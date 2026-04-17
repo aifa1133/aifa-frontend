@@ -11,6 +11,7 @@ import Directors from "./Components/Directors";
 import Stats from "./Components/Stats";
 import Testimonial from "./Components/Testimonial";
 import CTASection from "./Components/CTASection";
+import Footer from "./Components/Footer";
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
       <Stats />
       <Testimonial />
       <CTASection />
+      <Footer/>
     </div>
   );
 };

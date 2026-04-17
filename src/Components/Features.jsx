@@ -1,3 +1,5 @@
+"use client";
+
 const features = [
   {
     image: "/video/video1.png",
@@ -27,39 +29,39 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="w-full bg-black py-14">
+    <section className="w-full bg-[#0B0F10] py-20">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Title */}
-        <h2 className="text-white text-2xl md:text-3xl font-medium text-center mb-12">
+        {/* TITLE */}
+        <h2 className="text-white text-3xl md:text-4xl font-semibold text-center mb-16">
           The platform that powers your video strategy
         </h2>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+        {/* GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
           {features.map((item, i) => (
             <div key={i}>
-              {/* Image */}
-              <div className="overflow-hidden rounded-3xl mb-4">
+              {/* IMAGE */}
+              <div className="overflow-hidden rounded-[28px] mb-6">
                 <img
                   src={item.image}
                   alt="feature"
-                  className="w-full h-48 object-cover"
+                  className="w-full h-[220px] object-cover"
                 />
               </div>
 
-              {/* Title */}
-              <h3 className="text-white text-sm font-semibold mb-2">
+              {/* TITLE */}
+              <h3 className="text-white text-lg font-semibold mb-3">
                 {item.title}
               </h3>
 
-              {/* Description */}
-              <p className="text-gray-400 text-xs leading-relaxed mb-4">
+              {/* DESCRIPTION */}
+              <p className="text-gray-400 text-sm leading-relaxed mb-5">
                 Ensure your video play in their highest resolution, always
                 ad-free. No competitor distributions or random suggestion here
               </p>
 
-              {/* Button */}
-              <button className="bg-[#C7E36B] text-black px-4 py-2 text-xs font-medium rounded-sm">
+              {/* BUTTON */}
+              <button className="bg-[#C7E36B] text-black px-5 py-3 text-sm font-medium rounded-md">
                 + Learn about video hosting →
               </button>
             </div>

@@ -1,3 +1,5 @@
+"use client";
+
 const bootcamps = [
   {
     title: "AI Lego Animation Workshop",
@@ -24,61 +26,65 @@ const bootcamps = [
 
 export default function Bootcamps() {
   return (
-    <section className="w-full bg-black py-12">
+    <section className="w-full bg-[#0B0F10] py-14">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Title */}
-        <h2 className="text-white text-3xl font-medium mb-8">
+        {/* TITLE */}
+        <h2 className="text-white text-4xl font-semibold mb-10">
           AI Filmmaking Bootcamp
         </h2>
 
-        {/* List */}
-        <div className="flex flex-col gap-6">
+        {/* LIST */}
+        <div className="flex flex-col gap-8">
           {bootcamps.map((item, i) => (
             <div key={i} className="rounded-2xl overflow-hidden">
-              {/* Top */}
-              <div className="flex flex-col md:flex-row bg-[#e6dede] rounded-t-2xl">
-                {/* Image */}
+              {/* TOP SECTION */}
+              <div className="flex flex-col md:flex-row bg-[#dcdcdc] rounded-t-2xl">
+                {/* IMAGE */}
                 <img
                   src={item.image}
                   alt="bootcamp"
-                  className="w-full md:w-48 h-40 object-cover"
+                  className="w-full md:w-[220px] h-[180px] object-cover"
                 />
 
-                {/* Content */}
-                <div className="flex-1 p-5">
-                  {/* Title */}
-                  <h3 className="text-black text-xl md:text-2xl font-semibold mb-4">
+                {/* CONTENT */}
+                <div className="flex-1 px-8 py-6">
+                  {/* TITLE */}
+                  <h3 className="text-black text-3xl font-semibold mb-6">
                     {item.title}
                   </h3>
 
-                  {/* Info Boxes */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="border border-black/30 rounded-lg p-3">
-                      <p className="text-[10px] text-black/60 uppercase">
-                        Duration
+                  {/* INFO BOXES */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-[#cfcfcf] rounded-xl p-4">
+                      <p className="text-xs text-black/60 uppercase">
+                        ⏱ Duration
                       </p>
-                      <p className="text-sm font-medium">{item.duration}</p>
+                      <p className="mt-1 font-semibold text-black">
+                        {item.duration}
+                      </p>
                     </div>
 
-                    <div className="border border-black/30 rounded-lg p-3">
-                      <p className="text-[10px] text-black/60 uppercase">
-                        Pricing
+                    <div className="bg-[#cfcfcf] rounded-xl p-4">
+                      <p className="text-xs text-black/60 uppercase">
+                        💳 Pricing
                       </p>
-                      <p className="text-sm font-medium">{item.price}</p>
+                      <p className="mt-1 font-semibold text-black">
+                        {item.price}
+                      </p>
                     </div>
 
-                    <div className="border border-black/30 rounded-lg p-3">
-                      <p className="text-[10px] text-black/60 uppercase">
-                        Mode
+                    <div className="bg-[#cfcfcf] rounded-xl p-4">
+                      <p className="text-xs text-black/60 uppercase">Mode</p>
+                      <p className="mt-1 font-semibold text-black">
+                        {item.mode}
                       </p>
-                      <p className="text-sm font-medium">{item.mode}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Button */}
-              <div className="bg-[#C7E36B] text-center py-3 text-sm font-semibold text-black rounded-b-2xl">
+              {/* BOTTOM BUTTON */}
+              <div className="bg-[#C7E36B] text-center py-4 text-base font-semibold text-black rounded-b-2xl">
                 RESERVE SPOT →
               </div>
             </div>

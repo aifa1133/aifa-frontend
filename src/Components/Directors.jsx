@@ -1,14 +1,16 @@
+"use client";
+
 const directors = [
-  //   {
-  //     name: "Sherin",
-  //     role: "Head of Product",
-  //     image: "/team/team1.png",
-  //   },
-  //   {
-  //     name: "Ravi Teja",
-  //     role: "Head of Academics",
-  //     image: "/team/team2.png ",
-  //   },
+  {
+    name: "Sherin",
+    role: "Head of Product",
+    image: "/team/team1.png",
+  },
+  {
+    name: "Ravi Teja",
+    role: "Head of Academics",
+    image: "/team/team5.png",
+  },
   {
     name: "E Arun Kumar",
     role: "Head of Product",
@@ -19,61 +21,73 @@ const directors = [
     role: "Head of Product",
     image: "/team/team4.png",
   },
-  {
-    name: "Satyarth",
-    role: "Head of Product",
-    image: "/team/team5.png",
-  },
 ];
 
 export default function Directors() {
   return (
-    <section className="w-full bg-black py-16">
-      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-10">
-        {/* LEFT CONTENT */}
-        <div className="flex-1 text-left">
-          <h2 className="text-white text-3xl md:text-4xl font-medium leading-snug mb-4">
+    <section className="w-full bg-[#0B0F10] py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+        {/* LEFT */}
+        <div className="flex-1">
+          <h2 className="text-white text-5xl font-medium leading-tight mb-6">
             The AI Directors era <br /> has arrived
           </h2>
 
-          <p className="text-gray-400 text-sm mb-6 max-w-md">
+          <p className="text-gray-400 text-base mb-8 max-w-md">
             From vision to final frame, work with the most renowned AI Video
             Directors to create scroll-stopping content and campaigns that drive
             real impact.
           </p>
 
-          <button className="bg-[#C7E36B] text-black px-5 py-2 text-sm font-medium rounded-sm">
+          <button className="bg-[#C7E36B] text-black px-6 py-3 text-sm font-medium rounded-md">
             + Find your AI Director →
           </button>
         </div>
 
-        {/* RIGHT CARDS */}
+        {/* RIGHT */}
         <div className="flex-1 relative flex justify-center items-center">
-          <div className="flex gap-4">
-            {directors.map((item, i) => (
-              <div
-                key={i}
-                className={`relative w-40 h-64 md:w-44 md:h-72 rounded-2xl overflow-hidden border border-white/20 bg-black ${
-                  i === 1 ? "scale-105 z-10" : "opacity-80"
-                }`}
-              >
-                {/* Image */}
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
+          {/* 🔥 BACK LINE */}
+          <div className="absolute top-1/2 w-[120%] h-[1px] bg-white/20 -translate-y-1/2"></div>
 
-                {/* Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                  <p className="text-white text-xs font-semibold">
-                    {item.name}
-                  </p>
+          <div className="relative flex items-center justify-center">
+            {directors.map((item, i) => {
+              const isCenter = i === 1;
 
-                  <p className="text-gray-300 text-[10px]">{item.role}</p>
+              return (
+                <div
+                  key={i}
+                  className={`
+                    absolute transition-all duration-500
+                    w-48 md:w-56 h-80 md:h-[360px]
+                    rounded-[28px] overflow-hidden
+                    bg-black
+                    ${
+                      isCenter
+                        ? "z-30 scale-110 border border-white/40 shadow-xl"
+                        : "z-10 opacity-60 scale-95 border border-white/10"
+                    }
+                  `}
+                  style={{
+                    transform: `translateX(${(i - 1) * 150}px)`,
+                  }}
+                >
+                  {/* IMAGE */}
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* OVERLAY */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
+                    <p className="text-white text-sm font-semibold">
+                      {item.name}
+                    </p>
+                    <p className="text-gray-300 text-xs">{item.role}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

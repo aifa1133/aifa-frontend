@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const courses = [
@@ -9,13 +11,13 @@ const courses = [
   },
   {
     title: "Kling AI Video Masterclass",
-   image: "/courses/courses2.png",
+    image: "/courses/courses2.png",
     duration: "1h 10m",
     price: "₹49.00",
   },
   {
     title: "AI Background Magic",
-image: "/courses/courses3.png",
+    image: "/courses/courses3.png",
     duration: "1h 10m",
     price: "₹49.00",
   },
@@ -23,73 +25,82 @@ image: "/courses/courses3.png",
 
 export default function Courses() {
   return (
-    <section className="w-full bg-black py-12">
+    <section className="w-full bg-[#0B0F10] py-16">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-white text-2xl md:text-3xl font-semibold">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-10">
+          <h2 className="text-white text-3xl md:text-4xl font-semibold">
             Self Paced Courses
           </h2>
 
-          {/* Arrows */}
-          <div className="flex gap-2">
-            <button className="bg-[#C7E36B] p-2 rounded">
+          <div className="flex gap-3">
+            <button className="bg-[#C7E36B] p-3 rounded-md">
               <ChevronLeft size={18} />
             </button>
-            <button className="bg-[#C7E36B] p-2 rounded">
+            <button className="bg-[#C7E36B] p-3 rounded-md">
               <ChevronRight size={18} />
             </button>
           </div>
         </div>
 
-        {/* Cards */}
+        {/* CARDS */}
         <div className="grid md:grid-cols-3 gap-6">
+
           {courses.map((course, i) => (
             <div
               key={i}
-              className="bg-[#1a1a1a] rounded-xl overflow-hidden border border-gray-800 hover:scale-105 transition duration-300"
+              className="bg-[#111516] border border-white/10 rounded-xl overflow-hidden"
             >
-              {/* Image */}
+
+              {/* IMAGE */}
               <div className="relative">
                 <img
                   src={course.image}
                   alt={course.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-[220px] object-cover"
                 />
 
-                {/* Duration Badge */}
-                <span className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                {/* DURATION */}
+                <span className="absolute top-3 left-3 bg-black/70 text-white text-xs px-3 py-1 rounded-md">
                   {course.duration}
                 </span>
               </div>
 
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="text-white text-sm font-semibold mb-2">
+              {/* CONTENT */}
+              <div className="p-5">
+
+                <h3 className="text-white text-base font-semibold mb-3">
                   {course.title}
                 </h3>
 
-                {/* Price */}
-                <div className="flex items-center gap-2 text-xs mb-4">
-                  <span className="text-yellow-400 font-semibold">95% off</span>
-                  <span className="line-through text-gray-400">₹799</span>
+                {/* PRICE */}
+                <div className="flex items-center gap-2 text-sm mb-5">
+                  <span className="text-[#C7E36B] font-semibold">
+                    95% off
+                  </span>
+                  <span className="line-through text-gray-400">
+                    ₹799
+                  </span>
                 </div>
 
-                {/* Button */}
-                <button className="w-full bg-white text-black text-sm py-2 rounded hover:bg-gray-200 transition">
+                {/* BUTTON */}
+                <button className="w-full bg-[#E5E5E5] text-black py-2 rounded-md text-sm font-medium hover:bg-white transition">
                   Buy {course.price}
                 </button>
               </div>
             </div>
           ))}
+
         </div>
 
-        {/* Bottom Button */}
-        <div className="flex justify-center mt-10">
-          <button className="bg-[#C7E36B] text-black px-6 py-2 text-sm font-semibold rounded hover:scale-105 transition">
+        {/* BOTTOM BUTTON */}
+        <div className="flex justify-center mt-12">
+          <button className="bg-[#C7E36B] text-black px-6 py-3 text-sm font-semibold rounded-md">
             + Explore Courses
           </button>
         </div>
+
       </div>
     </section>
   );
