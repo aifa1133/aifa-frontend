@@ -4,7 +4,7 @@ const directors = [
   {
     name: "Sherin",
     role: "Head of Product",
-    image: "/team/team1.png",
+    image: "/team/team3.png",
   },
   {
     name: "Ravi Teja",
