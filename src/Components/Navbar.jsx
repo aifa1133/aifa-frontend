@@ -107,7 +107,7 @@ const navLinks = [
     name: "COURSES",
     dropdown: ["BOOTCAMP", "VIDEO COURSES", "WORKSHOPS"],
   },
-  { name: "HIRE TALENT" },
+  { name: "HIRE TALENT"  , link: "/hire-talent" },
   { name: "CourseFullPage", link: "/bootcamp" },
   { name: "JOBS" },
   {

@@ -126,6 +126,7 @@ import CoursesPage from "./pages/CoursesPage";
 import LoginModal from "./authentication/LoginModal";
 import SignUpModal from "./authentication/SignUpModal";
 import CourseFullPage from "./pages/CourseFullPage";
+import HireTalent from "./pages/HireTalent";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
@@ -151,6 +152,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/bootcamp" element={<CourseFullPage />} />
+        <Route path="/hire-talent" element={<HireTalent />} />
       </Routes>
 
       {/* FOOTER */}
