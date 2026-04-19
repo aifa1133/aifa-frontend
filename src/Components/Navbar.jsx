@@ -129,7 +129,7 @@ const navLinks = [
     name: "COMMUNITY",
     dropdown: ["FORUMS", "EVENTS", "CLUBS", "CHALLENGES", "AWARDS"],
   },
-  { name: "SERVICES" },
+  { name: "SERVICES", link: "/services" },
 ];
 
 export default function Navbar({ onLoginClick, onSignupClick }) {

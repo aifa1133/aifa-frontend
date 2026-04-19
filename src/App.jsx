@@ -133,6 +133,7 @@ import Workflow from "./pages/workflow";
 import Projects from "./pages/Projects";
 import LearningTips from "./pages/LearningTips";
 import AiDeals from "./pages/AiDeals";
+import ServicesPage from "./pages/ServicesPage";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
@@ -164,6 +165,7 @@ export default function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/learning" element={<LearningTips />} />
         <Route path="/deals" element={<AiDeals />} />
+        <Route path ="/services" element={<ServicesPage />} />
       </Routes>
 
       {/* FOOTER */}
