@@ -129,6 +129,9 @@ import CourseFullPage from "./pages/CourseFullPage";
 import HireTalent from "./pages/HireTalent";
 import JobsSection from "./pages/JobsSection";
 import PromptLibrary from "./pages/PromptLibrary";
+import Workflow from "./pages/workflow";
+import Projects from "./pages/Projects";
+import LearningTips from "./pages/LearningTips";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
@@ -136,7 +139,6 @@ export default function App() {
 
   return (
     <div className="bg-[#0B0F10] min-h-screen">
-
       {/* NAVBAR */}
       <Navbar
         onLoginClick={() => {
@@ -157,6 +159,9 @@ export default function App() {
         <Route path="/hire-talent" element={<HireTalent />} />
         <Route path="/jobs" element={<JobsSection />} />
         <Route path="/prompt-library" element={<PromptLibrary />} />
+        <Route path="/workflow" element={<Workflow />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/learning" element={<LearningTips />} />
       </Routes>
 
       {/* FOOTER */}
@@ -183,7 +188,6 @@ export default function App() {
           }}
         />
       )}
-
     </div>
   );
 }
