@@ -127,44 +127,9 @@ return (
       </div>
     </section>
 
-    {/* 🔥 COURSES SECTION */}
-    <section className="bg-[#0B0F10] py-16">
-      <div className="max-w-7xl mx-auto px-6">
-
-        <h2 className="text-white text-3xl md:text-4xl font-semibold mb-10">
-          Self Paced Courses
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {courses.map((course, i) => (
-            <div
-              key={i}
-              className="bg-[#111516] border border-white/10 rounded-xl overflow-hidden hover:border-[#C7E36B]/40 transition"
-            >
-              <img
-                src={course.image}
-                className="w-full h-[220px] object-cover"
-              />
-
-              <div className="p-5">
-                <h3 className="text-white font-semibold mb-3">
-                  {course.title}
-                </h3>
-
-                <div className="flex gap-2 text-sm mb-5">
-                  <span className="text-[#C7E36B]">95% off</span>
-                  <span className="line-through text-gray-400">₹799</span>
-                </div>
-
-                <button className="w-full bg-white text-black py-2 rounded-md hover:bg-gray-200">
-                  Buy {course.price}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </section>
+   
+  
+     
+  
   </>
 )}
