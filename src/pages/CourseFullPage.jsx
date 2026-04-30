@@ -1,48 +1,125 @@
 "use client";
-
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaSignal,
+  FaClock,
+  FaFileAlt,
+  FaDownload,
+  FaLaptopCode,
+  FaClosedCaptioning,
+  FaCertificate,
+  FaInfinity,
+  FaCalendarAlt,
+  FaMinus,
+  FaPlus,
+  FaArrowRight,
+} from "react-icons/fa";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
-export default function CourseFullPage() {
-  const [open, setOpen] = useState(0);
+export default function CourseAndBenefits() {
+  const benefits = [
+    "Flexible Office Hours & Remote Friendly",
+    "Group Insurance Fully Covered",
+    "Virtual Healthcare",
+    "Wellbeing & EAP Progress",
+    "10 Sick & Personal Day",
+    "Short & Long-Term Disability Program",
+    "Generous Time Off Flexible Policies",
+    "Holiday Break Company-Wide",
+    "RRSP Contribution Up To 6%",
+  ];
+  const items = [
+    "AIFA Promise to Deliver World Class Training",
+    "Course Assets",
+    "A Training Completion Badge",
+    "Completion Badge",
+    "Training Recording",
+    "A Training Completion Badge",
+  ];
 
-  const syllabus = [
+  const [openIndex, setOpenIndex] = useState(0);
+
+  const sessions = [
     {
-      title: "The Photo Enhancement Mindset",
-      desc: "Understand what makes professional photo enhancement different from casual editing—enhancing with intention, not filters. Learn how to analyze images, identify enhancement opportunities, and approach each project with a creative problem-solving mindset.",
-      img: "/courses/v1.png",
+      title: "Session 1: Introduction to AI Filmmaking",
+      desc: "Build a cinematic AI-powered short film from concept to final output. You'll create a compelling story, generate visuals using advanced AI tools, design scenes, craft realistic voiceovers, and add music and sound effects for a polished finish.",
     },
     {
-      title: "Real Client Workflow Experience",
-      desc: "Work through a realistic creative brief, analyze image issues, and deliver results aligned with client expectations. ",
-      img: "/courses/v2.png",
+      title: "Session 2: Screen Writing",
+      desc: "Learn storytelling and script structure for cinematic output.",
     },
     {
-      title: "AI Editing Basics",
-      desc: "Learn core tools and techniques used in AI-powered photo enhancement workflows.Understand how to use AI for intelligent adjustments while maintaining creative control.",
-      img: "/courses/v3.png",
+      title: "Session 3: Previsualization",
+      desc: "Plan scenes visually before production using AI tools.",
     },
     {
-      title: "Color Grading",
-      desc: "Apply cinematic color grading techniques to enhance mood and visual impact. Learn how to use color grading tools to create cohesive, professional-looking images.",
-      img: "/courses/v4.png",
+      title: "Session 4: Prompt Engineering",
+      desc: "Master prompts to generate consistent high-quality visuals.",
     },
     {
-      title: "Export & Delivery",
-      desc: "Prepare high-quality exports for social media, clients, and professional use. Learn best practices for file formats, resolution, and compression to ensure your enhanced photos look their best everywhere.",
-      img: "/courses/v5.png",
+      title: "Session 5: Creating with AI",
+      desc: "Hands-on creation using multiple AI tools.",
     },
     {
-      title: "Bonus Content",
-      desc: "Exclusive resources and templates to accelerate your photo enhancement journey. Get access to project files, cheat sheets, and a curated list of AI tools to help you continue improving your skills long after the course ends.",
-      img: "/courses/v6.png",
-    }
+      title: "Session 6: Cinematography",
+      desc: "Understand camera angles, lighting, and composition.",
+    },
+    {
+      title: "Session 7: Character Design",
+      desc: "Design consistent characters using AI workflows.",
+    },
+  ];
+
+  const toggle = (index) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+  const steps = [
+    {
+      title: "INITIAL HR CONTACT",
+      desc: "Creators and aspiring filmmakers who want to add AI skills to their creative toolkit",
+    },
+    {
+      title: "MEETING THE TEAM",
+      desc: "Designers, editors, and storytellers ready to evolve into full-stack AI filmmakers",
+    },
+    {
+      title: "INCLUSIVE AND ACCESSIBLE",
+      desc: "Students and professionals who want to learn modern AI tools and real-world production workflows",
+    },
+    {
+      title: "INCLUSIVE AND ACCESSIBLE",
+      desc: "We're committed to making our recruitment process accessible to everyone. Should you require any accommodations, please let us know. We respect your privacy and will adapt the process to meet your needs, ensuring a fair and comfortable experience for all candidates.",
+    },
+  ];
+
+  const instructors = [
+    {
+      name: "RAVI TEJA",
+      img: "/images/ravi.png",
+      short:
+        "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
+      long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    },
+    {
+      name: "SHERIN",
+      img: "/images/sherin.png",
+      short:
+        "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
+      long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    },
+    {
+      name: "ARUN KUMAR",
+      img: "/images/arun.png",
+      short:
+        "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
+      long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    },
   ];
 
   const faqs = [
     {
       q: "How is this microcourse different from YouTube tutorials?",
-      a: "Focused, structured, and practical. Each lesson is concise and designed to deliver clear results without unnecessary fluff. You'll follow a step-by-step system that builds real photo enhancement skills.",
+      a: "Focused, structured, and practical. Each lesson is concise and designed to deliver clear results without unnecessary fluff. You'll follow a step-by-step system that builds real photo enhancement skills, not just random tips.",
     },
     {
       q: "What’s the difference between buying a single microcourse and getting All-Access?",
@@ -52,413 +129,483 @@ export default function CourseFullPage() {
       q: "How long will I have access to the course?",
       a: "You get lifetime access to all purchased content.",
     },
-
     {
-      q: "What if I’m not satisfied with the course?",
-      a: "We offer a 30-day money-back guarantee. If you’re not satisfied, just reach out for a full refund.",
+      q: "Do I need prior experience with AI tools?",
+      a: "No, the course is beginner-friendly and guides you step-by-step.",
     },
     {
-      q: "Do I need prior experience with photo editing or AI tools?",
-      a: "No prior experience is needed. The course is designed for beginners and will guide you through every step of the process.",
-    },
-    {
-      q: "What software do I need for this course?",
-      a: "We cover industry-standard photo editing software and AI enhancement tools. Specific software recommendations will be provided in the course materials.",
+      q: "What software do I need?",
+      a: "We cover industry-standard tools and AI platforms used in modern workflows.",
     },
   ];
 
+  const testimonials = [
+    {
+      name: "Prerna Singh",
+      role: "Ravi Teja is an AI Filmmaker.",
+      text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+      img: "/images/user1.jpg",
+    },
+    {
+      name: "David Robert",
+      role: "Ravi Teja is an AI Filmmaker.",
+      text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+      img: "/images/user1.jpg",
+    },
+    {
+      name: "Tejasvi Kalbu",
+      role: "Ravi Teja is an AI Filmmaker.",
+      text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+      img: "/images/user1.jpg",
+    },
+  ];
+  const data = [
+    {
+      title: "AI SHORT FILM",
+      desc: "Create a complete story-driven video with scenes and visuals.",
+      img: "/bootcamp1.jpg",
+    },
+    {
+      title: "PRODUCT AD FILM",
+      desc: "Produce a high-quality commercial-style video for products or services.",
+       img: "/bootcamp1.jpg",
+    },
+    {
+      title: "SOCIAL MEDIA REELS",
+      desc: "Make scroll-stopping content optimized for Instagram, YouTube, and TikTok.",
+    img: "/bootcamp1.jpg",
+    },
+    {
+      title: "CINEMATIC POSTERS",
+      desc: "Design high-impact visuals for storytelling and marketing.",
+        img: "/bootcamp1.jpg",
+    },
+    {
+      title: "PORTFOLIO-READY PROJECTS",
+      desc: "Build a professional portfolio to showcase your work or get clients.",
+    img: "/bootcamp1.jpg",
+    },
+  ];
   return (
-    <div>
-      <section className="bg-[#0B0F10] text-white relative overflow-hidden">
-        {/* 🔥 BACKGROUND GLOW */}
-        <div className="absolute inset-0 opacity-30">
-          <img
-            src="/bg/glow.png" // add your abstract glow image
-            className="w-full h-full object-cover"
-          />
-        </div>
+    <div className="bg-[#0B0F19]">
+      {/* ================= COURSE SECTION ================= */}
+      <section className="w-full flex justify-center items-center py-28">
+        <div className="w-[90%] max-w-6xl bg-gradient-to-r from-[#1A1F2E] to-[#0F172A] rounded-2xl p-10 flex flex-col md:flex-row justify-between gap-10 border border-white/10 shadow-xl">
+          {/* LEFT */}
+          <div className="flex-1">
+            <p className="text-[#A3E635] text-sm font-semibold tracking-wide mb-4">
+              A COURSE YOU’LL ACTUALLY FINISH
+            </p>
 
-        <div className="relative max-w-7xl mx-auto px-6 py-16">
-          {/* 🔹 BREADCRUMB */}
-          <p className="text-gray-400 text-sm mb-8">
-            Home <span className="mx-2">›</span> Video Courses{" "}
-            <span className="mx-2">›</span>
-            <span className="text-[#C7E36B]">
-              AI Photo Enhancement Masterclass
-            </span>
-          </p>
+            <h1 className="text-white text-4xl md:text-5xl font-bold leading-tight mb-6">
+              Build AI-Powered <br />
+              Films An AI <br />
+              Fellowship for <br />
+              Creators
+            </h1>
 
-          {/* 🔥 HERO GRID */}
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            {/* LEFT IMAGE */}
-            <div className="rounded-2xl overflow-hidden border border-white/10">
-              <img
-                src="/courses/v1.png"
-                alt="course"
-                className="w-full h-[260px] md:h-[300px] object-cover"
-              />
-            </div>
-
-            {/* RIGHT CONTENT */}
-            <div>
-              <p className="text-[#C7E36B] text-xs tracking-widest mb-3">
-                INCLUDED IN ALL-ACCESS
-              </p>
-
-              <h1 className="text-3xl md:text-5xl font-semibold leading-tight mb-5">
-                Photo Enhancement Essentials
-              </h1>
-
-              <p className="text-gray-400 text-sm md:text-base mb-6 max-w-md">
-                Learn to transform ordinary images into stunning visuals using
-                industry-standard photo editing and AI enhancement tools.
-              </p>
-
-              <button className="bg-[#C7E36B] text-black px-6 py-3 rounded-md font-medium hover:opacity-90 transition">
-                + Purchase Now
-              </button>
-            </div>
+            <button className="bg-[#A3E635] text-black px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+              ENROLL NOW
+            </button>
           </div>
 
-          {/* 🔥 FEATURE CARDS */}
-          <div className="grid md:grid-cols-3 gap-6 mt-14">
-            {/* CARD 1 */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur transition hover:border-[#C7E36B]/40 hover:bg-white/10">
-              <div className="mb-4">
-                <img
-                  src="/courses/Imgicon.svg"
-                  alt="Schedule Icon"
-                  className="w-10 h-10 object-contain"
-                />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">
-                Learn On Your Own Schedule
-              </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Build your photo enhancement skills at your own pace. All
-                lessons and project files are available 24/7.
-              </p>
-            </div>
-
-            {/* CARD 2 */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur transition hover:border-[#C7E36B]/40 hover:bg-white/10">
-              <div className="mb-4">
-                <img
-                  src="/courses/Imgicon2.svg"
-                  alt="Duration Icon"
-                  className="w-10 h-10 object-contain"
-                />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">
-                3+ Hours of Content
-              </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Structured, practical lessons focused on real-world photo
-                enhancement skills.
-              </p>
-            </div>
-
-            {/* CARD 3 */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur transition hover:border-[#C7E36B]/40 hover:bg-white/10">
-              <div className="mb-4">
-                <img
-                  src="/courses/Imgicon3.svg"
-                  alt="Beginner Icon"
-                  className="w-10 h-10 object-contain"
-                />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Beginner Friendly</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Designed for beginners with no prior experience in editing or AI
-                enhancement tools.
-              </p>
-            </div>
+          {/* RIGHT */}
+          <div className="flex-1 grid grid-cols-1 gap-4 text-gray-300 text-sm">
+            <Feature icon={<FaSignal />} text="Beginner" />
+            <Feature icon={<FaClock />} text="22 Hours" />
+            <Feature icon={<FaFileAlt />} text="20 Assignments" />
+            <Feature icon={<FaDownload />} text="Downloadable Content" />
+            <Feature icon={<FaLaptopCode />} text="Hands-on Exercises" />
+            <Feature icon={<FaClosedCaptioning />} text="English Captions" />
+            <Feature
+              icon={<FaCertificate />}
+              text="Certificate of Completion"
+            />
+            <Feature icon={<FaInfinity />} text="Class Recordings" />
+            <Feature icon={<FaCalendarAlt />} text="1 month duration" />
           </div>
         </div>
       </section>
 
-      <section className="bg-[#0B0F10] text-white py-4">
-        <div className="max-w-7xl mx-auto px-6">
-          {/* 🔥 OUTER BORDER */}
-          <div className="border border-white/10 rounded-[28px] p-3">
-            {/* 🔥 INNER CARD */}
-            <div className="rounded-[24px] p-8 md:p-10 bg-gradient-to-br from-[#1a1f22] to-[#111] border border-white/10">
-              <div className="grid md:grid-cols-2 gap-12">
-                {/* LEFT */}
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-semibold mb-6">
-                    Course Overview
-                  </h2>
-
-                  <p className="text-gray-300 text-sm md:text-base leading-relaxed">
-                    In Photo Enhancement Essentials, you’ll work through
-                    real-world image projects from raw photo to final export,
-                    learning not just how to enhance visuals, but why specific
-                    adjustments create stronger impact.
-                    <br />
-                    <br />
-                    Get introduced to a practical AI editing
-                    toolkit—professional photo editing software for precision
-                    control, AI enhancement tools for intelligent corrections,
-                    and color grading techniques for cinematic results. Learn
-                    when to use each tool, how to maintain natural detail, and
-                    how to prepare high-quality outputs ready for social media,
-                    advertising, or client delivery.
-                  </p>
-
-                  {/* 🔥 BOTTOM LOGO */}
-                  <div className="flex items-center gap-4 mt-10">
-                    <img
-                      src="/Tools/newicon2.png"
-                      className="w-16 opacity-80"
-                    />
-                    <div className="bg-black px-4 py-2 text-xl font-semibold">
-                      Flow
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT */}
-                <div>
-                  <h3 className="text-xl md:text-2xl font-semibold mb-6">
-                    You Get:
-                  </h3>
-
-                  <ul className="space-y-4 text-gray-300 text-sm md:text-base">
-                    {[
-                      "3+ Hours Of Video Training",
-                      "PDF Cheat Sheets",
-                      "Downloadable Notes & Assets",
-                      "24/7 Community Access",
-                      "Verified Credential Upon Completion",
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-3">
-                        <span className="text-[#C7E36B] text-lg">✔</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🔥 SYLLABUS */}
-      <div className="max-w-7xl mx-auto px-6 mb-24">
-        <h2 className="text-4xl md:text-5xl font-semibold mb-12 text-amber-50">
-          Course syllabus.
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {syllabus.map((item, i) => (
-            <div key={i} className="group">
-              {/* IMAGE */}
-              <div className="rounded-xl overflow-hidden border border-white/10">
-                <img
-                  src={item.img}
-                  className="w-full h-52 object-cover transition duration-500 group-hover:scale-105"
-                />
-              </div>
-
-              {/* TEXT */}
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2 text-amber-50">{item.title}</h3>
-
-                <p className="text-gray-400 text-1xl leading-relaxed ">
-                  {item.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 🔥 CTA TEXT */}
-      <div className="text-center mb-20 px-6">
-        <h2 className="text-5xl font-semibold mb-4 text-white">
-          Ready to Enhance with AI?
-        </h2>
-        <p className="text-white max-w-4xl mx-auto text-2xl">
-          Don’t just experiment with tools. Learn how to use AI photo
-          enhancement confidently to create professional, high-impact visuals.
-        </p>
-      </div>
-
-      <section className="bg-[#0B0F10] text-white py-4">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-8">
-          {/* 🔥 LEFT CARD */}
-          <div className="relative rounded-2xl p-8 md:p-10 border border-white/10 overflow-hidden">
-            {/* BACKGROUND GLOW */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2a3b0a] via-[#0B0F10] to-[#0B0F10] opacity-60"></div>
-
-            <div className="relative z-10">
-              <h3 className="text-xl md:text-2xl font-semibold mb-2">
-                Buy this Course
-              </h3>
-
-              <p className="text-pink-300 mb-6">Own this course forever.</p>
-
-              <h2 className="text-4xl md:text-5xl font-bold mb-8">₹399</h2>
-
-              <div className="flex justify-center">
-                <button className="bg-[#C7E36B] text-black px-8 py-3 rounded-md font-medium hover:opacity-90 transition">
-                  + Buy This Course
-                </button>
-              </div>
-
-              <p className="text-center text-orange-300 text-sm mt-4 mb-8">
-                No recurring fees — ever.
-              </p>
-
-              <p className="text-pink-300 mb-4">What's Included:</p>
-
-              <ul className="space-y-4 text-gray-300 text-1xl">
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> 3 hours of HD video
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> 120 lessons
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Lifetime access
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Downloadable content
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> English captions
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Certificate of
-                  completion
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* 🔥 RIGHT CARD */}
-          <div className="relative rounded-2xl p-8 md:p-10 border border-white/10 overflow-hidden">
-            {/* BADGE */}
-            <span className="absolute top-4 right-4 bg-orange-400 text-black text-xs px-3 py-1 rounded-md">
-              Best Value
-            </span>
-
-            {/* BACKGROUND GLOW */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2a3b0a] via-[#0B0F10] to-[#0B0F10] opacity-60"></div>
-
-            <div className="relative z-10">
-              <h3 className="text-xl md:text-2xl font-semibold mb-2">
-                Get Lifetime Access
-              </h3>
-
-              <p className="text-pink-300 mb-6">
-                All current & future courses — one payment.
-              </p>
-
-              <h2 className="text-4xl md:text-5xl font-bold mb-8">₹9,999</h2>
-
-              <div className="flex justify-center">
-                <button className="bg-[#C7E36B] text-black px-8 py-3 rounded-md font-medium hover:opacity-90 transition">
-                  + Unlock All Courses
-                </button>
-              </div>
-
-              <p className="text-center text-orange-300 text-sm mt-4 mb-8">
-                No recurring fees — ever.
-              </p>
-
-              <p className="text-pink-300 mb-4">What's Included:</p>
-
-              <ul className="space-y-4 text-gray-300 text-1xl">
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> 50+ premium courses
-                  worth 20,000
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> All future courses
-                  included
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> 330 hours of HD
-                  video
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Lifetime access
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Downloadable content
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Early access to new
-                  courses
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-[#C7E36B]">✔</span> Help shape future
-                  course topics
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🔥 FAQ */}
-
-      <section className="bg-[#0B0F10] text-white py-4">
-        <div className="max-w-4xl mx-auto px-6">
-          {/* Heading */}
-          <p className="text-center text-[#C7E36B] mb-2">Need More Details?</p>
-
-          <h2 className="text-5xl font-semibold text-center mb-12">
-            Frequently-Asked Questions
+      {/* ================= BENEFITS SECTION ================= */}
+      <section className="w-full py-20 flex justify-center">
+        <div className="w-[90%] max-w-6xl text-center">
+          <h2 className="text-white text-3xl md:text-4xl font-bold mb-4 leading-tight">
+            BENEFITS THAT SUPPORT <br /> YOU & YOUR LOVED ONES
           </h2>
 
-          {/* FAQ */}
-          <div className="space-y-4">
-            {faqs.map((item, i) => {
-              const isOpen = open === i;
+          <p className="text-gray-400 max-w-2xl mx-auto mb-12 text-sm md:text-base">
+            Understand how modern AI models power intelligent visual
+            storytelling. Work with prompts, visual context, and tool settings
+            to control cinematic output
+          </p>
 
-              return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {benefits.map((item, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-[#1A1F2E] to-[#0F172A] 
+                border border-white/10 
+                rounded-2xl 
+                px-6 py-6 
+                text-left 
+                text-white 
+                font-semibold 
+                text-sm md:text-base
+                hover:scale-[1.05] 
+                transition duration-300"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="w-full bg-[#070B14] py-24 flex justify-center">
+        <div className="w-[90%] max-w-6xl">
+          {/* HEADER */}
+          <div className="text-center mb-20">
+            <h2 className="text-white text-3xl md:text-5xl font-bold mb-4">
+              WHAT YOU WILL BUILD
+            </h2>
+            <p className="text-gray-400 text-sm max-w-2xl mx-auto">
+              Build real, portfolio-ready projects as you learn films, ads, and
+              social content created step by step.
+            </p>
+          </div>
+
+          {/* ZIG-ZAG LIST */}
+          <div className="flex flex-col gap-16">
+            {data.map((item, index) => (
+              <div
+                key={index}
+                className={`flex flex-col md:flex-row items-center gap-10 ${
+                  index % 2 !== 0 ? "md:flex-row-reverse" : ""
+                }`}
+              >
+                {/* TEXT */}
+                <div className="flex-1">
+                  <p className="text-gray-500 text-xs mb-2">BEGINNER</p>
+
+                  <h3 className="text-white text-xl md:text-2xl font-bold mb-3">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-gray-400 text-sm max-w-md">{item.desc}</p>
+                </div>
+
+                {/* IMAGE */}
+                <div className="flex-1">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="w-full max-w-[350px] rounded-[40px] object-cover"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="w-full py-28 bg-[#5C6335] flex justify-center relative overflow-hidden">
+        {/* 🔥 Soft Background Glow */}
+        <div className="absolute right-0 top-0 w-[400px] h-[400px] bg-[#D9E7A3]/20 blur-[120px] rounded-full"></div>
+
+        <div className="relative w-[90%] max-w-6xl grid md:grid-cols-2 gap-16 items-center">
+          {/* LEFT SIDE */}
+          <div>
+            <h2 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6">
+              WHAT’S INCLUDED <br /> WITH OUR <br /> COURSES...
+            </h2>
+
+            <p className="text-white/80 text-sm md:text-base mb-10 max-w-md">
+              All attendees will receive a free 3 month software license with
+              their course registration.
+            </p>
+
+            {/* ✅ REACT IMAGE */}
+            <div className="w-[320px]">
+              <img
+                src="/bootcamp2.png" // 👉 put your image here
+                alt="illustration"
+                className="w-full object-contain drop-shadow-xl"
+              />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="flex flex-col gap-6">
+            {items.map((item, index) => (
+              <div
+                key={index}
+                className="group relative rounded-2xl p-[1px] bg-gradient-to-br from-white/20 to-transparent"
+              >
                 <div
-                  key={i}
-                  className={`rounded-2xl border transition-all duration-300 ${
-                    isOpen
-                      ? "bg-white/10 border-white/20 p-6"
-                      : "border-white/10 p-5 hover:bg-white/5"
-                  }`}
+                  className="rounded-2xl bg-[#D9E7A3]/95 px-6 py-5
+            text-[#2E2E2E] border border-white/20
+            hover:scale-[1.05] transition duration-300"
                 >
-                  {/* Question */}
-                  <div
-                    onClick={() => setOpen(isOpen ? null : i)}
-                    className="flex justify-between items-center cursor-pointer"
-                  >
-                    <h3 className="text-lg font-medium">{item.q}</h3>
+                  {/* Glow */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-white/10 blur-xl rounded-2xl"></div>
 
-                    <span className="text-2xl">{isOpen ? "−" : "+"}</span>
+                  <h3 className="relative z-10 font-bold text-sm md:text-base mb-1">
+                    {item}
+                  </h3>
+
+                  <p className="relative z-10 text-xs text-[#4B4B4B]">
+                    All attendees will receive a free 3 month
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full py-24 bg-[#070B14] flex justify-center">
+        <div className="w-[90%] max-w-5xl">
+          {/* HEADER */}
+          <p className="text-[#A3E635] text-sm font-semibold mb-3">
+            A PERFECTLY STRUCTURED COURSE
+          </p>
+
+          <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">
+            COURSE CONTENT
+          </h2>
+
+          <p className="text-gray-400 text-sm mb-10">
+            22 Sessions . 44 Total Hours . 20 Assignments
+          </p>
+
+          {/* ACCORDION */}
+          <div className="flex flex-col gap-4">
+            {sessions.map((item, index) => (
+              <div
+                key={index}
+                className="border border-white/10 rounded-xl bg-[#0F172A]/60 backdrop-blur-md overflow-hidden"
+              >
+                {/* HEADER */}
+                <button
+                  onClick={() => toggle(index)}
+                  className="w-full flex justify-between items-center px-6 py-4 text-left text-white font-medium"
+                >
+                  <span>{item.title}</span>
+                  {openIndex === index ? <FaChevronUp /> : <FaChevronDown />}
+                </button>
+
+                {/* CONTENT */}
+                <div
+                  className={`px-6 transition-all duration-300 ${
+                    openIndex === index
+                      ? "max-h-40 pb-4 opacity-100"
+                      : "max-h-0 opacity-0"
+                  } overflow-hidden text-gray-400 text-sm`}
+                >
+                  {item.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full py-24 bg-[#070B14] flex justify-center">
+        <div className="w-[90%] max-w-6xl grid md:grid-cols-2 gap-16 items-center">
+          {/* LEFT SIDE */}
+          <div>
+            <p className="text-gray-400 text-sm mb-3 uppercase tracking-wide">
+              WHAT TO EXPECT
+            </p>
+
+            <h2 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6">
+              RECRUITMENT <br /> PROCESS
+            </h2>
+
+            <p className="text-gray-400 text-sm md:text-base max-w-md">
+              Joining our team starts with a transparent and respectful
+              recruitment journey. Although our HR team is small, with just
+              Jessie – our dedicated People Operations Director, we make every
+              effort to respond to each applicant. Here’s what you can expect:
+            </p>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="flex flex-col gap-5">
+            {steps.map((step, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-r from-[#1A1F2E] to-[#0F172A]
+              border border-white/10
+              rounded-2xl px-6 py-5
+              text-white
+              shadow-lg
+              hover:scale-[1.02]
+              transition duration-300"
+              >
+                <h3 className="font-bold text-sm md:text-base mb-1">
+                  {step.title}
+                </h3>
+
+                <p className="text-gray-400 text-xs md:text-sm">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full py-24 bg-[#070B14] flex justify-center">
+        <div className="w-[90%] max-w-6xl">
+          {/* HEADING */}
+          <h2 className="text-white text-3xl md:text-4xl font-bold mb-12">
+            GET TO KNOW OUR INSTRUCTORS
+          </h2>
+
+          {/* GRID */}
+          <div className="grid md:grid-cols-3 gap-6">
+            {instructors.map((person, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-b from-[#1A1F2E] to-[#0F172A]
+              border border-white/10
+              rounded-2xl
+              overflow-hidden
+              hover:scale-[1.02]
+              transition duration-300"
+              >
+                {/* TOP SECTION */}
+                <div className="p-6 border-b border-white/10">
+                  {/* IMAGE */}
+                  <div className="w-16 h-16 rounded-full overflow-hidden mb-4 border border-white/20">
+                    <img
+                      src={person.img}
+                      alt={person.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                  {/* Answer */}
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-gray-400 mt-4 text-sm leading-relaxed"
-                      >
-                        {item.a}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  {/* NAME */}
+                  <h3 className="text-white font-bold text-lg mb-2">
+                    {person.name}
+                  </h3>
+
+                  {/* SHORT DESC */}
+                  <p className="text-gray-400 text-sm">{person.short}</p>
                 </div>
-              );
-            })}
+
+                {/* BOTTOM SECTION */}
+                <div className="p-6">
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    {person.long}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>{" "}
-        {/* ✅ CORRECT PLACE */}
+        </div>
       </section>
+
+      <section className="w-full bg-[#070B14] py-24 flex justify-center">
+        <div className="w-[90%] max-w-7xl">
+          {/* HEADER */}
+          <div className="text-center mb-16 relative">
+            <p className="text-gray-400 text-sm mb-3 tracking-wide">
+              TESTIMONIALS
+            </p>
+
+            <h2 className="text-white text-3xl md:text-5xl font-bold leading-tight">
+              HEAR WHAT OUR <br /> TRAINEES HAVE TO SAY
+            </h2>
+
+            {/* ARROW BUTTON */}
+            <button className="absolute right-0 top-1/2 -translate-y-1/2 bg-[#A3E635] text-black p-4 rounded-xl hover:scale-105 transition">
+              <FaArrowRight />
+            </button>
+          </div>
+
+          {/* CARDS */}
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((item, index) => (
+              <div
+                key={index}
+                className="bg-[#1A1F2E] border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:scale-[1.02] transition"
+              >
+                {/* TEXT */}
+                <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                  {item.text}
+                </p>
+
+                {/* USER */}
+                <div className="flex items-center gap-3 border-t border-white/10 pt-4">
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+
+                  <div>
+                    <h4 className="text-white font-semibold text-sm">
+                      {item.name}
+                    </h4>
+                    <p className="text-gray-400 text-xs">{item.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="w-full py-24 bg-[#070B14] flex justify-center">
+        <div className="w-[90%] max-w-4xl text-center">
+          {/* TOP TEXT */}
+          <p className="text-gray-400 text-sm mb-2 uppercase tracking-wide">
+            NEED MORE DETAILS?
+          </p>
+
+          <h2 className="text-white text-3xl md:text-4xl font-bold mb-12">
+            FREQUENTLY-ASKED QUESTIONS
+          </h2>
+
+          {/* FAQ LIST */}
+          <div className="flex flex-col gap-4 text-left">
+            {faqs.map((item, index) => (
+              <div
+                key={index}
+                className="border border-white/10 rounded-2xl bg-[#0F172A]/60 backdrop-blur-md overflow-hidden"
+              >
+                {/* QUESTION */}
+                <button
+                  onClick={() => toggle(index)}
+                  className="w-full flex justify-between items-center px-6 py-5 text-white font-medium"
+                >
+                  <span>{item.q}</span>
+                  {openIndex === index ? <FaMinus /> : <FaPlus />}
+                </button>
+
+                {/* ANSWER */}
+                <div
+                  className={`px-6 transition-all duration-300 ${
+                    openIndex === index
+                      ? "max-h-40 pb-5 opacity-100"
+                      : "max-h-0 opacity-0"
+                  } overflow-hidden text-gray-400 text-sm`}
+                >
+                  {item.a}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* ================= REUSABLE FEATURE ================= */
+function Feature({ icon, text }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-gray-400 text-base">{icon}</span>
+      <span>{text}</span>
     </div>
   );
 }
