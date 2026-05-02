@@ -193,7 +193,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
                       <Link
                         key={idx}
                         to={sub.path}
-                        className="flex items-center gap-[10px] px-[18px] py-[16px] text-[#F0F0F0] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none hover:bg-white/10 transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-transparent hover:before:bg-white"
+                        className="flex items-center gap-[10px] px-[18px] py-[16px] text-[#F0F0F0] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none hover:bg-white/10 transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-transparent hover:before:bg-[#D0E46A]"
                       >
                         {sub.label}
                       </Link>

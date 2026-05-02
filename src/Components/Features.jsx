@@ -77,11 +77,11 @@
 import { motion } from "framer-motion";
 
 const features = [
-  { image: "/video/video1.png", title: "Hire Top AI Talent" },
-  { image: "/video/video2.png", title: "Explore AI Job Opportunities" },
-  { image: "/video/video3.png", title: "Access Powerful AI Resources" },
-  { image: "/video/video4.png", title: "Join the Creator Community" },
-  { image: "/video/video5.png", title: "Get End-to-End AI Services" },
+  { image: "/video/video1.jpg", title: "Hire Top AI Talent" },
+  { image: "/video/video2.jpg", title: "Explore AI Job Opportunities" },
+  { image: "/video/video3.jpg", title: "Access Powerful AI Resources" },
+  { image: "/video/video4.jpg", title: "Join the Creator Community" },
+  { image: "/video/video5.jpg", title: "Get End-to-End AI Services" },
   { image: "/video/video6.jpg", title: "Upgrade to Pro Membership" },
 ];
 

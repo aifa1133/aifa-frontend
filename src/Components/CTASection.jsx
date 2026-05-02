@@ -8,11 +8,12 @@ export default function CTASection() {
         {/* AVATAR */}
         <div className="flex justify-center mb-8">
           <div className="w-[201px] h-[201px] rounded-full overflow-hidden bg-[#E4A76D] mx-auto">
-            <img
-              src="/avatar/avatar1.png"
-              alt="avatar"
-              className="w-full h-full object-cover object-[50%_10%]"
-            />
+                <img
+      src="/avatar/avatar1.png"
+      alt="avatar"
+      className="w-[130%] h-[300%] object-cover object-center"
+    />
+
           </div>
         </div>
 
