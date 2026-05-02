@@ -116,7 +116,6 @@
 //     </section>
 //   );
 // }
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -132,38 +131,33 @@ const directors = [
 export default function Directors() {
   const [active, setActive] = useState(1);
 
-  // 🔥 Auto slide
+  // Auto slide
   useEffect(() => {
     const interval = setInterval(() => {
       setActive((prev) => (prev + 1) % directors.length);
     }, 2500);
-
     return () => clearInterval(interval);
   }, []);
 
   return (
     <section className="w-full bg-[#0B0F10] py-16 md:py-20 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center gap-10 md:gap-16">
+
         {/* LEFT */}
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-[#F0F0F0] font-montserrat text-[48px] leading-[56px] font-normal mb-4 md:mb-6">
-            The AI Directors era <br /> has arrived
+          <h2 className="text-[#F0F0F0] font-montserrat font-black 
+          text-[36px] leading-[42px] 
+          sm:text-[48px] sm:leading-[56px] 
+          md:text-[64px] md:leading-[70px] 
+          mb-4 md:mb-6">
+            LEARN FROM THE INDUSTRY <br /> LEADERS
           </h2>
-
-          <p className="text-[#F0F0F0] font-montserrat text-[14px] leading-[20px] font-medium mb-6 md:mb-8 max-w-md mx-auto md:mx-0">
-            From vision to final frame, work with the most renowned AI Video
-            Directors to create scroll-stopping content.
-          </p>
-
-          <button className="flex items-center justify-center gap-[4px] px-[30px] py-[12px] bg-[#D0E46A] text-black font-medium text-[14px] leading-[20px] rounded-[12px] mx-auto md:mx-0">
-            <span>Find your AI Director</span>
-            <img src="/Arrowleft2.svg" alt="" className="w-[14px] h-[14px]" />
-          </button>
         </div>
 
         {/* RIGHT - CAROUSEL */}
         <div className="hidden md:flex relative justify-center items-center h-[420px] flex-1 overflow-hidden [perspective:1000px]">
-          {/* 🔥 side fade */}
+
+          {/* SIDE FADE */}
           <div className="pointer-events-none absolute left-0 top-0 h-full w-32 bg-gradient-to-r from-[#0B0F10] to-transparent z-40" />
           <div className="pointer-events-none absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-[#0B0F10] to-transparent z-40" />
 
@@ -175,11 +169,11 @@ export default function Directors() {
                 key={i}
                 onClick={() => setActive(i)}
                 animate={{
-                  x: offset * 180, // 🔥 overlap spacing
-                  scale: offset === 0 ? 1.15 : 0.8,
+                  x: offset * 180,
+                  scale: offset === 0 ? 1.15 : 0.85,
                   opacity: offset === 0 ? 1 : 0.45,
                   filter: offset === 0 ? "blur(0px)" : "blur(3px)",
-                  rotateY: offset === 0 ? 0 : offset > 0 ? -15 : 15,
+                  rotateY: offset === 0 ? 0 : offset > 0 ? -12 : 12,
                   zIndex: offset === 0 ? 30 : 10,
                 }}
                 transition={{
@@ -189,7 +183,19 @@ export default function Directors() {
                 }}
                 className="absolute cursor-pointer"
               >
-                <div className="group w-[220px] h-[360px] rounded-[28px] overflow-hidden relative bg-black border border-white/10 shadow-xl">
+
+                {/* CARD */}
+                <div
+                  className={`group w-[218px] h-[352px] rounded-[32px] overflow-hidden relative 
+                  bg-[#0F1112] 
+                  ${
+                    offset === 0
+                      ? "border border-[#D0E46A] shadow-[0_0_20px_rgba(208,228,106,0.3)]"
+                      : "border border-[#DCDCDC]/20"
+                  } 
+                  transition`}
+                >
+
                   {/* IMAGE */}
                   <img
                     src={item.image}
@@ -198,14 +204,26 @@ export default function Directors() {
                   />
 
                   {/* GRADIENT */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F1112] via-black/40 to-transparent" />
 
                   {/* TEXT */}
-                  <div className="absolute bottom-4 left-4">
-                    <p className="text-white font-semibold">{item.name}</p>
-                    <p className="text-gray-300 text-sm">{item.role}</p>
+                  <div className="absolute bottom-6 w-full px-4 flex flex-col items-center text-center">
+
+                    {/* NAME */}
+                    <p className="text-[#F0F0F0] font-montserrat font-bold 
+                    text-[16px] leading-[24px] uppercase tracking-[0.05em]">
+                      {item.name}
+                    </p>
+
+                    {/* ROLE */}
+                    <p className="text-[#9CA3AF] font-montserrat font-medium 
+                    text-[13px] leading-[20px]">
+                      {item.role}
+                    </p>
+
                   </div>
                 </div>
+
               </motion.div>
             );
           })}

@@ -1,63 +1,83 @@
 "use client";
 
-import { Play, GraduationCap, Star } from "lucide-react";
-
 export default function Stats() {
   return (
     <section className="w-full bg-[#0B0F10] py-24">
       <div className="max-w-6xl mx-auto px-6 text-center">
+
         {/* HEADING */}
-      <h2 className="text-[#F0F0F0] text-center font-montserrat text-[40px] leading-[48px] font-semibold mb-16">
-  Trusted by media companies, creators,
-  <br />
-  and businesses around the globe
-</h2>
+        <h2
+          className="text-[#F0F0F0] font-montserrat font-black 
+          text-[28px] leading-[34px] 
+          sm:text-[34px] sm:leading-[40px] 
+          md:text-[40px] md:leading-[48px] 
+          mb-16"
+        >
+          GROWING A COMMUNITY OF AI CREATORS
+        </h2>
 
         {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-          {/* ITEM */}
-          <div className="flex flex-col items-center">
-            <img src="/baseline-ondemand-video1.svg" alt="" />
 
-            <h3 className="text-white text-4xl md:text-5xl font-semibold">
-              100+ billion
+          {/* ITEM */}
+          <div className="flex flex-col items-center gap-3">
+            <img src="/baseline-ondemand-video1.svg" className="w-10 h-10" />
+
+            <h3
+              className="text-[#F0F0F0] font-montserrat font-semibold 
+              text-[28px] leading-[34px] 
+              sm:text-[32px] sm:leading-[38px] 
+              md:text-[36px] md:leading-[42px]"
+            >
+              500+
             </h3>
 
-            <p className="text-gray-400 text-sm mt-3">
-              Video View (And Counting)
+            <p className="text-[#9CA3AF] font-montserrat font-medium 
+            text-[14px] leading-[20px]">
+              Creators trained
             </p>
           </div>
 
           {/* ITEM */}
-          <div className="flex flex-col items-center">
-            <img src="/baseline-ondemand-video2.svg" alt="" />
+          <div className="flex flex-col items-center gap-3">
+            <img src="/baseline-ondemand-video2.svg" className="w-10 h-10" />
 
-            <h3 className="text-white text-4xl md:text-5xl font-semibold">
-              7+ million
+            <h3
+              className="text-[#F0F0F0] font-montserrat font-semibold 
+              text-[28px] leading-[34px] 
+              sm:text-[32px] sm:leading-[38px] 
+              md:text-[36px] md:leading-[42px]"
+            >
+              40+
             </h3>
 
-            <p className="text-gray-400 text-sm mt-3">
-              Video Uploaded Every Month
+            <p className="text-[#9CA3AF] font-montserrat font-medium 
+            text-[14px] leading-[20px]">
+              Live workshops conducted
             </p>
           </div>
 
           {/* ITEM */}
-          <div className="flex flex-col items-center">
-            <img src="/baseline-ondemand-video3.svg" alt="" />
+          <div className="flex flex-col items-center gap-3">
+            <img src="/baseline-ondemand-video3.svg" className="w-10 h-10" />
 
-            <h3 className="text-white text-4xl md:text-5xl font-semibold">
-              4+ billion
+            <h3
+              className="text-[#F0F0F0] font-montserrat font-semibold 
+              text-[28px] leading-[34px] 
+              sm:text-[32px] sm:leading-[38px] 
+              md:text-[36px] md:leading-[42px]"
+            >
+              60+
             </h3>
 
-            <p className="text-gray-400 text-sm mt-3">
-              Minutes Streamed Each Month
+            <p className="text-[#9CA3AF] font-montserrat font-medium 
+            text-[14px] leading-[20px]">
+              Student projects created
             </p>
           </div>
+
         </div>
       </div>
     </section>
   );
 }
-
-
-

@@ -77,12 +77,12 @@
 import { motion } from "framer-motion";
 
 const features = [
-  { image: "/video/video1.png", title: "Host in high quality, ad-free" },
-  { image: "/video/video2.png", title: "Host in high quality, ad-free" },
-  { image: "/video/video3.png", title: "Host in high quality, ad-free" },
-  { image: "/video/video4.png", title: "Host in high quality, ad-free" },
-  { image: "/video/video5.png", title: "Host in high quality, ad-free" },
-  { image: "/video/video6.jpg", title: "Host in high quality, ad-free" },
+  { image: "/video/video1.png", title: "Hire Top AI Talent" },
+  { image: "/video/video2.png", title: "Explore AI Job Opportunities" },
+  { image: "/video/video3.png", title: "Access Powerful AI Resources" },
+  { image: "/video/video4.png", title: "Join the Creator Community" },
+  { image: "/video/video5.png", title: "Get End-to-End AI Services" },
+  { image: "/video/video6.jpg", title: "Upgrade to Pro Membership" },
 ];
 
 export default function Features() {
@@ -94,9 +94,12 @@ export default function Features() {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-white text-3xl md:text-4xl font-semibold text-center mb-16"
+          className="text-[#F0F0F0] text-center font-montserrat font-black 
+  text-[28px] leading-[34px] 
+  sm:text-[34px] sm:leading-[40px] 
+  md:text-[40px] md:leading-[48px] mb-16"
         >
-          The platform that powers your video strategy
+          EVERYTHING YOU NEED TO CREATE WITH AI
         </motion.h2>
 
         {/* GRID */}
@@ -114,13 +117,13 @@ export default function Features() {
               <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-[28px] overflow-hidden transition">
                 {/* IMAGE */}
                 <div className="relative overflow-hidden">
-                <motion.img
-  src={item.image}
-  alt="feature"
-  className="w-[386px] h-[275px] object-cover rounded-[72px]"
-  whileHover={{ scale: 1.1 }}
-  transition={{ duration: 0.6 }}
-/>
+                  <motion.img
+                    src={item.image}
+                    alt="feature"
+                    className="w-[386px] h-[275px] object-cover rounded-[72px]"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ duration: 0.6 }}
+                  />
 
                   {/* cinematic overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
@@ -128,24 +131,36 @@ export default function Features() {
 
                 {/* CONTENT */}
                 <div className="p-6">
-                  <h3 className="text-[#F0F0F0] font-montserrat text-[20px] leading-[28px] font-bold mb-3">
+                  <h3
+                    className="text-[#F0F0F0] font-montserrat font-bold 
+text-[18px] leading-[26px] 
+sm:text-[20px] sm:leading-[28px] 
+mb-3"
+                  >
                     {item.title}
                   </h3>
-
-                  <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                  <p
+                    className="text-[#F0F0F0] font-montserrat font-medium 
+text-[14px] leading-[20px] mb-6"
+                  >
                     Ensure your video plays in the highest resolution, always
                     ad-free. No competitor distributions or random suggestions
                     here.
                   </p>
-
                   {/* BUTTON */}
                   <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center justify-center gap-[4px] px-[30px] py-[12px] bg-[#C7E36B] text-black font-semibold text-[14px] leading-[20px] rounded-[8px]"
+                    whileTap={{ scale: 0.96 }}
+                    className="flex items-center justify-center gap-[4px] 
+  px-[30px] py-[12px] 
+  bg-[#303133] text-[#F0F0F0] 
+  font-montserrat font-medium 
+  text-[14px] leading-[20px] 
+  rounded-[8px] w-full 
+  transition hover:bg-[#3A3B3C]"
                   >
-                    <span> Learn about video hosting</span>
+                    <span>LEARN MORE </span>
                     <img
-                      src="/Arrowleft2.svg"
+                      src="/Arrowleftnew.svg"
                       alt=""
                       className="w-[14px] h-[14px]"
                     />

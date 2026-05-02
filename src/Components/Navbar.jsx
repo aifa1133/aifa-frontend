@@ -214,13 +214,28 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
 
         {/* RIGHT BUTTONS */}
       <div className="hidden md:flex items-center gap-3">
-         <button
+<button
   onClick={onLoginClick}
-  className="px-[16px] py-[8px] text-[14px] font-medium text-white border border-white/20 rounded-[6px] hover:bg-white/10 transition"
+  className="px-[16px] py-[8px]
+  text-[#F0F0F0] font-montserrat font-bold
+  text-[14px] leading-[16px]
+  border border-white/20 rounded-[6px]
+  transition hover:bg-white/10"
 >
-  Login
+  LOGIN
 </button>
-
+<button
+  className="flex items-center justify-center gap-[4px]
+  px-[16px] py-[8px]
+  border border-[#F0F0F0] rounded-[4px]
+  text-[#F0F0F0] font-montserrat font-semibold
+  text-[14px] leading-[20px]
+  sm:text-[16px] sm:leading-[24px]
+  [font-variant:all-small-caps]
+  transition hover:bg-white hover:text-[#0F1112]"
+>
+  JOIN
+</button>
          <button
   className="px-[18px] py-[8px] text-[14px] font-semibold bg-white text-black rounded-[6px] hover:bg-gray-200 transition"
 >

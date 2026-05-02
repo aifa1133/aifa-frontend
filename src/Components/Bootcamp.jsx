@@ -345,14 +345,14 @@ const bootcamps = [
     mode: "ONLINE",
   },
   {
-    title: "AI Lego Animation Workshop",
+    title: "AI Superhero Cinematic Workshop",
     image: "/bootcamp/bootcamp2.jpg",
     duration: "35 HOURS",
     price: "USD 999.00",
     mode: "ONLINE",
   },
   {
-    title: "AI Lego Animation Workshop",
+    title: "AI Sci-Fi Movie Creator",
     image: "/bootcamp/bootcamp3.jpg",
     duration: "35 HOURS",
     price: "USD 999.00",
@@ -364,8 +364,13 @@ export default function Bootcamps() {
     <section className="w-full bg-[#0B0F10] py-[64px] flex justify-center">
       <div className="w-full max-w-[1180px] px-[16px] flex flex-col gap-[32px]">
         {/* HEADING */}
-        <h1 className="text-[#E5E7EB] font-montserrat text-[40px] leading-[48px] font-semibold">
-          AI Filmmaking Bootcamp
+        <h1
+          className="text-[#F0F0F0] font-montserrat font-black 
+text-[28px] leading-[34px] 
+sm:text-[34px] sm:leading-[40px] 
+md:text-[40px] md:leading-[48px]"
+        >
+          AI FILMMAKING WORKSHOPS
         </h1>
         <div className="w-full max-w-[1180px] px-[16px]">
           <div className="flex flex-col gap-[24px]">
@@ -397,7 +402,12 @@ export default function Bootcamps() {
                   <div className="flex-1 flex flex-col gap-[8px]">
                     {/* TITLE */}
                     <div className="bg-[#E5E5E5] rounded-[12px] h-[90px] px-[12px] py-[10px] flex flex-col justify-center w-full">
-                      <h3 className="text-[#282A2C] font-montserrat text-[48px] leading-[56px] font-bold">
+                      <h3
+                        className="text-[#282A2C] font-montserrat font-bold 
+text-[24px] leading-[36px] 
+sm:text-[32px] sm:leading-[44px] 
+md:text-[40px] md:leading-[56px]"
+                      >
                         {item.title}
                       </h3>
                     </div>
@@ -408,11 +418,16 @@ export default function Bootcamps() {
                       <div className="flex-1 bg-[#DCDCDC] rounded-[8px] p-[20px] flex flex-col items-start gap-[6px]">
                         <div className="flex items-center gap-[6px]">
                           <img
-                            src="/Tagicon.svg"
+                            src="/Tagiconnew1.svg"
                             alt=""
-                            className="w-[14px] h-[14px]"
+                            className="w-[14px] h-[14px]  "
                           />
-                          <p className="text-[12px] text-[#5A5A5A]">Duration</p>
+                          <p
+                            className="text-[#414243] font-montserrat font-semibold 
+text-[14px] leading-[20px]"
+                          >
+                            Duration
+                          </p>
                         </div>
 
                         <p className="text-[14px] font-bold text-[#282A2C]">
@@ -424,11 +439,16 @@ export default function Bootcamps() {
                       <div className="flex-1 bg-[#DCDCDC] rounded-[8px] p-[20px] flex flex-col items-start gap-[6px]">
                         <div className="flex items-center gap-[6px]">
                           <img
-                            src="/Tagicon2.svg"
+                            src="/Tagiconnew2.svg"
                             alt="Pricing icon"
                             className="w-[14px] h-[14px]"
                           />
-                          <p className="text-[12px] text-[#5A5A5A]">Pricing</p>
+                          <p
+                            className="text-[#414243] font-montserrat font-semibold 
+text-[14px] leading-[20px]"
+                          >
+                            Pricing
+                          </p>
                         </div>
 
                         <p className="text-[14px] font-bold text-[#282A2C]">
@@ -438,11 +458,25 @@ export default function Bootcamps() {
 
                       {/* Mode */}
                       <div className="flex-1 bg-[#DCDCDC] rounded-[8px] p-[20px] flex flex-col items-start gap-[6px]">
-                        <p className="text-[12px] text-[#5A5A5A]">Mode</p>
+                        <div className="flex items-center gap-[6px]">
+                          <img
+                            src="/Tagiconnew3.svg"
+                            alt="mode icon"
+                            className="w-[14px] h-[14px]"
+                          />
+                          <p
+                            className="text-[#414243] font-montserrat font-semibold 
+text-[14px] leading-[20px]"
+                          >
+                            MODE
+                          </p>
+                        </div>
+
                         <p className="text-[14px] font-bold text-[#282A2C]">
                           {item.mode}
                         </p>
                       </div>
+
                     </div>
                   </div>
                 </div>
