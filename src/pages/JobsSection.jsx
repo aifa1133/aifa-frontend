@@ -103,7 +103,7 @@ export default function JobsSection() {
 
 
   return (
-  <section className="bg-[#0B0F10] text-white py-20">
+  <section className="bg-[#0B0F10] text-white py-28">
     
     {/* MAIN CONTAINER */}
     <div className="max-w-7xl mx-auto px-6">

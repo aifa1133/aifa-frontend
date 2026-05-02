@@ -18,23 +18,41 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 export default function CourseAndBenefits() {
   const benefits = [
-    "Flexible Office Hours & Remote Friendly",
-    "Group Insurance Fully Covered",
-    "Virtual Healthcare",
-    "Wellbeing & EAP Progress",
-    "10 Sick & Personal Day",
-    "Short & Long-Term Disability Program",
-    "Generous Time Off Flexible Policies",
-    "Holiday Break Company-Wide",
-    "RRSP Contribution Up To 6%",
+    "UNDERSTAND AI VIDEO MODELS",
+    "MASTER PROMPTING FOR VISUALS",
+    "CREATE CINEMATIC SCENES",
+    "CONTROL STYLE & CONSISTENCY",
+    "BUILD END-TO-END VIDEOS",
+    "USE AI TOOLS & WORKFLOWS",
+    "CREATE ADS & SOCIAL CONTENT",
+    "EDIT & ENHANCE WITH AI",
+    "BUILD A STRONG PORTFOLIO",
   ];
   const items = [
-    "AIFA Promise to Deliver World Class Training",
-    "Course Assets",
-    "A Training Completion Badge",
-    "Completion Badge",
-    "Training Recording",
-    "A Training Completion Badge",
+    {
+      title: "LIFETIME AIFA MEMBERSHIP",
+      desc: "Access to the AIFA ecosystem, updates, and opportunities.",
+    },
+    {
+      title: "STEP-BY-STEP CURRICULUM",
+      desc: "Follow a clear path from basics to advanced.",
+    },
+    {
+      title: "DOWNLOADABLE PROJECT FILES",
+      desc: "Access all files and resources used in the course.",
+    },
+    {
+      title: "LIVE SESSION RECORDINGS",
+      desc: "Get access to all session recordings to revisit lessons anytime.",
+    },
+    {
+      title: "ASSIGNMENTS & PRACTICAL EXERCISES",
+      desc: "Apply what you learn through hands-on projects.",
+    },
+    {
+      title: "CERTIFICATE OF COMPLETION",
+      desc: "Showcase your skills with a verified certificate.",
+    },
   ];
 
   const [openIndex, setOpenIndex] = useState(0);
@@ -168,73 +186,77 @@ export default function CourseAndBenefits() {
     {
       title: "PRODUCT AD FILM",
       desc: "Produce a high-quality commercial-style video for products or services.",
-      img: "/bootcamp1.jpg",
+      img: "/bootcamp6.jpg",
     },
     {
       title: "SOCIAL MEDIA REELS",
       desc: "Make scroll-stopping content optimized for Instagram, YouTube, and TikTok.",
-      img: "/bootcamp1.jpg",
+      img: "/bootcamp3.jpg",
     },
     {
       title: "CINEMATIC POSTERS",
       desc: "Design high-impact visuals for storytelling and marketing.",
-      img: "/bootcamp1.jpg",
+      img: "/bootcamp4.jpg",
     },
     {
       title: "PORTFOLIO-READY PROJECTS",
       desc: "Build a professional portfolio to showcase your work or get clients.",
-      img: "/bootcamp1.jpg",
+      img: "/bootcamp5.jpg",
     },
   ];
   return (
     <div className="bg-[#0B0F19]">
       {/* ================= COURSE SECTION ================= */}
-      <section className="w-full flex justify-center items-center py-28">
-        <div className="w-[90%] max-w-6xl bg-[#282A2C] border border-[#767779] rounded-[22px] p-[50px] flex flex-col md:flex-row justify-between gap-[10px]">
+      <section className="w-full flex justify-center items-center py-24 bg-gradient-to-b from-[#0B0D0E] to-[#111315]">
+        <div className="w-[90%] max-w-5xl bg-[#151718] border border-[#2A2D2F] rounded-[24px] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-12">
           {/* LEFT */}
-          <div className="flex-1">
-            <p className="text-[#D0E46A] text-[18px] leading-[28px] font-bold tracking-wide mb-4 font-[Montserrat]">
+          <div className="flex-1 flex flex-col justify-center">
+            <p className="text-[#D0E46A] text-[18px] leading-[28px] font-bold font-[Montserrat] mb-3">
               A COURSE YOU’LL ACTUALLY FINISH
             </p>
 
-            <h1 className="text-[#F0F0F0] text-[40px] md:text-[64px] leading-[48px] md:leading-[70px] font-black font-[Montserrat] mb-6">
-              Build AI-Powered <br />
-              Films An AI <br />
-              Fellowship for <br />
-              Creators
+            <h1 className="text-[#F0F0F0] text-[64px] leading-[70px] font-black font-[Montserrat] mb-6 max-w-[520px]">
+              Build <span>AI-Powered Films</span>
+              <br /> An AI Fellowship for
+              <br /> Creators
             </h1>
 
-            <button className="flex items-center justify-center gap-[4px] w-[221px] px-[30px] py-[12px] bg-[#D0E46A] text-black rounded-[8px] font-semibold hover:opacity-90 transition">
+            <button className="flex items-center justify-center w-fit px-6 py-3 rounded-[10px] bg-[#D0E46A] text-black font-bold hover:scale-[1.05] active:scale-[0.97] transition shadow-[0_0_20px_rgba(208,228,106,0.25)]">
               ENROLL NOW
             </button>
           </div>
 
           {/* RIGHT */}
-          <div className="flex-1 flex flex-wrap justify-center gap-4">
-            <Feature icon={<FaSignal />} text="Beginner" />
-            <Feature icon={<FaClock />} text="22 Hours" />
-            <Feature icon={<FaFileAlt />} text="20 Assignments" />
-            <Feature icon={<FaDownload />} text="Downloadable Content" />
-            <Feature icon={<FaLaptopCode />} text="Hands-on Exercises" />
-            <Feature icon={<FaClosedCaptioning />} text="English Captions" />
+          <div className="flex-1 flex flex-col gap-4 justify-center">
+            <Feature icon="/bootcampicons/icon1.svg" text="Beginner Friendly" />
+            <Feature icon="/bootcampicons/icon2.svg" text="20 Assignments" />
             <Feature
-              icon={<FaCertificate />}
-              text="Certificate of Completion"
+              icon="/bootcampicons/icon3.svg"
+              text="Downloadable Resources"
             />
-            <Feature icon={<FaInfinity />} text="Class Recordings" />
-            <Feature icon={<FaCalendarAlt />} text="1 month duration" />
+            <Feature icon="/bootcampicons/icon4.svg" text="Hands-on Training" />
+            <Feature
+              icon="/bootcampicons/icon5.svg"
+              text="Portfolio Mentorship"
+            />
+            <Feature
+              icon="/bootcampicons/icon6.svg"
+              text="Completion Certificate"
+            />
+            <Feature icon="/bootcampicons/icon7.svg" text="Class Recordings" />
+            <Feature icon="/bootcampicons/icon8.svg" text="1 Month Duration" />
           </div>
         </div>
       </section>
 
       {/* ================= BENEFITS SECTION ================= */}
-      <section className="w-full py-20 flex justify-center">
+      <section className="w-full py-12 flex justify-center">
         <div className="w-[90%] max-w-6xl text-center">
-          <h2 className="text-[#F0F0F0] text-[40px] md:text-[64px] leading-[48px] md:leading-[70px] font-black font-[Montserrat] mb-4">
+          <h2 className="text-[#F0F0F0] text-[64px] leading-[70px] font-black font-[Montserrat] mb-4">
             WHAT YOU WILL LEARN
           </h2>
 
-          <p className="text-[#DCDCDC] text-[16px] md:text-[18px] leading-[24px] md:leading-[28px] font-normal font-[Montserrat] text-center max-w-2xl mx-auto mb-12">
+          <p className="text-[#DCDCDC] text-[14px] leading-[28px] font-normal font-[Montserrat] text-center max-w-2xl mx-auto mb-12">
             Master the complete process of creating high-quality, cinematic AI
             videos from idea and prompting to final output.
           </p>
@@ -243,16 +265,16 @@ export default function CourseAndBenefits() {
             {benefits.map((item, index) => (
               <div
                 key={index}
-                className="bg-gradient-to-br from-[#1A1F2E] to-[#0F172A] 
-                border border-white/10 
-                rounded-2xl 
-                px-6 py-6 
-                text-left 
-                text-white 
-                font-semibold 
-                text-sm md:text-base
-                hover:scale-[1.05] 
-                transition duration-300"
+                className="bg-[#282A2C] 
+  border border-white/10 
+  rounded-2xl 
+  px-6 py-6 
+  text-left 
+  text-[#F0F0F0] 
+  text-[24px] leading-[32px] 
+  font-black font-[Montserrat]
+  hover:scale-[1.05] 
+  transition duration-300"
               >
                 {item}
               </div>
@@ -265,10 +287,10 @@ export default function CourseAndBenefits() {
         <div className="w-[90%] max-w-6xl">
           {/* HEADER */}
           <div className="text-center mb-20">
-            <h2 className="text-white text-3xl md:text-5xl font-bold mb-4">
+            <h2 className="text-[#F0F0F0] text-[64px] leading-[70px] font-black font-[Montserrat] text-center mb-4">
               WHAT YOU WILL BUILD
             </h2>
-            <p className="text-gray-400 text-sm max-w-2xl mx-auto">
+            <p className="text-[#DCDCDC] text-[16px] leading-[28px] font-normal font-[Montserrat] text-center max-w-2xl mx-auto">
               Build real, portfolio-ready projects as you learn films, ads, and
               social content created step by step.
             </p>
@@ -285,13 +307,16 @@ export default function CourseAndBenefits() {
               >
                 {/* TEXT */}
                 <div className="flex-1">
-                  <p className="text-gray-500 text-xs mb-2">BEGINNER</p>
+                  <p className="text-[#F0F0F0] text-[18px] leading-[28px] font-bold font-[Montserrat] mb-2">
+                    BEGINNER
+                  </p>
 
-                  <h3 className="text-white text-xl md:text-2xl font-bold mb-3">
+                  <h3 className="text-[#F0F0F0] text-[32px] leading-[40px] font-black font-[Montserrat] mb-3">
                     {item.title}
                   </h3>
-
-                  <p className="text-gray-400 text-sm max-w-md">{item.desc}</p>
+                  <p className="text-[#DCDCDC] text-[16px] leading-[24px] font-medium font-[Montserrat] max-w-md">
+                    {item.desc}
+                  </p>
                 </div>
 
                 {/* IMAGE */}
@@ -299,7 +324,7 @@ export default function CourseAndBenefits() {
                   <img
                     src={item.img}
                     alt={item.title}
-                    className="w-full max-w-[350px] rounded-[40px] object-cover"
+                    className="w-[584px] h-[306px] rounded-[200px] object-cover"
                   />
                 </div>
               </div>
@@ -314,13 +339,18 @@ export default function CourseAndBenefits() {
         <div className="relative w-[90%] max-w-6xl grid md:grid-cols-2 gap-16 items-center">
           {/* LEFT SIDE */}
           <div>
-            <h2 className="text-white text-4xl md:text-5xl font-extrabold leading-tight mb-6">
-              WHAT’S INCLUDED <br /> WITH OUR <br /> COURSES...
+            <h2 className="text-[#F0F0F0] text-[40px] leading-[48px] font-black font-[Montserrat] mb-6">
+              WHAT’S INCLUDED
+              <br /> WITH THE
+              <br /> BOOTCAMP
             </h2>
 
-            <p className="text-white/80 text-sm md:text-base mb-10 max-w-md">
-              All attendees will receive a free 3 month software license with
-              their course registration.
+            <p
+              className="text-[#DCDCDC] text-[16px] leading-[24px] font-medium font-[Montserrat] mb-10 max-w-md"
+              style={{ fontKerning: "none", fontFeatureSettings: "'liga' 0" }}
+            >
+              Everything you need to learn, build, and grow with AI inside and
+              beyond the course.
             </p>
 
             {/* ✅ REACT IMAGE */}
@@ -342,18 +372,19 @@ export default function CourseAndBenefits() {
               >
                 <div
                   className="rounded-2xl bg-[#D9E7A3]/95 px-6 py-5
-            text-[#2E2E2E] border border-white/20
-            hover:scale-[1.05] transition duration-300"
+        text-[#2E2E2E] border border-white/20
+        hover:scale-[1.05] transition duration-300"
                 >
                   {/* Glow */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-white/10 blur-xl rounded-2xl"></div>
 
-                  <h3 className="relative z-10 font-bold text-sm md:text-base mb-1">
-                    {item}
+                  {/* TITLE */}
+                  <h3 className="relative z-10 text-[#585F37] text-[24px] leading-[32px] font-black font-[Montserrat] mb-1">
+                    {item.title}
                   </h3>
 
                   <p className="relative z-10 text-xs text-[#4B4B4B]">
-                    All attendees will receive a free 3 month
+                    {item.desc}
                   </p>
                 </div>
               </div>
@@ -603,9 +634,16 @@ export default function CourseAndBenefits() {
 /* ================= REUSABLE FEATURE ================= */
 function Feature({ icon, text }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-gray-400 text-base">{icon}</span>
-      <span>{text}</span>
+    <div className="flex items-center gap-3 px-4 py-1 rounded-[10px]  transition">
+      <img
+        src={icon}
+        alt={text}
+        className="w-[18px] h-[18px] object-contain flex-shrink-0"
+      />
+
+      <p className="text-[14px] text-[#E6E6E6] font-medium tracking-[0.2px]">
+        {text}
+      </p>
     </div>
   );
 }
