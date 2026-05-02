@@ -141,8 +141,6 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
       {/* <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"> */}
 
       <div className="w-full max-w-[1366px] mx-auto px-4 sm:px-6 md:px-10 lg:px-[93px] py-[20px] flex items-center justify-between">
-
-        
         {/* LOGO */}
         <h1 className="text-xl font-bold flex items-center gap-2">
           <img src="/logos/Group1logo.svg" alt="logo" className="h-6" />
@@ -213,19 +211,19 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
         </nav>
 
         {/* RIGHT BUTTONS */}
-      <div className="hidden md:flex items-center gap-3">
-<button
-  onClick={onLoginClick}
-  className="px-[16px] py-[8px]
+        <div className="hidden md:flex items-center gap-3">
+          <button
+            onClick={onLoginClick}
+            className="px-[16px] py-[8px]
   text-[#F0F0F0] font-montserrat font-bold
   text-[14px] leading-[16px]
   border border-white/20 rounded-[6px]
   transition hover:bg-white/10"
->
-  LOGIN
-</button>
-<button
-  className="flex items-center justify-center gap-[4px]
+          >
+            LOGIN
+          </button>
+          <button
+            className="flex items-center justify-center gap-[4px]
   px-[16px] py-[8px]
   border border-[#F0F0F0] rounded-[4px]
   text-[#F0F0F0] font-montserrat font-semibold
@@ -233,14 +231,25 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
   sm:text-[16px] sm:leading-[24px]
   [font-variant:all-small-caps]
   transition hover:bg-white hover:text-[#0F1112]"
->
-  JOIN
-</button>
-         <button
-  className="px-[18px] py-[8px] text-[14px] font-semibold bg-white text-black rounded-[6px] hover:bg-gray-200 transition"
->
-  Talk to Sales
-</button>
+          >
+            JOIN
+          </button>
+          <button
+            className="flex items-center justify-center gap-[6px]
+  px-[18px] py-[8px]
+  bg-white text-[#0F1112]
+  font-montserrat font-semibold
+  text-[14px] leading-[20px]
+  rounded-[6px]
+  transition hover:bg-gray-200 active:scale-[0.97]"
+          >
+            Talk to Sales
+            <img
+              src="/arrArrowleftnew.svg"
+              alt="arrow"
+              className="w-[14px] h-[14px]"
+            />
+          </button>
         </div>
 
         {/* MOBILE TOGGLE */}
