@@ -124,14 +124,14 @@ export default function CourseAndBenefits() {
     },
     {
       name: "SHERIN",
-            img: "/insta2.png",
+      img: "/insta2.png",
       short:
         "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
       long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
     },
     {
       name: "ARUN KUMAR",
-         img: "/insta3.png",
+      img: "/insta3.png",
       short:
         "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
       long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
@@ -252,7 +252,30 @@ export default function CourseAndBenefits() {
           </div>
         </div>
       </section>
+      <section className="w-full flex justify-center items-center bg-[#0B0D0E] py-20">
+        <div className="w-[90%] max-w-6xl relative rounded-[12px] overflow-hidden">
+          {/* IMAGE */}
+          <img
+            src="/videoimg.png"
+            alt="Video Preview"
+            className="w-full h-[520px] object-cover"
+          />
 
+          {/* DARK SIDE GRADIENT (LEFT + RIGHT FADE) */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-black/70"></div>
+
+          {/* CENTER PLAY BUTTON */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <button className="flex items-center justify-center gap-[10px] w-[200px] h-[90px] rounded-[8px] bg-[#D0E46A]/80 hover:bg-[#D0E46A] transition">
+              <img
+                src="/Polygon 2.svg"
+                alt="Play"
+                className="w-[24px] h-[24px]"
+              />
+            </button>
+          </div>
+        </div>
+      </section>
       {/* ================= BENEFITS SECTION ================= */}
       <section className="w-full py-12 flex justify-center">
         <div className="w-[90%] max-w-6xl text-center">
