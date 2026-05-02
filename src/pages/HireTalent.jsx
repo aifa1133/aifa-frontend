@@ -373,7 +373,7 @@ export default function HireTalent() {
 
                 <button className="flex justify-center items-center gap-[4px] bg-[#D0E46A] text-black px-[16px] py-[8px] text-sm font-medium rounded-[4px] w-full sm:w-auto">
                   SEND INQUIRY
-                  <img src="/arrowright2.svg" alt="" />
+                  <img src="/Arrowleftsend.svg" alt="" />
                 </button>
               </div>
 
