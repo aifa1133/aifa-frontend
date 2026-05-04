@@ -13,7 +13,7 @@ export default function CTASection() {
               <img
                 src="/avatar/avatar1.png"
                 alt="avatar"
-                className="w-full h-full object-cover"
+                className="w-full h-[550px] object-cover"
               />
             </div>
           </div>

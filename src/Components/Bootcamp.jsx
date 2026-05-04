@@ -550,18 +550,11 @@ export default function Bootcamps() {
               transition={{ duration: 0.4 }}
               className="bg-[#0F1415] rounded-[16px] sm:rounded-[20px] overflow-hidden"
             >
-              {/* TOP */}
-              <div className="flex flex-col lg:flex-row gap-[10px] p-[12px] sm:p-[16px] lg:h-[260px]">
+              {/* TOP SECTION (FIXED HERE) */}
+              <div className="flex flex-col lg:flex-row gap-[10px] px-[12px] pt-[12px] pb-0 sm:px-[16px] sm:pt-[16px] sm:pb-0 lg:h-[260px]">
                 {/* IMAGE */}
                 <div className="w-full lg:w-[266px]">
-                  <div
-                    className="
-                      w-full
-                      h-[160px] sm:h-[200px] lg:h-[200px]
-                      overflow-hidden
-                      rounded-tl-[16px] sm:rounded-tl-[20px]
-                    "
-                  >
+                  <div className="w-full h-[160px] sm:h-[200px] lg:h-[200px] overflow-hidden rounded-tl-[16px] sm:rounded-tl-[20px]">
                     <img
                       src={item.image}
                       alt=""
@@ -573,23 +566,8 @@ export default function Bootcamps() {
                 {/* RIGHT */}
                 <div className="flex-1 flex flex-col gap-[8px] sm:gap-[10px]">
                   {/* TITLE */}
-                  <div
-                    className="
-                      bg-[#DCDCDC]
-                      min-h-[80px] sm:h-[105px]
-                      px-[10px] sm:px-[12px] py-[8px] sm:py-[10px]
-                      flex items-center
-                      rounded-tr-[16px] sm:rounded-tr-[20px]
-                    "
-                  >
-                    <h3
-                      className="
-                        text-[#282A2C]
-                        font-montserrat font-bold
-                        text-[18px] sm:text-[28px] md:text-[48px]
-                        leading-[26px] sm:leading-[34px] md:leading-[56px]
-                      "
-                    >
+                  <div className="bg-[#DCDCDC] min-h-[80px] sm:h-[105px] px-[10px] sm:px-[12px] py-[8px] sm:py-[10px] flex items-center rounded-tr-[16px] sm:rounded-tr-[20px]">
+                    <h3 className="text-[#282A2C] font-montserrat font-bold text-[18px] sm:text-[28px] md:text-[48px] leading-[26px] sm:leading-[34px] md:leading-[56px]">
                       {item.title}
                     </h3>
                   </div>
@@ -647,20 +625,8 @@ export default function Bootcamps() {
                 </div>
               </div>
 
-              {/* BUTTON */}
-              <button
-                className="
-                  w-full
-                  bg-[#D0E46A] text-[#1A1A1A]
-                  px-[20px] sm:px-[30px]
-                  py-[10px] sm:py-[12px]
-                  flex items-center justify-center gap-[4px]
-                  font-bold font-montserrat text-[12px] sm:text-[14px]
-                  rounded-b-[20px] sm:rounded-b-[25px]
-                  hover:opacity-90 active:scale-[0.98]
-                  transition-all duration-200
-                "
-              >
+              {/* BUTTON (NO GAP NOW) */}
+              <button className="w-full bg-[#D0E46A] text-[#1A1A1A] px-[20px] sm:px-[30px] py-[12px] sm:py-[12px] flex items-center justify-center gap-[4px] font-bold font-montserrat text-[12px] sm:text-[14px] rounded-b-[20px] sm:rounded-b-[25px] hover:opacity-90 active:scale-[0.98] transition-all duration-200">
                 RESERVE SPOT
                 <img
                   src="/Arrowleft2.svg"
