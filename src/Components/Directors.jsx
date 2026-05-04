@@ -140,9 +140,14 @@ export default function Directors() {
   }, []);
 
   return (
-    <section className="w-full bg-[#0B0F10] py-16 md:py-20 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center gap-10 md:gap-16">
-
+   <section className="w-full bg-[#0F1112] flex justify-center py-[64px] overflow-hidden">
+    <div className="
+  w-full max-w-[1180px]
+  flex flex-col md:flex-row
+  justify-between items-center
+  gap-[40px] md:gap-[64px]
+  px-[16px] sm:px-[24px] lg:px-0
+">
         {/* LEFT */}
         <div className="flex-1 text-center md:text-left">
           <h2 className="text-[#F0F0F0] font-montserrat font-black 

@@ -87,89 +87,123 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="w-full bg-[#0B0F10] py-24">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="w-full bg-[#0F1112] flex justify-center py-[64px]">
+      {/* INNER CONTAINER */}
+      <div className="w-full max-w-[1180px] flex flex-col gap-[64px] px-[16px] sm:px-[24px] lg:px-0">
         {/* TITLE */}
         <motion.h2
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-[#F0F0F0] text-center font-montserrat font-black 
-  text-[28px] leading-[34px] 
-  sm:text-[34px] sm:leading-[40px] 
-  md:text-[40px] md:leading-[48px] mb-16"
+          className="
+        text-[#F0F0F0] text-center
+        font-montserrat font-black
+        text-[24px] leading-[32px]
+        sm:text-[32px] sm:leading-[40px]
+        md:text-[40px] md:leading-[48px]
+      "
         >
           EVERYTHING YOU NEED TO CREATE WITH AI
         </motion.h2>
 
         {/* GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+        <div
+          className="
+  grid
+  grid-cols-1 sm:grid-cols-2 md:grid-cols-3
+  gap-x-[11px]
+  gap-y-[60px]
+"
+        >
           {features.map((item, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -10 }}
+              whileHover={{ y: -8 }}
               className="group relative"
             >
               {/* CARD */}
-              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-[28px] overflow-hidden transition">
+              <div
+                className="
+  bg-white/5 backdrop-blur-lg
+  border border-white/10
+  rounded-[24px]
+  overflow-hidden
+  flex flex-col
+  gap-[24px]
+  h-full
+  transition
+"
+              >
                 {/* IMAGE */}
-                <div className="relative overflow-hidden">
+
+                <div className="w-full overflow-hidden rounded-[72px]">
                   <motion.img
                     src={item.image}
                     alt="feature"
-                    className="w-[386px] h-[275px] object-cover rounded-[72px]"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.6 }}
+                    className="
+      w-full
+      h-[275px]
+      object-cover
+    "
+                    whileHover={{ scale: 1.06 }}
+                    transition={{ duration: 0.5 }}
                   />
 
-                  {/* cinematic overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
                 </div>
 
                 {/* CONTENT */}
-                <div className="p-6">
+                <div className="flex flex-col gap-[12px] p-[20px]">
                   <h3
-                    className="text-[#F0F0F0] font-montserrat font-bold 
-text-[18px] leading-[26px] 
-sm:text-[20px] sm:leading-[28px] 
-mb-3"
+                    className="
+                text-[#F0F0F0] font-montserrat font-bold
+                text-[16px] leading-[24px]
+                sm:text-[18px] sm:leading-[26px]
+              "
                   >
                     {item.title}
                   </h3>
+
                   <p
-                    className="text-[#F0F0F0] font-montserrat font-medium 
-text-[14px] leading-[20px] mb-6"
+                    className="
+                text-[#F0F0F0] font-montserrat font-medium
+                text-[14px] leading-[20px]
+              "
                   >
                     Ensure your video plays in the highest resolution, always
                     ad-free. No competitor distributions or random suggestions
                     here.
                   </p>
+
                   {/* BUTTON */}
                   <motion.button
                     whileTap={{ scale: 0.96 }}
-                    className="flex items-center justify-center gap-[4px] 
-  px-[30px] py-[12px] 
-  bg-[#303133] text-[#F0F0F0] 
-  font-montserrat font-medium 
-  text-[14px] leading-[20px] 
-  rounded-[8px] w-full 
-  transition hover:bg-[#3A3B3C]"
+                    className="
+    w-full
+    flex items-center justify-center gap-[4px]
+    px-[30px] py-[12px]
+    bg-[#303133] text-[#F0F0F0]
+    text-[14px]
+    font-medium font-montserrat
+    rounded-[8px]
+    hover:bg-[#3A3B3C]
+    transition
+  "
                   >
-                    <span>LEARN MORE </span>
+                    LEARN MORE
                     <img
                       src="/Arrowleftnew.svg"
-                      alt=""
                       className="w-[14px] h-[14px]"
                     />
                   </motion.button>
                 </div>
               </div>
 
-              {/* OUTER GLOW */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-2xl rounded-[28px]"></div>
+              {/* GLOW */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-2xl rounded-[24px]" />
             </motion.div>
           ))}
         </div>
