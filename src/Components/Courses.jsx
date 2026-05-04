@@ -128,33 +128,36 @@ export default function Courses() {
   const scroll = (dir) => {
     const el = scrollRef.current;
     if (!el) return;
+
+    const scrollAmount = window.innerWidth < 640 ? 260 : 300; // ✅ mobile optimized
+
     el.scrollBy({
-      left: dir === "left" ? -300 : 300,
+      left: dir === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
     });
   };
 
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[64px]">
-      <div className="w-full max-w-[1180px] flex flex-col gap-[48px] px-[16px] sm:px-[24px] lg:px-0">
+    <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
+      <div className="w-full max-w-[1180px] flex flex-col gap-[32px] sm:gap-[48px] px-[16px] sm:px-[24px] lg:px-0">
         {/* HEADER */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-[#F0F0F0] font-montserrat font-black text-[24px] sm:text-[32px] md:text-[40px]">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-[16px] sm:gap-0">
+          <h2 className="text-[#F0F0F0] font-montserrat font-black text-[22px] sm:text-[32px] md:text-[40px] text-center sm:text-left">
             SELF PACED COURSES
           </h2>
 
-          <div className="flex gap-[12px]">
+          <div className="flex gap-[10px]">
             <button
               onClick={() => scroll("left")}
-              className="bg-[#D0E46A] p-[12px] rounded-[8px]"
+              className="bg-[#D0E46A] p-[10px] sm:p-[12px] rounded-[8px]"
             >
-              <img src="/Arrowleft1.svg" className="w-[18px]" />
+              <img src="/Arrowleft1.svg" className="w-[16px] sm:w-[18px]" />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="bg-[#D0E46A] p-[12px] rounded-[8px]"
+              className="bg-[#D0E46A] p-[10px] sm:p-[12px] rounded-[8px]"
             >
-              <img src="/Arrowleft2.svg" className="w-[18px]" />
+              <img src="/Arrowleft2.svg" className="w-[16px] sm:w-[18px]" />
             </button>
           </div>
         </div>
@@ -162,7 +165,11 @@ export default function Courses() {
         {/* CAROUSEL */}
         <div
           ref={scrollRef}
-          className="flex gap-[24px] overflow-x-auto scrollbar-hide"
+          className="
+            flex gap-[16px] sm:gap-[24px] 
+            overflow-x-auto scrollbar-hide
+            scroll-smooth
+          "
         >
           {courses.map((course, i) => (
             <motion.div
@@ -170,10 +177,10 @@ export default function Courses() {
               whileHover={{ y: -4 }}
               transition={{ duration: 0.25 }}
               className="
-                min-w-[336px]
+                min-w-[260px] sm:min-w-[300px] md:min-w-[336px]
                 bg-[#111516]
                 border border-white/10
-                rounded-[12px]
+                rounded-[10px] sm:rounded-[12px]
                 overflow-hidden
                 group relative
                 hover:border-[#D0E46A]
@@ -185,36 +192,40 @@ export default function Courses() {
                 <img
                   src={course.image}
                   alt={course.title}
-                  className="w-full h-[261px] object-cover transition duration-500 group-hover:scale-105"
+                  className="
+                    w-full 
+                    h-[200px] sm:h-[240px] md:h-[261px]
+                    object-cover 
+                    transition duration-500 group-hover:scale-105
+                  "
                 />
 
-                {/* OVERLAY */}
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition" />
 
-                {/* DURATION */}
-                <span className="absolute top-[12px] left-[12px] bg-black/70 text-white text-[12px] px-[8px] py-[4px] rounded-[6px]">
+                <span className="absolute top-[10px] left-[10px] bg-black/70 text-white text-[11px] sm:text-[12px] px-[8px] py-[4px] rounded-[6px]">
                   {course.duration}
                 </span>
               </div>
 
               {/* CONTENT */}
-              <div className="flex flex-col gap-[8px] p-[24px]">
-                <h3 className="text-[#F0F0F0] font-montserrat font-bold text-[16px] leading-[24px]">
+              <div className="flex flex-col gap-[6px] sm:gap-[8px] p-[16px] sm:p-[24px]">
+                <h3 className="text-[#F0F0F0] font-montserrat font-bold text-[14px] sm:text-[16px] leading-[22px]">
                   {course.title}
                 </h3>
 
-                <div className="flex items-center gap-[6px] text-[14px]">
+                <div className="flex items-center gap-[6px] text-[12px] sm:text-[14px]">
                   <span className="text-[#D0E46A] font-bold">60% OFF</span>
                   <span className="line-through text-[#9CA3AF]">₹999</span>
                 </div>
 
                 <button
                   className="
-                  mt-[8px]
+                  mt-[6px] sm:mt-[8px]
                   w-full flex items-center justify-center
                   bg-[#F0F0F0] text-[#0F1112]
-                  px-[16px] py-[10px]
-                  text-[14px]
+                  px-[14px] sm:px-[16px] 
+                  py-[8px] sm:py-[10px]
+                  text-[13px] sm:text-[14px]
                   font-semibold font-montserrat
                   rounded-[6px]
                   hover:bg-white
@@ -236,10 +247,11 @@ export default function Courses() {
           <button
             className="
             bg-[#D0E46A] text-[#0F1112]
-            px-[28px] py-[12px]
-            text-[16px] sm:text-[18px]
+            px-[20px] sm:px-[28px] 
+            py-[10px] sm:py-[12px]
+            text-[14px] sm:text-[18px]
             font-bold font-montserrat
-            rounded-[10px]
+            rounded-[8px] sm:rounded-[10px]
             hover:opacity-90
             transition
           "

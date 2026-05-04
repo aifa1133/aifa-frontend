@@ -104,19 +104,19 @@
 
 export default function CourseCard() {
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[64px]">
+    <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
       {/* CONTAINER */}
       <div className="w-full max-w-[1366px] flex flex-col gap-[10px] px-[16px] sm:px-[24px] md:px-[40px] lg:px-0">
         {/* TOP CARD */}
-        <div className="flex flex-col lg:flex-row w-full overflow-hidden rounded-[20px] lg:h-[383px]">
+        <div className="flex flex-col lg:flex-row w-full overflow-hidden rounded-[16px] sm:rounded-[20px] lg:h-[383px]">
           {/* IMAGE */}
           <div className="w-full lg:w-1/2">
             <div
               className="
               w-full
-              h-[220px] sm:h-[300px] md:h-[380px] lg:h-[383px]
+              h-[200px] sm:h-[260px] md:h-[320px] lg:h-[383px]
               overflow-hidden
-              rounded-t-[20px]
+              rounded-t-[16px] sm:rounded-t-[20px]
               lg:rounded-t-none
               lg:rounded-l-[20px]
             "
@@ -135,22 +135,23 @@ export default function CourseCard() {
             w-full lg:w-1/2 
             flex flex-col justify-between h-full
             bg-[#414243]
-            px-[16px] sm:px-[24px]
-            py-[24px]
-            rounded-tr-[20px]
+            px-[14px] sm:px-[20px] md:px-[24px]
+            py-[20px] sm:py-[24px]
+            rounded-b-[16px] sm:rounded-b-[20px]
+            lg:rounded-b-none lg:rounded-tr-[20px]
           "
           >
             {/* TEXT */}
-            <div className="flex flex-col gap-[8px]">
-              <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[16px] md:text-[18px] font-bold uppercase tracking-wide">
+            <div className="flex flex-col gap-[6px] sm:gap-[8px]">
+              <p className="text-[#F0F0F0] font-montserrat text-[12px] sm:text-[14px] md:text-[18px] font-bold uppercase tracking-wide">
                 BEGINNER
               </p>
 
               <h2
                 className="
                 text-[#F0F0F0] font-montserrat font-black
-                text-[24px] sm:text-[28px] md:text-[32px]
-                leading-[32px] sm:leading-[36px] md:leading-[40px]
+                text-[20px] sm:text-[26px] md:text-[32px]
+                leading-[28px] sm:leading-[34px] md:leading-[40px]
               "
               >
                 AI FILMMAKING BOOTCAMP
@@ -159,9 +160,9 @@ export default function CourseCard() {
               <p
                 className="
                 text-[#F0F0F0]
-                text-[14px] sm:text-[16px]
-                leading-[22px] sm:leading-[24px]
-                max-w-[520px]
+                text-[13px] sm:text-[15px] md:text-[16px]
+                leading-[20px] sm:leading-[22px] md:leading-[24px]
+                max-w-full sm:max-w-[520px]
               "
               >
                 Master AI-powered filmmaking from concept to final cut while
@@ -173,11 +174,13 @@ export default function CourseCard() {
             {/* BUTTON */}
             <button
               className="
-              w-full
+              w-full sm:w-auto
+              mt-[12px] sm:mt-[16px]
               bg-[#D0E46A] text-[#0F1112]
+              px-[16px] sm:px-[24px]
               py-[10px] sm:py-[12px]
-              text-[14px] sm:text-[16px]
-              rounded-[12px]
+              text-[13px] sm:text-[15px] md:text-[16px]
+              rounded-[10px] sm:rounded-[12px]
               font-bold font-montserrat
               hover:opacity-90 active:scale-[0.98]
               transition-all duration-200
@@ -189,42 +192,54 @@ export default function CourseCard() {
         </div>
 
         {/* BOTTOM BAR */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px] sm:gap-[10px]">
           {/* ITEM */}
-          <div className="bg-[#414243] rounded-[12px] px-[16px] sm:px-[20px] py-[14px] sm:py-[18px] flex flex-col gap-[6px]">
+          <div className="bg-[#414243] rounded-[10px] sm:rounded-[12px] px-[14px] sm:px-[20px] py-[12px] sm:py-[18px] flex flex-col gap-[6px]">
             <div className="flex items-center gap-[6px]">
-              <img src="/Tagicon.svg" alt="" className="w-[14px] h-[14px]" />
+              <img
+                src="/Tagicon.svg"
+                alt=""
+                className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
+              />
               <p className="text-[#9CA3AF] font-montserrat text-[10px] sm:text-[12px] font-semibold uppercase tracking-[0.08em]">
                 Duration
               </p>
             </div>
-            <p className="text-[#F0F0F0] font-montserrat text-[16px] sm:text-[18px] font-bold">
+            <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[18px] font-bold">
               3 HOURS
             </p>
           </div>
 
           {/* ITEM */}
-          <div className="bg-[#414243] rounded-[12px] px-[16px] sm:px-[20px] py-[14px] sm:py-[18px] flex flex-col gap-[6px]">
+          <div className="bg-[#414243] rounded-[10px] sm:rounded-[12px] px-[14px] sm:px-[20px] py-[12px] sm:py-[18px] flex flex-col gap-[6px]">
             <div className="flex items-center gap-[6px]">
-              <img src="/Tagicon1.svg" alt="" className="w-[14px] h-[14px]" />
+              <img
+                src="/Tagicon1.svg"
+                alt=""
+                className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
+              />
               <p className="text-[#9CA3AF] font-montserrat text-[10px] sm:text-[12px] font-semibold uppercase tracking-[0.08em]">
                 Pricing
               </p>
             </div>
-            <p className="text-[#F0F0F0] font-montserrat text-[16px] sm:text-[18px] font-bold">
+            <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[18px] font-bold">
               ₹499.00
             </p>
           </div>
 
           {/* ITEM */}
-          <div className="bg-[#414243] rounded-[12px] px-[16px] sm:px-[20px] py-[14px] sm:py-[18px] flex flex-col gap-[6px]">
+          <div className="bg-[#414243] rounded-[10px] sm:rounded-[12px] px-[14px] sm:px-[20px] py-[12px] sm:py-[18px] flex flex-col gap-[6px]">
             <div className="flex items-center gap-[6px]">
-              <img src="/Tagicon2.svg" alt="" className="w-[14px] h-[14px]" />
+              <img
+                src="/Tagicon2.svg"
+                alt=""
+                className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
+              />
               <p className="text-[#9CA3AF] font-montserrat text-[10px] sm:text-[12px] font-semibold uppercase tracking-[0.08em]">
                 Access
               </p>
             </div>
-            <p className="text-[#F0F0F0] font-montserrat text-[16px] sm:text-[18px] font-bold">
+            <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[18px] font-bold">
               Lifetime
             </p>
           </div>

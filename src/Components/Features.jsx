@@ -87,21 +87,20 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[64px]">
-      {/* INNER CONTAINER */}
-      <div className="w-full max-w-[1180px] flex flex-col gap-[64px] px-[16px] sm:px-[24px] lg:px-0">
+    <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
+      <div className="w-full max-w-[1180px] flex flex-col gap-[32px] sm:gap-[64px] px-[16px] sm:px-[24px] lg:px-0">
         {/* TITLE */}
         <motion.h2
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="
-        text-[#F0F0F0] text-center
-        font-montserrat font-black
-        text-[24px] leading-[32px]
-        sm:text-[32px] sm:leading-[40px]
-        md:text-[40px] md:leading-[48px]
-      "
+            text-[#F0F0F0] text-center
+            font-montserrat font-black
+            text-[20px] leading-[28px]
+            sm:text-[32px] sm:leading-[40px]
+            md:text-[40px] md:leading-[48px]
+          "
         >
           EVERYTHING YOU NEED TO CREATE WITH AI
         </motion.h2>
@@ -109,11 +108,11 @@ export default function Features() {
         {/* GRID */}
         <div
           className="
-  grid
-  grid-cols-1 sm:grid-cols-2 md:grid-cols-3
-  gap-x-[11px]
-  gap-y-[60px]
-"
+            grid
+            grid-cols-1 sm:grid-cols-2 md:grid-cols-3
+            gap-x-[10px] sm:gap-x-[11px]
+            gap-y-[24px] sm:gap-y-[60px]
+          "
         >
           {features.map((item, i) => (
             <motion.div
@@ -127,27 +126,26 @@ export default function Features() {
               {/* CARD */}
               <div
                 className="
-  bg-white/5 backdrop-blur-lg
-  border border-white/10
-  rounded-[24px]
-  overflow-hidden
-  flex flex-col
-  gap-[24px]
-  h-full
-  transition
-"
+                  bg-white/5 backdrop-blur-lg
+                  border border-white/10
+                  rounded-[16px] sm:rounded-[24px]
+                  overflow-hidden
+                  flex flex-col
+                  gap-[16px] sm:gap-[24px]
+                  h-full
+                  transition
+                "
               >
                 {/* IMAGE */}
-
-                <div className="w-full overflow-hidden rounded-[72px]">
+                <div className="relative w-full overflow-hidden rounded-[20px] sm:rounded-[72px]">
                   <motion.img
                     src={item.image}
                     alt="feature"
                     className="
-      w-full
-      h-[275px]
-      object-cover
-    "
+                      w-full
+                      h-[180px] sm:h-[240px] md:h-[275px]
+                      object-cover
+                    "
                     whileHover={{ scale: 1.06 }}
                     transition={{ duration: 0.5 }}
                   />
@@ -156,22 +154,23 @@ export default function Features() {
                 </div>
 
                 {/* CONTENT */}
-                <div className="flex flex-col gap-[12px] p-[20px]">
+                <div className="flex flex-col gap-[8px] sm:gap-[12px] p-[16px] sm:p-[20px]">
                   <h3
                     className="
-                text-[#F0F0F0] font-montserrat font-bold
-                text-[16px] leading-[24px]
-                sm:text-[18px] sm:leading-[26px]
-              "
+                      text-[#F0F0F0] font-montserrat font-bold
+                      text-[14px] sm:text-[18px]
+                      leading-[22px] sm:leading-[26px]
+                    "
                   >
                     {item.title}
                   </h3>
 
                   <p
                     className="
-                text-[#F0F0F0] font-montserrat font-medium
-                text-[14px] leading-[20px]
-              "
+                      text-[#F0F0F0] font-montserrat font-medium
+                      text-[12px] sm:text-[14px]
+                      leading-[18px] sm:leading-[20px]
+                    "
                   >
                     Ensure your video plays in the highest resolution, always
                     ad-free. No competitor distributions or random suggestions
@@ -182,28 +181,29 @@ export default function Features() {
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     className="
-    w-full
-    flex items-center justify-center gap-[4px]
-    px-[30px] py-[12px]
-    bg-[#303133] text-[#F0F0F0]
-    text-[14px]
-    font-medium font-montserrat
-    rounded-[8px]
-    hover:bg-[#3A3B3C]
-    transition
-  "
+                      w-full
+                      flex items-center justify-center gap-[4px]
+                      px-[20px] sm:px-[30px]
+                      py-[10px] sm:py-[12px]
+                      bg-[#303133] text-[#F0F0F0]
+                      text-[12px] sm:text-[14px]
+                      font-medium font-montserrat
+                      rounded-[6px] sm:rounded-[8px]
+                      hover:bg-[#3A3B3C]
+                      transition
+                    "
                   >
                     LEARN MORE
                     <img
                       src="/Arrowleftnew.svg"
-                      className="w-[14px] h-[14px]"
+                      className="w-[12px] sm:w-[14px]"
                     />
                   </motion.button>
                 </div>
               </div>
 
               {/* GLOW */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-2xl rounded-[24px]" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-2xl rounded-[16px] sm:rounded-[24px]" />
             </motion.div>
           ))}
         </div>

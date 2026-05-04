@@ -29,7 +29,6 @@ const testimonials = [
 export default function Testimonial() {
   const [active, setActive] = useState(2);
 
-  // ✅ AUTO SLIDE
   useEffect(() => {
     const interval = setInterval(() => {
       setActive((prev) => (prev + 1) % testimonials.length);
@@ -40,7 +39,16 @@ export default function Testimonial() {
 
   return (
     <section className="w-full bg-[#0F1112] flex justify-center">
-      <div className="w-[1366px] px-[93px] py-[64px] flex flex-col md:flex-row items-center justify-center gap-[10px]">
+      <div
+        className="
+        w-full max-w-[1366px] 
+        px-[16px] sm:px-[24px] md:px-[93px] 
+        py-[40px] sm:py-[64px] 
+        flex flex-col md:flex-row 
+        items-center justify-center 
+        gap-[20px] md:gap-[10px]
+      "
+      >
         {/* IMAGE */}
         <div className="flex-1 flex justify-center">
           <AnimatePresence mode="wait">
@@ -51,12 +59,12 @@ export default function Testimonial() {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.5 }}
               className="
-            w-[260px] h-[380px]
-            sm:w-[320px] sm:h-[460px]
-            md:w-[400px] md:h-[580px]
-            rounded-[140px] md:rounded-[180px]
-            overflow-hidden
-          "
+                w-[200px] h-[300px]
+                sm:w-[280px] sm:h-[420px]
+                md:w-[400px] md:h-[580px]
+                rounded-[120px] sm:rounded-[150px] md:rounded-[180px]
+                overflow-hidden
+              "
             >
               <img
                 src={testimonials[active].image}
@@ -76,11 +84,14 @@ export default function Testimonial() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="text-[#F0F0F0] font-montserrat font-black 
-          text-[30px] leading-[38px] 
-          sm:text-[38px] sm:leading-[46px] 
-          md:text-[44px] md:leading-[52px] 
-          tracking-[-0.5px] mb-6"
+              className="
+                text-[#F0F0F0] font-montserrat font-black 
+                text-[22px] leading-[30px]
+                sm:text-[34px] sm:leading-[42px]
+                md:text-[44px] md:leading-[52px]
+                tracking-[-0.5px] 
+                mb-4 sm:mb-6
+              "
             >
               “{testimonials[active].quote}”
             </motion.h2>
@@ -91,8 +102,12 @@ export default function Testimonial() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-[#9CA3AF] font-montserrat font-semibold 
-        text-[14px] uppercase tracking-[0.12em] mb-8"
+            className="
+              text-[#9CA3AF] font-montserrat font-semibold 
+              text-[12px] sm:text-[14px] 
+              uppercase tracking-[0.12em] 
+              mb-6 sm:mb-8
+            "
           >
             {testimonials[active].name}
           </motion.p>

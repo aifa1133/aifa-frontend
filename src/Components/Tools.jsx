@@ -54,6 +54,8 @@
 //   );
 // }
 
+
+
 "use client";
 
 import { motion } from "framer-motion";
@@ -72,13 +74,15 @@ const tools = [
 
 export default function Tools() {
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[64px] relative overflow-hidden">
+    <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px] relative overflow-hidden">
+      
       {/* SIDE FADE */}
-      <div className="absolute left-0 top-0 h-full w-[80px] sm:w-[120px] md:w-[180px] bg-gradient-to-r from-[#0F1112] to-transparent z-10" />
-      <div className="absolute right-0 top-0 h-full w-[80px] sm:w-[120px] md:w-[180px] bg-gradient-to-l from-[#0F1112] to-transparent z-10" />
+      <div className="absolute left-0 top-0 h-full w-[40px] sm:w-[80px] md:w-[180px] bg-gradient-to-r from-[#0F1112] to-transparent z-10" />
+      <div className="absolute right-0 top-0 h-full w-[40px] sm:w-[80px] md:w-[180px] bg-gradient-to-l from-[#0F1112] to-transparent z-10" />
 
       {/* INNER CONTAINER */}
-      <div className="w-full max-w-[1180px] flex flex-col items-center gap-[48px] px-[16px] sm:px-[24px] lg:px-0 relative z-20">
+      <div className="w-full max-w-[1180px] flex flex-col items-center gap-[28px] sm:gap-[48px] px-[16px] sm:px-[24px] lg:px-0 relative z-20">
+        
         {/* HEADING */}
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
@@ -87,7 +91,7 @@ export default function Tools() {
           className="
             text-[#F0F0F0]
             font-montserrat font-black text-center
-            text-[24px] leading-[32px]
+            text-[20px] leading-[28px]
             sm:text-[28px] sm:leading-[36px]
             md:text-[32px] md:leading-[40px]
           "
@@ -96,33 +100,34 @@ export default function Tools() {
         </motion.h2>
 
         {/* ROWS */}
-        <div className="w-full flex flex-col gap-[32px] overflow-hidden">
+        <div className="w-full flex flex-col gap-[20px] sm:gap-[32px] overflow-hidden">
+          
           {[0, 1].map((row, rowIndex) => (
             <motion.div
               key={rowIndex}
-              className="flex gap-[16px] sm:gap-[20px] md:gap-[24px]"
+              className="flex gap-[12px] sm:gap-[20px] md:gap-[24px]"
               animate={{
                 x: rowIndex % 2 === 0 ? ["0%", "-50%"] : ["-50%", "0%"],
               }}
               transition={{
-                duration: 24,
+                duration: window.innerWidth < 640 ? 18 : 24, // ✅ faster mobile
                 repeat: Infinity,
                 ease: "linear",
               }}
             >
               {[...tools, ...tools].map((tool, i) => {
                 const sizes = [
-                  "h-[64px] w-[64px]",
-                  "h-[80px] w-[80px]",
-                  "h-[96px] w-[96px]",
+                  "h-[48px] w-[48px] sm:h-[64px] sm:w-[64px]",
+                  "h-[60px] w-[60px] sm:h-[80px] sm:w-[80px]",
+                  "h-[72px] w-[72px] sm:h-[96px] sm:w-[96px]",
                 ];
 
                 return (
                   <motion.div
                     key={i}
-                    animate={{ y: [0, -6, 0] }}
+                    animate={{ y: [0, -4, 0] }} // ✅ softer on mobile
                     transition={{
-                      duration: 5 + (i % 2),
+                      duration: 4 + (i % 2),
                       repeat: Infinity,
                       ease: "easeInOut",
                     }}
@@ -130,7 +135,7 @@ export default function Tools() {
                       flex items-center justify-center
                       ${sizes[i % sizes.length]}
                       bg-[#2A2D2E]
-                      rounded-[16px]
+                      rounded-[12px] sm:rounded-[16px]
                       flex-shrink-0
                       hover:scale-105
                       transition
@@ -148,6 +153,7 @@ export default function Tools() {
               })}
             </motion.div>
           ))}
+
         </div>
       </div>
     </section>
