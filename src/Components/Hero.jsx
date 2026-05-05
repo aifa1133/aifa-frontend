@@ -122,7 +122,7 @@ export default function Hero() {
   }, [active]);
 
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[24px] sm:py-[32px]">
+    <section className="w-full bg-[#0F1112] flex justify-center py-[28px] sm:py-[38px]">
       <div className="w-full max-w-[1180px] flex flex-col gap-[20px] sm:gap-[24px] px-[16px] sm:px-[24px] lg:px-0">
         {/* HERO */}
         <div
