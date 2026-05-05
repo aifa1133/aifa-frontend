@@ -505,171 +505,136 @@
 
 "use client";
 
-import { useRef } from "react";
 import { motion } from "framer-motion";
 
-const courses = [
+const bootcamps = [
   {
-    title: "Google Flow Masterclass",
-    image: "/courses/v1.png",
-    duration: "1h 10m",
-    price: "₹49.00",
+    title: "AI Lego Animation Workshop",
+    image: "/bootcamp/bootcamp1.png",
+    duration: "35 HOURS",
+    price: "USD 999.00",
+    mode: "ONLINE",
   },
   {
-    title: "Kling AI Video Masterclass",
-    image: "/courses/v2.png",
-    duration: "1h 10m",
-    price: "₹49.00",
+    title: "AI Superhero Cinematic Workshop",
+    image: "/bootcamp/bootcamp2.jpg",
+    duration: "35 HOURS",
+    price: "USD 999.00",
+    mode: "ONLINE",
   },
   {
-    title: "AI Background Magic",
-    image: "/courses/v3.png",
-    duration: "1h 10m",
-    price: "₹49.00",
+    title: "AI Sci-Fi Movie Creator",
+    image: "/bootcamp/bootcamp3.jpg",
+    duration: "35 HOURS",
+    price: "USD 999.00",
+    mode: "ONLINE",
   },
 ];
 
-export default function Courses() {
-  const scrollRef = useRef(null);
-
-  const scroll = (dir) => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const scrollAmount = window.innerWidth < 640 ? 260 : 300;
-
-    el.scrollBy({
-      left: dir === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
+export default function Bootcamps() {
   return (
     <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
       <div className="w-full max-w-[1180px] flex flex-col gap-[32px] sm:gap-[48px] px-[16px] sm:px-[24px] lg:px-0">
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-[16px] sm:gap-0">
-          <h2 className="text-[#F0F0F0] font-montserrat font-black text-[22px] sm:text-[32px] md:text-[40px] text-center sm:text-left">
-            SELF PACED COURSES
-          </h2>
+        {/* HEADING */}
+        <h2 className="text-[#F0F0F0] font-montserrat font-black text-[22px] sm:text-[32px] md:text-[40px] text-center sm:text-left">
+          AI FILMMAKING WORKSHOPS
+        </h2>
 
-          {/* ✅ Hide arrows on mobile */}
-          <div className="hidden sm:flex gap-[10px]">
-            <button
-              onClick={() => scroll("left")}
-              className="bg-[#D0E46A] p-[12px] rounded-[8px]"
-            >
-              <img src="/Arrowleft1.svg" className="w-[18px]" />
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              className="bg-[#D0E46A] p-[12px] rounded-[8px]"
-            >
-              <img src="/Arrowleft2.svg" className="w-[18px]" />
-            </button>
-          </div>
-        </div>
-
-        {/* ✅ CARDS CONTAINER */}
-        <div
-          ref={scrollRef}
-          className="
-            flex flex-col sm:flex-row
-            gap-[16px] sm:gap-[24px]
-
-            overflow-x-visible sm:overflow-x-auto
-            overflow-y-auto sm:overflow-y-hidden
-
-            scroll-smooth
-          "
-        >
-          {courses.map((course, i) => (
+        {/* LIST */}
+        <div className="flex flex-col gap-[12px] sm:gap-[10px]">
+          {bootcamps.map((item, i) => (
             <motion.div
               key={i}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.25 }}
-              className="
-                w-full sm:min-w-[300px] md:min-w-[336px]
-                bg-[#111516]
-                border border-white/10
-                rounded-[12px]
-                overflow-hidden
-                group relative
-                hover:border-[#D0E46A]
-                transition-all duration-300
-              "
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-[#0F1415] rounded-[16px] sm:rounded-[20px] overflow-hidden"
             >
-              {/* IMAGE */}
-              <div className="relative overflow-hidden">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="
-                    w-full 
-                    h-[200px] sm:h-[240px] md:h-[261px]
-                    object-cover 
-                    transition duration-500 group-hover:scale-105
-                  "
-                />
-
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition" />
-
-                <span className="absolute top-[10px] left-[10px] bg-black/70 text-white text-[12px] px-[8px] py-[4px] rounded-[6px]">
-                  {course.duration}
-                </span>
-              </div>
-
-              {/* CONTENT */}
-              <div className="flex flex-col gap-[8px] p-[16px] sm:p-[24px]">
-                <h3 className="text-[#F0F0F0] font-montserrat font-bold text-[14px] sm:text-[16px] leading-[22px]">
-                  {course.title}
-                </h3>
-
-                <div className="flex items-center gap-[6px] text-[12px] sm:text-[14px]">
-                  <span className="text-[#D0E46A] font-bold">60% OFF</span>
-                  <span className="line-through text-[#9CA3AF]">₹999</span>
+              {/* TOP SECTION (FIXED HERE) */}
+              <div className="flex flex-col lg:flex-row gap-[10px] px-[12px] pt-[12px] pb-0 sm:px-[16px] sm:pt-[16px] sm:pb-0 lg:h-[260px]">
+                {/* IMAGE */}
+                <div className="w-full lg:w-[266px]">
+                  <div className="w-full h-[160px] sm:h-[200px] lg:h-[200px] overflow-hidden rounded-tl-[16px] sm:rounded-tl-[20px]">
+                    <img
+                      src={item.image}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
 
-                <button
-                  className="
-                    mt-[8px]
-                    w-full flex items-center justify-center
-                    bg-[#F0F0F0] text-[#0F1112]
-                    px-[16px] 
-                    py-[10px]
-                    text-[14px]
-                    font-semibold font-montserrat
-                    rounded-[6px]
-                    hover:bg-white
-                    transition
-                  "
-                >
-                  BUY ₹399
-                </button>
+                {/* RIGHT */}
+                <div className="flex-1 flex flex-col gap-[8px] sm:gap-[10px]">
+                  {/* TITLE */}
+                  <div className="bg-[#DCDCDC] min-h-[80px] sm:h-[105px] px-[10px] sm:px-[12px] py-[8px] sm:py-[10px] flex items-center rounded-tr-[16px] sm:rounded-tr-[20px]">
+                    <h3 className="text-[#282A2C] font-montserrat font-bold text-[18px] sm:text-[28px] md:text-[48px] leading-[26px] sm:leading-[34px] md:leading-[56px]">
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  {/* INFO */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-[6px] sm:gap-[8px]">
+                    {/* Duration */}
+                    <div className="bg-[#DCDCDC] rounded-[6px] sm:rounded-[8px] p-[12px] sm:p-[20px] flex flex-col gap-[4px] sm:gap-[6px]">
+                      <div className="flex items-center gap-[6px]">
+                        <img
+                          src="/Tagiconnew1.svg"
+                          className="w-[12px] sm:w-[14px]"
+                        />
+                        <p className="text-[#414243] text-[10px] sm:text-[12px] font-semibold">
+                          Duration
+                        </p>
+                      </div>
+                      <p className="text-[#282A2C] text-[12px] sm:text-[14px] font-bold">
+                        {item.duration}
+                      </p>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="bg-[#DCDCDC] rounded-[6px] sm:rounded-[8px] p-[12px] sm:p-[20px] flex flex-col gap-[4px] sm:gap-[6px]">
+                      <div className="flex items-center gap-[6px]">
+                        <img
+                          src="/Tagiconnew2.svg"
+                          className="w-[12px] sm:w-[14px]"
+                        />
+                        <p className="text-[#414243] text-[10px] sm:text-[12px] font-semibold">
+                          Pricing
+                        </p>
+                      </div>
+                      <p className="text-[#282A2C] text-[12px] sm:text-[14px] font-bold">
+                        {item.price}
+                      </p>
+                    </div>
+
+                    {/* Mode */}
+                    <div className="bg-[#DCDCDC] rounded-[6px] sm:rounded-[8px] p-[12px] sm:p-[20px] flex flex-col gap-[4px] sm:gap-[6px]">
+                      <div className="flex items-center gap-[6px]">
+                        <img
+                          src="/Tagiconnew3.svg"
+                          className="w-[12px] sm:w-[14px]"
+                        />
+                        <p className="text-[#414243] text-[10px] sm:text-[12px] font-semibold">
+                          Mode
+                        </p>
+                      </div>
+                      <p className="text-[#282A2C] text-[12px] sm:text-[14px] font-bold">
+                        {item.mode}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* GLOW EFFECT */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-xl" />
+              {/* BUTTON (NO GAP NOW) */}
+              <button className="w-full bg-[#D0E46A] text-[#1A1A1A] px-[20px] sm:px-[30px] py-[12px] sm:py-[12px] flex items-center justify-center gap-[4px] font-bold font-montserrat text-[12px] sm:text-[14px] rounded-b-[20px] sm:rounded-b-[25px] hover:opacity-90 active:scale-[0.98] transition-all duration-200">
+                RESERVE SPOT
+                <img
+                  src="/Arrowleft2.svg"
+                  className="w-[14px] h-[14px] sm:w-[16px] sm:h-[16px]"
+                />
+              </button>
             </motion.div>
           ))}
-        </div>
-
-        {/* BOTTOM BUTTON */}
-        <div className="flex justify-center">
-          <button
-            className="
-              bg-[#D0E46A] text-[#0F1112]
-              px-[20px] sm:px-[28px] 
-              py-[10px] sm:py-[12px]
-              text-[14px] sm:text-[18px]
-              font-bold font-montserrat
-              rounded-[10px]
-              hover:opacity-90
-              transition
-            "
-          >
-            EXPLORE COURSES
-          </button>
         </div>
       </div>
     </section>

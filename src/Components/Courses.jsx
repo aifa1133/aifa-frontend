@@ -95,7 +95,6 @@
 //     </section>
 //   );
 // }
-
 "use client";
 
 import { useRef } from "react";
@@ -106,19 +105,16 @@ const courses = [
     title: "Google Flow Masterclass",
     image: "/courses/v1.png",
     duration: "1h 10m",
-    price: "₹49.00",
   },
   {
     title: "Kling AI Video Masterclass",
     image: "/courses/v2.png",
     duration: "1h 10m",
-    price: "₹49.00",
   },
   {
     title: "AI Background Magic",
     image: "/courses/v3.png",
     duration: "1h 10m",
-    price: "₹49.00",
   },
 ];
 
@@ -129,133 +125,101 @@ export default function Courses() {
     const el = scrollRef.current;
     if (!el) return;
 
-    const scrollAmount = window.innerWidth < 640 ? 260 : 300; // ✅ mobile optimized
-
     el.scrollBy({
-      left: dir === "left" ? -scrollAmount : scrollAmount,
+      left: dir === "left" ? -320 : 320,
       behavior: "smooth",
     });
   };
 
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
+    <section className="w-full overflow-x-hidden bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
       <div className="w-full max-w-[1180px] flex flex-col gap-[32px] sm:gap-[48px] px-[16px] sm:px-[24px] lg:px-0">
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-[16px] sm:gap-0">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-[16px]">
           <h2 className="text-[#F0F0F0] font-montserrat font-black text-[22px] sm:text-[32px] md:text-[40px] text-center sm:text-left">
             SELF PACED COURSES
           </h2>
 
-          <div className="flex gap-[10px]">
+          {/* arrows only desktop */}
+          <div className="hidden sm:flex gap-[10px]">
             <button
               onClick={() => scroll("left")}
-              className="bg-[#D0E46A] p-[10px] sm:p-[12px] rounded-[8px]"
+              className="bg-[#D0E46A] p-[12px] rounded-[8px]"
             >
-              <img src="/Arrowleft1.svg" className="w-[16px] sm:w-[18px]" />
+              ←
             </button>
             <button
               onClick={() => scroll("right")}
-              className="bg-[#D0E46A] p-[10px] sm:p-[12px] rounded-[8px]"
+              className="bg-[#D0E46A] p-[12px] rounded-[8px]"
             >
-              <img src="/Arrowleft2.svg" className="w-[16px] sm:w-[18px]" />
+              →
             </button>
           </div>
         </div>
 
-        {/* CAROUSEL */}
+        {/* CARDS */}
         <div
           ref={scrollRef}
           className="
-            flex gap-[16px] sm:gap-[24px] 
-            overflow-x-auto scrollbar-hide
-            scroll-smooth
+            flex flex-col
+            sm:flex-row
+            gap-[16px] sm:gap-[24px]
+
+            overflow-x-hidden sm:overflow-x-auto
           "
         >
           {courses.map((course, i) => (
             <motion.div
               key={i}
               whileHover={{ y: -4 }}
-              transition={{ duration: 0.25 }}
               className="
-                min-w-[260px] sm:min-w-[300px] md:min-w-[336px]
+                w-full
+                sm:min-w-[300px]
+                md:min-w-[336px]
+
                 bg-[#111516]
                 border border-white/10
-                rounded-[10px] sm:rounded-[12px]
+                rounded-[12px]
                 overflow-hidden
-                group relative
-                hover:border-[#D0E46A]
+                group
                 transition-all duration-300
               "
             >
               {/* IMAGE */}
-              <div className="relative overflow-hidden">
+              <div className="relative">
                 <img
                   src={course.image}
                   alt={course.title}
-                  className="
-                    w-full 
-                    h-[200px] sm:h-[240px] md:h-[261px]
-                    object-cover 
-                    transition duration-500 group-hover:scale-105
-                  "
+                  className="w-full h-[200px] sm:h-[240px] md:h-[261px] object-cover"
                 />
 
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition" />
-
-                <span className="absolute top-[10px] left-[10px] bg-black/70 text-white text-[11px] sm:text-[12px] px-[8px] py-[4px] rounded-[6px]">
+                <span className="absolute top-[10px] left-[10px] bg-black/70 text-white text-[12px] px-[8px] py-[4px] rounded-[6px]">
                   {course.duration}
                 </span>
               </div>
 
               {/* CONTENT */}
-              <div className="flex flex-col gap-[6px] sm:gap-[8px] p-[16px] sm:p-[24px]">
-                <h3 className="text-[#F0F0F0] font-montserrat font-bold text-[14px] sm:text-[16px] leading-[22px]">
+              <div className="p-[16px] sm:p-[24px] flex flex-col gap-[8px]">
+                <h3 className="text-[#F0F0F0] font-bold text-[14px] sm:text-[16px]">
                   {course.title}
                 </h3>
 
-                <div className="flex items-center gap-[6px] text-[12px] sm:text-[14px]">
+                <div className="flex gap-[6px] text-[12px] sm:text-[14px]">
                   <span className="text-[#D0E46A] font-bold">60% OFF</span>
-                  <span className="line-through text-[#9CA3AF]">₹999</span>
+                  <span className="line-through text-gray-400">₹999</span>
                 </div>
 
-                <button
-                  className="
-                  mt-[6px] sm:mt-[8px]
-                  w-full flex items-center justify-center
-                  bg-[#F0F0F0] text-[#0F1112]
-                  px-[14px] sm:px-[16px] 
-                  py-[8px] sm:py-[10px]
-                  text-[13px] sm:text-[14px]
-                  font-semibold font-montserrat
-                  rounded-[6px]
-                  hover:bg-white
-                  transition
-                "
-                >
+                <button className="mt-[8px] w-full bg-white text-black py-[10px] rounded-[6px] font-semibold">
                   BUY ₹399
                 </button>
               </div>
-
-              {/* GLOW */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-xl" />
             </motion.div>
           ))}
         </div>
 
-        {/* BOTTOM BUTTON */}
+        {/* BUTTON */}
         <div className="flex justify-center">
-          <button
-            className="
-            bg-[#D0E46A] text-[#0F1112]
-            px-[20px] sm:px-[28px] 
-            py-[10px] sm:py-[12px]
-            text-[14px] sm:text-[18px]
-            font-bold font-montserrat
-            rounded-[8px] sm:rounded-[10px]
-            hover:opacity-90
-            transition
-          "
-          >
+          <button className="bg-[#D0E46A] text-black px-[24px] py-[12px] rounded-[10px] font-bold">
             EXPLORE COURSES
           </button>
         </div>
