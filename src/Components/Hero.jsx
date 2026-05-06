@@ -236,33 +236,33 @@ export default function Hero() {
                 {slides[active].tag}
               </p>
 
-              <h1
-                className="
-              mt-2
+             <h1
+  className="
+    mt-2
 
-              text-[#F0F0F0]
+    text-[#F0F0F0]
 
-              font-montserrat
-              font-black
+    font-montserrat
+    font-black
 
-              text-[28px]
-              leading-[34px]
+    text-[28px]
+    leading-[34px]
 
-              sm:text-[40px]
-              sm:leading-[46px]
+    sm:text-[40px]
+    sm:leading-[46px]
 
-              md:text-[52px]
-              md:leading-[58px]
+    md:text-[52px]
+    md:leading-[58px]
 
-              lg:text-[64px]
-              lg:leading-[70px]
+    lg:text-[64px]
+    lg:leading-[70px]
 
-              max-w-[95%]
-              sm:max-w-[620px]
-            "
-              >
-                {slides[active].title}
-              </h1>
+    max-w-[95%]
+    sm:max-w-[620px]
+  "
+>
+  {slides[active].title}
+</h1>
             </div>
 
             {/* BUTTON */}
