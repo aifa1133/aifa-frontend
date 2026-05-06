@@ -241,25 +241,66 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
             LOGIN
           </button>
           <button
-            className="flex items-center justify-center gap-[4px]
-  px-[16px] py-[4px]
-  border border-[#F0F0F0] rounded-[4px]
-  text-[#F0F0F0] font-montserrat font-semibold
-  text-[14px] leading-[20px]
-  sm:text-[16px] sm:leading-[24px]
-  [font-variant:all-small-caps]
-  transition hover:bg-white hover:text-[#0F1112]"
+            className="
+    flex
+    items-center
+    justify-center
+    gap-[4px]
+
+    px-[16px]
+    py-[8px]
+
+    rounded-[4px]
+
+    border
+    border-[#F0F0F0]
+
+    bg-transparent
+
+    text-[#F0F0F0]
+
+    font-montserrat
+    text-[16px]
+    font-semibold
+    leading-[24px]
+
+    [font-variant:all-small-caps]
+
+    transition-all
+    duration-300
+
+    hover:bg-[#F0F0F0]
+    hover:text-[#0F1112]
+  "
           >
             JOIN
           </button>
           <button
-            className="flex items-center justify-center gap-[6px]
-  px-[18px] py-[8px]
-  bg-white text-[#0F1112]
-  font-montserrat font-semibold
-  text-[14px] leading-[20px]
-  rounded-[6px]
-  transition hover:bg-gray-200 active:scale-[0.97]"
+            className="
+    flex
+    items-center
+    justify-center
+    gap-[8px]
+
+    px-[16px]
+    py-[8px]
+
+    rounded-[4px]
+
+    bg-[#F0F0F0]
+    text-[#0F1112]
+
+    font-montserrat
+    text-[14px]
+    font-medium
+    leading-[24px]
+
+    transition-all
+    duration-300
+
+    hover:bg-gray-200
+    active:scale-[0.97]
+  "
           >
             TALK TO SALES
             <img
