@@ -534,7 +534,7 @@ export default function Hero() {
           </h1>
 
           {/* DESCRIPTION */}
-          <p
+          {/* <p
             className="
               mt-[24px]
 
@@ -554,7 +554,7 @@ export default function Hero() {
             Learn cinematic AI filmmaking, storytelling, editing, visual
             direction, and professional production workflows with industry-level
             mentorship.
-          </p>
+          </p> */}
 
           {/* BUTTON */}
           <button
