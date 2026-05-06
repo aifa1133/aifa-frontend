@@ -105,12 +105,14 @@ const slides = [
 
 export default function Hero() {
   const [active, setActive] = useState(0);
+
   const videoRef = useRef(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setActive((prev) => (prev + 1) % slides.length);
     }, 5000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -122,28 +124,72 @@ export default function Hero() {
   }, [active]);
 
   return (
-    <section className="w-full bg-[#0F1112] flex justify-center py-[28px] sm:py-[38px]">
-    <div className="
-  w-full 
-  max-w-[1400px] xl:max-w-[1600px]
-  flex flex-col 
-  gap-[20px] sm:gap-[24px]
+    <section className="w-full bg-[#0F1112] flex justify-center">
+      {/* CONTAINER */}
+      <div
+        className="
+      w-full
+      max-w-[1440px]
 
-  px-[16px] sm:px-[40px] lg:px-[93px]
-">
+      flex
+      flex-col
+      justify-center
+      items-start
+
+      gap-[24px]
+
+      px-[16px]
+      sm:px-[24px]
+      md:px-[40px]
+      lg:px-[60px]
+
+      py-[20px]
+      sm:py-[32px]
+    "
+      >
         {/* HERO */}
         <div
           className="
-          relative w-full 
-          h-[420px] sm:h-[520px] md:h-[652px]   /* ✅ responsive height */
-          rounded-[16px] sm:rounded-[24px] 
-          overflow-hidden
-        "
+        relative
+
+        w-full
+
+        h-[420px]
+        sm:h-[520px]
+        md:h-[588px]
+
+        flex
+        flex-col
+        justify-center
+        items-start
+
+        gap-[24px]
+        sm:gap-[40px]
+        md:gap-[60px]
+
+        px-[16px]
+        sm:px-[32px]
+        md:px-[60px]
+        lg:px-[80px]
+
+        rounded-[20px]
+        sm:rounded-[24px]
+
+        overflow-hidden
+      "
         >
           {/* VIDEO */}
           <video
             ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="
+          absolute
+          inset-0
+
+          w-full
+          h-full
+
+          object-cover
+        "
             autoPlay
             muted
             loop
@@ -153,35 +199,67 @@ export default function Hero() {
           </video>
 
           {/* OVERLAY */}
-          <div className="absolute inset-0 bg-black/30"></div>
+          <div className="absolute inset-0 bg-black/40"></div>
 
           {/* CONTENT */}
           <div
             className="
-              relative z-10 h-full flex flex-col justify-center items-start 
-              px-[16px] sm:px-[32px] md:px-[60px] lg:px-[93px] 
-              gap-[24px] sm:gap-[40px] md:gap-[60px]
-            "
+          relative
+          z-10
+
+          flex
+          flex-col
+          justify-center
+          items-start
+
+          gap-[24px]
+          sm:gap-[40px]
+          md:gap-[60px]
+        "
           >
             {/* TEXT */}
             <div>
               <p
-                className="text-[#F0F0F0] font-montserrat 
-                text-[16px] sm:text-[20px] md:text-[32px] 
-                font-bold uppercase"
+                className="
+              text-[#F0F0F0]
+
+              font-montserrat
+              font-bold
+
+              uppercase
+
+              text-[16px]
+              sm:text-[22px]
+              md:text-[32px]
+            "
               >
                 {slides[active].tag}
               </p>
 
               <h1
                 className="
-                  mt-2 text-[#F0F0F0] font-montserrat font-black
-                  text-[24px] leading-[30px]
-                  sm:text-[36px] sm:leading-[42px]
-                  md:text-[52px] md:leading-[58px]
-                  lg:text-[64px] lg:leading-[70px]
-                  max-w-[90%] sm:max-w-[620px]
-                "
+              mt-2
+
+              text-[#F0F0F0]
+
+              font-montserrat
+              font-black
+
+              text-[28px]
+              leading-[34px]
+
+              sm:text-[40px]
+              sm:leading-[46px]
+
+              md:text-[52px]
+              md:leading-[58px]
+
+              lg:text-[64px]
+              lg:leading-[70px]
+
+              max-w-[95%]
+              sm:max-w-[620px]
+            "
               >
                 {slides[active].title}
               </h1>
@@ -190,18 +268,42 @@ export default function Hero() {
             {/* BUTTON */}
             <button
               className="
-                inline-flex items-center justify-center gap-[4px]
-                bg-[#D0E46A] text-[#0F1112]
-                px-[16px] py-[8px]
-                sm:px-[20px] sm:py-[10px]
-                md:px-[24px] md:py-[12px]
-                text-[12px] sm:text-[14px] md:text-[18px]
-                leading-[20px] sm:leading-[24px]
-                font-bold font-montserrat
-                rounded-[10px] sm:rounded-[12px]
-                hover:opacity-90
-                transition-all duration-200
-              "
+            inline-flex
+            items-center
+            justify-center
+
+            gap-[4px]
+
+            px-[16px]
+            py-[8px]
+
+            sm:px-[20px]
+            sm:py-[10px]
+
+            md:px-[24px]
+            md:py-[12px]
+
+            rounded-[10px]
+            sm:rounded-[12px]
+
+            bg-[#D0E46A]
+            text-[#0F1112]
+
+            font-montserrat
+            font-bold
+
+            text-[12px]
+            sm:text-[14px]
+            md:text-[18px]
+
+            leading-[20px]
+            sm:leading-[24px]
+
+            transition-all
+            duration-300
+
+            hover:opacity-90
+          "
             >
               BOOK A FREE 30 MINS CONSULTATION
             </button>
@@ -210,10 +312,22 @@ export default function Hero() {
           {/* THUMBNAILS */}
           <div
             className="
-            absolute bottom-3 sm:bottom-4 md:bottom-6 
-            left-1/2 -translate-x-1/2 
-            flex gap-2 sm:gap-3 z-20
-          "
+          absolute
+
+          bottom-[16px]
+          sm:bottom-[24px]
+
+          left-1/2
+          -translate-x-1/2
+
+          flex
+          items-center
+
+          gap-[8px]
+          sm:gap-[12px]
+
+          z-20
+        "
           >
             {slides.map((slide, i) => (
               <img
@@ -221,17 +335,29 @@ export default function Hero() {
                 src={slide.thumb}
                 onClick={() => setActive(i)}
                 className={`
-                  w-[36px] h-[24px] 
-                  sm:w-[48px] sm:h-[32px] 
-                  md:w-[52px] md:h-[36px]
-                  object-cover rounded-[6px] cursor-pointer
-                  transition-all
-                  ${
-                    active === i
-                      ? "border border-white scale-105"
-                      : "opacity-60 hover:opacity-100"
-                  }
-                `}
+              w-[36px]
+              h-[24px]
+
+              sm:w-[48px]
+              sm:h-[32px]
+
+              md:w-[52px]
+              md:h-[36px]
+
+              object-cover
+
+              rounded-[6px]
+
+              cursor-pointer
+
+              transition-all
+
+              ${
+                active === i
+                  ? "border border-white scale-105"
+                  : "opacity-60 hover:opacity-100"
+              }
+            `}
               />
             ))}
           </div>

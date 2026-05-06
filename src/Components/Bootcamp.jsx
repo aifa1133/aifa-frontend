@@ -320,7 +320,7 @@
 //               {/* BUTTON */}
 //               <motion.button
 //                 whileTap={{ scale: 0.98 }}
-//                 className="col-[1/span_2] flex w-full items-center justify-center gap-[4px] bg-[#D0E46A] text-[#0F1112] px-[30px] py-[12px] text-[18px] leading-[28px] font-bold font-montserrat rounded-b-[20px]"
+//                 className="col-[1/span_2] flex w-full items-start justify-center gap-[4px] bg-[#D0E46A] text-[#0F1112] px-[30px] py-[12px] text-[18px] leading-[28px] font-bold font-montserrat rounded-b-[20px]"
 //               >
 //                 RESERVE SPOT →
 //               </motion.button>
@@ -416,7 +416,7 @@
 //                     <div className="flex gap-[8px]">
 //                       {/* Duration */}
 //                       <div className="flex-1 bg-[#DCDCDC] rounded-[8px] p-[20px] flex flex-col items-start gap-[6px]">
-//                         <div className="flex items-center gap-[6px]">
+//                         <div className="flex items-start gap-[6px]">
 //                           <img
 //                             src="/Tagiconnew1.svg"
 //                             alt=""
@@ -437,7 +437,7 @@
 
 //                       {/* Pricing */}
 //                       <div className="flex-1 bg-[#DCDCDC] rounded-[8px] p-[20px] flex flex-col items-start gap-[6px]">
-//                         <div className="flex items-center gap-[6px]">
+//                         <div className="flex items-start gap-[6px]">
 //                           <img
 //                             src="/Tagiconnew2.svg"
 //                             alt="Pricing icon"
@@ -458,7 +458,7 @@
 
 //                       {/* Mode */}
 //                       <div className="flex-1 bg-[#DCDCDC] rounded-[8px] p-[20px] flex flex-col items-start gap-[6px]">
-//                         <div className="flex items-center gap-[6px]">
+//                         <div className="flex items-start gap-[6px]">
 //                           <img
 //                             src="/Tagiconnew3.svg"
 //                             alt="mode icon"
@@ -486,7 +486,7 @@
 //                 RESERVE SPOT <img src="/Arrowleft1.svg" alt="" />
 //               </button> */}
 
-//                 <button className="mt-[8px] w-full bg-[#D0E46A] text-[#1A1A1A] py-[12px] rounded-b-[25px] font-bold flex items-center justify-center gap-[6px]">
+//                 <button className="mt-[8px] w-full bg-[#D0E46A] text-[#1A1A1A] py-[12px] rounded-b-[25px] font-bold flex items-start justify-center gap-[6px]">
 //                   RESERVE SPOT
 //                   <img
 //                     src="/Arrowleft2.svg"
@@ -535,7 +535,13 @@ export default function Bootcamps() {
   return (
     <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
       {/* CONTAINER (FIGMA WIDTH + PADDING) */}
-      <div className="w-full max-w-[1400px] xl:max-w-[1600px] px-[16px] sm:px-[40px] lg:px-[93px] flex flex-col gap-[32px] sm:gap-[48px]">
+      <div
+        className="w-full max-w-[1440px]
+mx-auto px-[16px]
+sm:px-[24px]
+md:px-[40px]
+lg:px-[60px] flex flex-col gap-[32px] sm:gap-[48px]"
+      >
         {/* HEADING */}
         <h2 className="text-[#F0F0F0] font-montserrat font-black text-[22px] sm:text-[32px] md:text-[40px] text-center sm:text-left">
           AI FILMMAKING WORKSHOPS
@@ -554,7 +560,8 @@ export default function Bootcamps() {
               {/* GRID STRUCTURE */}
               <div className="grid grid-cols-1 lg:grid-cols-[266px_1fr] grid-rows-[auto_auto] gap-[8px] p-[12px] sm:p-[16px]">
                 {/* IMAGE */}
-                <div className="w-full h-[180px] sm:h-[200px] lg:w-[266px] lg:h-[200px] overflow-hidden rounded-tl-[20px]">
+                <div className="w-full h-[180px] sm:h-[200px] lg:w-[266px] lg:h-[200px] overflow-hidden rounded-[20px]
+">
                   <img
                     src={item.image}
                     alt={item.title}
@@ -609,7 +616,7 @@ export default function Bootcamps() {
                 <button
                   className="
                     col-span-1 lg:col-span-2
-                    flex justify-center items-center
+                    flex justify-center items-start
                     px-[20px] sm:px-[30px]
                     py-[12px]
                     gap-[4px]

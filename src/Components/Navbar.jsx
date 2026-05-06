@@ -182,11 +182,12 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
                 )}
 
                 {item.dropdown && (
-                  <ChevronDown
-                    size={12}
-                    className="text-gray-400 group-hover:rotate-180 transition"
-                  />
-                )}
+  <img
+    src="/Vector 212.svg"
+    alt="dropdown"
+    className="w-[16px] h-[16px]"
+  />
+)}
               </div>
 
               {/* UNDERLINE */}
@@ -260,11 +261,11 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
     text-[#F0F0F0]
 
     font-montserrat
-    text-[16px]
-    font-semibold
-    leading-[24px]
+    text-[14px]
+    font-bold
+    leading-[18px]
 
-    [font-variant:all-small-caps]
+   
 
     transition-all
     duration-300
@@ -292,7 +293,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
 
     font-montserrat
     text-[14px]
-    font-medium
+    font-bold
     leading-[24px]
 
     transition-all

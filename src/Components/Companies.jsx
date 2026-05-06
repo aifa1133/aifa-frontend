@@ -39,12 +39,13 @@ import { useEffect, useRef, useState } from "react";
 
 export default function Companies() {
   const logos = [
-    "/logos/nb1.svg",
-    "/logos/nb2svg.svg",
-    "/logos/nb3.svg",
-    "/logos/Vector.svg",
-    "/logos/Vector1.svg",
-    "/logos/logo1.png",
+    "/logos/companylogo1.png",
+    "/logos/companylogo2.png",
+    "/logos/companylogo3.png",
+    "/logos/companylogo4.png",
+    "/logos/companylogo5.jpg",
+    "/logos/companylogo6.png",
+    "/logos/companylogo6.png",
   ];
 
   const scrollRef = useRef(null);

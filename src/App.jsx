@@ -142,7 +142,16 @@ export default function App() {
   const [showSignup, setShowSignup] = useState(false);
 
   return (
-    <div className="bg-[#0B0F10] min-h-screen">
+    <div
+      className="
+        w-full
+        min-h-screen
+
+        bg-[#0B0F10]
+
+        overflow-x-hidden
+      "
+    >
       {/* NAVBAR */}
       <Navbar
         onLoginClick={() => {
@@ -155,21 +164,32 @@ export default function App() {
         }}
       />
 
-      {/* ROUTES */}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/courses" element={<CoursesPage />} />
-        <Route path="/bootcamp" element={<Bootcamppage />} />
-        <Route path="/hire-talent" element={<HireTalent />} />
-        <Route path="/jobs" element={<JobsSection />} />
-        <Route path="/prompt-library" element={<PromptLibrary />} />
-        <Route path="/workflow" element={<Workflow />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/learning" element={<LearningTips />} />
-        <Route path="/deals" element={<AiDeals />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/workshops" element={<WorkshopsPage />} />
-      </Routes>
+      {/* MAIN CONTENT */}
+      <main
+        className="
+          w-full
+
+          pt-[72px]
+
+          flex
+          flex-col
+        "
+      >
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/bootcamp" element={<Bootcamppage />} />
+          <Route path="/hire-talent" element={<HireTalent />} />
+          <Route path="/jobs" element={<JobsSection />} />
+          <Route path="/prompt-library" element={<PromptLibrary />} />
+          <Route path="/workflow" element={<Workflow />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/learning" element={<LearningTips />} />
+          <Route path="/deals" element={<AiDeals />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/workshops" element={<WorkshopsPage />} />
+        </Routes>
+      </main>
 
       {/* FOOTER */}
       <Footer />
