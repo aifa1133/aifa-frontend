@@ -111,7 +111,7 @@ const features = [
     title: "Upgrade to Pro Membership",
     desc: "Unlock premium tools, content, and exclusive access. Get priority features and insider opportunities.",
   },
-]
+];
 
 export default function Features() {
   return (
@@ -123,12 +123,21 @@ export default function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="
-            text-[#F0F0F0] text-center
-            font-montserrat font-black
-            text-[20px] leading-[28px]
-            sm:text-[32px] sm:leading-[40px]
-            md:text-[40px] md:leading-[48px]
-          "
+        text-[#F0F0F0]
+        text-center
+
+        font-montserrat
+        font-black
+
+        text-[20px]
+        leading-[28px]
+
+        sm:text-[32px]
+        sm:leading-[40px]
+
+        md:text-[40px]
+        md:leading-[48px]
+      "
         >
           EVERYTHING YOU NEED TO CREATE WITH AI
         </motion.h2>
@@ -136,11 +145,14 @@ export default function Features() {
         {/* GRID */}
         <div
           className="
-            grid
-            grid-cols-1 sm:grid-cols-2 md:grid-cols-3
-            gap-x-[10px] sm:gap-x-[11px]
-            gap-y-[24px] sm:gap-y-[60px]
-          "
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        md:grid-cols-3
+
+        gap-x-[11px]
+        gap-y-[24px] sm:gap-y-[60px]
+      "
         >
           {features.map((item, i) => (
             <motion.div
@@ -149,92 +161,150 @@ export default function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -8 }}
-              className="group relative"
+              className="
+            group
+
+            flex
+            flex-col
+
+            w-full
+
+            bg-transparent
+          "
             >
-              {/* CARD */}
-              <div>
-                {/* IMAGE */}
-                <div className="relative w-full overflow-hidden rounded-[20px] sm:rounded-[72px]">
-                  <motion.img
-                    src={item.image}
-                    alt="feature"
-                    className="
-                      w-full
-                      h-[180px] sm:h-[240px] md:h-[275px]
-                      object-cover
-                    "
-                    whileHover={{ scale: 1.06 }}
-                    transition={{ duration: 0.5 }}
-                  />
+              {/* IMAGE */}
+              <div
+                className="
+    relative
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                </div>
-
-                {/* CONTENT */}
-                <div className="flex flex-col gap-[8px] sm:gap-[12px] p-[16px] sm:p-[20px]">
-                  <h3
-                    className="
-                      text-[#F0F0F0] font-montserrat font-bold
-                      text-[14px] sm:text-[18px]
-                      leading-[22px] sm:leading-[26px]
-                    "
-                  >
-                    {item.title}
-                  </h3>
-
-                  <p
-                    className="
-                      text-[#F0F0F0] font-montserrat font-medium
-                      text-[12px] sm:text-[14px]
-                      leading-[18px] sm:leading-[20px]
-                    "
-                  >
-                   {item.desc}
-                  </p>
-
-                  {/* BUTTON */}
-                 <motion.button
-  whileTap={{ scale: 0.96 }}
-  className="
     flex
-    w-[352px]
+    justify-center
+    items-center
 
-    px-[30px]
-    py-[12px]
+    w-full
+    max-w-[386px]
 
+    h-[275px]
+
+    aspect-[153/109]
+
+    overflow-hidden
+
+    rounded-[48px]
+  "
+              >
+                <motion.img
+                  src={item.image}
+                  alt={item.title}
+                  className="
+      w-full
+      h-full
+
+      object-cover
+    "
+                  whileHover={{ scale: 1.06 }}
+                  transition={{ duration: 0.5 }}
+                />
+
+                {/* OVERLAY */}
+                <div
+                  className="
+                absolute
+                inset-0
+
+                bg-gradient-to-t
+                from-black/70
+                via-transparent
+                to-transparent
+              "
+                />
+              </div>
+
+              {/* CONTENT */}
+              <div
+                className="
+              flex
+              flex-col
+
+              items-start
+
+              gap-[16px]
+
+              pt-[24px]
+
+              w-full
+            "
+              >
+                {/* TITLE */}
+                <h3
+                  className="
+    text-[#F0F0F0]
+
+    font-montserrat
+    text-[20px]
+    font-bold
+    leading-[28px]
+  "
+                >
+                  {item.title}
+                </h3>
+
+                {/* DESCRIPTION */}
+                <p
+                  className="
+    text-[#F0F0F0]
+
+    font-montserrat
+    font-medium
+
+    text-[14px]
+    leading-[20px]
+  "
+                >
+                  {item.desc}
+                </p>
+
+                {/* BUTTON */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  className="
+    flex
     justify-center
     items-center
 
     gap-[4px]
 
     self-stretch
+    w-full
+
+    px-[30px]
+    py-[12px]
 
     rounded-[8px]
 
     bg-[#303133]
 
     text-[#F0F0F0]
+
+    font-montserrat
     text-[14px]
     font-medium
-    font-montserrat
+    leading-[20px]
 
     transition-all
     duration-300
 
     hover:bg-[#3A3B3C]
   "
->
-                    LEARN MORE
-                    <img
-                      src="/Arrowleftnew.svg"
-                      className="w-[12px] sm:w-[14px]"
-                    />
-                  </motion.button>
-                </div>
+                >
+                  LEARN MORE
+                  <img
+                    src="/Arrowleftnew.svg"
+                    alt="arrow"
+                    className="w-[14px] h-[14px] object-contain"
+                  />
+                </motion.button>
               </div>
-
-              {/* GLOW */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/10 blur-2xl rounded-[16px] sm:rounded-[24px]" />
             </motion.div>
           ))}
         </div>
