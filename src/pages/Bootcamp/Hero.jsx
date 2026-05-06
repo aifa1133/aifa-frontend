@@ -96,11 +96,11 @@ export default function Hero() {
                 mb-[28px]
               "
             >
-              Build AI-Powered 
+              Build AI-Powered
               <br />
-               Films An AI 
+              Films An AI
               <br />
-             Fellowship for Creators
+              Fellowship for Creators
             </h1>
 
             <button
@@ -128,8 +128,8 @@ export default function Hero() {
           </div>
 
           {/* RIGHT FEATURES */}
-        <div
-  className="
+          <div
+            className="
     flex-1
     w-full
 
@@ -140,48 +140,30 @@ export default function Hero() {
 
     items-start
   "
->
-  <Feature
-    icon="/bootcampicons/icon1.svg"
-    text="Beginner"
-  />
+          >
+            <Feature icon="/bootcampicons/icon1.svg" text="Beginner" />
 
-  <Feature
-    icon="/bootcampicons/icon2.svg"
-    text="20 Assignments"
-  />
+            <Feature icon="/bootcampicons/icon2.svg" text="20 Assignments" />
 
-  <Feature
-    icon="/bootcampicons/icon3.svg"
-    text="Downloadable Content"
-  />
+            <Feature
+              icon="/bootcampicons/icon3.svg"
+              text="Downloadable Content"
+            />
 
-  <Feature
-    icon="/bootcampicons/icon4.svg"
-    text="Hands-on Training"
-  />
+            <Feature icon="/bootcampicons/icon4.svg" text="Hands-on Training" />
 
-  <Feature
-    icon="/bootcampicons/icon5.svg"
-    text="Portfolio Mentorship"
-  />
+            <Feature
+              icon="/bootcampicons/icon5.svg"
+              text="Portfolio Mentorship"
+            />
 
-  <Feature
-    icon="/bootcampicons/icon6.svg"
-    text="Certificate"
-  />
+            <Feature icon="/bootcampicons/icon6.svg" text="Certificate" />
 
-  <Feature
-    icon="/bootcampicons/icon7.svg"
-    text="Class Recordings"
-  />
+            <Feature icon="/bootcampicons/icon7.svg" text="Class Recordings" />
 
-  <Feature
-    icon="/bootcampicons/icon8.svg"
-    text="1 Month Duration"
-  />
-</div>
-</div>
+            <Feature icon="/bootcampicons/icon8.svg" text="1 Month Duration" />
+          </div>
+        </div>
       </div>
     </section>
   );

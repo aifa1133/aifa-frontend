@@ -138,20 +138,17 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-[#0F1112] border-b border-white/10">
-      {/* <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"> */}
-
       <div
         className="
-  w-full 
-  flex 
-  items-center 
-  justify-between 
-  py-[20px] 
-  px-[16px] 
-  sm:px-[24px] 
-  md:px-[40px] 
-  lg:px-[93px]
-"
+      w-full
+
+      flex
+      items-center
+      justify-between
+
+      px-[93px]
+      py-[20px]
+    "
       >
         {/* LOGO */}
         <h1 className="text-xl font-bold flex items-center gap-2">
@@ -163,7 +160,6 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
             />
           </Link>
           {/* BETA BADGE */}
-         
         </h1>
 
         {/* DESKTOP MENU */}
@@ -246,7 +242,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
           </button>
           <button
             className="flex items-center justify-center gap-[4px]
-  px-[16px] py-[8px]
+  px-[16px] py-[4px]
   border border-[#F0F0F0] rounded-[4px]
   text-[#F0F0F0] font-montserrat font-semibold
   text-[14px] leading-[20px]
@@ -265,7 +261,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
   rounded-[6px]
   transition hover:bg-gray-200 active:scale-[0.97]"
           >
-            Talk to Sales
+            TALK TO SALES
             <img
               src="/Arrowleft2.svg"
               alt="arrow"
