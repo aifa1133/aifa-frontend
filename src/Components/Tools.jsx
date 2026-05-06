@@ -67,6 +67,7 @@ const tools = [
   "/Tools/newicon7.svg",
   "/Tools/newicon8.png",
   "/Tools/newicon9.png",
+    "/Tools/newicon9.png",
 ];
 
 export default function Tools() {
