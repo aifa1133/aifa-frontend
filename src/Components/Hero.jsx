@@ -569,7 +569,7 @@ export default function Hero() {
               px-[24px]
               py-[14px]
 
-              rounded-full
+              rounded-[8px]
 
               bg-white/10
               backdrop-blur-md
