@@ -380,7 +380,7 @@ const slides = [
   },
   {
     video: "/hero/web2.mp4",
-   thumb: "/hero/hero2.jpg",
+    thumb: "/hero/hero2.jpg",
     tag: "MENTORSHIP",
     title: "TRAIN WITH INDUSTRY EXPERTS",
   },
@@ -534,7 +534,7 @@ export default function Hero() {
           </h1>
 
           {/* DESCRIPTION */}
-          {/* <p
+          <p
             className="
               mt-[24px]
 
@@ -554,7 +554,7 @@ export default function Hero() {
             Learn cinematic AI filmmaking, storytelling, editing, visual
             direction, and professional production workflows with industry-level
             mentorship.
-          </p> */}
+          </p>
 
           {/* BUTTON */}
           <button
@@ -591,10 +591,7 @@ export default function Hero() {
               hover:bg-white/20
             "
           >
-             BOOK A FREE 30 MINS CONSULTATION
-           
-            
-          
+            BOOK A FREE 30 MINS CONSULTATION
           </button>
         </div>
       </div>
