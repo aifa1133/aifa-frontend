@@ -50,6 +50,9 @@ export default function WhoSection() {
           gap-[10px]
 
           bg-[#0F1112]
+
+          max-sm:px-[16px]
+          max-sm:py-[40px]
         "
       >
         {/* INNER WRAPPER */}
@@ -64,6 +67,9 @@ export default function WhoSection() {
             items-center
 
             gap-[80px]
+
+            max-sm:grid-cols-1
+            max-sm:gap-[36px]
           "
         >
           {/* LEFT SIDE */}
@@ -75,6 +81,8 @@ export default function WhoSection() {
               items-start
 
               gap-[18px]
+
+              max-sm:gap-[14px]
             "
           >
             {/* SMALL LABEL */}
@@ -89,6 +97,9 @@ export default function WhoSection() {
                 tracking-[1px]
 
                 leading-[28px]
+
+                max-sm:text-[14px]
+                max-sm:leading-[22px]
               "
             >
               WHO IT’S FOR?
@@ -105,6 +116,10 @@ export default function WhoSection() {
                 leading-[72px]
 
                 tracking-[-1.5px]
+
+                max-sm:text-[34px]
+                max-sm:leading-[42px]
+                max-sm:tracking-[-1px]
               "
             >
               RECRUITMENT
@@ -121,6 +136,10 @@ export default function WhoSection() {
 
                 text-[18px]
                 leading-[30px]
+
+                max-sm:max-w-full
+                max-sm:text-[15px]
+                max-sm:leading-[26px]
               "
             >
               Designed for creators, professionals, and beginners looking to
@@ -137,6 +156,8 @@ export default function WhoSection() {
               flex-col
 
               gap-[16px]
+
+              max-sm:gap-[12px]
             "
           >
             {steps.map((step, index) => (
@@ -166,6 +187,10 @@ export default function WhoSection() {
 
                   hover:border-[#D0E46A]
                   hover:translate-x-[6px]
+
+                  max-sm:p-[16px]
+                  max-sm:rounded-[18px]
+                  max-sm:gap-[8px]
                 "
               >
                 {/* TITLE */}
@@ -181,6 +206,9 @@ export default function WhoSection() {
                     leading-[32px]
 
                     tracking-[-0.5px]
+
+                    max-sm:text-[18px]
+                    max-sm:leading-[26px]
                   "
                 >
                   {step.title}
@@ -195,6 +223,9 @@ export default function WhoSection() {
 
                     text-[15px]
                     leading-[24px]
+
+                    max-sm:text-[14px]
+                    max-sm:leading-[22px]
                   "
                 >
                   {step.desc}
