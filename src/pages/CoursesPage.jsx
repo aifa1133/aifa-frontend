@@ -7,55 +7,55 @@ import ProPlanBanner from "./ProPlanBanner";
 const courses = [
   {
     title: "AI Reels & Shorts Masterclass",
-    desc: "Create Engaging Short-Form Videos Using Smart AI Tools.",
+    desc: "Master AI-powered tools to write engaging and impactful scripts.",
     image: "/courses/v1.png",
     duration: "1h 10m",
   },
   {
     title: "AI Social Media Design Course",
-    desc: "Design Scroll-Stopping Social Content With AI Creativity.",
+    desc: "Transform still images into dynamic visuals using AI tools.",
     image: "/courses/v2.png",
     duration: "1h 10m",
   },
   {
     title: "AI Thumbnail Creation Masterclass",
-    desc: "Design High-Converting Thumbnails Using AI-Powered Tools.",
+    desc: "Create realistic AI avatars with advanced editing techniques.",
     image: "/courses/v3.png",
     duration: "1h 10m",
   },
   {
     title: "AI Video Editing Masterclass",
-    desc: "Master cinematic editing using AI tools and workflows.",
+    desc: "Design stunning virtual fashion models using AI technology.",
     image: "/courses/v4.png",
     duration: "2h 00m",
   },
   {
     title: "AI Content Creation Bootcamp",
-    desc: "Build high-quality content using AI automation tools.",
+    desc: "Restore and enhance colors in photos with AI precision.",
     image: "/courses/v5.png",
     duration: "1h 30m",
   },
   {
     title: "AI Cinematic Storytelling",
-    desc: "Learn storytelling techniques with AI filmmaking.",
+    desc: "Enhance facial details and clarity using powerful AI tools.",
     image: "/courses/v6.png",
     duration: "2h 15m",
   },
   {
     title: "AI Scriptwriting Masterclass",
-    desc: "Craft compelling scripts using AI writing tools.",
+    desc: "Build intelligent workflows and automate tasks using AI tools.",
     image: "/courses/v7.png",
     duration: "1h 45m",
   },
   {
     title: "AI Visual Effects Course",
-    desc: "Create stunning VFX using AI-powered software.",
+    desc: "Create stunning AI-generated videos with cinematic precision.",
     image: "/courses/v8.png",
     duration: "2h 30m",
   },
   {
     title: "AI Sound Design Masterclass",
-    desc: "Design immersive soundscapes with AI audio tools.",
+    desc: "Generate immersive backgrounds and scenes using AI tools.",
     image: "/courses/v9.png",
     duration: "1h 20m",
   },
@@ -404,18 +404,16 @@ export default function CoursesPage() {
                     {/* TITLE */}
                     <h3
                       className="
-                        text-[#F0F0F0]
+    text-[#F0F0F0]
 
-                        font-black
+    font-[Montserrat]
+    text-[18px]
+    font-semibold
+    leading-[28px]
 
-                        text-[22px]
-                        leading-[30px]
-
-                        tracking-[-0.5px]
-
-                        max-sm:text-[18px]
-                        max-sm:leading-[26px]
-                      "
+    max-sm:text-[16px]
+    max-sm:leading-[24px]
+  "
                     >
                       {course.title}
                     </h3>
@@ -423,50 +421,61 @@ export default function CoursesPage() {
                     {/* DESCRIPTION */}
                     <p
                       className="
-                        text-[#A9A9A9]
+    self-stretch
+    max-h-[48px]
 
-                        text-[14px]
-                        leading-[22px]
-                      "
+    text-[#767779]
+
+    font-[Montserrat]
+    text-[16px]
+    font-normal
+    leading-[24px]
+
+    [font-feature-settings:'case'_on]
+
+    overflow-hidden
+  "
                     >
                       {course.desc}
                     </p>
-
                     {/* PRICE */}
-                    <div
-                      className="
-                        flex
-                        items-center
+                   <div
+  className="
+    flex
+    items-center
+    gap-[8px]
+    self-stretch
+    mt-auto
+  "
+>
+  <span
+    className="
+      text-[#C7E36B]
 
-                        gap-[10px]
+      font-[Montserrat]
+      text-[14px]
+      font-semibold
+      leading-[22px]
+    "
+  >
+    95% off
+  </span>
 
-                        mt-auto
-                      "
-                    >
-                      <span
-                        className="
-                          text-[#C7E36B]
+  <span
+    className="
+      line-through
 
-                          text-[14px]
-                          font-semibold
-                        "
-                      >
-                        95% off
-                      </span>
+      text-[#6F6F6F]
 
-                      <span
-                        className="
-                          line-through
-
-                          text-[#6F6F6F]
-
-                          text-[14px]
-                        "
-                      >
-                        ₹799
-                      </span>
-                    </div>
-
+      font-[Montserrat]
+      text-[14px]
+      font-normal
+      leading-[22px]
+    "
+  >
+    ₹799
+  </span>
+</div>
                     {/* BUTTON */}
                     <button
                       className="
