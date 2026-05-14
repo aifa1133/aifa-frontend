@@ -6,282 +6,280 @@ const testimonials = [
   {
     name: "Prerna Singh",
     role: "AI Filmmaker & Creator",
-    text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects. His focus is on turning complex AI workflows into simple, repeatable systems that empower storytellers to produce professional-quality content.",
     img: "/test1.png",
   },
   {
     name: "David Robert",
     role: "Content Creator",
-    text: "The course structure was incredibly practical and easy to follow. I started creating professional AI ads within weeks and landed freelance projects shortly after.",
+    text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects. His focus is on turning complex AI workflows into simple, repeatable systems that empower storytellers to produce professional-quality content.",
     img: "/test1.png",
   },
   {
     name: "Tejasvi Kalbu",
     role: "Visual Designer",
-    text: "What stood out most was the mentorship and workflow clarity. Every module felt premium and directly applicable to real-world creative work.",
+    text: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects. His focus is on turning complex AI workflows into simple, repeatable systems that empower storytellers to produce professional-quality content.",
     img: "/test1.png",
   },
 ];
 
 export default function TestimonialsSection() {
   return (
-    <section
-      className="
-        w-full
-        bg-[#0F1112]
-
-        flex
-        justify-center
-      "
-    >
-      {/* FIGMA EXACT CONTAINER */}
+    <section className="w-full bg-[#0D0F10] flex justify-center overflow-hidden">
       <div
         className="
           w-full
-          max-w-[1366px]
+          max-w-[1400px]
 
-          px-[93px]
-          py-[64px]
+          px-5
+          sm:px-8
+          md:px-12
+          lg:px-[80px]
 
-          flex
-          flex-col
-
-          justify-center
-          items-center
-
-          gap-[10px]
+          py-[80px]
         "
       >
-        {/* INNER WRAPPER */}
-        <div
-          className="
-            w-full
-            max-w-[1180px]
-
-            flex
-            flex-col
-
-            gap-[48px]
-          "
-        >
-          {/* HEADER */}
-          <div
-            className="
-              relative
-
-              flex
-              flex-col
-
-              items-center
-
-              gap-[14px]
-            "
-          >
-            {/* SMALL TEXT */}
-            <p
-              className="
-                text-[#D0E46A]
-
-                text-[16px]
-                font-bold
-
-                uppercase
-
-                tracking-[1px]
-
-                leading-[24px]
-              "
-            >
-              TESTIMONIALS
-            </p>
-
-            {/* HEADING */}
-            <h2
-              className="
-                text-[#F0F0F0]
-
-                text-center
-
-                font-black
-
-                text-[64px]
-                leading-[72px]
-
-                tracking-[-1.5px]
-              "
-            >
-              HEAR WHAT OUR
-              <br />
-              TRAINEES SAY
-            </h2>
-
-            {/* BUTTON */}
-            <button
-              className="
-                absolute
-                right-0
-                top-1/2
-
-                -translate-y-1/2
-
-                flex
-                items-center
-                justify-center
-
-                w-[58px]
-                h-[58px]
-
-                rounded-full
-
-                bg-[#D0E46A]
-
-                text-black
-
-                transition-all
-                duration-300
-
-                hover:scale-[1.05]
-              "
-            >
-              <FaArrowRight className="text-[18px]" />
-            </button>
-          </div>
-
-          {/* TESTIMONIAL GRID */}
-         {/* TESTIMONIAL GRID */}
-<div
-  className="
-    grid
-    grid-cols-3
-
-    gap-[20px]
-  "
->
-  {testimonials.map((item, index) => (
-    <div
-      key={index}
-      className="
-        flex
-        flex-col
-
-        rounded-[20px]
-
-        overflow-hidden
-
-        border
-        border-[#343638]
-
-        transition-all
-        duration-500
-
-        hover:border-[#D0E46A]
-        hover:translate-y-[-6px]
-      "
-    >
-      {/* TOP CONTENT BOX */}
-      <div
-        className="
-          flex
-          flex-col
-
-          items-start
-
-          gap-[10px]
-
-          self-stretch
-
-          p-[24px]
-
-          rounded-t-[20px]
-
-          bg-[#282A2C]
-
-          min-h-[220px]
-        "
-      >
-        {/* TEXT */}
-        <p
-          className="
-            text-[#E4E4E4]
-
-            text-[18px]
-            leading-[32px]
-
-            font-medium
-          "
-        >
-          “{item.text}”
-        </p>
-      </div>
-
-      {/* BOTTOM USER BOX */}
-      <div
-        className="
-          flex
-          items-center
-
-          gap-[14px]
-
-          px-[24px]
-          py-[20px]
-
-          bg-[#1E2022]
-
-          border-t
-          border-[#3A3D3F]
-        "
-      >
-        {/* IMAGE */}
-        <img
-          src={item.img}
-          alt={item.name}
-          className="
-            w-[60px]
-            h-[60px]
-
-            rounded-full
-
-            object-cover
-          "
-        />
-
-        {/* INFO */}
-        <div
-          className="
-            flex
-            flex-col
-
-            gap-[2px]
-          "
-        >
-          <h4
-            className="
-              text-[#F0F0F0]
-
-              font-black
-
-              text-[22px]
-              leading-[28px]
-            "
-          >
-            {item.name}
-          </h4>
-
+        {/* HEADER */}
+        <div className="relative flex flex-col items-center mb-[60px]">
+          {/* TOP LABEL */}
           <p
             className="
-              text-[#B0B0B0]
+              text-[#D0E46A]
+              uppercase
+              tracking-[3px]
 
-              text-[14px]
-              leading-[22px]
+              text-[13px]
+              sm:text-[14px]
+
+              font-bold
+
+              mb-4
             "
           >
-            {item.role}
+            Testimonials
           </p>
+
+          {/* HEADING */}
+          <h2
+            className="
+              text-center
+              uppercase
+
+              text-[#F0F0F0]
+
+              font-[Montserrat]
+              font-black
+
+              tracking-[-2px]
+
+              text-[30px]
+              sm:text-[40px]
+              md:text-[52px]
+              lg:text-[64px]
+
+              leading-[38px]
+              sm:leading-[48px]
+              md:leading-[60px]
+              lg:leading-[72px]
+            "
+          >
+            HEAR WHAT OUR
+            <br />
+            TRAINEES HAVE TO SAY
+          </h2>
+
+          {/* GLOW */}
+          <div
+            className="
+              absolute
+              top-[30%]
+
+              w-[280px]
+              h-[120px]
+
+              bg-[#D0E46A]
+
+              opacity-10
+              blur-[100px]
+
+              rounded-full
+            "
+          ></div>
+
+          {/* BUTTON */}
+        <button
+  className="
+    absolute
+    right-0
+    top-1/2
+
+    -translate-y-1/2
+
+    hidden
+    lg:flex
+
+    items-center
+    justify-center
+
+    px-[30px]
+    py-[12px]
+
+    gap-[8px]
+
+    rounded-[12px]
+
+    bg-[#D0E46A]
+
+    text-black
+
+    transition-all
+    duration-300
+
+    hover:scale-[1.04]
+    hover:shadow-[0_0_30px_rgba(208,228,106,0.35)]
+  "
+>
+  <FaArrowRight className="text-[18px]" />
+</button>
         </div>
-      </div>
-    </div>
-  ))}
-</div>
+
+        {/* GRID */}
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            lg:grid-cols-3
+
+            gap-6
+          "
+        >
+          {testimonials.map((item, index) => (
+            <div
+              key={index}
+              className="
+                group
+                relative
+
+                rounded-[28px]
+
+                border
+                border-[#2B2D2F]
+
+                bg-[#161819]/80
+                backdrop-blur-xl
+
+                overflow-hidden
+
+                transition-all
+                duration-500
+
+                hover:border-[#D0E46A]
+                hover:-translate-y-2
+              "
+            >
+              {/* CARD GLOW */}
+              <div
+                className="
+                  absolute
+                  inset-0
+
+                  opacity-0
+                  group-hover:opacity-100
+
+                  transition-all
+                  duration-500
+
+                  bg-gradient-to-b
+                  from-[#D0E46A10]
+                  to-transparent
+                "
+              ></div>
+
+              {/* CONTENT */}
+              <div className="relative p-[28px] min-h-[280px]">
+                <p
+                  className="
+                    text-[#E7E7E7]
+
+                    text-[17px]
+                    sm:text-[18px]
+
+                    leading-[32px]
+
+                    font-medium
+                  "
+                >
+                  “{item.text}”
+                </p>
+              </div>
+
+              {/* USER */}
+              <div
+                className="
+                  relative
+
+                  flex
+                  items-center
+
+                  gap-4
+
+                  px-[28px]
+                  py-[24px]
+
+                  border-t
+                  border-[#2F3234]
+
+                  bg-[#1A1C1D]
+                "
+              >
+                <img
+                  src={item.img}
+                  alt={item.name}
+                  className="
+                    w-[64px]
+                    h-[64px]
+
+                    rounded-full
+
+                    object-cover
+
+                    border
+                    border-[#3A3D3F]
+                  "
+                />
+
+                <div>
+                  <h4
+                    className="
+                      text-[#F0F0F0]
+
+                      font-black
+
+                      text-[20px]
+                      sm:text-[22px]
+
+                      leading-[28px]
+                    "
+                  >
+                    {item.name}
+                  </h4>
+
+                  <p
+                    className="
+                      text-[#A9A9A9]
+
+                      text-[14px]
+
+                      leading-[22px]
+                    "
+                  >
+                    {item.role}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

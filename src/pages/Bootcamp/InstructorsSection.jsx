@@ -6,21 +6,21 @@ const instructors = [
     img: "/insta1.png",
     short:
       "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
-    long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects. His focus is on turning complex AI workflows into simple, repeatable systems that empower storytellers to produce professional-quality content.",
   },
   {
     name: "SHERIN",
     img: "/insta2.png",
     short:
       "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
-    long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects. His focus is on turning complex AI workflows into simple, repeatable systems that empower storytellers to produce professional-quality content.",
   },
   {
     name: "ARUN KUMAR",
     img: "/insta3.png",
     short:
       "Ravi Teja is an AI Filmmaker and creative technologist, and one of the lead instructors at AIFA.",
-    long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects.",
+    long: "He specializes in helping creators transform ideas into cinematic visuals using AI—leveraging emerging tools not just for experimentation, but to build real-world, monetizable creative projects. His focus is on turning complex AI workflows into simple, repeatable systems that empower storytellers to produce professional-quality content.",
   },
 ];
 
@@ -39,19 +39,29 @@ export default function InstructorsSection() {
         {/* HEADING */}
         <h2
           className="
-          text-[#F0F0F0]
-          font-black
+    relative
+    inline-block
 
-          text-[24px]
-          sm:text-[32px]
-          md:text-[40px]
+    text-[#F0F0F0]
+    font-black
+    uppercase
+    tracking-[-1px]
 
-          leading-[30px]
-          sm:leading-[38px]
-          md:leading-[48px]
-        "
+    text-[26px]
+    sm:text-[34px]
+    md:text-[40px]
+
+    leading-[34px]
+    sm:leading-[42px]
+    md:leading-[48px]
+
+    font-[Montserrat]
+  "
         >
-          GET TO KNOW OUR INSTRUCTORS
+          <span className="relative z-10">GET TO KNOW OUR INSTRUCTORS</span>
+
+          {/* Glow Effect */}
+        
         </h2>
 
         {/* GRID */}
@@ -66,7 +76,7 @@ export default function InstructorsSection() {
             <div
               key={index}
               className="
-                bg-gradient-to-b from-[#1A1F2E] to-[#0F172A]
+                bg-[#282A2C]
                 border border-white/10
                 rounded-[16px]
                 overflow-hidden
