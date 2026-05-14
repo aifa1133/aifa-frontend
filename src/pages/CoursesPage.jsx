@@ -497,7 +497,7 @@ export default function CoursesPage() {
     hover:bg-white
   "
                     >
-                      Buy ₹49.00
+                      BUY ₹399.00
                     </button>
                   </div>
                 </div>
