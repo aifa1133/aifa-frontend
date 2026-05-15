@@ -2,7 +2,8 @@
 
 export default function ServicesPage() {
   return (
-    <div className="bg-[#0F1112] text-white w-full">
+    <div className="bg-[#0F1112] text-white w-full overflow-hidden">
+      
       {/* 🔥 HERO */}
       <section
         className="
@@ -10,77 +11,119 @@ export default function ServicesPage() {
           justify-center
           items-center
           gap-[10px]
-          self-stretch
-          px-[10px]
+
+          px-[16px]
+          sm:px-[24px]
+          md:px-[40px]
+          lg:px-[60px]
+          xl:px-[93px]
+
           py-[64px]
+
           bg-[#0F1112]
         "
       >
-        <div className="w-full max-w-7xl">
+        <div className="w-full max-w-[1180px]">
+          
+          {/* TITLE */}
           <h1
             className="
-      text-[#F0F0F0]
-      text-center
-      font-[Montserrat]
-      text-[64px]
-      not-italic
-      font-[900]
-      leading-[70px]
-      mb-12
-    "
+              text-[#F0F0F0]
+              text-center
+              font-[Montserrat]
+
+              text-[34px]
+              leading-[42px]
+
+              sm:text-[48px]
+              sm:leading-[56px]
+
+              lg:text-[64px]
+              lg:leading-[70px]
+
+              not-italic
+              font-[900]
+
+              mb-12
+            "
           >
             AI Services for Creators, Teams & Businesses
           </h1>
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div className="overflow-hidden rounded-[100px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[40px] items-center">
+            
+            {/* IMAGE */}
+            <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px]">
               <img
                 src="/3Dai/ai3d1.jpg"
                 alt="AI 3D"
-                className="w-full h-[306px] rounded-[200px] object-cover"
+                className="
+                  w-full
+                  h-[260px]
+                  sm:h-[320px]
+                  md:h-[306px]
+
+                  rounded-[40px]
+                  sm:rounded-[70px]
+                  lg:rounded-[200px]
+
+                  object-cover
+                "
               />
             </div>
 
+            {/* CONTENT */}
             <div>
+              
               <p
                 className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[18px]
-    not-italic
-    font-[700]
-    leading-[28px]
-    mb-2
-  "
+                  text-[#F0F0F0]
+                  font-[Montserrat]
+                  text-[18px]
+                  not-italic
+                  font-[700]
+                  leading-[28px]
+                  mb-2
+                "
               >
                 FOR TEAMS & ORGANISATIONS
               </p>
 
               <h2
                 className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[48px]
-    not-italic
-    font-[900]
-    leading-[56px]
-    mb-4
-  "
+                  text-[#F0F0F0]
+                  font-[Montserrat]
+
+                  text-[32px]
+                  leading-[40px]
+
+                  sm:text-[40px]
+                  sm:leading-[48px]
+
+                  lg:text-[48px]
+                  lg:leading-[56px]
+
+                  not-italic
+                  font-[900]
+
+                  mb-4
+                "
               >
                 Corporate <br />
                 & Institutional <br />
                 Training
               </h2>
+
               <p
                 className="
-    text-[#DCDCDC]
-    font-[Montserrat]
-    text-[16px]
-    not-italic
-    font-[500]
-    leading-[24px]
-    mb-6
-  "
+                  text-[#DCDCDC]
+                  font-[Montserrat]
+                  text-[16px]
+                  not-italic
+                  font-[500]
+                  leading-[24px]
+                  mb-6
+                "
                 style={{
                   fontKerning: "none",
                   fontFeatureSettings: "'liga' off",
@@ -92,24 +135,24 @@ export default function ServicesPage() {
 
               <button
                 className="
-    flex
-    justify-center
-    items-center
-    gap-[4px]
-    px-[16px]
-    py-[8px]
-    rounded-[4px]
-    bg-[#D0E46A]
-  "
+                  flex
+                  justify-center
+                  items-center
+                  gap-[4px]
+                  px-[16px]
+                  py-[8px]
+                  rounded-[4px]
+                  bg-[#D0E46A]
+                "
               >
                 <span
                   className="
-      text-black
-      font-[Montserrat]
-      text-[16px]
-      font-[500]
-      leading-[24px]
-    "
+                    text-black
+                    font-[Montserrat]
+                    text-[16px]
+                    font-[500]
+                    leading-[24px]
+                  "
                 >
                   Talk to Us
                 </span>
@@ -132,52 +175,71 @@ export default function ServicesPage() {
           justify-center
           items-center
           gap-[10px]
-          self-stretch
-          px-[10px]
+
+          px-[16px]
+          sm:px-[24px]
+          md:px-[40px]
+          lg:px-[60px]
+          xl:px-[93px]
+
           py-[64px]
+
           bg-[#0F1112]
         "
       >
-        <div className="w-full max-w-7xl grid md:grid-cols-2 gap-10 items-center">
-          <div>
+        <div className="w-full max-w-[1180px] grid grid-cols-1 md:grid-cols-2 gap-[40px] items-center">
+          
+          {/* CONTENT */}
+          <div className="order-2 md:order-1">
+            
             <p
               className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[18px]
-    not-italic
-    font-[700]
-    leading-[28px]
-    mb-2
-  "
+                text-[#F0F0F0]
+                font-[Montserrat]
+                text-[18px]
+                not-italic
+                font-[700]
+                leading-[28px]
+                mb-2
+              "
             >
               FOR SCHOOLS & INSTITUTIONS
             </p>
 
             <h2
               className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[48px]
-    not-italic
-    font-[900]
-    leading-[56px]
-    mb-4
-  "
+                text-[#F0F0F0]
+                font-[Montserrat]
+
+                text-[32px]
+                leading-[40px]
+
+                sm:text-[40px]
+                sm:leading-[48px]
+
+                lg:text-[48px]
+                lg:leading-[56px]
+
+                not-italic
+                font-[900]
+
+                mb-4
+              "
             >
-              Curriculum <br /> Consulting
+              Curriculum <br />
+              Consulting
             </h2>
 
             <p
               className="
-    text-[#DCDCDC]
-    font-[Montserrat]
-    text-[16px]
-    not-italic
-    font-[500]
-    leading-[24px]
-    mb-6
-  "
+                text-[#DCDCDC]
+                font-[Montserrat]
+                text-[16px]
+                not-italic
+                font-[500]
+                leading-[24px]
+                mb-6
+              "
               style={{
                 fontKerning: "none",
                 fontFeatureSettings: "'liga' off",
@@ -189,36 +251,53 @@ export default function ServicesPage() {
 
             <button
               className="
-    flex
-    justify-center
-    items-center
-    gap-[4px]
-    px-[16px]
-    py-[8px]
-    rounded-[4px]
-    bg-[#D0E46A]
-  "
+                flex
+                justify-center
+                items-center
+                gap-[4px]
+                px-[16px]
+                py-[8px]
+                rounded-[4px]
+                bg-[#D0E46A]
+              "
             >
               <span
                 className="
-      text-black
-      font-[Montserrat]
-      text-[16px]
-      font-[500]
-      leading-[24px]
-    "
+                  text-black
+                  font-[Montserrat]
+                  text-[16px]
+                  font-[500]
+                  leading-[24px]
+                "
               >
                 Talk to Us
               </span>
 
-              <img src="/Arrowleft2.svg" alt="" className="w-[24px] h-[24px]" />
+              <img
+                src="/Arrowleft2.svg"
+                alt=""
+                className="w-[24px] h-[24px]"
+              />
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-[100px]">
+          {/* IMAGE */}
+          <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px] order-1 md:order-2">
             <img
               src="/3Dai/ai3d2.jpg"
-              className="w-full h-[306px] rounded-[200px] object-cover"
+              alt=""
+              className="
+                w-full
+                h-[260px]
+                sm:h-[320px]
+                md:h-[306px]
+
+                rounded-[40px]
+                sm:rounded-[70px]
+                lg:rounded-[200px]
+
+                object-cover
+              "
             />
           </div>
         </div>
@@ -231,45 +310,76 @@ export default function ServicesPage() {
           justify-center
           items-center
           gap-[10px]
-          self-stretch
-          px-[10px]
+
+          px-[16px]
+          sm:px-[24px]
+          md:px-[40px]
+          lg:px-[60px]
+          xl:px-[93px]
+
           py-[64px]
+
           bg-[#0F1112]
         "
       >
-        <div className="w-full max-w-7xl grid md:grid-cols-2 gap-10 items-center">
-          <div className="overflow-hidden rounded-[100px]">
+        <div className="w-full max-w-[1180px] grid grid-cols-1 md:grid-cols-2 gap-[40px] items-center">
+          
+          {/* IMAGE */}
+          <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px]">
             <img
               src="/3Dai/ai3d3.jpg"
-              className="w-full h-[306px] rounded-[200px] object-cover"
+              alt=""
+              className="
+                w-full
+                h-[260px]
+                sm:h-[320px]
+                md:h-[306px]
+
+                rounded-[40px]
+                sm:rounded-[70px]
+                lg:rounded-[200px]
+
+                object-cover
+              "
             />
           </div>
 
+          {/* CONTENT */}
           <div>
+            
             <p
               className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[18px]
-    not-italic
-    font-[700]
-    leading-[28px]
-    mb-2
-  "
+                text-[#F0F0F0]
+                font-[Montserrat]
+                text-[18px]
+                not-italic
+                font-[700]
+                leading-[28px]
+                mb-2
+              "
             >
               FOR CREATORS & TEAMS
             </p>
 
             <h2
               className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[48px]
-    not-italic
-    font-[900]
-    leading-[56px]
-    mb-4
-  "
+                text-[#F0F0F0]
+                font-[Montserrat]
+
+                text-[32px]
+                leading-[40px]
+
+                sm:text-[40px]
+                sm:leading-[48px]
+
+                lg:text-[48px]
+                lg:leading-[56px]
+
+                not-italic
+                font-[900]
+
+                mb-4
+              "
             >
               Production <br />
               Support
@@ -277,14 +387,14 @@ export default function ServicesPage() {
 
             <p
               className="
-    text-[#DCDCDC]
-    font-[Montserrat]
-    text-[16px]
-    not-italic
-    font-[500]
-    leading-[24px]
-    mb-6
-  "
+                text-[#DCDCDC]
+                font-[Montserrat]
+                text-[16px]
+                not-italic
+                font-[500]
+                leading-[24px]
+                mb-6
+              "
               style={{
                 fontKerning: "none",
                 fontFeatureSettings: "'liga' off",
@@ -296,29 +406,33 @@ export default function ServicesPage() {
 
             <button
               className="
-    flex
-    justify-center
-    items-center
-    gap-[4px]
-    px-[16px]
-    py-[8px]
-    rounded-[4px]
-    bg-[#D0E46A]
-  "
+                flex
+                justify-center
+                items-center
+                gap-[4px]
+                px-[16px]
+                py-[8px]
+                rounded-[4px]
+                bg-[#D0E46A]
+              "
             >
               <span
                 className="
-      text-black
-      font-[Montserrat]
-      text-[16px]
-      font-[500]
-      leading-[24px]
-    "
+                  text-black
+                  font-[Montserrat]
+                  text-[16px]
+                  font-[500]
+                  leading-[24px]
+                "
               >
                 Talk to Us
               </span>
 
-              <img src="/Arrowleft2.svg" alt="" className="w-[24px] h-[24px]" />
+              <img
+                src="/Arrowleft2.svg"
+                alt=""
+                className="w-[24px] h-[24px]"
+              />
             </button>
           </div>
         </div>
@@ -331,52 +445,71 @@ export default function ServicesPage() {
           justify-center
           items-center
           gap-[10px]
-          self-stretch
-          px-[10px]
+
+          px-[16px]
+          sm:px-[24px]
+          md:px-[40px]
+          lg:px-[60px]
+          xl:px-[93px]
+
           py-[64px]
+
           bg-[#0F1112]
         "
       >
-        <div className="w-full max-w-7xl grid md:grid-cols-2 gap-10 items-center">
-          <div>
+        <div className="w-full max-w-[1180px] grid grid-cols-1 md:grid-cols-2 gap-[40px] items-center">
+          
+          {/* CONTENT */}
+          <div className="order-2 md:order-1">
+            
             <p
               className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[18px]
-    not-italic
-    font-[700]
-    leading-[28px]
-    mb-2
-  "
+                text-[#F0F0F0]
+                font-[Montserrat]
+                text-[18px]
+                not-italic
+                font-[700]
+                leading-[28px]
+                mb-2
+              "
             >
               FOR BRANDS & BUSINESSES
             </p>
 
             <h2
               className="
-    text-[#F0F0F0]
-    font-[Montserrat]
-    text-[48px]
-    not-italic
-    font-[900]
-    leading-[56px]
-    mb-4
-  "
+                text-[#F0F0F0]
+                font-[Montserrat]
+
+                text-[32px]
+                leading-[40px]
+
+                sm:text-[40px]
+                sm:leading-[48px]
+
+                lg:text-[48px]
+                lg:leading-[56px]
+
+                not-italic
+                font-[900]
+
+                mb-4
+              "
             >
-              AI Content <br /> Production
+              AI Content <br />
+              Production
             </h2>
 
             <p
               className="
-    text-[#DCDCDC]
-    font-[Montserrat]
-    text-[16px]
-    not-italic
-    font-[500]
-    leading-[24px]
-    mb-6
-  "
+                text-[#DCDCDC]
+                font-[Montserrat]
+                text-[16px]
+                not-italic
+                font-[500]
+                leading-[24px]
+                mb-6
+              "
               style={{
                 fontKerning: "none",
                 fontFeatureSettings: "'liga' off",
@@ -388,40 +521,58 @@ export default function ServicesPage() {
 
             <button
               className="
-    flex
-    justify-center
-    items-center
-    gap-[4px]
-    px-[16px]
-    py-[8px]
-    rounded-[4px]
-    bg-[#D0E46A]
-  "
+                flex
+                justify-center
+                items-center
+                gap-[4px]
+                px-[16px]
+                py-[8px]
+                rounded-[4px]
+                bg-[#D0E46A]
+              "
             >
               <span
                 className="
-      text-black
-      font-[Montserrat]
-      text-[16px]
-      font-[500]
-      leading-[24px]
-    "
+                  text-black
+                  font-[Montserrat]
+                  text-[16px]
+                  font-[500]
+                  leading-[24px]
+                "
               >
                 Talk to Us
               </span>
 
-              <img src="/Arrowleft2.svg" alt="" className="w-[24px] h-[24px]" />
+              <img
+                src="/Arrowleft2.svg"
+                alt=""
+                className="w-[24px] h-[24px]"
+              />
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-[100px]">
+          {/* IMAGE */}
+          <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px] order-1 md:order-2">
             <img
               src="/3Dai/ai3d4.png"
-              className="w-full h-[306px] rounded-[200px] object-cover"
+              alt=""
+              className="
+                w-full
+                h-[260px]
+                sm:h-[320px]
+                md:h-[306px]
+
+                rounded-[40px]
+                sm:rounded-[70px]
+                lg:rounded-[200px]
+
+                object-cover
+              "
             />
           </div>
         </div>
       </section>
+
 
 
       {/* 🔥 CONTACT FORM */}
