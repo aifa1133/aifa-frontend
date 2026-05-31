@@ -1,6 +1,15 @@
 "use client";
+import { useRef } from "react";
 
 export default function ServicesPage() {
+  const contactRef = useRef(null);
+
+const scrollToContact = () => {
+  contactRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
   return (
     <div className="bg-[#0F1112] text-white w-full overflow-hidden">
       
@@ -134,6 +143,7 @@ export default function ServicesPage() {
               </p>
 
               <button
+              onClick={scrollToContact}
                 className="
                   flex
                   justify-center
@@ -143,6 +153,7 @@ export default function ServicesPage() {
                   py-[8px]
                   rounded-[4px]
                   bg-[#D0E46A]
+                 hover:bg-[#c1d05a] cursor-pointer
                 "
               >
                 <span
@@ -250,6 +261,7 @@ export default function ServicesPage() {
             </p>
 
             <button
+             onClick={scrollToContact}
               className="
                 flex
                 justify-center
@@ -259,6 +271,7 @@ export default function ServicesPage() {
                 py-[8px]
                 rounded-[4px]
                 bg-[#D0E46A]
+                hover:cursor-pointer hover:bg-[#c1d05a]
               "
             >
               <span
@@ -405,6 +418,7 @@ export default function ServicesPage() {
             </p>
 
             <button
+              onClick={scrollToContact}
               className="
                 flex
                 justify-center
@@ -414,6 +428,7 @@ export default function ServicesPage() {
                 py-[8px]
                 rounded-[4px]
                 bg-[#D0E46A]
+                hover:bg-[#c1d05a] cursor-pointer
               "
             >
               <span
@@ -520,6 +535,7 @@ export default function ServicesPage() {
             </p>
 
             <button
+              onClick={scrollToContact}
               className="
                 flex
                 justify-center
@@ -529,6 +545,7 @@ export default function ServicesPage() {
                 py-[8px]
                 rounded-[4px]
                 bg-[#D0E46A]
+                hover:bg-[#c1d05a] cursor-pointer
               "
             >
               <span
@@ -576,7 +593,7 @@ export default function ServicesPage() {
 
 
       {/* 🔥 CONTACT FORM */}
-      <section
+      <section ref={contactRef}
         className="
     flex
     w-full
@@ -775,7 +792,7 @@ export default function ServicesPage() {
         font-medium
       "
           >
-            NEXT
+            SUBMIT
           </button>
         </div>
       </section>
