@@ -143,10 +143,11 @@ import Challenges from "./pages/Challenges";
 import Awards from "./pages/Awards";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 import CoursePlayer from "./pages/CoursePlayer";
 import ResetPassword from "./pages/ResetPassword";
 
-const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/reset-password"];
+const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/reset-password"];
 
 function AppShell() {
   const [showLogin, setShowLogin] = useState(false);
@@ -187,6 +188,7 @@ function AppShell() {
           <Route path="/awards" element={<Awards />} />
           <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/courses/:id/watch" element={<CoursePlayer />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
