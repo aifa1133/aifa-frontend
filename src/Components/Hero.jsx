@@ -427,6 +427,7 @@ export default function Hero() {
     <section className="relative w-full h-screen overflow-hidden bg-black">
       {/* MAIN VIDEO */}
       <video
+        key={slides[active].video}
         ref={videoRef}
         autoPlay
         muted
