@@ -189,9 +189,12 @@ export default function StudentDashboard() {
             <div className="relative" ref={userRef}>
               <button
                 onClick={() => { setShowUserMenu(!showUserMenu); setShowNotif(false); }}
-                className="w-8 h-8 rounded-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center hover:opacity-90 transition-all"
+                className="w-8 h-8 rounded-full overflow-hidden hover:opacity-90 transition-all shrink-0"
               >
-                {userInitial}
+                {profile?.profilePicture
+                  ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                  : <span className="w-full h-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center">{userInitial}</span>
+                }
               </button>
               {showUserMenu && (
                 <UserMenuDropdown
@@ -1276,18 +1279,37 @@ function InvoiceView({ item, onBack }) {
    PROFILE SECTION
 ════════════════════════════════════════════ */
 function ProfileSection({ profile, token, onUpdated }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(profile?.name || "");
-  const [phone, setPhone] = useState(profile?.phone || "");
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [editing, setEditing]       = useState(false);
+  const [name, setName]             = useState(profile?.name || "");
+  const [phone, setPhone]           = useState(profile?.phone || "");
+  const [linkedin, setLinkedin]     = useState(profile?.socialLinks?.linkedin || "");
+  const [instagram, setInstagram]   = useState(profile?.socialLinks?.instagram || "");
+  const [portfolio, setPortfolio]   = useState(profile?.socialLinks?.portfolio || "");
+  const [saving, setSaving]         = useState(false);
+  const [msg, setMsg]               = useState("");
+  const [uploading, setUploading]   = useState(false);
+  const fileRef = useRef(null);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("avatar", file);
+    try {
+      const res = await fetch("/api/users/me/avatar", { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const data = await res.json();
+      if (res.ok) { onUpdated(data.user); }
+    } catch {}
+    setUploading(false);
+  };
 
   const handleSave = async () => {
     setSaving(true); setMsg("");
     const res = await fetch("/api/users/me", {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name, phone }),
+      body: JSON.stringify({ name, phone, socialLinks: { linkedin, instagram, portfolio } }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -1299,6 +1321,8 @@ function ProfileSection({ profile, token, onUpdated }) {
   };
 
   const memberId = `AIFA-${String(profile?._id || "98234").slice(-5).toUpperCase()}`;
+  const avatarSrc = profile?.profilePicture;
+  const initial = (profile?.name || "A")[0].toUpperCase();
 
   return (
     <div className="p-6 bg-[#F5F7FA] min-h-full">
@@ -1307,7 +1331,8 @@ function ProfileSection({ profile, token, onUpdated }) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-gray-900">Personal Information</h2>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800">
+            <button onClick={() => { setName(profile?.name||""); setPhone(profile?.phone||""); setLinkedin(profile?.socialLinks?.linkedin||""); setInstagram(profile?.socialLinks?.instagram||""); setPortfolio(profile?.socialLinks?.portfolio||""); setEditing(true); }}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800">
               <Ic name="edit" size={14} />Edit
             </button>
           )}
@@ -1315,12 +1340,21 @@ function ProfileSection({ profile, token, onUpdated }) {
 
         {editing ? (
           <div>
+            {/* Avatar picker */}
             <div className="flex flex-col items-center mb-6">
-              <div className="w-20 h-20 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-2xl font-bold mb-3">
-                {(name || profile?.name || "A")[0].toUpperCase()}
+              <div className="relative w-20 h-20 mb-3">
+                {avatarSrc
+                  ? <img src={avatarSrc} alt="avatar" className="w-20 h-20 rounded-full object-cover" />
+                  : <div className="w-20 h-20 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-2xl font-bold">{initial}</div>
+                }
+                {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
               </div>
-              <button className="text-sm bg-[#C7E36B] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-lime-300">Change Picture</button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} className="text-sm bg-[#C7E36B] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-lime-300 disabled:opacity-60">
+                {uploading ? "Uploading..." : "Change Photo"}
+              </button>
             </div>
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Full Name</label>
@@ -1338,6 +1372,26 @@ function ProfileSection({ profile, token, onUpdated }) {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#7C3AED]" />
               </div>
             </div>
+
+            {/* Social links */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">LinkedIn URL</label>
+                <input value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="linkedin.com/in/..."
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#7C3AED]" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Instagram</label>
+                <input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#7C3AED]" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Portfolio URL</label>
+                <input value={portfolio} onChange={e => setPortfolio(e.target.value)} placeholder="https://..."
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#7C3AED]" />
+              </div>
+            </div>
+
             {msg && <p className={`text-sm mb-3 ${msg === "Saved!" ? "text-green-600" : "text-red-500"}`}>{msg}</p>}
             <div className="flex justify-end gap-3">
               <button onClick={() => setEditing(false)} className="px-5 py-2 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">Cancel</button>
@@ -1348,9 +1402,10 @@ function ProfileSection({ profile, token, onUpdated }) {
           </div>
         ) : (
           <div className="flex items-start gap-6">
-            <div className="w-16 h-16 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold shrink-0">
-              {(profile?.name || "A")[0].toUpperCase()}
-            </div>
+            {avatarSrc
+              ? <img src={avatarSrc} alt="avatar" className="w-16 h-16 rounded-full object-cover shrink-0" />
+              : <div className="w-16 h-16 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold shrink-0">{initial}</div>
+            }
             <div className="grid grid-cols-2 gap-6 flex-1">
               <div>
                 <p className="text-xs text-[#7C3AED] font-semibold mb-1">Full Name</p>
@@ -1362,8 +1417,18 @@ function ProfileSection({ profile, token, onUpdated }) {
               </div>
               <div>
                 <p className="text-xs text-[#7C3AED] font-semibold mb-1">Mobile Number</p>
-                <p className="text-sm text-gray-800">{profile?.phone || "+1 (555) 123-4567"}</p>
+                <p className="text-sm text-gray-800">{profile?.phone || "—"}</p>
               </div>
+              {(profile?.socialLinks?.linkedin || profile?.socialLinks?.instagram || profile?.socialLinks?.portfolio) && (
+                <div>
+                  <p className="text-xs text-[#7C3AED] font-semibold mb-1">Social Links</p>
+                  <div className="flex gap-3">
+                    {profile.socialLinks.linkedin  && <a href={profile.socialLinks.linkedin}  target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">LinkedIn</a>}
+                    {profile.socialLinks.instagram && <a href={`https://instagram.com/${profile.socialLinks.instagram.replace("@","")}`} target="_blank" rel="noreferrer" className="text-xs text-pink-500 hover:underline">Instagram</a>}
+                    {profile.socialLinks.portfolio  && <a href={profile.socialLinks.portfolio}  target="_blank" rel="noreferrer" className="text-xs text-gray-600 hover:underline">Portfolio</a>}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

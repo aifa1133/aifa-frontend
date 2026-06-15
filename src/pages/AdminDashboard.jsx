@@ -109,7 +109,12 @@ export default function AdminDashboard() {
           })}
         </nav>
         <button onClick={() => setActivePage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left">
-          <div className="w-7 h-7 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-xs font-bold shrink-0">{name[0]}</div>
+          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+            {profile?.profilePicture
+              ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+              : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-xs font-bold">{name[0]}</span>
+            }
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-white font-semibold truncate">{name}</p>
             <p className="text-[9px] text-gray-500">Super Admin</p>
@@ -131,7 +136,12 @@ export default function AdminDashboard() {
               <I name="bell" size={16} className="text-gray-400" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-[#C7E36B] flex items-center justify-center text-black font-bold text-sm">{name[0]}</div>
+            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+              {profile?.profilePicture
+                ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-bold text-sm">{name[0]}</span>
+              }
+            </div>
           </div>
         </header>
 
@@ -1268,17 +1278,33 @@ function Placeholder({ title }) {
 
 /* ── ADMIN PROFILE ── */
 function AdminProfile({ token, profile, onUpdated }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(profile?.name || "");
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [current, setCurrent] = useState("");
-  const [newPwd, setNewPwd] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [pwdMsg, setPwdMsg] = useState("");
+  const [editing, setEditing]     = useState(false);
+  const [name, setName]           = useState(profile?.name || "");
+  const [saving, setSaving]       = useState(false);
+  const [msg, setMsg]             = useState("");
+  const [current, setCurrent]     = useState("");
+  const [newPwd, setNewPwd]       = useState("");
+  const [confirm, setConfirm]     = useState("");
+  const [pwdMsg, setPwdMsg]       = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
 
   const memberId = `AIFA-ADMIN-${String(profile?._id || "00001").slice(-5).toUpperCase()}`;
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("avatar", file);
+    try {
+      const res = await fetch("/api/users/me/avatar", { method:"PUT", headers:{ Authorization:`Bearer ${token}` }, body:fd });
+      const data = await res.json();
+      if (res.ok) { onUpdated(data.user); }
+    } catch {}
+    setUploading(false);
+  };
 
   const handleSave = async () => {
     setSaving(true); setMsg("");
@@ -1308,7 +1334,19 @@ function AdminProfile({ token, profile, onUpdated }) {
       {/* Identity card */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-5">
         <div className="flex items-center gap-4 mb-5">
-          <div className="w-14 h-14 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold">{(profile?.name||"A")[0]}</div>
+          <div className="relative">
+            <div className="w-14 h-14 rounded-full overflow-hidden">
+              {profile?.profilePicture
+                ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold">{(profile?.name||"A")[0]}</span>
+              }
+            </div>
+            {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
+            <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all" title="Change photo">
+              <I name="edit" size={10} className="text-black" />
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          </div>
           <div>
             <p className="text-sm font-bold text-white">{profile?.name}</p>
             <p className="text-xs text-gray-400">{profile?.email}</p>
