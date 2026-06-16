@@ -108,7 +108,7 @@ export default function AdminDashboard() {
             );
           })}
         </nav>
-        <button onClick={() => setActivePage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left">
+        <div onClick={() => setActivePage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left cursor-pointer">
           <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
             {profile?.profilePicture
               ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
             <p className="text-[9px] text-gray-500">Super Admin</p>
           </div>
           <button onClick={e => { e.stopPropagation(); handleLogout(); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
-        </button>
+        </div>
       </aside>
 
       {/* MAIN AREA */}

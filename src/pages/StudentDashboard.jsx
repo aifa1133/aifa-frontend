@@ -189,6 +189,7 @@ export default function StudentDashboard() {
             <div className="relative" ref={userRef}>
               <button
                 onClick={() => { setShowUserMenu(!showUserMenu); setShowNotif(false); }}
+                aria-label="Open user menu"
                 className="w-8 h-8 rounded-full overflow-hidden hover:opacity-90 transition-all shrink-0"
               >
                 {profile?.profilePicture

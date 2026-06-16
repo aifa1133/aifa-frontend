@@ -50,7 +50,7 @@ export default function HireTalent() {
   return (
     <section className="bg-[#0B0F10] text-white overflow-hidden pt-[80px] sm:pt-[100px] lg:pt-[120px] pb-[64px]">
       {/* HIDE SCROLLBAR */}
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
