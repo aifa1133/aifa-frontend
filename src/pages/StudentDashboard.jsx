@@ -58,8 +58,8 @@ const NAV = [
   { id: "certificates", label: "Certificates", icon: "cert"      },
   { id: "jobs",         label: "Jobs",         icon: "jobs"          },
   { id: "resources",    label: "Resources",    icon: "resources" },
-  { id: "community",    label: "Community",    icon: "community",    soon: true },
-  { id: "hire-talent",  label: "Hire Talent",  icon: "hire",         soon: true },
+  { id: "community",    label: "Community",    icon: "community" },
+  { id: "hire-talent",  label: "Hire Talent",  icon: "hire" },
 ];
 
 /* ════════════════════════════════════════════
@@ -227,8 +227,8 @@ export default function StudentDashboard() {
               {activePage === "certificates" && <CertificatesSection token={token} profile={profile} />}
               {activePage === "jobs" && <JobsSection token={token} />}
               {activePage === "resources" && <ResourcesSection token={token} />}
-              {activePage === "community" && <PlaceholderSection title="Community" />}
-              {activePage === "hire-talent" && <PlaceholderSection title="Hire Talent" />}
+              {activePage === "community" && <CommunitySection token={token} />}
+              {activePage === "hire-talent" && <HireTalentSection token={token} />}
               {activePage === "profile" && <ProfileSection profile={profile} token={token} onUpdated={setProfile} />}
               {activePage === "settings" && <SettingsSection token={token} />}
               {activePage === "billing" && <BillingSection onViewInvoice={setInvoiceItem} />}
@@ -1904,6 +1904,246 @@ function ResourcesSection({ token }) {
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/* ─── COMMUNITY SECTION ─── */
+const MOCK_THREADS = [
+  { id: 1, title: "Best AI tools for video editing in 2024?", author: "Kiran M", avatar: "", replies: 14, views: 328, tag: "Tools", time: "2h ago", body: "Looking for recommendations on AI-powered video editing tools that integrate well with Adobe Premiere. What has your experience been with RunwayML vs Topaz?" },
+  { id: 2, title: "How to write effective AI prompts for creative briefs", author: "Sarah J", avatar: "", replies: 9, views: 201, tag: "Prompts", time: "5h ago", body: "I've been experimenting with structured prompts for creative brief generation. Here's my template that's been working well across different client types..." },
+  { id: 3, title: "My workflow for automating client deliverables", author: "Rajiv K", avatar: "", replies: 22, views: 512, tag: "Workflow", time: "1d ago", body: "After 3 months of iteration I've built a solid automation stack using Zapier + GPT-4 + Notion. Happy to share the full breakdown here." },
+  { id: 4, title: "Certificate of AI Proficiency — what courses count?", author: "Priya S", avatar: "", replies: 6, views: 133, tag: "Certificates", time: "2d ago", body: "I completed both Bootcamp and Video Courses but the certificate still shows pending. Does the Workflow module need to be done first?" },
+  { id: 5, title: "Resources for learning Motion Graphics AI?", author: "Alex T", avatar: "", replies: 11, views: 276, tag: "Resources", time: "3d ago", body: "Just joined and looking for the best starting point for AI motion graphics. Is the Bootcamp the right place or should I start with video courses?" },
+];
+const THREAD_TAG_COLORS = { Tools:"bg-blue-500/20 text-blue-400", Prompts:"bg-purple-500/20 text-purple-400", Workflow:"bg-orange-500/20 text-orange-400", Certificates:"bg-[#7C3AED]/20 text-[#7C3AED]", Resources:"bg-green-500/20 text-green-400", General:"bg-gray-500/20 text-gray-400" };
+
+function CommunitySection({ token }) {
+  const [threads] = useState(MOCK_THREADS);
+  const [selected, setSelected] = useState(null);
+  const [filterTag, setFilterTag] = useState("All");
+  const [search, setSearch] = useState("");
+  const [reply, setReply] = useState("");
+  const [replies, setReplies] = useState([]);
+
+  const tags = ["All", ...new Set(threads.map(t => t.tag))];
+  const filtered = threads.filter(t => (filterTag === "All" || t.tag === filterTag) && (!search || t.title.toLowerCase().includes(search.toLowerCase())));
+
+  const submitReply = () => {
+    if (!reply.trim()) return;
+    setReplies(rs => [...rs, { id: Date.now(), text: reply.trim(), time: "Just now", author: "You" }]);
+    setReply("");
+  };
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      {/* Left thread list */}
+      <div className="w-[340px] shrink-0 border-r border-white/5 overflow-y-auto">
+        <div className="p-4 border-b border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-base font-bold text-white">Community Forum</h1>
+            <span className="text-[10px] bg-[#7C3AED]/20 text-[#7C3AED] font-bold px-2 py-0.5 rounded-full">{threads.length} Threads</span>
+          </div>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search threads..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none mb-3"/>
+          <div className="flex gap-1 flex-wrap">
+            {tags.map(t => (
+              <button key={t} onClick={() => setFilterTag(t)} className={`text-[10px] px-2 py-1 rounded-full font-semibold transition-all ${filterTag === t ? "bg-[#7C3AED] text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <div className="divide-y divide-white/5">
+          {filtered.map(t => (
+            <button key={t.id} onClick={() => setSelected(t)} className={`w-full text-left p-4 hover:bg-white/5 transition-all ${selected?.id === t.id ? "border-l-2 border-[#7C3AED] bg-white/5" : ""}`}>
+              <div className="flex items-start gap-2 mb-1">
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${THREAD_TAG_COLORS[t.tag] || THREAD_TAG_COLORS.General}`}>{t.tag}</span>
+                <p className="text-sm font-semibold text-white line-clamp-2 leading-snug">{t.title}</p>
+              </div>
+              <div className="flex items-center gap-3 mt-1.5">
+                <span className="text-[10px] text-gray-500">{t.author}</span>
+                <span className="text-[10px] text-gray-600">·</span>
+                <span className="text-[10px] text-gray-500">💬 {t.replies}</span>
+                <span className="text-[10px] text-gray-500">👁 {t.views}</span>
+                <span className="text-[10px] text-gray-600 ml-auto">{t.time}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right detail + reply view */}
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+        {!selected ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="text-center"><p className="text-3xl mb-2">💬</p><p className="text-sm">Select a thread to read and reply</p></div>
+          </div>
+        ) : (
+          <div className="max-w-2xl flex flex-col gap-5 w-full">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${THREAD_TAG_COLORS[selected.tag] || THREAD_TAG_COLORS.General}`}>{selected.tag}</span>
+                <span className="text-[10px] text-gray-500">{selected.time}</span>
+              </div>
+              <h2 className="text-lg font-bold text-white mb-1">{selected.title}</h2>
+              <p className="text-xs text-gray-400 mb-3">Posted by <span className="text-white font-semibold">{selected.author}</span></p>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-sm text-gray-300 leading-relaxed">{selected.body}</p>
+              </div>
+              <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                <span>💬 {selected.replies + replies.length} replies</span>
+                <span>👁 {selected.views} views</span>
+                <button className="ml-auto text-[#7C3AED] hover:underline">Share</button>
+              </div>
+            </div>
+
+            {/* Existing replies */}
+            {replies.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase">Replies</p>
+                {replies.map(r => (
+                  <div key={r.id} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">Y</div>
+                      <span className="text-xs font-semibold text-white">{r.author}</span>
+                      <span className="text-[10px] text-gray-500 ml-auto">{r.time}</span>
+                    </div>
+                    <p className="text-sm text-gray-300 pl-8">{r.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Reply box */}
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-[10px] text-gray-400 font-semibold mb-2">YOUR REPLY</p>
+              <textarea value={reply} onChange={e => setReply(e.target.value)} rows={3} className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#7C3AED]/50 resize-none mb-2" placeholder="Write a thoughtful reply..."/>
+              <button onClick={submitReply} disabled={!reply.trim()} className="text-xs bg-[#7C3AED] text-white font-bold px-4 py-2 rounded-lg disabled:opacity-40 hover:bg-violet-500">Post Reply</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── HIRE TALENT SECTION ─── */
+const FALLBACK_TALENT = [
+  { _id: "1", name: "Sarah Jenkins", location: "New York, USA", category: "Logo Design", avatar: "", bio: "Award-winning brand identity designer with 8 years experience in logo design and visual branding for startups.", skills: ["Logo Design", "Brand Identity", "Typography", "Illustrator"], works: ["", "", ""], contactEmail: "sarah@example.com", isActive: true },
+  { _id: "2", name: "Rajiv Kumar", location: "Bangalore, India", category: "UI Design", avatar: "", bio: "Senior UI/UX designer specialising in SaaS products and mobile-first design systems.", skills: ["UI Design", "Figma", "Prototyping", "Design Systems"], works: ["", "", ""], contactEmail: "rajiv@example.com", isActive: true },
+  { _id: "3", name: "Jessica Park", location: "Seoul, South Korea", category: "Video Editing", avatar: "", bio: "Creative video editor and motion graphics artist working with global brands on ad campaigns and social content.", skills: ["Premiere Pro", "After Effects", "Motion Graphics", "Color Grading"], works: ["", "", ""], contactEmail: "jessica@example.com", isActive: true },
+];
+const HT_CATEGORIES = ["All", "Logo Design", "UI Design", "Video Editing", "3D Modeling", "Animation", "VFX", "Sound Design"];
+
+function HireTalentSection({ token }) {
+  const [talents, setTalents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [catFilter, setCatFilter] = useState("All");
+  const [inquiry, setInquiry] = useState(null);
+  const [inqMsg, setInqMsg] = useState("");
+  const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/talent")
+      .then(r => r.json())
+      .then(d => { setTalents(Array.isArray(d) && d.length > 0 ? d : FALLBACK_TALENT); setLoading(false); })
+      .catch(() => { setTalents(FALLBACK_TALENT); setLoading(false); });
+  }, []);
+
+  const filtered = talents.filter(t => catFilter === "All" || t.category === catFilter);
+
+  const openInquiry = (t) => { setInquiry(t); setInqMsg(""); setSent(false); };
+
+  const sendInquiry = () => {
+    if (!inqMsg.trim()) return;
+    setSent(true);
+    setTimeout(() => { setInquiry(null); setSent(false); }, 2000);
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-5">
+        <h1 className="text-xl font-bold text-white mb-1">Hire Talent</h1>
+        <p className="text-xs text-gray-400">Connect with skilled creative professionals</p>
+      </div>
+
+      {/* Category scroll filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-thin">
+        {HT_CATEGORIES.map(c => (
+          <button key={c} onClick={() => setCatFilter(c)} className={`text-xs px-3 py-1.5 rounded-full font-semibold whitespace-nowrap shrink-0 transition-all ${catFilter === c ? "bg-[#7C3AED] text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}>{c}</button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="text-gray-500 text-sm animate-pulse">Loading talent...</p>
+      ) : (
+        <div className="space-y-6">
+          {filtered.map(t => (
+            <div key={t._id} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-14 h-14 rounded-full overflow-hidden shrink-0">
+                  {t.avatar ? <img src={t.avatar} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full bg-gradient-to-br from-[#7C3AED] to-purple-800 flex items-center justify-center text-white font-black text-xl">{t.name[0]}</div>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-base font-bold text-white">{t.name}</p>
+                    <span className="text-[10px] bg-[#7C3AED]/20 text-[#7C3AED] font-bold px-2 py-0.5 rounded-full">{t.category}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">📍 {t.location}</p>
+                  <p className="text-sm text-gray-300 mt-1.5 leading-relaxed">{t.bio}</p>
+                </div>
+                <button onClick={() => openInquiry(t)} className="shrink-0 text-xs bg-[#7C3AED] text-white font-bold px-4 py-2 rounded-xl hover:bg-violet-500 transition-all">SEND INQUIRY</button>
+              </div>
+
+              {/* Skills */}
+              {t.skills?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {t.skills.map(s => <span key={s} className="text-[10px] bg-white/8 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{s}</span>)}
+                </div>
+              )}
+
+              {/* Works grid */}
+              {t.works?.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {t.works.map((w, i) => (
+                    <div key={i} className="aspect-video rounded-lg overflow-hidden bg-white/5">
+                      {w ? <img src={w} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full flex items-center justify-center text-gray-600 text-[10px]">Portfolio {i + 1}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {filtered.length === 0 && <div className="text-center py-12"><p className="text-gray-500 text-sm">No talent found in this category</p></div>}
+        </div>
+      )}
+
+      {/* Inquiry Modal */}
+      {inquiry && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && setInquiry(null)}>
+          <div className="bg-[#0F1112] border border-white/15 rounded-2xl p-6 w-full max-w-md">
+            {sent ? (
+              <div className="text-center py-4">
+                <p className="text-4xl mb-3">✅</p>
+                <p className="text-white font-bold">Inquiry Sent!</p>
+                <p className="text-xs text-gray-400 mt-1">{inquiry.name} will get back to you soon.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C3AED] to-purple-800 flex items-center justify-center text-white font-bold">{inquiry.name[0]}</div>
+                  <div><p className="text-sm font-bold text-white">{inquiry.name}</p><p className="text-[10px] text-gray-400">{inquiry.category}</p></div>
+                  <button onClick={() => setInquiry(null)} className="ml-auto text-gray-500 hover:text-white"><Ic name="close" size={18}/></button>
+                </div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-2">YOUR MESSAGE</p>
+                <textarea value={inqMsg} onChange={e => setInqMsg(e.target.value)} rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#7C3AED]/50 resize-none mb-3" placeholder={`Hi ${inquiry.name.split(" ")[0]}, I'm interested in your ${inquiry.category} services...`}/>
+                <div className="flex gap-2">
+                  <button onClick={() => setInquiry(null)} className="flex-1 text-xs border border-white/15 text-gray-400 py-2 rounded-xl hover:bg-white/5">Cancel</button>
+                  <button onClick={sendInquiry} disabled={!inqMsg.trim()} className="flex-1 text-xs bg-[#7C3AED] text-white font-bold py-2 rounded-xl disabled:opacity-40 hover:bg-violet-500">Send</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

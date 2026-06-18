@@ -1,8 +1,27 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export default function ServicesPage() {
   const contactRef = useRef(null);
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", service: "", country: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await fetch("/api/service-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: `${form.firstName} ${form.lastName}`.trim(), email: form.email, phone: form.phone, service: form.service || "corporate-training", company: form.country, message: form.message }),
+      });
+      setSubmitted(true);
+    } catch {}
+    setSubmitting(false);
+  };
 
 const scrollToContact = () => {
   contactRef.current?.scrollIntoView({
@@ -639,161 +658,77 @@ const scrollToContact = () => {
             WE CAN HELP YOU!
           </h2>
 
-          {/* FORM GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* FORM */}
+          {submitted ? (
+            <div className="text-center py-16">
+              <p className="text-5xl mb-4">✅</p>
+              <p className="text-white text-xl font-bold mb-2">Request Sent!</p>
+              <p className="text-gray-400 text-sm">We'll get back to you within 24 hours.</p>
+            </div>
+          ) : (
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* FIRST NAME */}
             <div>
               <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">
                 First Name
               </label>
-
-              <input
-                type="text"
-                className="
-            w-full
-            h-[48px]
-            px-4
-            rounded-[6px]
-            bg-[#DCE8A3]
-            outline-none
-            text-black
-          "
-              />
+              <input type="text" value={form.firstName} onChange={e => setF("firstName", e.target.value)} required className="w-full h-[48px] px-4 rounded-[6px] bg-[#DCE8A3] outline-none text-black"/>
             </div>
 
             {/* LAST NAME */}
             <div>
-              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">
-                Last Name (Required)
-              </label>
-
-              <input
-                type="text"
-                className="
-            w-full
-            h-[48px]
-            px-4
-            rounded-[6px]
-            bg-[#DCE8A3]
-            outline-none
-            text-black
-          "
-              />
+              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">Last Name (Required)</label>
+              <input type="text" value={form.lastName} onChange={e => setF("lastName", e.target.value)} required className="w-full h-[48px] px-4 rounded-[6px] bg-[#DCE8A3] outline-none text-black"/>
             </div>
 
             {/* EMAIL */}
             <div className="md:col-span-2">
-              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">
-                Email
-              </label>
-
-              <input
-                type="email"
-                className="
-            w-full
-            h-[48px]
-            px-4
-            rounded-[6px]
-            bg-[#DCE8A3]
-            outline-none
-            text-black
-          "
-              />
+              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">Email</label>
+              <input type="email" value={form.email} onChange={e => setF("email", e.target.value)} required className="w-full h-[48px] px-4 rounded-[6px] bg-[#DCE8A3] outline-none text-black"/>
             </div>
 
             {/* PHONE */}
             <div className="md:col-span-2">
-              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">
-                Phone
-              </label>
-
-              <input
-                type="text"
-                className="
-            w-full
-            h-[48px]
-            px-4
-            rounded-[6px]
-            bg-[#DCE8A3]
-            outline-none
-            text-black
-          "
-              />
+              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">Phone</label>
+              <input type="text" value={form.phone} onChange={e => setF("phone", e.target.value)} className="w-full h-[48px] px-4 rounded-[6px] bg-[#DCE8A3] outline-none text-black"/>
             </div>
 
             {/* SERVICES */}
             <div className="md:col-span-2 relative">
-              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">
-                Services
-              </label>
-
-              <select
-                className="
-            w-full
-            h-[48px]
-            px-4
-            pr-10
-            rounded-[6px]
-            bg-[#DCE8A3]
-            outline-none
-            appearance-none
-            text-black
-          "
-              >
-                <option>Select Service</option>
-                <option>AI Film Training</option>
-                <option>Corporate Training</option>
+              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">Services</label>
+              <select value={form.service} onChange={e => setF("service", e.target.value)} className="w-full h-[48px] px-4 pr-10 rounded-[6px] bg-[#DCE8A3] outline-none appearance-none text-black">
+                <option value="">Select Service</option>
+                <option value="corporate-training">Corporate Training</option>
+                <option value="curriculum-consulting">Curriculum Consulting</option>
+                <option value="production-support">Production Support</option>
+                <option value="ai-content">AI Content Production</option>
               </select>
-
-              <span className="absolute right-4 top-[42px] pointer-events-none">
-                <img src="/Vectorarrow.svg" alt="" />
-              </span>
+              <span className="absolute right-4 top-[42px] pointer-events-none"><img src="/Vectorarrow.svg" alt=""/></span>
             </div>
 
             {/* COUNTRY */}
             <div className="md:col-span-2 relative">
-              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">
-                Country
-              </label>
-
-              <select
-                className="
-            w-full
-            h-[48px]
-            px-4
-            pr-10
-            rounded-[6px]
-            bg-[#DCE8A3]
-            outline-none
-            appearance-none
-            text-black
-          "
-              >
-                <option>Select Country</option>
-                <option>India</option>
-                <option>USA</option>
+              <label className="block text-white text-[12px] font-semibold tracking-[0.6px] uppercase mb-2">Country</label>
+              <select value={form.country} onChange={e => setF("country", e.target.value)} className="w-full h-[48px] px-4 pr-10 rounded-[6px] bg-[#DCE8A3] outline-none appearance-none text-black">
+                <option value="">Select Country</option>
+                <option value="India">India</option>
+                <option value="USA">USA</option>
+                <option value="UK">UK</option>
+                <option value="Canada">Canada</option>
+                <option value="Australia">Australia</option>
+                <option value="Other">Other</option>
               </select>
-
-              <span className="absolute right-4 top-[42px] pointer-events-none">
-                <img src="/Vectorarrow.svg" alt="" />
-              </span>
+              <span className="absolute right-4 top-[42px] pointer-events-none"><img src="/Vectorarrow.svg" alt=""/></span>
             </div>
-          </div>
 
-          {/* BUTTON */}
-          <button
-            className="
-        mt-10
-        w-full
-        h-[44px]
-        rounded-[4px]
-        bg-[#EDEDED]
-        text-black
-        font-medium
-      "
-          >
-            SUBMIT
-          </button>
+            {/* SUBMIT */}
+            <div className="md:col-span-2">
+              <button type="submit" disabled={submitting} className="mt-4 w-full h-[44px] rounded-[4px] bg-[#EDEDED] text-black font-medium disabled:opacity-60">
+                {submitting ? "SUBMITTING..." : "SUBMIT"}
+              </button>
+            </div>
+          </form>
+          )}
         </div>
       </section>
     </div>

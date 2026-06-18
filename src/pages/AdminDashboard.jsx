@@ -50,16 +50,16 @@ const NAV_ITEMS = [
   { id: "certificates",       label: "Certificates",   icon: "cert"     },
   { id: "jobs",               label: "Jobs",           icon: "jobs"     },
   { id: "community",          label: "Community",      icon: "community" },
-  { id: "service-request",    label: "Service Request",icon: "service",       soon: true },
-  { id: "sales-consultation", label: "Sales Consult.", icon: "sales",         soon: true },
-  { id: "hire-talent",        label: "Hire Talent",    icon: "hire",          soon: true },
+  { id: "service-request",    label: "Service Request",icon: "service"   },
+  { id: "sales-consultation", label: "Sales Consult.", icon: "sales"     },
+  { id: "hire-talent",        label: "Hire Talent",    icon: "hire"      },
 ];
 const MGMT_ITEMS = [
   { id: "users",      label: "Users",      icon: "users"      },
   { id: "payments",   label: "Payments",   icon: "payments"   },
   { id: "enrolments", label: "Enrolments", icon: "enrolments" },
   { id: "analytics",  label: "Analytics",  icon: "analytics"  },
-  { id: "membership", label: "Membership", icon: "membership", soon: true },
+  { id: "membership", label: "Membership", icon: "membership" },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -158,10 +158,11 @@ export default function AdminDashboard() {
           {activePage === "certificates"    && <CertificatesAdmin token={token} />}
           {activePage === "jobs"            && <JobsAdmin token={token} />}
           {activePage === "profile"         && <AdminProfile token={token} profile={profile} onUpdated={setProfile} />}
-          {activePage === "community" && <CommunityAdmin token={token} />}
-          {["service-request","sales-consultation","hire-talent","membership"].includes(activePage) && (
-            <Placeholder title={[...NAV_ITEMS,...MGMT_ITEMS].find(n=>n.id===activePage)?.label} />
-          )}
+          {activePage === "community"         && <CommunityAdmin token={token} />}
+          {activePage === "service-request"    && <ServiceRequestAdmin token={token} />}
+          {activePage === "sales-consultation" && <SalesConsultAdmin token={token} />}
+          {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
+          {activePage === "membership"         && <MembershipAdmin token={token} />}
         </main>
       </div>
     </div>
@@ -1815,6 +1816,574 @@ function CommunityAdmin({ token }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── SERVICE REQUEST ADMIN ── */
+const SR_STATUS_COLORS = { new:"bg-blue-500/20 text-blue-400", "in-progress":"bg-yellow-500/20 text-yellow-400", completed:"bg-green-500/20 text-green-400", rejected:"bg-red-500/20 text-red-400" };
+const SR_SERVICE_LABELS = { "corporate-training":"Corporate Training","curriculum-consulting":"Curriculum Consulting","production-support":"Production Support","ai-content":"AI Content Production" };
+const SR_SERVICE_COLORS = { "corporate-training":"bg-purple-500/20 text-purple-400","curriculum-consulting":"bg-blue-500/20 text-blue-400","production-support":"bg-orange-500/20 text-orange-400","ai-content":"bg-[#C7E36B]/20 text-[#C7E36B]" };
+
+function ServiceRequestAdmin({ token }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [filter, setFilter]     = useState("all");
+  const [note, setNote]         = useState("");
+  const [status, setStatus]     = useState("");
+
+  useEffect(() => {
+    fetch("/api/service-requests", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setRequests(d); setLoading(false); }).catch(()=>setLoading(false));
+  }, [token]);
+
+  const selectReq = (r) => { setSelected(r); setNote(r.adminNote||""); setStatus(r.status); };
+
+  const handleSave = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const res = await fetch(`/api/service-requests/${selected._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ status, adminNote:note }) });
+    const data = await res.json();
+    if (res.ok) { setRequests(rs=>rs.map(r=>r._id===data._id?data:r)); setSelected(data); }
+    setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!selected || !window.confirm("Delete this request?")) return;
+    await fetch(`/api/service-requests/${selected._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    setRequests(rs=>rs.filter(r=>r._id!==selected._id)); setSelected(null);
+  };
+
+  const filtered = requests.filter(r=>filter==="all"||r.status===filter);
+  const newCount = requests.filter(r=>r.status==="new").length;
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      {/* Left list */}
+      <div className="w-[340px] shrink-0 border-r border-white/5 overflow-y-auto">
+        <div className="p-4 border-b border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-base font-bold text-white">Service Requests</h1>
+            {newCount>0 && <span className="text-[10px] bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full">{newCount} New</span>}
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {["all","new","in-progress","completed","rejected"].map(f=>(
+              <button key={f} onClick={()=>setFilter(f)} className={`text-[10px] px-2 py-1 rounded-full font-semibold capitalize transition-all ${filter===f?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10"}`}>{f==="all"?"All":f}</button>
+            ))}
+          </div>
+        </div>
+        {loading ? <p className="text-gray-500 text-sm animate-pulse p-4">Loading...</p> : (
+          <div className="divide-y divide-white/5">
+            {filtered.length===0 && <p className="text-gray-500 text-sm p-4">No requests</p>}
+            {filtered.map(r=>(
+              <button key={r._id} onClick={()=>selectReq(r)} className={`w-full text-left p-4 hover:bg-white/5 transition-all ${selected?._id===r._id?"border-l-2 border-[#C7E36B] bg-white/5":""}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-semibold text-white">{r.name}</span>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full capitalize ${SR_STATUS_COLORS[r.status]}`}>{r.status}</span>
+                </div>
+                <p className="text-[10px] text-gray-500 mb-1">{r.email}</p>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${SR_SERVICE_COLORS[r.service]}`}>{SR_SERVICE_LABELS[r.service]}</span>
+                  {r.company && <span className="text-[10px] text-gray-500">{r.company}</span>}
+                </div>
+                <p className="text-[10px] text-gray-600 mt-1">{new Date(r.createdAt).toLocaleDateString()}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Right detail */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {!selected ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="text-center"><p className="text-3xl mb-2">📋</p><p className="text-sm">Select a request to view details</p></div>
+          </div>
+        ) : (
+          <div className="max-w-2xl space-y-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white">{selected.name}</h2>
+                <p className="text-sm text-gray-400">{selected.email} {selected.phone && `· ${selected.phone}`}</p>
+                {selected.company && <p className="text-xs text-gray-500">{selected.company}</p>}
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${SR_SERVICE_COLORS[selected.service]}`}>{SR_SERVICE_LABELS[selected.service]}</span>
+            </div>
+            {selected.message && (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-2">Message</p>
+                <p className="text-sm text-gray-300 leading-relaxed">{selected.message}</p>
+              </div>
+            )}
+            {selected.budget && <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Budget</p><p className="text-sm text-white">{selected.budget}</p></div>}
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">STATUS</p>
+              <select value={status} onChange={e=>setStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                <option value="new">New</option><option value="in-progress">In Progress</option><option value="completed">Completed</option><option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">ADMIN NOTE</p>
+              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 resize-none" placeholder="Add internal notes..."/>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Changes"}</button>
+              <button onClick={handleDelete} className="text-xs border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10">Delete</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── SALES CONSULTATION ADMIN ── */
+const CON_STATUS_COLORS = { pending:"bg-orange-500/20 text-orange-400", confirmed:"bg-blue-500/20 text-blue-400", completed:"bg-green-500/20 text-green-400", cancelled:"bg-red-500/20 text-red-400" };
+
+function SalesConsultAdmin({ token }) {
+  const [consultations, setConsultations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [filter, setFilter]     = useState("all");
+  const [status, setStatus]     = useState("");
+  const [meetLink, setMeetLink] = useState("");
+  const [note, setNote]         = useState("");
+
+  useEffect(() => {
+    fetch("/api/consultations", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setConsultations(d); setLoading(false); }).catch(()=>setLoading(false));
+  }, [token]);
+
+  const selectC = (c) => { setSelected(c); setStatus(c.status); setMeetLink(c.meetLink||""); setNote(c.adminNote||""); };
+
+  const handleSave = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const res = await fetch(`/api/consultations/${selected._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ status, meetLink, adminNote:note }) });
+    const data = await res.json();
+    if (res.ok) { setConsultations(cs=>cs.map(c=>c._id===data._id?data:c)); setSelected(data); }
+    setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!selected || !window.confirm("Delete this consultation?")) return;
+    await fetch(`/api/consultations/${selected._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    setConsultations(cs=>cs.filter(c=>c._id!==selected._id)); setSelected(null);
+  };
+
+  const filtered = consultations.filter(c=>filter==="all"||c.status===filter);
+  const newCount = consultations.filter(c=>c.status==="pending").length;
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      <div className="w-[340px] shrink-0 border-r border-white/5 overflow-y-auto">
+        <div className="p-4 border-b border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-base font-bold text-white">Sales Consultations</h1>
+            {newCount>0 && <span className="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded-full">{newCount} Pending</span>}
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {["all","pending","confirmed","completed","cancelled"].map(f=>(
+              <button key={f} onClick={()=>setFilter(f)} className={`text-[10px] px-2 py-1 rounded-full font-semibold capitalize transition-all ${filter===f?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10"}`}>{f==="all"?"All":f}</button>
+            ))}
+          </div>
+        </div>
+        {loading ? <p className="text-gray-500 text-sm animate-pulse p-4">Loading...</p> : (
+          <div className="divide-y divide-white/5">
+            {filtered.length===0 && <p className="text-gray-500 text-sm p-4">No consultations</p>}
+            {filtered.map(c=>(
+              <button key={c._id} onClick={()=>selectC(c)} className={`w-full text-left p-4 hover:bg-white/5 transition-all ${selected?._id===c._id?"border-l-2 border-[#C7E36B] bg-white/5":""}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-semibold text-white">{c.name}</span>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full capitalize ${CON_STATUS_COLORS[c.status]}`}>{c.status}</span>
+                </div>
+                <p className="text-[10px] text-gray-500 mb-1">{c.email}</p>
+                {c.preferredDate && <p className="text-[10px] text-gray-400">{c.preferredDate} {c.preferredTime && `at ${c.preferredTime}`}</p>}
+                {c.topic && <p className="text-[10px] text-gray-600 mt-1 line-clamp-1">{c.topic}</p>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto p-6">
+        {!selected ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="text-center"><p className="text-3xl mb-2">📅</p><p className="text-sm">Select a consultation to view details</p></div>
+          </div>
+        ) : (
+          <div className="max-w-2xl space-y-5">
+            <div>
+              <h2 className="text-lg font-bold text-white">{selected.name}</h2>
+              <p className="text-sm text-gray-400">{selected.email} {selected.phone && `· ${selected.phone}`}</p>
+            </div>
+            {(selected.preferredDate||selected.preferredTime) && (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-6">
+                <div><p className="text-[10px] text-gray-500 uppercase font-semibold mb-0.5">Date</p><p className="text-sm text-white">{selected.preferredDate||"—"}</p></div>
+                <div><p className="text-[10px] text-gray-500 uppercase font-semibold mb-0.5">Time</p><p className="text-sm text-white">{selected.preferredTime||"—"}</p></div>
+              </div>
+            )}
+            {selected.topic && <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Topic</p><p className="text-sm text-gray-300">{selected.topic}</p></div>}
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">STATUS</p>
+              <select value={status} onChange={e=>setStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                <option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">MEET LINK</p>
+              <div className="flex gap-2">
+                <input value={meetLink} onChange={e=>setMeetLink(e.target.value)} placeholder="https://meet.google.com/..." className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50"/>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">ADMIN NOTE</p>
+              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 resize-none" placeholder="Add internal notes..."/>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Changes"}</button>
+              <button onClick={()=>console.log("Send confirmation email to", selected.email)} className="text-xs border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-500/10">Send Confirmation</button>
+              <button onClick={handleDelete} className="text-xs border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10">Delete</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── HIRE TALENT ADMIN ── */
+const TALENT_CATEGORIES = ["All","Logo Design","UI Design","Video Editing","3D Modeling","Animation","VFX","Sound Design"];
+
+function HireTalentAdmin({ token }) {
+  const [talents, setTalents]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [form, setForm] = useState({ name:"", location:"", category:"All", bio:"", contactEmail:"", skills:"", avatar:"", work1:"", work2:"", work3:"" });
+
+  const load = () => {
+    setLoading(true);
+    fetch("/api/talent/all", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setTalents(d); setLoading(false); }).catch(()=>setLoading(false));
+  };
+  useEffect(load, [token]);
+
+  const openAdd = () => { setEditTarget(null); setForm({ name:"",location:"",category:"All",bio:"",contactEmail:"",skills:"",avatar:"",work1:"",work2:"",work3:"" }); setShowForm(true); };
+  const openEdit = (t) => {
+    setEditTarget(t);
+    setForm({ name:t.name,location:t.location||"",category:t.category||"All",bio:t.bio||"",contactEmail:t.contactEmail||"",skills:(t.skills||[]).join(", "),avatar:t.avatar||"",work1:t.works?.[0]||"",work2:t.works?.[1]||"",work3:t.works?.[2]||"" });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const payload = { ...form, skills:form.skills.split(",").map(s=>s.trim()).filter(Boolean), works:[form.work1,form.work2,form.work3].filter(Boolean) };
+    const url = editTarget ? `/api/talent/${editTarget._id}` : "/api/talent";
+    const method = editTarget ? "PUT" : "POST";
+    const res = await fetch(url, { method, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(payload) });
+    if (res.ok) { setShowForm(false); load(); }
+    setSaving(false);
+  };
+
+  const toggleActive = async (t) => {
+    await fetch(`/api/talent/${t._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isActive:!t.isActive }) });
+    setTalents(ts=>ts.map(x=>x._id===t._id?{...x,isActive:!x.isActive}:x));
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this talent profile?")) return;
+    await fetch(`/api/talent/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    setTalents(ts=>ts.filter(t=>t._id!==id));
+  };
+
+  if (showForm) return (
+    <div className="p-6 max-w-2xl">
+      <div className="flex items-center gap-3 mb-5">
+        <button onClick={()=>setShowForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
+        <h1 className="text-lg font-bold text-white">{editTarget?"Edit Talent":"Add Talent"}</h1>
+      </div>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Fld label="NAME" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="Full name"/>
+          <Fld label="LOCATION" value={form.location} onChange={v=>setForm({...form,location:v})} placeholder="City, Country"/>
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 font-semibold mb-1">CATEGORY</p>
+          <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+            {TALENT_CATEGORIES.map(c=><option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <Fld label="BIO" value={form.bio} onChange={v=>setForm({...form,bio:v})} textarea placeholder="Short professional bio..."/>
+        <div className="grid grid-cols-2 gap-3">
+          <Fld label="CONTACT EMAIL" value={form.contactEmail} onChange={v=>setForm({...form,contactEmail:v})} placeholder="email@example.com"/>
+          <Fld label="SKILLS (comma-separated)" value={form.skills} onChange={v=>setForm({...form,skills:v})} placeholder="AI, Design, Motion"/>
+        </div>
+        <Fld label="AVATAR URL" value={form.avatar} onChange={v=>setForm({...form,avatar:v})} placeholder="https://..."/>
+        <div className="grid grid-cols-3 gap-3">
+          <Fld label="PORTFOLIO 1" value={form.work1} onChange={v=>setForm({...form,work1:v})} placeholder="Image URL"/>
+          <Fld label="PORTFOLIO 2" value={form.work2} onChange={v=>setForm({...form,work2:v})} placeholder="Image URL"/>
+          <Fld label="PORTFOLIO 3" value={form.work3} onChange={v=>setForm({...form,work3:v})} placeholder="Image URL"/>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button onClick={()=>setShowForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save"}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div><h1 className="text-xl font-bold text-white">Hire Talent</h1><p className="text-xs text-gray-400">Manage talent profiles · {talents.length} total</p></div>
+        <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>+ Add Talent</button>
+      </div>
+      {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
+        talents.length===0 ? (
+          <div className="text-center py-12"><p className="text-gray-500 text-sm mb-3">No talent profiles yet</p><button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First</button></div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            {talents.map(t=>(
+              <div key={t._id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
+                    {t.avatar ? <img src={t.avatar} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-lg">{t.name[0]}</div>}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{t.name}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{t.location}</p>
+                    <span className="text-[9px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full">{t.category}</span>
+                  </div>
+                </div>
+                {t.skills?.length>0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {t.skills.slice(0,3).map(s=><span key={s} className="text-[9px] bg-[#C7E36B]/10 text-[#C7E36B] px-2 py-0.5 rounded-full">{s}</span>)}
+                    {t.skills.length>3 && <span className="text-[9px] text-gray-500">+{t.skills.length-3} more</span>}
+                  </div>
+                )}
+                {t.works?.length>0 && (
+                  <div className="flex gap-1 mb-3">
+                    {t.works.slice(0,3).map((w,i)=>(
+                      <div key={i} className="flex-1 h-10 rounded-md overflow-hidden">
+                        {w ? <img src={w} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full bg-white/5"/>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400">{t.isActive?"Active":"Inactive"}</span>
+                    <Tog value={t.isActive} onChange={()=>toggleActive(t)}/>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={()=>openEdit(t)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-all"><I name="edit" size={13}/></button>
+                    <button onClick={()=>handleDelete(t._id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all"><I name="trash" size={13}/></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+/* ── MEMBERSHIP ADMIN ── */
+const DEFAULT_PLANS = [
+  { name:"Free",       price:0,    billingCycle:"monthly", color:"#6B7280", features:["5 Free Prompts","Community Access","Basic Resources"] },
+  { name:"Pro",        price:999,  billingCycle:"monthly", color:"#C7E36B", features:["Unlimited Prompts","All Resources","Priority Support","Certificate Downloads"] },
+  { name:"Enterprise", price:4999, billingCycle:"monthly", color:"#8B5CF6", features:["Everything in Pro","Custom Curriculum","Dedicated Manager","Team Dashboard","White-label Options"] },
+];
+
+function MembershipAdmin({ token }) {
+  const [plans, setPlans]       = useState([]);
+  const [members, setMembers]   = useState([]);
+  const [tab, setTab]           = useState("plans");
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editPlan, setEditPlan] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [form, setForm] = useState({ name:"", price:0, billingCycle:"monthly", color:"#C7E36B", features:[], isActive:true });
+  const [newFeature, setNewFeature] = useState("");
+
+  const loadAll = async () => {
+    setLoading(true);
+    const [p, m] = await Promise.all([
+      fetch("/api/membership/plans").then(r=>r.json()).catch(()=>[]),
+      fetch("/api/membership/members", { headers:{ Authorization:`Bearer ${token}` } }).then(r=>r.json()).catch(()=>[]),
+    ]);
+    const planList = Array.isArray(p) ? p : [];
+    setPlans(planList);
+    if (Array.isArray(m)) setMembers(m);
+    if (planList.length===0) {
+      for (const def of DEFAULT_PLANS) {
+        await fetch("/api/membership/plans", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(def) });
+      }
+      fetch("/api/membership/plans").then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setPlans(d); });
+    }
+    setLoading(false);
+  };
+  useEffect(()=>{ loadAll(); }, [token]);
+
+  const openAdd = () => { setEditPlan(null); setForm({ name:"",price:0,billingCycle:"monthly",color:"#C7E36B",features:[],isActive:true }); setShowForm(true); };
+  const openEdit = (p) => { setEditPlan(p); setForm({ name:p.name,price:p.price,billingCycle:p.billingCycle,color:p.color,features:[...p.features],isActive:p.isActive }); setShowForm(true); };
+
+  const handleSavePlan = async () => {
+    setSaving(true);
+    const url = editPlan ? `/api/membership/plans/${editPlan._id}` : "/api/membership/plans";
+    const method = editPlan ? "PUT" : "POST";
+    await fetch(url, { method, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(form) });
+    setShowForm(false); loadAll(); setSaving(false);
+  };
+
+  const togglePlanActive = async (p) => {
+    await fetch(`/api/membership/plans/${p._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isActive:!p.isActive }) });
+    setPlans(ps=>ps.map(x=>x._id===p._id?{...x,isActive:!x.isActive}:x));
+  };
+
+  const deletePlan = async (id) => {
+    if (!window.confirm("Delete this plan?")) return;
+    await fetch(`/api/membership/plans/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    setPlans(ps=>ps.filter(p=>p._id!==id));
+  };
+
+  const filteredMembers = members.filter(m => !memberSearch || m.name?.toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase()));
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-white">Membership</h1>
+        {tab==="plans" && !showForm && <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>+ Create Plan</button>}
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-5 border-b border-white/10">
+        {["plans","members"].map(t=>(
+          <button key={t} onClick={()=>{setTab(t);setShowForm(false);}} className={`px-4 py-2 text-sm font-medium border-b-2 transition-all -mb-px capitalize ${tab===t?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-400 hover:text-white"}`}>{t}</button>
+        ))}
+      </div>
+
+      {/* PLANS TAB */}
+      {tab==="plans" && (
+        showForm ? (
+          <div className="max-w-lg space-y-3">
+            <div className="flex items-center gap-3 mb-4">
+              <button onClick={()=>setShowForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
+              <h2 className="text-base font-bold text-white">{editPlan?"Edit Plan":"Create Plan"}</h2>
+            </div>
+            <Fld label="PLAN NAME" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="e.g. Pro"/>
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="PRICE (₹)" value={String(form.price)} onChange={v=>setForm({...form,price:Number(v)||0})} placeholder="999"/>
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">BILLING CYCLE</p>
+                <select value={form.billingCycle} onChange={e=>setForm({...form,billingCycle:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                  <option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="lifetime">Lifetime</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">COLOR</p>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-10 h-9 rounded-lg border-0 cursor-pointer bg-transparent"/>
+                <input value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 font-mono"/>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-2">FEATURES</p>
+              <div className="space-y-1.5 mb-2">
+                {form.features.map((f,i)=>(
+                  <div key={i} className="flex items-center gap-2">
+                    <input value={f} onChange={e=>setForm({...form,features:form.features.map((x,j)=>j===i?e.target.value:x)})} className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/50"/>
+                    <button onClick={()=>setForm({...form,features:form.features.filter((_,j)=>j!==i)})} className="text-gray-600 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input value={newFeature} onChange={e=>setNewFeature(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newFeature.trim()){setForm({...form,features:[...form.features,newFeature.trim()]});setNewFeature("");}}} placeholder="Add feature..." className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/50 min-w-0"/>
+                <button onClick={()=>{if(newFeature.trim()){setForm({...form,features:[...form.features,newFeature.trim()]});setNewFeature("");}}} className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1.5 rounded-lg">+ Add</button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3"><span className="text-xs text-gray-400">Active</span><Tog value={form.isActive} onChange={v=>setForm({...form,isActive:v})}/></div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={()=>setShowForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+              <button onClick={handleSavePlan} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Plan"}</button>
+            </div>
+          </div>
+        ) : (
+          loading ? <p className="text-gray-500 text-sm animate-pulse">Loading plans...</p> : (
+            <div className="grid grid-cols-3 gap-4">
+              {plans.map(p=>(
+                <div key={p._id} className="bg-white/5 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-xl font-black" style={{color:p.color}}>{p.name}</p>
+                      <p className="text-2xl font-bold text-white">{p.price===0?"FREE":`₹${p.price}`}</p>
+                      <p className="text-[10px] text-gray-500 capitalize">/{p.billingCycle}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={()=>openEdit(p)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-all"><I name="edit" size={12}/></button>
+                      <button onClick={()=>deletePlan(p._id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all"><I name="trash" size={12}/></button>
+                    </div>
+                  </div>
+                  <ul className="space-y-1.5 mb-4">
+                    {p.features.map((f,i)=>(
+                      <li key={i} className="flex items-center gap-1.5 text-[11px] text-gray-300"><span style={{color:p.color}}>✓</span>{f}</li>
+                    ))}
+                  </ul>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-gray-400">{p.isActive?"Active":"Inactive"}</span>
+                    <Tog value={p.isActive} onChange={()=>togglePlanActive(p)}/>
+                  </div>
+                </div>
+              ))}
+              {plans.length===0 && <div className="col-span-3 text-center py-12"><p className="text-gray-500 text-sm">No plans yet</p></div>}
+            </div>
+          )
+        )
+      )}
+
+      {/* MEMBERS TAB */}
+      {tab==="members" && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-gray-400">{members.length} members</p>
+            <input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="Search members..." className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none w-[220px]"/>
+          </div>
+          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading members...</p> : (
+            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
+                  {["Name","Email","Enrolled","Member Since","Plan"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
+                </tr></thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredMembers.length===0 ? (
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No members found</td></tr>
+                  ) : filteredMembers.map(m=>(
+                    <tr key={m._id} className="hover:bg-white/5 transition-all">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(m.name||"U")[0]}</div>
+                          <span className="text-sm font-semibold text-white">{m.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-400">{m.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-400">{(m.enrolledCourses?.length||0)+(m.enrolledWorkshops?.length||0)+(m.enrolledBootcamps?.length||0)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-400">{new Date(m.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3"><span className="text-[10px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-semibold">Free</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
