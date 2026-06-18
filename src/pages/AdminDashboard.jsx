@@ -2540,10 +2540,11 @@ function PlatformSettings({ token }) {
   };
 
   const revealSecret = async (key) => {
-    if (reveal[key]) { setReveal(r => ({ ...r, [key]: false })); return; }
+    if (key in reveal) { setReveal(r => { const n = { ...r }; delete n[key]; return n; }); return; }
     const res = await fetch(`/api/admin/config/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
     const data = await res.json();
-    setReveal(r => ({ ...r, [key]: data.value || "" }));
+    setReveal(r => ({ ...r, [key]: data.value ?? "" }));
   };
 
   const TABS = [
@@ -2568,15 +2569,15 @@ function PlatformSettings({ token }) {
         </div>
         <div className="flex gap-2">
           <input
-            type={c.isSecret && !reveal[configKey] ? "password" : "text"}
-            value={reveal[configKey] && typeof reveal[configKey] === "string" ? reveal[configKey] : currentVal}
+            type={c.isSecret && !(configKey in reveal) ? "password" : "text"}
+            value={configKey in reveal ? reveal[configKey] : currentVal}
             onChange={e => handleChange(configKey, e.target.value)}
             placeholder={displayPlaceholder}
             className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"
           />
           {c.isSecret && (
             <button onClick={() => revealSecret(configKey)} className="text-xs border border-white/20 text-gray-400 px-3 py-2 rounded-lg hover:text-white hover:border-white/40 shrink-0">
-              {reveal[configKey] ? "🙈 Hide" : "👁 Show"}
+              {configKey in reveal ? "🙈 Hide" : "👁 Show"}
             </button>
           )}
         </div>
