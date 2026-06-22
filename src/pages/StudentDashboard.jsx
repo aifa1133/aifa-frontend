@@ -227,7 +227,7 @@ export default function StudentDashboard() {
           ) : (
             <>
               {activePage === "dashboard" && <DashboardHome profile={profile} token={token} onNavigate={setActivePage} />}
-              {activePage === "bootcamp" && <BootcampSection token={token} />}
+              {activePage === "bootcamp" && <BootcampSection token={token} profile={profile} />}
               {activePage === "workshops" && <WorkshopsSection token={token} />}
               {activePage === "video-courses" && <VideoCoursesSection profile={profile} onNavigate={setActivePage} />}
               {activePage === "certificates" && <CertificatesSection token={token} profile={profile} />}
@@ -499,8 +499,8 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/86400)} days ago`;
 }
 
-function BootcampSection({ token }) {
-  const [enrolled, setEnrolled] = useState(false);
+function BootcampSection({ token, profile }) {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
   const [showDrawer, setShowDrawer] = useState(false);
   const [showAllAnn, setShowAllAnn] = useState(false);
@@ -520,6 +520,12 @@ function BootcampSection({ token }) {
       .then(d => { if (Array.isArray(d) && d.length > 0) setBootcampData(d[0]); })
       .catch(() => {});
   }, []);
+
+  /* Derive enrollment from DB — user's _id must be in bootcamp.enrollments */
+  const userId = profile?._id || JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
+  const enrolled = !!(bootcampData && userId && bootcampData.enrollments?.some(
+    id => String(id) === String(userId)
+  ));
 
   useEffect(() => {
     if (!enrolled || !bootcampData?._id) return;
@@ -609,7 +615,7 @@ function BootcampSection({ token }) {
                   <div key={t} className="flex items-center gap-2"><span className="text-[#C7E36B] font-bold">✓</span>{t}</div>
                 ))}
               </div>
-              <button onClick={()=>setEnrolled(true)} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
+              <button onClick={()=>navigate("/bootcamp/enroll")} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
                 ENROLL NOW →
               </button>
               <p className="text-center text-gray-500 text-[11px]">🔒 Secure payment via Razorpay</p>
@@ -2432,3 +2438,4 @@ function PlaceholderSection({ title }) {
     </div>
   );
 }
+
