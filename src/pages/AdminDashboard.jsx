@@ -630,7 +630,7 @@ function BootcampAdmin({ token }) {
           </div>
           <div className="flex gap-2">
             <button onClick={()=>window.open("/dashboard","_blank")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">PREVIEW STUDENT VIEW</button>
-            <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>SAVE CHANGES</button>
+            <button onClick={()=>save(setSavedBatch)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>{savedBatch?"✓ SAVED":"SAVE CHANGES"}</button>
           </div>
         </div>
         <div className="flex gap-0">
@@ -829,7 +829,7 @@ function BootcampAdmin({ token }) {
             )}
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-white">Enrolled Students ({BC_STUDS.length})</h2>
-              <button className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Student</button>
+              <button onClick={()=>alert("Enter student email to add:\n(Invite feature — student must sign up first, then admin can assign them to this bootcamp.)")} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Student</button>
             </div>
             <div className="flex gap-2 mb-4">
               <select value={studStatus} onChange={e=>setStudStatus(e.target.value)} className="bg-[#0F1112] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">
