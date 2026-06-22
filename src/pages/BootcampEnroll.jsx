@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const CHECKLIST = [
@@ -79,6 +79,74 @@ export default function BootcampEnroll() {
   const GST      = couponApplied ? 170 : 0;
   const TOTAL    = SUBTOTAL + GST;
   const ORDER    = "ORD-89241";
+
+  const [paying, setPaying] = useState(false);
+
+  const loadRazorpay = () => new Promise(resolve => {
+    if (window.Razorpay) { resolve(true); return; }
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+
+  const handleRazorpay = async () => {
+    setPaying(true);
+    try {
+      const loaded = await loadRazorpay();
+      if (!loaded) { alert("Payment gateway failed to load. Please check your connection."); setPaying(false); return; }
+
+      const orderRes = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: TOTAL,
+          itemType: "bootcamp",
+          itemTitle: bootcamp?.title || "AI Filmmaking Bootcamp",
+          itemId: bootcamp?._id,
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) { alert(orderData.message || "Could not create order. Try again."); setPaying(false); return; }
+
+      const options = {
+        key: orderData.keyId || "rzp_live_T4dSvrjNOoRdif",
+        amount: orderData.amount,
+        currency: "INR",
+        name: "AIFA Film Academy",
+        description: bootcamp?.title || "AI Filmmaking Bootcamp",
+        order_id: orderData.orderId,
+        prefill: { name: form.name, email: form.email, contact: form.phone },
+        theme: { color: "#C7E36B" },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+                txId: orderData.txId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.success) {
+              setStep(3);
+            } else {
+              alert("Payment verification failed. Contact support with your payment ID: " + response.razorpay_payment_id);
+            }
+          } catch { alert("Verification error. Save your payment ID: " + response.razorpay_payment_id); }
+          setPaying(false);
+        },
+        modal: { ondismiss: () => setPaying(false) },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch { alert("Something went wrong. Please try again."); setPaying(false); }
+  };
 
   const handleApplyCoupon = async () => {
     setCouponMsg("");
@@ -290,8 +358,8 @@ export default function BootcampEnroll() {
                     <span className="text-[#C7E36B]">₹{TOTAL.toLocaleString()}</span>
                   </div>
                 </div>
-                <button onClick={() => setStep(3)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl mt-4 hover:bg-lime-300 transition-all">
-                  Proceed to pay
+                <button onClick={handleRazorpay} disabled={paying} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl mt-4 hover:bg-lime-300 transition-all disabled:opacity-60">
+                  {paying ? "Opening payment..." : "Proceed to pay"}
                 </button>
               </div>
             )}
