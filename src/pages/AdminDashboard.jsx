@@ -363,17 +363,52 @@ function AdminOverview({ token, onNavigate }) {
 }
 
 /* ── PROJECTS TAB (extracted to avoid hook-inside-render issues) ── */
-function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setProjSaved, projFileRef }) {
+function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setProjSaved, projFileRef, projects, setProjects, bootcampId, token }) {
+  const h = { Authorization:`Bearer ${token}` };
   useEffect(() => { setLocalProj(selProj); }, [selProj]);
+
+  const handleAdd = async () => {
+    const no = `PROJECT ${String((projects.length || 0) + 1).padStart(2,"0")}`;
+    const res = await fetch(`/api/bootcamps/${bootcampId}/projects`, {
+      method:"POST", headers:{...h,"Content-Type":"application/json"},
+      body: JSON.stringify({ no, title:"New Project", desc:"", requirements:[], resources:[] }),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      const mapped = { ...d, req: [], res: [] };
+      setProjects(prev=>[...prev, mapped]);
+      setSelProj(mapped);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!localProj?._id) return;
+    await fetch(`/api/bootcamps/${bootcampId}/projects/${localProj._id}`, {
+      method:"PUT", headers:{...h,"Content-Type":"application/json"},
+      body: JSON.stringify({
+        no: localProj.no, title: localProj.title, desc: localProj.desc,
+        requirements: localProj.req || [],
+        resources: (localProj.res || []).map(r => typeof r === "string" ? { name:r, size:"—", fileType:"PDF" } : r),
+      }),
+    });
+    setProjects(prev => prev.map(p => p._id === localProj._id ? { ...localProj } : p));
+    setProjSaved(true);
+    setTimeout(() => setProjSaved(false), 2000);
+  };
+
+  const displayList = projects.length > 0 ? projects : BC_PROJS_DATA;
+
   return (
     <div className="flex gap-5 h-full">
       <div className="w-[260px] shrink-0 space-y-2">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white">Projects</h3>
-          <button className="text-xs bg-[#C7E36B] text-black font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add</button>
+          <h3 className="text-sm font-semibold text-white">Projects <span className="text-gray-600 text-[10px]">({displayList.length})</span></h3>
+          <button onClick={handleAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add</button>
         </div>
-        {BC_PROJS_DATA.map((p,i)=>(
-          <div key={i} onClick={()=>setSelProj(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${selProj?.no===p.no?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
+        {displayList.length === 0 ? (
+          <p className="text-gray-600 text-xs text-center py-6">No projects yet. Click "+ Add" to create one.</p>
+        ) : displayList.map((p,i)=>(
+          <div key={p._id||i} onClick={()=>setSelProj(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${selProj?._id===p._id||selProj?.no===p.no?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
             <p className="text-[10px] text-gray-400 font-semibold uppercase">{p.no}</p>
             <p className="text-xs font-bold text-white mt-0.5">{p.title}</p>
             <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{p.desc}</p>
@@ -384,21 +419,21 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
         <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5 overflow-y-auto">
           <input type="file" ref={projFileRef} className="hidden"/>
           <div className="grid grid-cols-2 gap-4">
-            <Fld label="Project Number" value={localProj.no} onChange={v=>setLocalProj(p=>({...p,no:v}))} />
-            <Fld label="Project Title" value={localProj.title} onChange={v=>setLocalProj(p=>({...p,title:v}))} />
+            <Fld label="Project Number" value={localProj.no||""} onChange={v=>setLocalProj(p=>({...p,no:v}))} />
+            <Fld label="Project Title" value={localProj.title||""} onChange={v=>setLocalProj(p=>({...p,title:v}))} />
           </div>
-          <Fld label="Description" value={localProj.desc} onChange={v=>setLocalProj(p=>({...p,desc:v}))} textarea />
+          <Fld label="Description" value={localProj.desc||""} onChange={v=>setLocalProj(p=>({...p,desc:v}))} textarea />
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] text-gray-400 font-semibold uppercase">Requirements</p>
-              <button onClick={()=>setLocalProj(p=>({...p,req:[...p.req,"New requirement..."]})) } className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="plus" size={11}/>Add Requirement</button>
+              <button onClick={()=>setLocalProj(p=>({...p,req:[...(p.req||[]),"New requirement..."]}))} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="plus" size={11}/>Add Requirement</button>
             </div>
             <div className="space-y-2">
-              {localProj.req.map((r,i)=>(
+              {(localProj.req||[]).map((r,i)=>(
                 <div key={i} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                   <I name="check" size={13} className="text-[#C7E36B] shrink-0"/>
-                  <span className="text-xs text-white flex-1">{r}</span>
-                  <button onClick={()=>setLocalProj(p=>({...p,req:p.req.filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
+                  <span className="text-xs text-white flex-1">{typeof r==="string"?r:r.text||r}</span>
+                  <button onClick={()=>setLocalProj(p=>({...p,req:(p.req||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
                 </div>
               ))}
             </div>
@@ -409,18 +444,18 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
               <button onClick={()=>projFileRef.current?.click()} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="upload" size={11}/>Upload File</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {localProj.res.map((f,i)=>(
+              {(localProj.res||[]).map((f,i)=>(
                 <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
                   <span className="text-lg">📄</span>
-                  <span className="text-xs text-white flex-1 truncate">{f}</span>
-                  <button onClick={()=>setLocalProj(p=>({...p,res:p.res.filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
+                  <span className="text-xs text-white flex-1 truncate">{typeof f==="string"?f:f.name||f}</span>
+                  <button onClick={()=>setLocalProj(p=>({...p,res:(p.res||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
                 </div>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-2 pt-2">
             <button onClick={()=>setLocalProj(selProj)} className="flex-1 border border-white/20 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">Discard</button>
-            <button onClick={()=>{setProjSaved(true);setTimeout(()=>setProjSaved(false),2000);}} className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Save Project</button>
+            <button onClick={handleSave} className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Save Project</button>
             {projSaved&&<span className="text-green-400 text-xs font-semibold whitespace-nowrap">✓ Project saved!</span>}
           </div>
         </div>
@@ -661,6 +696,19 @@ function BootcampAdmin({ token }) {
           setAnnsLoading(false);
         }).catch(()=>setAnnsLoading(false));
     }
+    if (tab === "projects") {
+      fetch(`/api/bootcamps/${sel._id}/projects`, { headers:h })
+        .then(r=>r.ok?r.json():[])
+        .then(d=>{
+          if (Array.isArray(d) && d.length > 0) {
+            setProjects(d);
+            setSelProj(d[0]);
+          } else {
+            setProjects([]);
+            setSelProj(null);
+          }
+        }).catch(()=>{});
+    }
     if (tab === "settings" && sel) {
       setStgs({
         name: sel.batchName || sel.title || "",
@@ -692,6 +740,7 @@ function BootcampAdmin({ token }) {
   };
 
   const [anns,setAnns]=useState([]);
+  const [projects,setProjects]=useState([]);
 
   const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings"];
 
@@ -971,7 +1020,7 @@ function BootcampAdmin({ token }) {
         )}
 
         {tab==="projects"&&(
-          <ProjTab selProj={selProj} setSelProj={setSelProj} localProj={localProj} setLocalProj={setLocalProj} projSaved={projSaved} setProjSaved={setProjSaved} projFileRef={projFileRef} />
+          <ProjTab selProj={selProj} setSelProj={setSelProj} localProj={localProj} setLocalProj={setLocalProj} projSaved={projSaved} setProjSaved={setProjSaved} projFileRef={projFileRef} projects={projects} setProjects={setProjects} bootcampId={sel?._id} token={token} />
         )}
 
         {tab==="announcement"&&(
