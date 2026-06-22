@@ -120,7 +120,7 @@ export default function StudentDashboard() {
           <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" />
         </div>
         {/* Nav */}
-        <nav className="flex-1 py-3 overflow-y-auto">
+        <nav className="flex-1 py-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {NAV.map(item => (
             <button
               key={item.id}

@@ -97,7 +97,7 @@ export default function AdminDashboard() {
           <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" onError={e => { e.target.style.display='none'; }} />
           <span className="text-white font-black text-sm">AIFA</span>
         </div>
-        <nav className="flex-1 overflow-y-auto py-2">
+        <nav className="flex-1 overflow-y-auto py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {[...NAV_ITEMS, { _divider: true }, ...MGMT_ITEMS].map((item, idx) => {
             if (item._divider) return <p key="div" className="text-[9px] text-gray-600 font-bold uppercase px-3 pt-3 pb-1 tracking-wider">Management</p>;
             return (
