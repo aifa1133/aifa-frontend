@@ -308,8 +308,8 @@ export default function BootcampEnroll() {
               <span className="text-white font-bold">₹14,000</span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-gray-300">Coupon code Applied</span>
-              <span className="text-red-400">-₹250</span>
+              <span className="text-gray-300">Coupon code Applied {couponApplied ? "[SAVE500]" : ""}</span>
+              <span className="text-red-400">-₹{DISCOUNT}</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-300">Membership Included</span>
