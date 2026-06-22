@@ -1503,10 +1503,10 @@ function InvoiceView({ item, onBack }) {
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${item.status === "Paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{item.status}</span>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 text-sm border border-gray-200 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">
+          <button onClick={() => window.print()} className="flex items-center gap-2 text-sm border border-gray-200 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">
             <Ic name="print" size={14} />Print
           </button>
-          <button className="flex items-center gap-2 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+          <button onClick={() => alert("PDF download coming soon!")} className="flex items-center gap-2 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
             <Ic name="download" size={14} />Download PDF
           </button>
         </div>
