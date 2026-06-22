@@ -662,8 +662,10 @@ function BootcampAdmin({ token }) {
   const [sessAdded,setSessAdded]=useState(false);
   /* F: real announcements from API */
   const [annsLoading,setAnnsLoading]=useState(false);
-  /* G: Edit Details modal resources */
-  const [modalResources,setModalResources]=useState(["Slides.pdf","Notes.pdf"]);
+  /* G: Edit Details modal resources + recording + status */
+  const [modalResources,setModalResources]=useState([]);
+  const [modalRecordingUrl,setModalRecordingUrl]=useState("");
+  const [modalStatus,setModalStatus]=useState("COMING SOON");
   /* H: View Student */
   const [viewStudent,setViewStudent]=useState(null);
   /* I: Edit Student */
@@ -680,6 +682,15 @@ function BootcampAdmin({ token }) {
   const [folderName,setFolderName]=useState("");
   const [folderSaved,setFolderSaved]=useState(false);
   const h = { Authorization:`Bearer ${token}` };
+
+  /* Sync modal fields whenever a session is opened for editing */
+  useEffect(() => {
+    if (editSession) {
+      setModalStatus(editSession.status || "COMING SOON");
+      setModalRecordingUrl(editSession.recordingUrl || "");
+      setModalResources((editSession.resources || []).map(r => r.name || r));
+    }
+  }, [editSession?._id]);
 
   /* Load tab-specific data when switching tabs */
   useEffect(() => {
@@ -832,15 +843,15 @@ function BootcampAdmin({ token }) {
                   <div className="space-y-4">
                     <div>
                       <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Status</p>
-                      <select defaultValue={editSession.status} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
-                        {["Completed","Active","Coming Soon","Cancelled"].map(o=><option key={o}>{o}</option>)}
+                      <select value={modalStatus} onChange={e=>setModalStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
+                        {["COMPLETED","ACTIVE","COMING SOON","CANCELLED"].map(o=><option key={o}>{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Recording Link</p>
                       <div className="relative">
                         <I name="link" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
-                        <input placeholder="Paste Video URL..." className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl pl-9 pr-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B] placeholder-gray-600"/>
+                        <input value={modalRecordingUrl} onChange={e=>setModalRecordingUrl(e.target.value)} placeholder="Paste Video URL..." className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl pl-9 pr-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B] placeholder-gray-600"/>
                       </div>
                     </div>
                     <div>
@@ -863,8 +874,13 @@ function BootcampAdmin({ token }) {
                     <button onClick={()=>setEditSession(null)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
                     <button onClick={async()=>{
                       if (editSession?._id) {
-                        await fetch(`/api/bootcamps/${sel._id}/sessions/${editSession._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ resources: modalResources.map(n=>({name:n,size:"—"})) }) });
-                        setSessions(prev=>prev.map(s=>s._id===editSession._id?{...s,resources:modalResources.map(n=>({name:n,size:"—"}))}:s));
+                        const payload = {
+                          status: modalStatus,
+                          recordingUrl: modalRecordingUrl,
+                          resources: modalResources.map(n=>({name:n,size:"—"})),
+                        };
+                        await fetch(`/api/bootcamps/${sel._id}/sessions/${editSession._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+                        setSessions(prev=>prev.map(s=>s._id===editSession._id?{...s,...payload}:s));
                       }
                       setEditSession(null);
                     }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">SAVE & UPDATE</button>
