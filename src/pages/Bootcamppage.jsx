@@ -15,7 +15,12 @@ import IncludedSection from "./Bootcamp/IncludedSection";
 
 export default function Bootcamppage() {
   const [showBar, setShowBar] = useState(false);
+  const [bootcamp, setBootcamp] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handle = () => {
@@ -48,8 +53,8 @@ export default function Bootcamppage() {
           <div>
             <div className="flex items-center gap-4">
               <p className="text-white font-bold text-base">AI Filmmaking Bootcamp</p>
-              <span className="text-[#C7E36B] font-bold text-2xl">₹14,000</span>
-              <span className="text-gray-400 line-through text-sm">₹19,000</span>
+              <span className="text-[#C7E36B] font-bold text-2xl">₹{(bootcamp?.price||14000).toLocaleString("en-IN")}</span>
+              <span className="text-gray-400 line-through text-sm">₹{(bootcamp?.originalPrice||19000).toLocaleString("en-IN")}</span>
             </div>
             <p className="text-gray-400 text-xs mt-0.5">1 month Program + Lifetime AIFA Membership (Worth ₹40,000)</p>
           </div>
@@ -61,9 +66,9 @@ export default function Bootcamppage() {
         <div className="md:hidden px-4 py-4">
           <div className="flex items-center justify-between mb-1">
             <p className="text-white font-bold text-sm">AI Filmmaking Bootcamp</p>
-            <span className="text-gray-400 line-through text-xs">₹19,000</span>
+            <span className="text-gray-400 line-through text-xs">₹{(bootcamp?.originalPrice||19000).toLocaleString("en-IN")}</span>
           </div>
-          <p className="text-[#C7E36B] font-bold text-2xl mb-3">₹14,000</p>
+          <p className="text-[#C7E36B] font-bold text-2xl mb-3">₹{(bootcamp?.price||14000).toLocaleString("en-IN")}</p>
           <button onClick={() => navigate("/bootcamp/enroll")} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Book your seat →
           </button>

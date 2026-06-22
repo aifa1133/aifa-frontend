@@ -490,21 +490,70 @@ const BC_FILES = [
   { icon: "📦", color: "text-blue-400",   name: "Midjourney Guide.pdf",           meta: "45 MB • ZIP",        type: "download" },
 ];
 
+function timeAgo(dateStr) {
+  const d = new Date(dateStr); const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)} days ago`;
+}
+
 function BootcampSection({ token }) {
   const [enrolled, setEnrolled] = useState(false);
   const [tab, setTab] = useState("overview");
-  const [activeSession, setActiveSession] = useState(BC_SESSION_LIST[0]);
-  const [activeProject, setActiveProject] = useState(BC_PROJECT_LIST[0]);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showAllAnn, setShowAllAnn] = useState(false);
+
+  /* API data */
+  const [bootcampData, setBootcampData] = useState(null);
+  const [sessions, setSessions]         = useState([]);
+  const [projects, setProjects]         = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [drawerFiles, setDrawerFiles]   = useState(BC_FILES);
+  const [activeSession, setActiveSession] = useState(null);
+  const [activeProject, setActiveProject] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/bootcamps")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d) && d.length > 0) setBootcampData(d[0]); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!enrolled || !bootcampData?._id) return;
+    const id = bootcampData._id;
+    fetch(`/api/bootcamps/${id}/sessions`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d) && d.length > 0) { setSessions(d); setActiveSession(d[0]); } else { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); } })
+      .catch(() => { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); });
+    fetch(`/api/bootcamps/${id}/projects`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          const mapped = d.map(p => ({ ...p, req: (p.requirements||[]).map(r => ({ done:false, text:r })), res: (p.resources||[]).map(r => r.name||r) }));
+          setProjects(mapped); setActiveProject(mapped[0]);
+        } else { setProjects(BC_PROJECT_LIST); setActiveProject(BC_PROJECT_LIST[0]); }
+      })
+      .catch(() => { setProjects(BC_PROJECT_LIST); setActiveProject(BC_PROJECT_LIST[0]); });
+    fetch(`/api/bootcamps/${id}/announcements`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setAnnouncements(d); })
+      .catch(() => {});
+    fetch("/api/resources")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d) && d.length > 0) setDrawerFiles(d.map(r => ({ icon:"📄", color:"text-gray-400", name:r.title||r.name, meta:`${r.fileSize||"—"} • ${r.type||"PDF"}`, type:r.type==="LINK"?"link":"download" }))); })
+      .catch(() => {});
+  }, [enrolled, bootcampData?._id]);
 
   if (!enrolled) return (
     <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="mb-8">
-          <span className="text-[10px] bg-[#7C3AED] text-white font-bold px-3 py-1 rounded-full tracking-wider">BATCH 3 · 2024</span>
-          <h1 className="text-3xl font-black text-white mt-4 mb-2 leading-tight">Build AI-Powered Films<br/>from Script to Screen</h1>
+          <span className="text-[10px] bg-[#7C3AED] text-white font-bold px-3 py-1 rounded-full tracking-wider">{bootcampData?.batchLabel || "Batch 2024"}</span>
+          <h1 className="text-3xl font-black text-white mt-4 mb-2 leading-tight">{bootcampData?.title || "Build AI-Powered Films"}<br/>from Script to Screen</h1>
           <p className="text-gray-400 text-sm leading-relaxed max-w-lg">Transform your storytelling with cutting-edge AI tools. No prior filmmaking experience needed — just your imagination.</p>
         </div>
 
@@ -551,10 +600,10 @@ function BootcampSection({ token }) {
           <div>
             <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5 sticky top-4">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-3xl font-black text-white">₹14,000</span>
-                <span className="text-gray-400 line-through text-base">₹19,000</span>
+                <span className="text-3xl font-black text-white">₹{(bootcampData?.price||14000).toLocaleString("en-IN")}</span>
+                <span className="text-gray-400 line-through text-base">₹{(bootcampData?.originalPrice||19000).toLocaleString("en-IN")}</span>
               </div>
-              <p className="text-[#C7E36B] text-xs font-bold mb-4">Save ₹5,000 — Limited seats</p>
+              <p className="text-[#C7E36B] text-xs font-bold mb-4">Save ₹{((bootcampData?.originalPrice||19000)-(bootcampData?.price||14000)).toLocaleString("en-IN")} — Limited seats</p>
               <div className="space-y-2 mb-5 text-xs text-gray-400">
                 {["1 Month Intensive Program","Lifetime AIFA Membership (Worth ₹40,000)","Certificate of Completion","20 Assignments + 5 Projects"].map(t=>(
                   <div key={t} className="flex items-center gap-2"><span className="text-[#C7E36B] font-bold">✓</span>{t}</div>
@@ -577,8 +626,8 @@ function BootcampSection({ token }) {
       <div className="bg-[#7C3AED]/10 border-b border-[#7C3AED]/20 px-6 py-3 shrink-0 flex items-center gap-3">
         <span className="text-[10px] font-bold bg-[#7C3AED] text-white px-2.5 py-1 rounded-full">IN PROGRESS</span>
         <div>
-          <h2 className="text-sm font-bold text-white">AI Filmmaking Bootcamp</h2>
-          <p className="text-[10px] text-gray-400">Batch 3 · 2024 · 24 students enrolled</p>
+          <h2 className="text-sm font-bold text-white">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h2>
+          <p className="text-[10px] text-gray-400">{bootcampData?.batchLabel || "Batch 2024"} · {bootcampData?.enrollments?.length || bootcampData?.enrolledCount || 0} students enrolled</p>
         </div>
       </div>
       <div className="flex border-b border-white/10 bg-[#0F1112] px-6 shrink-0">
@@ -593,14 +642,14 @@ function BootcampSection({ token }) {
             <div className="flex-1 space-y-4 min-w-0">
               <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-5">
                 <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full w-fit mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>NEXT LIVE : SESSION 12
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>NEXT LIVE
                 </span>
-                <h3 className="text-xl font-bold text-white mb-1">Generative Video with Sora &amp; Midjourney</h3>
+                <h3 className="text-xl font-bold text-white mb-1">{bootcampData?.nextSessionName || "Upcoming Session"}</h3>
                 <div className="flex items-center gap-4 text-white/80 text-xs mb-4">
-                  <span>📅 Today, 7:00 PM IST</span><span>⏳ Starts in 2h 45m</span>
+                  <span>📅 {bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt).toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "TBA"}</span>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={()=>window.open("https://zoom.us","_blank")} className="bg-[#7C3AED] text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-purple-600">Join Session Now →</button>
+                  <button onClick={()=>window.open(bootcampData?.zoomLink||"https://zoom.us","_blank")} className="bg-[#7C3AED] text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-purple-600">Join Session Now →</button>
                   <button className="bg-white/20 text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-white/30">Mark as Watched</button>
                 </div>
               </div>
@@ -623,17 +672,17 @@ function BootcampSection({ token }) {
                   <h3 className="text-sm font-semibold text-white">Announcements</h3>
                   <button onClick={()=>setShowAllAnn(v=>!v)} className="text-xs text-[#7C3AED] hover:underline">{showAllAnn?"Show Less":"View All"}</button>
                 </div>
-                {[
-                  {title:"New Resource: AI Cinematography Guide",time:"2h ago",desc:"I've just uploaded the comprehensive guide for Module 5. Please review it before today's live session."},
-                  {title:"Workshop Rescheduled: 1-on-1 Mentoring",time:"Yesterday",desc:"The Friday mentorship slot has been moved to 3:00 PM EST. Check the Mentorship tab for updates."},
+                {(announcements.length > 0 ? announcements : [
+                  {title:"New Resource: AI Cinematography Guide",createdAt:new Date(Date.now()-7200000).toISOString(),content:"The comprehensive guide for Module 5 is now available."},
+                  {title:"Workshop Rescheduled: 1-on-1 Mentoring",createdAt:new Date(Date.now()-86400000).toISOString(),content:"The Friday mentorship slot has been moved to 3:00 PM."},
                   ...(showAllAnn?[
-                    {title:"Live Recording: Session 10 Available",time:"3 days ago",desc:"Session 10 recording has been uploaded. Watch at 1.5x speed for revision."},
-                    {title:"Project 02 Deadline: Oct 28",time:"4 days ago",desc:"Submit your 30-second Runway Gen-2 short film by Oct 28, 11:59 PM IST."},
+                    {title:"Live Recording: Session 10 Available",createdAt:new Date(Date.now()-259200000).toISOString(),content:"Session 10 recording has been uploaded."},
+                    {title:"Project 02 Deadline: Oct 28",createdAt:new Date(Date.now()-345600000).toISOString(),content:"Submit your 30-second Runway Gen-2 short film by Oct 28."},
                   ]:[])
-                ].map((a,i)=>(
+                ]).slice(0, showAllAnn ? 99 : 2).map((a,i)=>(
                   <div key={i} className="border-b border-white/5 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
-                    <div className="flex items-center justify-between"><p className="text-xs font-semibold text-white">{a.title}</p><span className="text-[10px] text-gray-500 shrink-0 ml-2">{a.time}</span></div>
-                    <p className="text-[11px] text-gray-400 mt-1">{a.desc}</p>
+                    <div className="flex items-center justify-between"><p className="text-xs font-semibold text-white">{a.title}</p><span className="text-[10px] text-gray-500 shrink-0 ml-2">{a.createdAt?timeAgo(a.createdAt):a.time}</span></div>
+                    <p className="text-[11px] text-gray-400 mt-1">{a.content||a.desc}</p>
                   </div>
                 ))}
               </div>
@@ -651,7 +700,7 @@ function BootcampSection({ token }) {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <h3 className="text-xs font-semibold text-white mb-3">Your Mentors</h3>
-                {[{name:"David Fincher AI",role:"Lead Instructor"},{name:"Sarah Jenkins",role:"Technical Mentor"}].map((m,i)=>(
+                {(bootcampData?.mentors?.length > 0 ? bootcampData.mentors : [{name:"David Fincher AI",role:"Lead Instructor"},{name:"Sarah Jenkins",role:"Technical Mentor"}]).map((m,i)=>(
                   <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">{m.name[0]}</div>
@@ -668,7 +717,7 @@ function BootcampSection({ token }) {
         {tab==="sessions"&&(
           <div className="flex h-full">
             <div className="w-[270px] shrink-0 border-r border-white/10 overflow-y-auto">
-              {BC_SESSION_LIST.map((s,i)=>(
+              {(sessions.length > 0 ? sessions : BC_SESSION_LIST).map((s,i)=>(
                 <button key={i} onClick={()=>!s.locked&&setActiveSession(s)} disabled={s.locked} className={`w-full flex items-center gap-3 px-4 py-3 border-b border-white/5 text-left transition-all ${activeSession?.no===s.no&&!s.locked?"bg-[#7C3AED]/10 border-l-2 border-l-[#7C3AED]":"hover:bg-white/5"} ${s.locked?"opacity-40 cursor-not-allowed":""}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[9px] font-bold ${s.locked?"bg-white/5 text-gray-600":s.no<=10?"bg-green-500/20 text-green-400":"bg-[#7C3AED]/20 text-[#7C3AED]"}`}>
                     {s.locked?<Ic name="lock" size={11} className="text-gray-500"/>:s.no<=10?<Ic name="check" size={11} className="text-green-400"/>:s.no}
@@ -713,7 +762,7 @@ function BootcampSection({ token }) {
         {tab==="projects"&&(
           <div className="flex h-full">
             <div className="w-[250px] shrink-0 border-r border-white/10 overflow-y-auto p-3 space-y-2">
-              {BC_PROJECT_LIST.map((p,i)=>(
+              {(projects.length > 0 ? projects : BC_PROJECT_LIST).map((p,i)=>(
                 <div key={i} onClick={()=>setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no?"border-[#7C3AED]/50 bg-[#7C3AED]/5":"border-white/10 hover:border-white/20"}`}>
                   <p className="text-[10px] text-[#7C3AED] font-bold uppercase">{p.no}</p>
                   <p className="text-xs font-bold text-white mt-0.5">{p.title}</p>
@@ -782,7 +831,7 @@ function BootcampSection({ token }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-          {BC_FILES.map((f, i) => (
+          {drawerFiles.map((f, i) => (
             <div key={i} className="bg-white border border-gray-100 rounded-xl px-3 py-3 flex items-center gap-3 shadow-sm hover:border-gray-200 transition-all">
               <span className={`text-xl shrink-0 ${f.color}`}>{f.icon}</span>
               <div className="flex-1 min-w-0">
@@ -1417,14 +1466,30 @@ function JobsSection({ token }) {
 /* ════════════════════════════════════════════
    BILLING & PAYMENTS SECTION
 ════════════════════════════════════════════ */
-const PURCHASES = [
-  { id: "#INV-2023-089", name: "Full-Stack Web Development", type: "Bootcamp", date: "Oct 24, 2023", amount: "$2,499.00", status: "Paid" },
-  { id: "#INV-2023-088", name: "Advanced React Patterns", type: "Workshop", date: "Sep 12, 2023", amount: "$199.00", status: "Paid" },
-  { id: "#INV-2023-087", name: "UI/UX Design Fundamentals", type: "Course", date: "Aug 05, 2023", amount: "$49.00", status: "Pending" },
-];
-
 function BillingSection({ onViewInvoice }) {
   const [openMenu, setOpenMenu] = useState(null);
+  const [purchases, setPurchases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("aifa_token");
+
+  useEffect(() => {
+    fetch("/api/payments/history", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          setPurchases(d.map(p => ({
+            id: `#INV-${String(p._id).slice(-6).toUpperCase()}`,
+            name: p.itemTitle || "Course",
+            type: p.itemType ? p.itemType.charAt(0).toUpperCase() + p.itemType.slice(1) : "Course",
+            date: new Date(p.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}),
+            amount: `₹${(p.amount||0).toLocaleString("en-IN")}`,
+            status: p.status === "paid" ? "Paid" : "Pending",
+          })));
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [token]);
 
   return (
     <div className="p-6 bg-[#F5F7FA] min-h-full">
@@ -1433,9 +1498,9 @@ function BillingSection({ onViewInvoice }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { icon: "💰", label: "Total Amount Spent", value: "$2,747.00" },
-          { icon: "🛒", label: "Total Purchases", value: "3" },
-          { icon: "📅", label: "Last Payment Date", value: "Oct 24, 2023" },
+          { icon: "💰", label: "Total Amount Spent", value: loading ? "—" : `₹${purchases.filter(p=>p.status==="Paid").reduce((s,p)=>s+Number(p.amount.replace(/[₹,]/g,"")||0),0).toLocaleString("en-IN")}` },
+          { icon: "🛒", label: "Total Purchases", value: loading ? "—" : String(purchases.length) },
+          { icon: "📅", label: "Last Payment Date", value: purchases.length > 0 ? purchases[0].date : "—" },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-sm text-gray-500 flex items-center gap-2"><span>{s.icon}</span>{s.label}</p>
@@ -1457,7 +1522,9 @@ function BillingSection({ onViewInvoice }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {PURCHASES.map((p, i) => (
+              {loading && <tr><td colSpan={7} className="px-6 py-6 text-center text-gray-400 text-sm animate-pulse">Loading transactions...</td></tr>}
+              {!loading && purchases.length === 0 && <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 text-sm">No transactions yet.</td></tr>}
+              {purchases.map((p, i) => (
                 <tr key={i} className="hover:bg-gray-50 transition-all">
                   <td className="px-6 py-4 text-sm font-semibold text-gray-700">{p.id}</td>
                   <td className="px-6 py-4 text-sm text-gray-800">{p.name}</td>

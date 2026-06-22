@@ -430,14 +430,32 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
 }
 
 /* ── BOOTCAMP LIST SUB-COMPONENT ── */
-function ListBootcampAdmin({ onSelect }) {
+function ListBootcampAdmin({ onSelect, token }) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy, setSortBy]             = useState("Default");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createSuccess, setCreateSuccess]     = useState(false);
   const [newBC, setNewBC] = useState({name:"",code:"",price:"",duration:"",status:"ACTIVE"});
+  const [bootcamps, setBootcamps] = useState([]);
+  const [loadingBC, setLoadingBC] = useState(true);
 
-  const filtered = BC_CARDS
+  useEffect(() => {
+    fetch("/api/bootcamps", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setBootcamps(d); setLoadingBC(false); })
+      .catch(() => setLoadingBC(false));
+  }, [token]);
+
+  const cards = bootcamps.map(b => ({
+    _id: b._id, code: b.batchCode || "B??", title: b.title,
+    desc: b.description || "", students: b.enrollments?.length || b.enrolledCount || 0,
+    price: b.price ? `₹${b.price.toLocaleString("en-IN")}` : "—",
+    duration: b.duration || "—",
+    status: b.isPublished ? "ACTIVE" : (b.status || "COMING SOON"),
+    raw: b,
+  }));
+
+  const filtered = cards
     .filter(b => statusFilter === "All" || b.status === statusFilter)
     .sort((a,b) => sortBy === "Name A-Z" ? a.title.localeCompare(b.title) : sortBy === "Students" ? b.students - a.students : 0);
 
@@ -499,23 +517,29 @@ function ListBootcampAdmin({ onSelect }) {
           </select>
           <span className="text-[10px] text-gray-600">{filtered.length} of {BC_CARDS.length} bootcamps</span>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          {filtered.map(b=>(
-            <div key={b._id} onClick={()=>onSelect(b)} className="bg-[#0F1112] border border-white/10 rounded-xl p-5 cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-              <div className="flex items-start justify-between mb-3">
-                <span className="text-[10px] bg-white/10 text-gray-400 font-bold px-2 py-0.5 rounded">{b.code}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[b.status]||"bg-gray-500/20 text-gray-400"}`}>{b.status}</span>
+        {loadingBC ? (
+          <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading bootcamps...</p>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-500 text-sm">No bootcamps found. Create your first one!</div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            {filtered.map(b=>(
+              <div key={b._id} onClick={()=>onSelect(b.raw || b)} className="bg-[#0F1112] border border-white/10 rounded-xl p-5 cursor-pointer hover:border-[#C7E36B]/40 transition-all">
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-[10px] bg-white/10 text-gray-400 font-bold px-2 py-0.5 rounded">{b.code}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[b.status]||"bg-gray-500/20 text-gray-400"}`}>{b.status}</span>
+                </div>
+                <h3 className="text-sm font-bold text-white mb-1">{b.title}</h3>
+                <p className="text-[11px] text-gray-400 mb-4 line-clamp-2">{b.desc}</p>
+                <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
+                  {[["Students",b.students],["Price",b.price],["Duration",b.duration]].map(([l,v])=>(
+                    <div key={l}><p className="text-[10px] text-gray-500 uppercase">{l}</p><p className="text-xs font-bold text-white mt-0.5">{v}</p></div>
+                  ))}
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-white mb-1">{b.title}</h3>
-              <p className="text-[11px] text-gray-400 mb-4 line-clamp-2">{b.desc}</p>
-              <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
-                {[["Students",b.students],["Price",b.price],["Duration",b.duration]].map(([l,v])=>(
-                  <div key={l}><p className="text-[10px] text-gray-500 uppercase">{l}</p><p className="text-xs font-bold text-white mt-0.5">{v}</p></div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -587,10 +611,17 @@ function BootcampAdmin({ token }) {
   const [savedBatch,setSavedBatch]=useState(false);
   const [savedZoom,setSavedZoom]=useState(false);
   const save = (setter) => { setter(true); setTimeout(()=>setter(false),2000); };
+  /* C: real sessions from API */
+  const [sessions,setSessions]=useState([]);
+  const [sessLoading,setSessLoading]=useState(false);
+  /* D: real students from API */
+  const [students,setStudents]=useState([]);
   /* E: Add Session modal */
   const [showAddSession,setShowAddSession]=useState(false);
   const [newSess,setNewSess]=useState({name:"",status:"COMING SOON"});
   const [sessAdded,setSessAdded]=useState(false);
+  /* F: real announcements from API */
+  const [annsLoading,setAnnsLoading]=useState(false);
   /* G: Edit Details modal resources */
   const [modalResources,setModalResources]=useState(["Slides.pdf","Notes.pdf"]);
   /* H: View Student */
@@ -608,10 +639,64 @@ function BootcampAdmin({ token }) {
   const [showFolderInput,setShowFolderInput]=useState(false);
   const [folderName,setFolderName]=useState("");
   const [folderSaved,setFolderSaved]=useState(false);
+  const h = { Authorization:`Bearer ${token}` };
+
+  /* Load tab-specific data when switching tabs */
+  useEffect(() => {
+    if (!sel?._id) return;
+    if (tab === "sessions") {
+      setSessLoading(true);
+      fetch(`/api/bootcamps/${sel._id}/sessions`, { headers:h })
+        .then(r=>r.ok?r.json():[]).then(d=>{ setSessions(Array.isArray(d)?d:[]); setSessLoading(false); }).catch(()=>setSessLoading(false));
+    }
+    if (tab === "students") {
+      fetch(`/api/bootcamps/${sel._id}/students`, { headers:h })
+        .then(r=>r.ok?r.json():[]).then(d=>{ setStudents(Array.isArray(d)?d:[]); }).catch(()=>setStudents([]));
+    }
+    if (tab === "announcement") {
+      setAnnsLoading(true);
+      fetch(`/api/bootcamps/${sel._id}/announcements/all`, { headers:h })
+        .then(r=>r.ok?r.json():[]).then(d=>{
+          if (Array.isArray(d)) { setAnns(d); if(d.length>0){setSelAnn(d[0]);setAnnF({title:d[0].title,content:d[0].content,status:d[0].status});} }
+          setAnnsLoading(false);
+        }).catch(()=>setAnnsLoading(false));
+    }
+    if (tab === "settings" && sel) {
+      setStgs({
+        name: sel.batchName || sel.title || "",
+        code: sel.batchCode || "",
+        startDate: sel.startDate ? sel.startDate.split("T")[0] : "",
+        endDate: sel.endDate ? sel.endDate.split("T")[0] : "",
+        status: sel.isPublished ? "ACTIVE" : "COMING SOON",
+        zoomLink: sel.zoomLink || "",
+        zoomId: sel.zoomId || "",
+        zoomPass: sel.zoomPass || "",
+        autoRecord: true, reminders: true, chat: true,
+      });
+      setMentors(sel.mentors || []);
+    }
+  }, [tab, sel?._id]);
+
+  /* Settings save functions wired to real API */
+  const saveBatchInfo = async () => {
+    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE" }) });
+    save(setSavedBatch);
+  };
+  const saveZoomSettings = async () => {
+    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink, zoomId:stgs.zoomId, zoomPass:stgs.zoomPass }) });
+    save(setSavedZoom);
+  };
+  const saveMentors = async (updated) => {
+    setMentors(updated);
+    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ mentors:updated }) });
+  };
+
+  const [anns,setAnns]=useState([]);
+
   const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings"];
 
   if(view==="list") return(
-    <ListBootcampAdmin onSelect={(b)=>{setSel(b);setTab("overview");setView("detail");}} />
+    <ListBootcampAdmin token={token} onSelect={(b)=>{setSel(b);setTab("overview");setView("detail");}} />
   );
 
   return(
@@ -717,7 +802,13 @@ function BootcampAdmin({ token }) {
                   </div>
                   <div className="flex justify-end gap-2 mt-6">
                     <button onClick={()=>setEditSession(null)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
-                    <button onClick={()=>setEditSession(null)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">SAVE & UPDATE</button>
+                    <button onClick={async()=>{
+                      if (editSession?._id) {
+                        await fetch(`/api/bootcamps/${sel._id}/sessions/${editSession._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ resources: modalResources.map(n=>({name:n,size:"—"})) }) });
+                        setSessions(prev=>prev.map(s=>s._id===editSession._id?{...s,resources:modalResources.map(n=>({name:n,size:"—"}))}:s));
+                      }
+                      setEditSession(null);
+                    }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">SAVE & UPDATE</button>
                   </div>
                 </div>
               </div>
@@ -742,7 +833,13 @@ function BootcampAdmin({ token }) {
                   </div>
                   <div className="flex justify-end gap-2 mt-6">
                     <button onClick={()=>setShowAddSession(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
-                    <button onClick={()=>{setShowAddSession(false);setSessAdded(true);setTimeout(()=>setSessAdded(false),2000);setNewSess({name:"",status:"COMING SOON"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">ADD SESSION</button>
+                    <button onClick={async()=>{
+                      if (!newSess.name.trim()) return;
+                      const no = (sessions.length || 0) + 1;
+                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({...newSess, no}) });
+                      if (res.ok) { const d = await res.json(); setSessions(prev=>[...prev,d]); }
+                      setShowAddSession(false); setSessAdded(true); setTimeout(()=>setSessAdded(false),2000); setNewSess({name:"",status:"COMING SOON"});
+                    }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">ADD SESSION</button>
                   </div>
                 </div>
               </div>
@@ -756,24 +853,30 @@ function BootcampAdmin({ token }) {
               <button onClick={()=>setShowAddSession(true)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shrink-0"><I name="plus" size={12}/>Add Session</button>
             </div>
             {sessAdded&&<p className="text-green-400 text-xs mb-3 flex items-center gap-1">✓ Session added!</p>}
-            <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
-              <table className="w-full text-xs">
-                <thead><tr className="border-b border-white/10 text-gray-400">
-                  {["No.","Session Name","Status","Edit Details","View Recording"].map(h=><th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>)}
-                </tr></thead>
-                <tbody>
-                  {BC_SESS.filter(s=>!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())).map(s=>(
-                    <tr key={s.no} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
-                      <td className="px-4 py-3 text-gray-400">{String(s.no).padStart(2,"0")}</td>
-                      <td className="px-4 py-3 text-white font-medium">{s.name}</td>
-                      <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
-                      <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="text-[#C7E36B] hover:underline text-xs">Edit Details</button></td>
-                      <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {sessLoading ? (
+              <p className="text-gray-500 text-sm animate-pulse text-center py-6">Loading sessions...</p>
+            ) : (
+              <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead><tr className="border-b border-white/10 text-gray-400">
+                    {["No.","Session Name","Status","Edit Details","View Recording"].map(hd=><th key={hd} className="text-left px-4 py-3 font-semibold">{hd}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {sessions.length === 0 ? (
+                      <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-xs">No sessions yet. Click '+ Add Session' to create the first one.</td></tr>
+                    ) : sessions.filter(s=>!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())).map(s=>(
+                      <tr key={s._id||s.no} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
+                        <td className="px-4 py-3 text-gray-400">{String(s.no).padStart(2,"0")}</td>
+                        <td className="px-4 py-3 text-white font-medium">{s.name}</td>
+                        <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
+                        <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="text-[#C7E36B] hover:underline text-xs">Edit Details</button></td>
+                        <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>s.recordingUrl?window.open(s.recordingUrl,"_blank"):alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -828,7 +931,7 @@ function BootcampAdmin({ token }) {
               </div>
             )}
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-white">Enrolled Students ({BC_STUDS.length})</h2>
+              <h2 className="text-sm font-semibold text-white">Enrolled Students ({students.length})</h2>
               <button onClick={()=>alert("Enter student email to add:\n(Invite feature — student must sign up first, then admin can assign them to this bootcamp.)")} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Student</button>
             </div>
             <div className="flex gap-2 mb-4">
@@ -845,7 +948,10 @@ function BootcampAdmin({ token }) {
                   {["Student","Email","Mobile","Join Date","Status","Actions"].map(h=><th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>)}
                 </tr></thead>
                 <tbody>
-                  {BC_STUDS
+                  {students.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-xs">No students enrolled yet.</td></tr>
+                  ) : null}
+                  {students
                     .filter(s=>studStatus==="All Status"||s.status===studStatus.toUpperCase()||(studStatus==="Active"&&s.status==="ACTIVE")||(studStatus==="Completed"&&s.status==="COMPLETED")||(studStatus==="Dropped"&&s.status==="DROPPED"))
                     .sort((a,b)=>studSort==="Name A-Z"?a.name.localeCompare(b.name):0)
                     .map((s,i)=>(
@@ -879,7 +985,7 @@ function BootcampAdmin({ token }) {
                 <I name="search" size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
                 <input value={annSearch} onChange={e=>setAnnSearch(e.target.value)} placeholder="Search Announcements..." className="w-full bg-[#0F1112] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none placeholder-gray-600"/>
               </div>
-              {BC_ANNS_DATA.filter(a=>!annSearch||a.title.toLowerCase().includes(annSearch.toLowerCase())).map(a=>(
+              {anns.filter(a=>!annSearch||a.title.toLowerCase().includes(annSearch.toLowerCase())).map(a=>(
                 <div key={a.id} onClick={()=>{setSelAnn(a);setAnnF({title:a.title,content:a.content,status:a.status});}} className={`p-3 border rounded-xl cursor-pointer transition-all ${selAnn?.id===a.id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-xs font-bold text-white line-clamp-1 flex-1 pr-1">{a.title}</p>
@@ -905,8 +1011,16 @@ function BootcampAdmin({ token }) {
                 <p className="text-[11px] text-gray-400">Attach files (PDF, ZIP, etc.)</p>
               </div>
               <div className="flex gap-2">
-                <button className="flex-1 border border-white/20 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">Save Draft</button>
-                <button className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Publish Now</button>
+                <button onClick={async()=>{
+                  const body={title:annF.title,content:annF.content,status:"DRAFT"};
+                  if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
+                  else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
+                }} className="flex-1 border border-white/20 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">Save Draft</button>
+                <button onClick={async()=>{
+                  const body={title:annF.title,content:annF.content,status:"PUBLISHED"};
+                  if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
+                  else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
+                }} className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Publish Now</button>
               </div>
               {/* Gap 3: Preview Panel */}
               {(annF.title||annF.content)&&(
@@ -1016,7 +1130,7 @@ function BootcampAdmin({ token }) {
               {/* Feature 7C: per-section save */}
               <div className="flex justify-end items-center gap-3 pt-1">
                 {savedBatch&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
-                <button onClick={()=>save(setSavedBatch)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Change</button>
+                <button onClick={saveBatchInfo} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Change</button>
               </div>
             </Sect>
             <Sect icon="link" title="Zoom Configuration">
@@ -1036,8 +1150,8 @@ function BootcampAdmin({ token }) {
               {/* Feature 7C: per-section save */}
               <div className="flex justify-end items-center gap-2 pt-1">
                 {savedZoom&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
-                <button onClick={()=>save(setSavedZoom)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Test Zoom Link →</button>
-                <button onClick={()=>save(setSavedZoom)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Update Zoom Settings</button>
+                <button onClick={()=>stgs.zoomLink?window.open(stgs.zoomLink,"_blank"):alert("No Zoom link set yet.")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Test Zoom Link →</button>
+                <button onClick={saveZoomSettings} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Update Zoom Settings</button>
               </div>
             </Sect>
             <Sect icon="users" title="Mentors">
@@ -1046,13 +1160,13 @@ function BootcampAdmin({ token }) {
                   <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2.5">
                     <div className="w-8 h-8 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] text-sm font-bold">{m.name[0]}</div>
                     <div className="flex-1"><p className="text-xs font-semibold text-white">{m.name}</p><p className="text-[10px] text-gray-400">{m.role}</p></div>
-                    <button onClick={()=>setMentors(ms=>ms.filter((_,j)=>j!==i))} className="text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
+                    <button onClick={()=>saveMentors(mentors.filter((_,j)=>j!==i))} className="text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
                   </div>
                 ))}
               </div>
               <div className="flex gap-2">
                 <input value={newMentor} onChange={e=>setNewMentor(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newMentor.trim()){setMentors(ms=>[...ms,{name:newMentor.trim(),role:"Mentor"}]);setNewMentor("");}}} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600" placeholder="Mentor name..." />
-                <button onClick={()=>{if(newMentor.trim()){setMentors(ms=>[...ms,{name:newMentor.trim(),role:"Mentor"}]);setNewMentor("");}}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Mentor</button>
+                <button onClick={()=>{if(newMentor.trim()){const updated=[...mentors,{name:newMentor.trim(),role:"Mentor"}];saveMentors(updated);setNewMentor("");}}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Mentor</button>
               </div>
             </Sect>
             <div className="flex justify-end gap-2">
@@ -3152,11 +3266,46 @@ function PlatformSettings({ token }) {
     setReveal(r => ({ ...r, [key]: data.value ?? "" }));
   };
 
+  const [coupons, setCoupons]               = useState([]);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [couponForm, setCouponForm]           = useState({ code:"", discountType:"flat", discountValue:"", maxUses:"0", expiresAt:"" });
+  const [couponSaving, setCouponSaving]       = useState(false);
+
+  useEffect(() => {
+    if (tab === "coupons") {
+      fetch("/api/coupons", { headers:{ Authorization:`Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) setCoupons(d); }).catch(()=>{});
+    }
+  }, [tab, token]);
+
+  const createCoupon = async () => {
+    setCouponSaving(true);
+    try {
+      const res = await fetch("/api/coupons", {
+        method:"POST", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` },
+        body: JSON.stringify({ ...couponForm, code: couponForm.code.toUpperCase(), discountValue: Number(couponForm.discountValue), maxUses: Number(couponForm.maxUses) }),
+      });
+      if (res.ok) { const d = await res.json(); setCoupons(prev=>[d,...prev]); setShowCouponModal(false); setCouponForm({ code:"", discountType:"flat", discountValue:"", maxUses:"0", expiresAt:"" }); }
+    } catch {} finally { setCouponSaving(false); }
+  };
+
+  const toggleCoupon = async (c) => {
+    const res = await fetch(`/api/coupons/${c._id}`, { method:"PUT", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body: JSON.stringify({ isActive: !c.isActive }) });
+    if (res.ok) setCoupons(prev=>prev.map(x=>x._id===c._id?{...x,isActive:!x.isActive}:x));
+  };
+
+  const deleteCoupon = async (id) => {
+    if (!window.confirm("Delete this coupon?")) return;
+    await fetch(`/api/coupons/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    setCoupons(prev=>prev.filter(c=>c._id!==id));
+  };
+
   const TABS = [
     { id: "email",   label: "📧 Email / SMTP"    },
     { id: "payment", label: "💳 Payment Gateway" },
     { id: "auth",    label: "🔐 Social Auth"     },
     { id: "site",    label: "🌐 Site Config"     },
+    { id: "coupons", label: "🏷 Coupons"         },
   ];
 
   const ConfigField = ({ configKey }) => {
@@ -3332,6 +3481,68 @@ function PlatformSettings({ token }) {
             {saved && <p className={`text-xs ${saved.includes("fail") ? "text-red-400" : "text-green-400"}`}>{saved}</p>}
             <button onClick={() => saveGroup("site")} disabled={saving} className="ml-auto text-xs bg-[#C7E36B] text-black font-bold px-5 py-2 rounded-lg disabled:opacity-60">{saving ? "Saving…" : "Save Site Settings"}</button>
           </div>
+        </div>
+      )}
+
+      {tab === "coupons" && (
+        <div>
+          {showCouponModal && (
+            <div className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-16 px-4" onClick={() => setShowCouponModal(false)}>
+              <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-5">
+                  <p className="text-white font-bold">Create Coupon</p>
+                  <button onClick={() => setShowCouponModal(false)} className="text-gray-400 hover:text-white text-xl">✕</button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Coupon Code</p>
+                    <input value={couponForm.code} onChange={e => setCouponForm(f=>({...f, code:e.target.value.toUpperCase()}))} placeholder="e.g. SAVE500" className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm font-mono uppercase outline-none focus:border-[#C7E36B]"/>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-2">Discount Type</p>
+                    <div className="flex gap-2">
+                      {[["flat","Flat ₹"],["percent","Percent %"]].map(([v,l]) => (
+                        <button key={v} onClick={() => setCouponForm(f=>({...f,discountType:v}))} className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${couponForm.discountType===v?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/15 text-gray-400"}`}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <Fld label="Discount Value" value={couponForm.discountValue} onChange={v=>setCouponForm(f=>({...f,discountValue:v}))} placeholder={couponForm.discountType==="flat"?"e.g. 700":"e.g. 10"}/>
+                  <Fld label="Max Uses (0 = unlimited)" value={couponForm.maxUses} onChange={v=>setCouponForm(f=>({...f,maxUses:v}))} placeholder="0"/>
+                  <Fld label="Expires At (optional)" value={couponForm.expiresAt} onChange={v=>setCouponForm(f=>({...f,expiresAt:v}))} placeholder="YYYY-MM-DD"/>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <button onClick={() => setShowCouponModal(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
+                  <button onClick={createCoupon} disabled={couponSaving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-60">{couponSaving?"Creating...":"CREATE COUPON"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between mb-5">
+            <div><h2 className="text-lg font-bold text-white">Discount Coupons</h2><p className="text-xs text-gray-400">Create and manage promotional coupon codes</p></div>
+            <button onClick={() => setShowCouponModal(true)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1"><I name="plus" size={13}/>Create Coupon</button>
+          </div>
+          {coupons.length === 0 ? (
+            <div className="text-center py-10 text-gray-500 text-sm">No coupons yet. Create your first one!</div>
+          ) : (
+            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+              <table className="w-full text-xs">
+                <thead><tr className="border-b border-white/10 text-gray-400">{["Code","Type","Value","Used/Max","Expires","Active","Actions"].map(h=><th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>)}</tr></thead>
+                <tbody>
+                  {coupons.map(c => (
+                    <tr key={c._id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
+                      <td className="px-4 py-3"><code className="bg-[#C7E36B]/10 text-[#C7E36B] font-mono px-2 py-0.5 rounded font-bold">{c.code}</code></td>
+                      <td className="px-4 py-3 text-gray-400">{c.discountType === "flat" ? "Flat ₹" : "Percent %"}</td>
+                      <td className="px-4 py-3 text-white font-semibold">{c.discountType === "flat" ? `₹${c.discountValue}` : `${c.discountValue}%`}</td>
+                      <td className="px-4 py-3 text-gray-400">{c.usedCount}/{c.maxUses === 0 ? "∞" : c.maxUses}</td>
+                      <td className="px-4 py-3 text-gray-400">{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : "No expiry"}</td>
+                      <td className="px-4 py-3"><Tog value={c.isActive} onChange={() => toggleCoupon(c)}/></td>
+                      <td className="px-4 py-3"><button onClick={() => deleteCoupon(c._id)} className="text-gray-400 hover:text-red-400"><I name="trash" size={13}/></button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

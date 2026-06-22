@@ -23,13 +23,13 @@ function LeftCard({ step, couponApplied, subtotal }) {
         <p className="text-white font-bold text-sm">AI Filmmaking Bootcamp</p>
       </div>
       <div className="flex items-baseline gap-3">
-        <span className="text-3xl font-bold text-white">₹14,000</span>
-        <span className="text-gray-400 line-through text-sm">₹19,000</span>
+        <span className="text-3xl font-bold text-white">₹{ORIGINAL.toLocaleString("en-IN")}</span>
+        <span className="text-gray-400 line-through text-sm">₹{ORIG_PRICE.toLocaleString("en-IN")}</span>
       </div>
       {step === 2 && couponApplied ? (
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
           <p className="text-green-400 text-sm font-bold">Total Payable: ₹{subtotal.toLocaleString()}</p>
-          <p className="text-green-300 text-xs mt-0.5">Coupon SAVE500 applied</p>
+          <p className="text-green-300 text-xs mt-0.5">Coupon {couponData?.code || "applied"}</p>
         </div>
       ) : (
         <div className="space-y-2 pt-2">
@@ -53,6 +53,8 @@ export default function BootcampEnroll() {
   const [payMethod, setPayMethod] = useState("upi");
   const [coupon, setCoupon]       = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
+  const [couponData, setCouponData]       = useState(null);
+  const [couponMsg, setCouponMsg]         = useState("");
   const [showSummary, setShowSummary] = useState(false);
   const [password, setPassword]         = useState("");
   const [confirmPw, setConfirmPw]       = useState("");
@@ -60,13 +62,34 @@ export default function BootcampEnroll() {
   const [showCPw, setShowCPw]           = useState(false);
   const [upiId, setUpiId]               = useState("");
   const [upiVerified, setUpiVerified]   = useState(false);
+  const [bootcamp, setBootcamp]         = useState(null);
 
-  const ORIGINAL = 14000;
-  const DISCOUNT = couponApplied ? 700 : 0;
+  useEffect(() => {
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
+  }, []);
+
+  const ORIGINAL = bootcamp?.price || 14000;
+  const ORIG_PRICE = bootcamp?.originalPrice || 19000;
+  const DISCOUNT = (() => {
+    if (!couponApplied || !couponData) return 0;
+    if (couponData.discountType === "percent") return Math.round(ORIGINAL * couponData.discountValue / 100);
+    return couponData.discountValue;
+  })();
   const SUBTOTAL = ORIGINAL - DISCOUNT;
   const GST      = couponApplied ? 170 : 0;
   const TOTAL    = SUBTOTAL + GST;
   const ORDER    = "ORD-89241";
+
+  const handleApplyCoupon = async () => {
+    setCouponMsg("");
+    if (!coupon.trim()) return;
+    try {
+      const res  = await fetch("/api/coupons/validate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ code: coupon.trim().toUpperCase() }) });
+      const data = await res.json();
+      if (data.valid) { setCouponApplied(true); setCouponData(data); }
+      else { setCouponMsg(data.message || "Invalid coupon code"); }
+    } catch { setCouponMsg("Could not validate coupon. Try again."); }
+  };
 
   const validateStep1 = () => {
     const e = {};
@@ -226,7 +249,7 @@ export default function BootcampEnroll() {
                     className="flex-1 bg-[#1A1D1E] border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B] placeholder-gray-600"
                   />
                   <button
-                    onClick={() => { if (coupon.trim().toUpperCase() === "SAVE500") setCouponApplied(true); }}
+                    onClick={handleApplyCoupon}
                     className="text-[#C7E36B] font-bold text-sm px-4 py-2.5 border border-[#C7E36B]/30 rounded-xl hover:bg-[#C7E36B]/5 transition-all"
                   >
                     Apply
@@ -236,7 +259,8 @@ export default function BootcampEnroll() {
                 <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 space-y-1.5">
                   <p className="text-green-400 text-sm font-bold">✓ You will save ₹700.00 on this order</p>
                   <div className="text-xs space-y-1 pt-1">
-                    <div className="flex justify-between text-gray-400"><span>Original Price</span><span>₹14,000</span></div>
+                    {couponMsg && <p className="text-red-400 text-xs">{couponMsg}</p>}
+                    <div className="flex justify-between text-gray-400"><span>Original Price</span><span>₹{ORIGINAL.toLocaleString("en-IN")}</span></div>
                     <div className="flex justify-between text-green-400"><span>Coupon Discount</span><span>-₹700</span></div>
                     <div className="flex justify-between text-white font-bold pt-1 border-t border-white/10"><span>Final Amount</span><span>₹13,300</span></div>
                   </div>
@@ -252,10 +276,10 @@ export default function BootcampEnroll() {
                   <span className="text-[10px] bg-white/10 text-gray-400 font-mono px-2 py-0.5 rounded">{ORDER}</span>
                 </div>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-400">Original Price (1 item)</span><span className="text-white">₹14,000</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Original Price (1 item)</span><span className="text-white">₹{ORIGINAL.toLocaleString("en-IN")}</span></div>
                   {couponApplied && (
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Coupon Code <span className="text-[#C7E36B]">[SAVE500]</span> ✓</span>
+                      <span className="text-gray-400">Coupon Code <span className="text-[#C7E36B]">[{couponData?.code||"COUPON"}]</span> ✓</span>
                       <span className="text-red-400">-₹700</span>
                     </div>
                   )}
@@ -316,10 +340,10 @@ export default function BootcampEnroll() {
           <div className="space-y-3 text-sm divide-y divide-white/5">
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-300">AI Filmmaking Bootcamp</span>
-              <span className="text-white font-bold">₹14,000</span>
+              <span className="text-white font-bold">₹{ORIGINAL.toLocaleString("en-IN")}</span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-gray-300">Coupon code Applied {couponApplied ? "[SAVE500]" : ""}</span>
+              <span className="text-gray-300">Coupon code Applied {couponApplied ? `[${couponData?.code||""}]` : ""}</span>
               <span className="text-red-400">-₹{DISCOUNT}</span>
             </div>
             <div className="flex justify-between items-center py-2">
