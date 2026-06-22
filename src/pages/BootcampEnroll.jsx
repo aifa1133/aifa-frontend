@@ -63,6 +63,9 @@ export default function BootcampEnroll() {
   const [upiId, setUpiId]               = useState("");
   const [upiVerified, setUpiVerified]   = useState(false);
   const [bootcamp, setBootcamp]         = useState(null);
+  /* auto-auth: account created silently before payment */
+  const [authToken, setAuthToken]       = useState(() => localStorage.getItem("aifa_token") || "");
+  const [tempPw, setTempPw]             = useState("");
 
   useEffect(() => {
     fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
@@ -95,12 +98,40 @@ export default function BootcampEnroll() {
   const handleRazorpay = async () => {
     setPaying(true);
     try {
+      /* ── 1. Ensure the user has an auth token before hitting protected endpoints ── */
+      let token = authToken;
+      if (!token) {
+        const pw = "AIFA_" + Math.random().toString(36).slice(2, 10) + "!1";
+        const sr = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: pw }),
+        });
+        const sd = await sr.json();
+        if (sd.token) {
+          token = sd.token;
+          localStorage.setItem("aifa_token", token);
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: sd._id, name: sd.name, role: sd.role || "student" }));
+          setAuthToken(token);
+          setTempPw(pw);
+        } else if (sd.message?.includes("already exists")) {
+          alert("An account with this email already exists. Please log in first at /dashboard.");
+          setPaying(false); return;
+        } else {
+          alert(sd.message || "Could not set up your account. Please try again.");
+          setPaying(false); return;
+        }
+      }
+
+      const h = { "Content-Type": "application/json", "Authorization": `Bearer ${token}` };
+
+      /* ── 2. Load Razorpay SDK ── */
       const loaded = await loadRazorpay();
       if (!loaded) { alert("Payment gateway failed to load. Please check your connection."); setPaying(false); return; }
 
+      /* ── 3. Create order (authenticated) ── */
       const orderRes = await fetch("/api/payments/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: h,
         body: JSON.stringify({
           amount: TOTAL,
           itemType: "bootcamp",
@@ -113,7 +144,7 @@ export default function BootcampEnroll() {
       setOrderId(orderData.orderId || "");
 
       const options = {
-        key: orderData.keyId || "rzp_live_T4dSvrjNOoRdif",
+        key: orderData.keyId,
         amount: orderData.amount,
         currency: "INR",
         name: "AIFA Film Academy",
@@ -123,9 +154,9 @@ export default function BootcampEnroll() {
         theme: { color: "#C7E36B" },
         handler: async (response) => {
           try {
+            /* ── 4. Verify payment (authenticated) — also enrolls user in bootcamp ── */
             const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+              method: "POST", headers: h,
               body: JSON.stringify({
                 razorpay_order_id:   response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -171,18 +202,29 @@ export default function BootcampEnroll() {
   };
 
   const handleCreateAccount = async () => {
+    const token = authToken || localStorage.getItem("aifa_token");
     try {
-      const res  = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password }),
-      });
-      const data = await res.json();
-      if (data.token) {
-        localStorage.setItem("aifa_token", data.token);
-        localStorage.setItem("aifa_user", JSON.stringify({ _id: data._id, name: data.name, role: data.role || "student" }));
+      if (token && tempPw && password) {
+        /* Account was auto-created before payment — update to user's chosen password */
+        await fetch("/api/users/me/password", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({ currentPassword: tempPw, newPassword: password }),
+        });
+      } else if (!token) {
+        /* Fallback: user was already logged in before visiting enroll — just signup if no account */
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password }),
+        });
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem("aifa_token", data.token);
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: data._id, name: data.name, role: data.role || "student" }));
+        }
       }
-    } catch { /* ignore */ }
+    } catch { /* ignore — navigate regardless */ }
     navigate("/dashboard");
   };
 
