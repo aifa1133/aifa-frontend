@@ -149,8 +149,9 @@ import AdminLogin from "./pages/AdminLogin";
 import UserLogin from "./pages/UserLogin";
 import CoursePlayer from "./pages/CoursePlayer";
 import ResetPassword from "./pages/ResetPassword";
+import BootcampEnroll from "./pages/BootcampEnroll";
 
-const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password"];
+const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
 
 function AppShell() {
   const [showLogin, setShowLogin] = useState(false);
@@ -175,6 +176,7 @@ function AppShell() {
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/bootcamp" element={<Bootcamppage />} />
+          <Route path="/bootcamp/enroll" element={<BootcampEnroll />} />
           <Route path="/hire-talent" element={<HireTalent />} />
           <Route path="/jobs" element={<JobsSection />} />
           <Route path="/prompt-library" element={<PromptLibrary />} />

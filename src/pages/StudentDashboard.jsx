@@ -71,6 +71,7 @@ export default function StudentDashboard() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNotif, setShowNotif] = useState(false);
+  const [notifCount, setNotifCount] = useState(5);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [invoiceItem, setInvoiceItem] = useState(null);
   const navigate = useNavigate();
@@ -184,9 +185,13 @@ export default function StudentDashboard() {
                 className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all relative"
               >
                 <Ic name="bell" size={16} className="text-gray-400" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                {notifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5">
+                    {notifCount}
+                  </span>
+                )}
               </button>
-              {showNotif && <NotificationDropdown onClose={() => setShowNotif(false)} />}
+              {showNotif && <NotificationDropdown onClose={() => setShowNotif(false)} onMarkRead={() => setNotifCount(0)} />}
             </div>
 
             {/* Avatar */}
@@ -245,44 +250,41 @@ export default function StudentDashboard() {
    NOTIFICATION DROPDOWN
 ════════════════════════════════════════════ */
 const NOTIFS = [
-  { icon: "⚠️", color: "text-orange-400", title: "Action Required", desc: "Your monthly performance report for October is ready for review and approval.", time: "1m ago", actions: true },
-  { icon: "🔴", color: "text-red-400", title: "Security Alert", desc: "New login detected from San Francisco, CA", time: "5m ago" },
-  { icon: "🔵", color: "text-blue-400", title: "System Update", desc: "Version 2.4.0 has been deployed successfully.", time: "2h ago" },
-  { icon: "📅", color: "text-purple-400", title: "Upcoming Meeting", desc: "Project Sync with Operations Team starts in 1 hour.", time: "3h ago" },
-  { icon: "✅", color: "text-green-400", title: "Export Complete", desc: "Your data export for 'Q3 Financials' is ready.", time: "Yesterday" },
+  { icon: "🎬", title: "Session 08 Recording Uploaded",         desc: "The Recording for Session 08 is now available in the session tab.",                                               time: "2m ago"   },
+  { icon: "📚", title: "AI Cinematography Guide",               desc: "A new resource has been uploaded to the Resources section.",                                                       time: "15m ago"  },
+  { icon: "📅", title: "Session 12 Starts Tomorrow",            desc: "Generative Video with Sora & Midjourney starts tomorrow at 7:00 PM.",                                             time: "2h ago"   },
+  { icon: "⚠️", title: "Workshop Rescheduled",                  desc: "The Friday mentoring session has been moved to 3:00 PM.",                                                         time: "5h ago"   },
+  { icon: "🎉", title: "Welcome to Batch #42",                  desc: "Please join the WhatsApp community and review the syllabus before Session 01.",                                   time: "Yesterday"},
 ];
 
-function NotificationDropdown({ onClose }) {
+function NotificationDropdown({ onClose, onMarkRead }) {
   return (
-    <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-xl shadow-2xl z-50 overflow-hidden">
+    <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-gray-100">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <span className="font-semibold text-gray-900 text-sm">Notifications</span>
-        <button className="text-[#6B21E8] text-xs font-medium hover:underline">Mark all as read</button>
+        <span className="font-bold text-gray-900 text-sm">Notifications</span>
+        <div className="flex items-center gap-3">
+          <button onClick={onMarkRead} className="text-orange-500 text-xs font-medium hover:underline">Mark all as read</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+        </div>
       </div>
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
         {NOTIFS.map((n, i) => (
-          <div key={i} className="px-4 py-3 hover:bg-gray-50 transition-all">
+          <div key={i} className="px-4 py-3 hover:bg-gray-50 transition-all cursor-pointer">
             <div className="flex gap-3">
               <span className="text-lg shrink-0 mt-0.5">{n.icon}</span>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-gray-900">{n.title}</p>
-                  <span className="text-[10px] text-gray-400 ml-2 shrink-0">{n.time}</span>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-bold text-gray-900 leading-snug">{n.title}</p>
+                  <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>
                 </div>
-                <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">{n.desc}</p>
-                {n.actions && (
-                  <div className="flex gap-2 mt-2">
-                    <button className="text-[10px] text-gray-600 border border-gray-200 px-2 py-0.5 rounded hover:bg-gray-100">Review Report</button>
-                    <button className="text-[10px] text-white bg-[#6B21E8] px-2 py-0.5 rounded hover:bg-purple-700">Dismiss</button>
-                  </div>
-                )}
+                <p className="text-[11px] text-gray-500 mt-1 leading-snug">{n.desc}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
       <div className="px-4 py-2.5 text-center border-t border-gray-100">
-        <button className="text-xs text-[#6B21E8] font-medium hover:underline">View all notifications →</button>
+        <button className="text-xs text-orange-500 font-semibold hover:underline">View all notifications →</button>
       </div>
     </div>
   );
@@ -478,11 +480,22 @@ const BC_PROJECT_LIST = [
   { no:"PROJECT 05", title:"Final AI Film Portfolio", desc:"A 3-minute capstone film integrating all bootcamp skills.", req:[{done:false,text:"Minimum 3 minutes runtime"},{done:false,text:"All techniques integrated"},{done:false,text:"Original score required"},{done:false,text:"Professional color grade"}], res:["Portfolio_Rubric.pdf","Submission_Guide.pdf"] },
 ];
 
+const BC_FILES = [
+  { icon: "📄", color: "text-red-400",    name: "Bootcamp Broucher.pdf",          meta: "1.2 MB • PDF",       type: "download" },
+  { icon: "📦", color: "text-blue-400",   name: "Prompt Engineering...",          meta: "45 MB • ZIP",        type: "download" },
+  { icon: "📄", color: "text-red-400",    name: "Filmmaking Syllabu...",          meta: "1.2 MB • PDF",       type: "download" },
+  { icon: "🔗", color: "text-purple-400", name: "Discord Community Server",       meta: "EXTERNAL LINK",      type: "link"     },
+  { icon: "📦", color: "text-blue-400",   name: "Session 03 Assets.zip",          meta: "45 MB • ZIP",        type: "download" },
+  { icon: "🔗", color: "text-purple-400", name: "Weekly Reading List",            meta: "EXTERNAL LINK",      type: "link"     },
+  { icon: "📦", color: "text-blue-400",   name: "Midjourney Guide.pdf",           meta: "45 MB • ZIP",        type: "download" },
+];
+
 function BootcampSection({ token }) {
   const [enrolled, setEnrolled] = useState(false);
   const [tab, setTab] = useState("overview");
   const [activeSession, setActiveSession] = useState(BC_SESSION_LIST[0]);
   const [activeProject, setActiveProject] = useState(BC_PROJECT_LIST[0]);
+  const [showDrawer, setShowDrawer] = useState(false);
 
   if (!enrolled) return (
     <div className="flex items-center justify-center min-h-full p-6">
@@ -516,6 +529,7 @@ function BootcampSection({ token }) {
   );
 
   return (
+    <>
     <div className="flex flex-col h-full">
       <div className="bg-[#7C3AED]/10 border-b border-[#7C3AED]/20 px-6 py-3 shrink-0 flex items-center gap-3">
         <span className="text-[10px] font-bold bg-[#7C3AED] text-white px-2.5 py-1 rounded-full">IN PROGRESS</span>
@@ -583,7 +597,7 @@ function BootcampSection({ token }) {
                     <button className="text-gray-400 hover:text-[#7C3AED] shrink-0"><Ic name="download" size={13}/></button>
                   </div>
                 ))}
-                <button className="text-xs text-[#7C3AED] hover:underline mt-2">View All Files</button>
+                <button onClick={() => setShowDrawer(true)} className="text-xs text-[#7C3AED] hover:underline mt-2">View All Files</button>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <h3 className="text-xs font-semibold text-white mb-3">Your Mentors</h3>
@@ -700,6 +714,51 @@ function BootcampSection({ token }) {
 
       </div>
     </div>
+
+    {/* ── VIEW ALL FILES DRAWER ── */}
+    <div>
+      {/* Overlay */}
+      {showDrawer && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowDrawer(false)} />}
+      {/* Drawer */}
+      <div className={`fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📁</span>
+            <div>
+              <p className="text-gray-900 font-bold text-base">Bootcamp Resources</p>
+              <p className="text-gray-400 text-xs mt-0.5">Access all files, guides, and templates.</p>
+            </div>
+          </div>
+          <button onClick={() => setShowDrawer(false)} className="text-gray-400 hover:text-gray-700 text-xl mt-0.5 leading-none">✕</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+          {BC_FILES.map((f, i) => (
+            <div key={i} className="bg-white border border-gray-100 rounded-xl px-3 py-3 flex items-center gap-3 shadow-sm hover:border-gray-200 transition-all">
+              <span className={`text-xl shrink-0 ${f.color}`}>{f.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-gray-900 font-semibold text-xs truncate">{f.name}</p>
+                <p className="text-gray-400 text-[10px] mt-0.5">{f.meta}</p>
+              </div>
+              <button
+                onClick={() => alert("Download starting...")}
+                className="text-gray-400 hover:text-[#7C3AED] shrink-0 transition-all"
+                title={f.type === "link" ? "Open link" : "Download"}
+              >
+                {f.type === "link" ? "↗" : "↓"}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="px-4 py-4 border-t border-gray-100">
+          <button onClick={() => alert("Download starting...")} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
+            Download All
+          </button>
+        </div>
+      </div>
+    </div>
+    </>
   );
 }
 

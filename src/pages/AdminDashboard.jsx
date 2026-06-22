@@ -416,6 +416,18 @@ function BootcampAdmin({ token }) {
   const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true});
   const [mentors,setMentors]=useState([{name:"David Fincher AI",role:"Lead Instructor"},{name:"Sarah Jenkins",role:"Technical Mentor"}]);
   const [newMentor,setNewMentor]=useState("");
+  /* Feature 5: sessions modal + search */
+  const [editSession,setEditSession]=useState(null);
+  const [sessSearch,setSessSearch]=useState("");
+  /* Feature 7A: students filter/sort */
+  const [studStatus,setStudStatus]=useState("All Status");
+  const [studSort,setStudSort]=useState("Latest Joined");
+  /* Feature 7B: announcement search */
+  const [annSearch,setAnnSearch]=useState("");
+  /* Feature 7C: per-section save feedback */
+  const [savedBatch,setSavedBatch]=useState(false);
+  const [savedZoom,setSavedZoom]=useState(false);
+  const save = (setter) => { setter(true); setTimeout(()=>setter(false),2000); };
   const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings"];
 
   if(view==="list") return(
@@ -518,9 +530,57 @@ function BootcampAdmin({ token }) {
 
         {tab==="sessions"&&(
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-white">All Sessions ({BC_SESS.length})</h2>
-              <button className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Session</button>
+            {/* Feature 5 Modal */}
+            {editSession&&(
+              <div className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-16 px-4" onClick={()=>setEditSession(null)}>
+                <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-lg" onClick={e=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2"><I name="edit" size={16} className="text-[#C7E36B]"/><p className="text-white font-bold">Edit Details</p></div>
+                    <button onClick={()=>setEditSession(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Status</p>
+                      <select className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
+                        {["Completed","Active","Coming Soon","Cancelled"].map(o=><option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Recording Link</p>
+                      <div className="relative">
+                        <I name="link" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+                        <input placeholder="Paste Video URL..." className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl pl-9 pr-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B] placeholder-gray-600"/>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] text-white uppercase font-bold">Session Resources</p>
+                        <button className="text-xs text-[#C7E36B] flex items-center gap-1"><I name="plus" size={11}/>Add Resource</button>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 border border-[#C7E36B]/40 bg-[#C7E36B]/5 rounded-lg px-3 py-2.5">
+                          <I name="resources" size={14} className="text-gray-400"/><span className="text-white text-xs flex-1">Slides.pdf</span><span className="text-gray-500 text-[10px]">2.4 MB</span>
+                        </div>
+                        <div className="flex items-center gap-3 border border-white/10 bg-white/[0.03] rounded-lg px-3 py-2.5">
+                          <I name="resources" size={14} className="text-gray-400"/><span className="text-white text-xs flex-1">Notes.pdf</span><span className="text-gray-500 text-[10px]">1.1 MB</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button onClick={()=>setEditSession(null)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
+                    <button onClick={()=>setEditSession(null)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">SAVE & UPDATE</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <div className="relative flex-1 max-w-xs">
+                <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+                <input value={sessSearch} onChange={e=>setSessSearch(e.target.value)} placeholder="Search Sessions..." className="w-full bg-[#0F1112] border border-white/10 rounded-lg pl-9 pr-4 py-2 text-xs text-white outline-none placeholder-gray-600"/>
+              </div>
+              <button className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shrink-0"><I name="plus" size={12}/>Add Session</button>
             </div>
             <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
               <table className="w-full text-xs">
@@ -528,12 +588,12 @@ function BootcampAdmin({ token }) {
                   {["No.","Session Name","Status","Edit Details","View Recording"].map(h=><th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>)}
                 </tr></thead>
                 <tbody>
-                  {BC_SESS.map(s=>(
+                  {BC_SESS.filter(s=>!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())).map(s=>(
                     <tr key={s.no} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
                       <td className="px-4 py-3 text-gray-400">{String(s.no).padStart(2,"0")}</td>
                       <td className="px-4 py-3 text-white font-medium">{s.name}</td>
                       <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
-                      <td className="px-4 py-3"><button className="text-[#C7E36B] hover:underline text-xs">Edit Details</button></td>
+                      <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="text-[#C7E36B] hover:underline text-xs">Edit Details</button></td>
                       <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
                     </tr>
                   ))}
@@ -545,9 +605,18 @@ function BootcampAdmin({ token }) {
 
         {tab==="students"&&(
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-white">Enrolled Students ({BC_STUDS.length})</h2>
               <button className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Student</button>
+            </div>
+            {/* Feature 7A: filter/sort row */}
+            <div className="flex gap-2 mb-4">
+              <select value={studStatus} onChange={e=>setStudStatus(e.target.value)} className="bg-[#0F1112] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">
+                {["All Status","Active","Completed","Dropped"].map(o=><option key={o}>{o}</option>)}
+              </select>
+              <select value={studSort} onChange={e=>setStudSort(e.target.value)} className="bg-[#0F1112] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">
+                {["Latest Joined","Oldest First","Name A-Z"].map(o=><option key={o}>{o}</option>)}
+              </select>
             </div>
             <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
               <table className="w-full text-xs">
@@ -555,7 +624,10 @@ function BootcampAdmin({ token }) {
                   {["Student","Email","Mobile","Join Date","Status","Actions"].map(h=><th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>)}
                 </tr></thead>
                 <tbody>
-                  {BC_STUDS.map((s,i)=>(
+                  {BC_STUDS
+                    .filter(s=>studStatus==="All Status"||s.status===studStatus.toUpperCase()||(studStatus==="Active"&&s.status==="ACTIVE")||(studStatus==="Completed"&&s.status==="COMPLETED")||(studStatus==="Dropped"&&s.status==="DROPPED"))
+                    .sort((a,b)=>studSort==="Name A-Z"?a.name.localeCompare(b.name):0)
+                    .map((s,i)=>(
                     <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
                       <td className="px-4 py-3"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] text-[10px] font-bold">{s.name[0]}</div><span className="text-white font-medium">{s.name}</span></div></td>
                       <td className="px-4 py-3 text-gray-400">{s.email}</td>
@@ -639,7 +711,11 @@ function BootcampAdmin({ token }) {
                 <h3 className="text-sm font-semibold text-white">Announcements</h3>
                 <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>New</button>
               </div>
-              {BC_ANNS_DATA.map(a=>(
+              <div className="relative mb-2">
+                <I name="search" size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+                <input value={annSearch} onChange={e=>setAnnSearch(e.target.value)} placeholder="Search Announcements..." className="w-full bg-[#0F1112] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none placeholder-gray-600"/>
+              </div>
+              {BC_ANNS_DATA.filter(a=>!annSearch||a.title.toLowerCase().includes(annSearch.toLowerCase())).map(a=>(
                 <div key={a.id} onClick={()=>{setSelAnn(a);setAnnF({title:a.title,content:a.content,status:a.status});}} className={`p-3 border rounded-xl cursor-pointer transition-all ${selAnn?.id===a.id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-xs font-bold text-white line-clamp-1 flex-1 pr-1">{a.title}</p>
@@ -673,39 +749,58 @@ function BootcampAdmin({ token }) {
         )}
 
         {tab==="resources"&&(
-          <div>
-            <div className="grid grid-cols-3 gap-4 mb-5">
-              {[{icon:"resources",label:"PDF Documents",val:"24"},{icon:"link",label:"External Links",val:"8"},{icon:"upload",label:"Project Files",val:"15"}].map(s=>(
-                <div key={s.label} className="bg-[#0F1112] border border-white/10 rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center"><I name={s.icon} size={18} className="text-[#C7E36B]"/></div>
-                  <div><p className="text-xl font-bold text-white">{s.val}</p><p className="text-[10px] text-gray-400">{s.label}</p></div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-lg px-3 py-2 flex items-center gap-2 mr-3 max-w-sm">
-                <I name="search" size={14} className="text-gray-500"/><input className="bg-transparent text-xs text-white outline-none flex-1 placeholder-gray-600" placeholder="Search resources..." />
+          <div className="space-y-5">
+            {/* Feature 6: redesigned header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Resources</h2>
+                <p className="text-gray-400 text-xs mt-0.5">Manage all downloadable resources available to students.</p>
               </div>
-              <button className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg flex items-center gap-1"><I name="upload" size={12}/>Upload Resource</button>
+              <div className="flex gap-2">
+                <button className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CREATE FOLDER</button>
+                <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1"><I name="upload" size={12}/>Upload Resources</button>
+              </div>
             </div>
-            <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
-              <table className="w-full text-xs">
-                <thead><tr className="border-b border-white/10 text-gray-400">
-                  {["Name / Category","Type","Size","Uploaded","Downloads","Actions"].map(h=><th key={h} className="text-left px-4 py-3 font-semibold">{h}</th>)}
-                </tr></thead>
-                <tbody>
-                  {BC_RESS.map((r,i)=>(
-                    <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
-                      <td className="px-4 py-3"><p className="text-white font-medium">{r.name}</p><p className="text-[10px] text-gray-500">{r.category}</p></td>
-                      <td className="px-4 py-3"><span className="text-[10px] bg-white/10 text-gray-300 font-bold px-2 py-0.5 rounded">{r.type}</span></td>
-                      <td className="px-4 py-3 text-gray-400">{r.size}</td>
-                      <td className="px-4 py-3 text-gray-400">{r.uploaded}</td>
-                      <td className="px-4 py-3 text-gray-300">{r.dl}</td>
-                      <td className="px-4 py-3"><div className="flex gap-2"><button className="text-gray-400 hover:text-[#C7E36B]"><I name="edit" size={13}/></button><button className="text-gray-400 hover:text-red-400"><I name="trash" size={13}/></button></div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            {/* Drag & Drop Zone */}
+            <label className="block border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
+              <input type="file" multiple className="hidden"/>
+              <div className="text-3xl mb-2">↑</div>
+              <p className="text-white font-bold text-sm mb-1">Drag & Drop to Upload</p>
+              <p className="text-gray-400 text-xs mb-4">or click to browse from your computer</p>
+              <div className="flex justify-center gap-2 flex-wrap">
+                {["PDF","ZIP","DOCX","PPTX","MEDIA"].map(t=>(
+                  <span key={t} className="bg-white/10 text-gray-400 text-xs px-3 py-1 rounded-full">{t}</span>
+                ))}
+              </div>
+            </label>
+
+            {/* All Resources list */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-white text-sm font-bold">All Resources</p>
+                <div className="relative">
+                  <I name="search" size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+                  <input className="bg-[#0F1112] border border-white/10 rounded-xl pl-8 pr-4 py-2 text-xs text-white outline-none placeholder-gray-600 w-[200px]" placeholder="Search resources..."/>
+                </div>
+              </div>
+              <div className="divide-y divide-white/5">
+                {BC_RESS.map((r,i)=>(
+                  <div key={i} className="flex items-center gap-3 py-3">
+                    <I name="resources" size={16} className="text-gray-500 shrink-0"/>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{r.name}</p>
+                      <p className="text-gray-500 text-xs">{r.category}</p>
+                    </div>
+                    <span className="text-gray-400 text-xs shrink-0">{r.size}</span>
+                    <span className="text-gray-400 text-xs shrink-0">Jun 12, 2026</span>
+                    <div className="flex gap-2 shrink-0">
+                      <button className="text-gray-400 hover:text-[#C7E36B]"><I name="edit" size={13}/></button>
+                      <button className="text-gray-400 hover:text-red-400"><I name="trash" size={13}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -727,6 +822,11 @@ function BootcampAdmin({ token }) {
                   ))}
                 </div>
               </div>
+              {/* Feature 7C: per-section save */}
+              <div className="flex justify-end items-center gap-3 pt-1">
+                {savedBatch&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
+                <button onClick={()=>save(setSavedBatch)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Change</button>
+              </div>
             </Sect>
             <Sect icon="link" title="Zoom Configuration">
               <Fld label="Meeting Link" value={stgs.zoomLink} onChange={v=>setStgs({...stgs,zoomLink:v})} placeholder="https://zoom.us/j/..." />
@@ -741,6 +841,12 @@ function BootcampAdmin({ token }) {
                     <Tog value={stgs[k]} onChange={v=>setStgs({...stgs,[k]:v})} />
                   </div>
                 ))}
+              </div>
+              {/* Feature 7C: per-section save */}
+              <div className="flex justify-end items-center gap-2 pt-1">
+                {savedZoom&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
+                <button onClick={()=>save(setSavedZoom)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Test Zoom Link →</button>
+                <button onClick={()=>save(setSavedZoom)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Update Zoom Settings</button>
               </div>
             </Sect>
             <Sect icon="users" title="Mentors">
