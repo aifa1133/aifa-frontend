@@ -533,7 +533,12 @@ function ListBootcampAdmin({ onSelect, token }) {
       </div>
       {createSuccess&&<div className="mx-6 mt-3 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Bootcamp created successfully!</div>}
       <div className="p-6 grid grid-cols-4 gap-4 border-b border-white/5">
-        {[{icon:"users",label:"TOTAL STUDENTS",val:"35"},{icon:"payments",label:"TOTAL REVENUE",val:"₹1,82,900"},{icon:"bootcamp",label:"TOTAL BOOTCAMPS",val:"3"},{icon:"check",label:"ACTIVE BOOTCAMPS",val:"1"}].map(s=>(
+        {[
+          {icon:"users",   label:"TOTAL STUDENTS",   val: bootcamps.reduce((s,b)=>s+(b.enrollments?.length||b.enrolledCount||0),0)},
+          {icon:"payments",label:"TOTAL REVENUE",     val: "₹"+bootcamps.reduce((s,b)=>s+((b.price||0)*(b.enrollments?.length||b.enrolledCount||0)),0).toLocaleString("en-IN")},
+          {icon:"bootcamp",label:"TOTAL BOOTCAMPS",   val: bootcamps.length},
+          {icon:"check",   label:"ACTIVE BOOTCAMPS",  val: bootcamps.filter(b=>b.isPublished).length},
+        ].map(s=>(
           <div key={s.label} className="bg-[#0F1112] border border-white/10 rounded-xl p-4">
             <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center mb-3"><I name={s.icon} size={18} className="text-gray-400"/></div>
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">{s.label}</p>
@@ -778,7 +783,12 @@ function BootcampAdmin({ token }) {
         {tab==="overview"&&(
           <div className="space-y-5">
             <div className="grid grid-cols-4 gap-4">
-              {[{icon:"users",label:"TOTAL STUDENTS",val:"21"},{icon:"payments",label:"TOTAL REVENUE",val:"₹64,200"},{icon:"check",label:"SESSIONS COMPLETED",val:"08/22"},{icon:"resources",label:"PROJECT COMPLETED",val:"4/12"}].map(s=>(
+              {[
+                {icon:"users",    label:"TOTAL STUDENTS",    val: sel?.enrollments?.length ?? students.length ?? 0},
+                {icon:"payments", label:"TOTAL REVENUE",     val: "₹"+((sel?.price||0)*(sel?.enrollments?.length||students.length||0)).toLocaleString("en-IN")},
+                {icon:"check",    label:"SESSIONS COMPLETED",val: sessions.filter(s=>s.status==="COMPLETED").length+"/"+sessions.length || "0/0"},
+                {icon:"resources",label:"PROJECTS",          val: projects.length},
+              ].map(s=>(
                 <div key={s.label} className="bg-[#0F1112] border border-white/10 rounded-xl p-4">
                   <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center mb-3"><I name={s.icon} size={18} className="text-gray-400"/></div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wider">{s.label}</p>
