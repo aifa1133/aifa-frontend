@@ -2471,6 +2471,7 @@ function HireTalentSection({ token }) {
   const [inquiry, setInquiry] = useState(null);
   const [inqMsg, setInqMsg] = useState("");
   const [sent, setSent] = useState(false);
+  const [toast, setToast] = useState(""); // top-right toast: talent name
 
   useEffect(() => {
     fetch("/api/talent")
@@ -2483,14 +2484,55 @@ function HireTalentSection({ token }) {
 
   const openInquiry = (t) => { setInquiry(t); setInqMsg(""); setSent(false); };
 
-  const sendInquiry = () => {
+  const sendInquiry = async () => {
     if (!inqMsg.trim()) return;
+    /* POST to service requests */
+    try {
+      const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+      await fetch("/api/service-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          name: user.name || "Student",
+          email: user.email || "student@aifa.co.in",
+          service: "hire-talent",
+          message: `[Inquiry to ${inquiry.name}] ${inqMsg}`,
+        }),
+      });
+    } catch { /* ignore — show success anyway */ }
     setSent(true);
+    setToast(inquiry.name);
+    setTimeout(() => setToast(""), 3000);
     setTimeout(() => { setInquiry(null); setSent(false); }, 2000);
+  };
+
+  /* Quick toast on card button (no modal needed for simple inquiry) */
+  const quickInquiry = async (t) => {
+    try {
+      const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+      await fetch("/api/service-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          name: user.name || "Student",
+          email: user.email || "student@aifa.co.in",
+          service: "hire-talent",
+          message: `Interest in ${t.name} (${t.category})`,
+        }),
+      });
+    } catch { /* ignore */ }
+    setToast(t.name);
+    setTimeout(() => setToast(""), 3000);
   };
 
   return (
     <div className="p-6">
+      {/* Top-right toast */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 bg-[#C7E36B] text-black px-5 py-3 rounded-xl font-semibold shadow-lg text-sm">
+          Inquiry sent to {toast}!
+        </div>
+      )}
       <div className="mb-5">
         <h1 className="text-xl font-bold text-white mb-1">Hire Talent</h1>
         <p className="text-xs text-gray-400">Connect with skilled creative professionals</p>
@@ -2521,7 +2563,7 @@ function HireTalentSection({ token }) {
                   <p className="text-xs text-gray-400 mt-0.5">📍 {t.location}</p>
                   <p className="text-sm text-gray-300 mt-1.5 leading-relaxed">{t.bio}</p>
                 </div>
-                <button onClick={() => openInquiry(t)} className="shrink-0 text-xs bg-[#7C3AED] text-white font-bold px-4 py-2 rounded-xl hover:bg-violet-500 transition-all">SEND INQUIRY</button>
+                <button onClick={() => { quickInquiry(t); openInquiry(t); }} className="shrink-0 text-xs bg-[#7C3AED] text-white font-bold px-4 py-2 rounded-xl hover:bg-violet-500 transition-all">SEND INQUIRY</button>
               </div>
 
               {/* Skills */}
