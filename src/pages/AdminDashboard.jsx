@@ -70,6 +70,9 @@ const MGMT_ITEMS = [
 export default function AdminDashboard() {
   const [activePage, setActivePage] = useState("dashboard");
   const [profile, setProfile] = useState(null);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [adminNotifs, setAdminNotifs] = useState([]);
   const navigate = useNavigate();
   const token = localStorage.getItem("aifa_token");
   const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
@@ -132,17 +135,64 @@ export default function AdminDashboard() {
             <input type="text" placeholder="Search platform..." className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 w-[240px]" />
             <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
             <span className="text-sm text-gray-400">Welcome back, <span className="text-white font-semibold">{name}</span></span>
-            <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 relative">
-              <I name="bell" size={16} className="text-gray-400" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
-            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
-              {profile?.profilePicture
-                ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-                : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-bold text-sm">{name[0]}</span>
-              }
+
+            {/* Bell icon with dropdown */}
+            <div className="relative">
+              <button onClick={()=>{ setShowNotifPanel(v=>!v); setShowProfileMenu(false);
+                if(!showNotifPanel) fetch("/api/notifications",{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setAdminNotifs(d.slice(0,8)); }).catch(()=>{});
+              }} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 relative transition-all">
+                <I name="bell" size={16} className="text-gray-400" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              </button>
+              {showNotifPanel && (
+                <div className="absolute right-0 top-full mt-2 w-[340px] bg-[#0F1112] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <p className="text-sm font-bold text-white">Notifications</p>
+                    <button onClick={()=>setShowNotifPanel(false)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
+                  </div>
+                  <div className="max-h-[380px] overflow-y-auto divide-y divide-white/5">
+                    {adminNotifs.length === 0
+                      ? <p className="text-gray-500 text-xs text-center py-8">No notifications yet</p>
+                      : adminNotifs.map((n,i) => (
+                        <div key={i} className="px-4 py-3 hover:bg-white/5 transition-all">
+                          <p className="text-xs font-semibold text-white">{n.title}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
+                          <p className="text-[10px] text-gray-600 mt-1">{n.createdAt ? new Date(n.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : ""}</p>
+                        </div>
+                      ))
+                    }
+                  </div>
+                  <div className="px-4 py-2 border-t border-white/10">
+                    <button onClick={()=>{ setShowNotifPanel(false); setActivePage("platform-settings"); }} className="text-xs text-[#C7E36B] hover:underline">Manage Notifications →</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Profile avatar with dropdown */}
+            <div className="relative">
+              <button onClick={()=>{ setShowProfileMenu(v=>!v); setShowNotifPanel(false); }} className="w-8 h-8 rounded-full overflow-hidden shrink-0 hover:ring-2 hover:ring-[#C7E36B]/50 transition-all">
+                {profile?.profilePicture
+                  ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                  : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-bold text-sm">{name[0]}</span>
+                }
+              </button>
+              {showProfileMenu && (
+                <div className="absolute right-0 top-full mt-2 w-[200px] bg-[#0F1112] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-white/10">
+                    <p className="text-sm font-bold text-white">{name}</p>
+                    <p className="text-[10px] text-gray-400">{profile?.email || user?.email}</p>
+                    <span className="text-[9px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full mt-1 inline-block">Super Admin</span>
+                  </div>
+                  <div className="py-1">
+                    <button onClick={()=>{ setShowProfileMenu(false); setActivePage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
+                    <button onClick={()=>{ setShowProfileMenu(false); setActivePage("platform-settings"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="settings" size={13}/>Settings</button>
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
