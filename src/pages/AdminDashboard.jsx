@@ -1526,7 +1526,7 @@ function VideoCoursesAdmin({ token }) {
   const publish = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ title:f.title, description:f.fullDesc, shortDesc:f.shortDesc, category:f.category, level:f.level, language:f.language, instructor:f.instructor, price:parseFloat(f.price)||0, originalPrice:parseFloat(f.discPrice)||0, lessons:sections.flatMap((s,si)=>s.lessons.map((l,li)=>({title:l.title,duration:l.duration,order:si*100+li,isFree:l.isFree}))), isPublished:true }) });
+      const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ title:f.title, description:f.fullDesc, shortDesc:f.shortDesc, category:f.category, level:f.level, language:f.language, instructor:f.instructor, price:parseFloat(f.price)||0, originalPrice:parseFloat(f.discPrice)||0, image:f.thumbnail||"", lessons:sections.flatMap((s,si)=>s.lessons.map((l,li)=>({title:l.title,duration:l.duration,order:si*100+li,isFree:l.isFree}))), isPublished:true }) });
       if(res.ok) { loadCourses(); }
     } catch(e){}
     setSaving(false); setView("list");
@@ -1540,6 +1540,18 @@ function VideoCoursesAdmin({ token }) {
 
   const addLesson = si => { const u=[...sections]; u[si].lessons.push({title:"New Lesson",duration:"",type:"Video",desc:"",isFree:false}); setSections(u); setActiveL({s:si,l:u[si].lessons.length-1}); };
   const updLesson = (key,val) => setSections(sections.map((s,si)=>si===activeL.s?{...s,lessons:s.lessons.map((l,li)=>li===activeL.l?{...l,[key]:val}:l)}:s));
+
+  const [editInfo, setEditInfo] = useState({});
+  const saveEditInfo = async () => {
+    setEditSaving(true); setEditMsg("");
+    const res = await fetch(`/api/courses/${editCourse._id}`, {
+      method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`},
+      body: JSON.stringify(editInfo),
+    });
+    if(res.ok) { const d=await res.json(); setEditCourse(d); setEditMsg("Saved!"); loadCourses(); }
+    else setEditMsg("Save failed.");
+    setEditSaving(false); setTimeout(()=>setEditMsg(""),3000);
+  };
 
   if (view === "edit" && editCourse) return (
     <div className="flex flex-col h-full">
@@ -1571,13 +1583,24 @@ function VideoCoursesAdmin({ token }) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4">
-          {editCourse.thumbnail && <img src={editCourse.thumbnail} alt="" className="w-24 h-16 rounded-lg object-cover shrink-0"/>}
-          <div>
-            <p className="text-xs text-gray-400 mb-1">{editCourse.level} · {editCourse.category} · {editCourse.language}</p>
-            <p className="text-sm text-gray-300 line-clamp-2">{editCourse.description}</p>
+        {/* Course basic info edit */}
+        <Sect icon="resources" title="Course Details">
+          <div className="grid grid-cols-2 gap-3">
+            <Fld label="Title" value={editInfo.title ?? editCourse.title ?? ""} onChange={v=>setEditInfo(i=>({...i,title:v}))} />
+            <Fld label="Price (₹)" value={String(editInfo.price ?? editCourse.price ?? "")} onChange={v=>setEditInfo(i=>({...i,price:parseFloat(v)||0}))} />
           </div>
-        </div>
+          <Fld label="Description" value={editInfo.description ?? editCourse.description ?? ""} onChange={v=>setEditInfo(i=>({...i,description:v}))} textarea />
+          <Fld label="Thumbnail URL" value={editInfo.image ?? editCourse.image ?? ""} onChange={v=>setEditInfo(i=>({...i,image:v}))} placeholder="https://..." />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Tog value={editInfo.isPublished ?? editCourse.isPublished ?? false} onChange={v=>setEditInfo(i=>({...i,isPublished:v}))} />
+              <span className="text-xs text-gray-300">Published (visible to students)</span>
+            </div>
+            <button onClick={saveEditInfo} disabled={editSaving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-60">
+              {editSaving ? "Saving…" : "Save Course Info"}
+            </button>
+          </div>
+        </Sect>
 
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -1665,6 +1688,7 @@ function VideoCoursesAdmin({ token }) {
                 </div>
               </div>
             </div>
+            <Fld label="Thumbnail URL" value={f.thumbnail||""} onChange={v=>setF({...f,thumbnail:v})} placeholder="https://... (paste image URL)" />
             <Fld label="Short Description" value={f.shortDesc} onChange={v=>setF({...f,shortDesc:v})} placeholder="A brief hook for your course..." />
             <Fld label="Full Description" value={f.fullDesc} onChange={v=>setF({...f,fullDesc:v})} textarea placeholder="Explain what students will learn..." />
             <div className="grid grid-cols-4 gap-3">
@@ -1724,8 +1748,8 @@ function VideoCoursesAdmin({ token }) {
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
                       <button className="text-xs text-gray-400 hover:text-white flex items-center gap-1"><I name="upload" size={12}/>+ Add Attachment</button>
                       <div className="flex gap-2">
-                        <button className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg">Discard Changes</button>
-                        <button className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg">Save & Update Lesson</button>
+                        <button onClick={()=>updLesson("_reset",null)} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5">Discard Changes</button>
+                        <button onClick={()=>alert("Lesson updated locally. Click Publish Course on Step 4 to save all lessons to DB.")} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300">Save & Update Lesson</button>
                       </div>
                     </div>
                   </div>
@@ -1738,8 +1762,8 @@ function VideoCoursesAdmin({ token }) {
           <div className="max-w-lg space-y-5">
             <Sect icon="payments" title="Course Pricing">
               <div className="grid grid-cols-2 gap-4">
-                <Fld label="Base Price" value={f.price} onChange={v=>setF({...f,price:v})} prefix="$" placeholder="0"/>
-                <Fld label="Discounted Price (Optional)" value={f.discPrice} onChange={v=>setF({...f,discPrice:v})} prefix="$"/>
+                <Fld label="Base Price (₹)" value={f.price} onChange={v=>setF({...f,price:v})} prefix="₹" placeholder="0"/>
+                <Fld label="Discounted Price (₹, Optional)" value={f.discPrice} onChange={v=>setF({...f,discPrice:v})} prefix="₹"/>
               </div>
             </Sect>
             <Sect icon="eye" title="Access & Expiry">
@@ -1828,13 +1852,22 @@ function VideoCoursesAdmin({ token }) {
               </div>
               <div className="p-3">
                 <h3 className="text-sm font-semibold text-white mb-1">{c.title}</h3>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-[#C7E36B] font-bold">₹{c.price}</span>
                   <span className="text-[10px] text-gray-400">{c.level||"Beginner"}</span>
                 </div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] text-gray-500">👥 {c.enrolledCourses?.length ?? c.enrollmentCount ?? 0} enrolled</span>
+                  <button onClick={async()=>{
+                    const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
+                    if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
+                  }} className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all ${c.isPublished?"bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400":"bg-yellow-500/20 text-yellow-400 hover:bg-green-500/20 hover:text-green-400"}`}>
+                    {c.isPublished?"● live":"○ draft"}
+                  </button>
+                </div>
                 <div className="flex gap-2">
                   <button onClick={()=>window.open(`/courses/${c._id}/watch`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
-                  <button onClick={()=>{ setEditCourse(c); setEditLessons(c.lessons&&c.lessons.length>0?c.lessons.map(l=>({...l})):[{title:"",videoUrl:"",duration:"",isFree:false}]); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
+                  <button onClick={()=>{ setEditCourse(c); setEditInfo({}); setEditLessons(c.lessons&&c.lessons.length>0?c.lessons.map(l=>({...l})):[{title:"",videoUrl:"",duration:"",isFree:false}]); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
                   <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={11}/></button>
                 </div>
               </div>
