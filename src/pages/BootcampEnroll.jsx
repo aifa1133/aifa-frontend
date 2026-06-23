@@ -72,39 +72,50 @@ export default function BootcampEnroll() {
   const [tempPw, setTempPw]               = useState("");
   const [paying, setPaying]               = useState(false);
   const [orderId, setOrderId]             = useState("");
+  const [checking, setChecking]           = useState(true); // true until enrollment check done
 
   /* ── useEffect after all useState ── */
   useEffect(() => {
-    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => {
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(async d => {
       if (Array.isArray(d) && d.length > 0) {
         const bc = d[0];
         setBootcamp(bc);
 
-        /* If user is already logged in, check enrollment */
         const token = localStorage.getItem("aifa_token");
         const user  = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+
         if (token && user._id) {
-          const userId = String(user._id);
+          const userId      = String(user._id);
           const enrollments = (bc.enrollments || []).map(String);
+
           if (enrollments.includes(userId)) {
-            /* Already enrolled — send to dashboard */
+            /* Already enrolled → go to dashboard, no flash */
             navigate("/dashboard");
             return;
           }
-          /* Logged in but not enrolled — pre-fill form and skip to Step 2 */
+
+          /* Logged in but not enrolled → pre-fill and go to Step 2 */
           setAuthToken(token);
-          setForm(prev => ({ ...prev, name: user.name || "", email: "" }));
-          /* Fetch real email from profile */
-          fetch("/api/users/me", { headers: { Authorization: "Bearer " + token } })
-            .then(r => r.ok ? r.json() : null)
-            .then(profile => {
-              if (profile) setForm(prev => ({ ...prev, name: profile.name || prev.name, email: profile.email || "", phone: profile.phone || "" }));
-            }).catch(() => {});
+          try {
+            const profileRes = await fetch("/api/users/me", { headers: { Authorization: "Bearer " + token } });
+            if (profileRes.ok) {
+              const profile = await profileRes.json();
+              setForm({ name: profile.name || user.name || "", email: profile.email || "", phone: profile.phone || "" });
+            }
+          } catch { /* ignore */ }
           setStep(2);
         }
       }
-    }).catch(() => {});
+      setChecking(false); // done checking — show the page
+    }).catch(() => setChecking(false));
   }, []);
+
+  /* ── Show loading until enrollment check completes — prevents Step 1 flash ── */
+  if (checking) return (
+    <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   /* ── Derived values — plain expressions, no IIFE ── */
   const ORIGINAL   = (bootcamp && bootcamp.price)         ? bootcamp.price         : 14000;
