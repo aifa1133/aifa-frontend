@@ -489,7 +489,13 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
       </div>
       {localProj&&(
         <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5 overflow-y-auto">
-          <input type="file" ref={projFileRef} className="hidden"/>
+          <input type="file" ref={projFileRef} className="hidden" multiple
+            onChange={e=>{
+              const files=Array.from(e.target.files||[]);
+              if(!files.length) return;
+              setLocalProj(p=>({...p,res:[...(p.res||[]),...files.map(f=>({name:f.name,size:Math.round(f.size/1024)+"KB",fileType:f.name.split(".").pop().toUpperCase()}))]}));
+              e.target.value="";
+            }}/>
           <div className="grid grid-cols-2 gap-4">
             <Fld label="Project Number" value={localProj.no||""} onChange={v=>setLocalProj(p=>({...p,no:v}))} />
             <Fld label="Project Title" value={localProj.title||""} onChange={v=>setLocalProj(p=>({...p,title:v}))} />
@@ -504,8 +510,13 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
               {(localProj.req||[]).map((r,i)=>(
                 <div key={i} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
                   <I name="check" size={13} className="text-[#C7E36B] shrink-0"/>
-                  <span className="text-xs text-white flex-1">{typeof r==="string"?r:r.text||r}</span>
-                  <button onClick={()=>setLocalProj(p=>({...p,req:(p.req||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
+                  <input
+                    value={typeof r==="string"?r:r.text||""}
+                    onChange={e=>setLocalProj(p=>({...p,req:(p.req||[]).map((x,j)=>j===i?e.target.value:x)}))}
+                    className="text-xs text-white flex-1 bg-transparent outline-none border-b border-transparent focus:border-[#C7E36B]/50 transition-colors placeholder-gray-600"
+                    placeholder="Enter requirement..."
+                  />
+                  <button onClick={()=>setLocalProj(p=>({...p,req:(p.req||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={13}/></button>
                 </div>
               ))}
             </div>
