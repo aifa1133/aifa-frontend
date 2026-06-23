@@ -680,7 +680,7 @@ function BootcampAdmin({ token }) {
   const [selProj,setSelProj]=useState(null);
   const [selAnn,setSelAnn]=useState(null);
   const [annF,setAnnF]=useState({title:"",content:""});
-  const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true});
+  const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",price:"",originalPrice:"",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true});
   const [mentors,setMentors]=useState([]);
   const [newMentor,setNewMentor]=useState("");
   /* Feature 5: sessions modal + search */
@@ -776,6 +776,8 @@ function BootcampAdmin({ token }) {
         startDate: sel.startDate ? sel.startDate.split("T")[0] : "",
         endDate: sel.endDate ? sel.endDate.split("T")[0] : "",
         status: sel.isPublished ? "ACTIVE" : "COMING SOON",
+        price: sel.price != null ? String(sel.price) : "",
+        originalPrice: sel.originalPrice != null ? String(sel.originalPrice) : "",
         zoomLink: sel.zoomLink || "",
         zoomId: sel.zoomId || "",
         zoomPass: sel.zoomPass || "",
@@ -787,7 +789,7 @@ function BootcampAdmin({ token }) {
 
   /* Settings save functions wired to real API */
   const saveBatchInfo = async () => {
-    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE" }) });
+    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0 }) });
     save(setSavedBatch);
   };
   const saveZoomSettings = async () => {
@@ -1246,6 +1248,8 @@ function BootcampAdmin({ token }) {
                 <Fld label="Batch Code" value={stgs.code} onChange={v=>setStgs({...stgs,code:v})} />
                 <Fld label="Start Date" value={stgs.startDate} onChange={v=>setStgs({...stgs,startDate:v})} />
                 <Fld label="End Date" value={stgs.endDate} onChange={v=>setStgs({...stgs,endDate:v})} />
+                <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs({...stgs,price:v})} placeholder="e.g. 14000" />
+                <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs({...stgs,originalPrice:v})} placeholder="e.g. 19000" />
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Batch Status</p>
