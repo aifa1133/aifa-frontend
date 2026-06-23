@@ -2287,6 +2287,9 @@ function UsersAdmin({ token }) {
 function PaymentsAdmin({ token }) {
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pSearch, setPSearch] = useState("");
+  const [pType, setPType] = useState("All");
+  const [pStatus, setPStatus] = useState("All");
   useEffect(() => {
     fetch("/api/admin/payments", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setTxs(d); setLoading(false); }).catch(()=>setLoading(false));
@@ -2295,6 +2298,13 @@ function PaymentsAdmin({ token }) {
   const total   = txs.filter(t=>t.status==="paid").reduce((s,t)=>s+t.amount,0);
   const pending = txs.filter(t=>t.status==="pending").reduce((s,t)=>s+t.amount,0);
   const thisMonth = txs.filter(t=>{ const d=new Date(t.createdAt); const n=new Date(); return t.status==="paid"&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); }).reduce((s,t)=>s+t.amount,0);
+
+  const filtered = txs.filter(t => {
+    const matchSearch = !pSearch || (t.user?.name||"").toLowerCase().includes(pSearch.toLowerCase()) || (t.itemTitle||"").toLowerCase().includes(pSearch.toLowerCase());
+    const matchType = pType==="All" || t.itemType===pType.toLowerCase();
+    const matchStatus = pStatus==="All" || t.status===pStatus.toLowerCase();
+    return matchSearch && matchType && matchStatus;
+  });
 
   return (
     <div className="p-6">
@@ -2306,6 +2316,20 @@ function PaymentsAdmin({ token }) {
           ))}
         </div>
       </div>
+      {/* Search + Filters */}
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <input value={pSearch} onChange={e=>setPSearch(e.target.value)} placeholder="Search by student or program..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+        </div>
+        <select value={pType} onChange={e=>setPType(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          {["All","Course","Workshop","Bootcamp"].map(o=><option key={o}>{o}</option>)}
+        </select>
+        <select value={pStatus} onChange={e=>setPStatus(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          {["All","Paid","Pending","Failed"].map(o=><option key={o}>{o}</option>)}
+        </select>
+      </div>
+
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
         <table className="w-full">
           <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
@@ -2313,8 +2337,8 @@ function PaymentsAdmin({ token }) {
           </tr></thead>
           <tbody className="divide-y divide-white/5">
             {loading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm animate-pulse">Loading...</td></tr>
-              : txs.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">No transactions yet</td></tr>
-              : txs.map((p,i)=>(
+              : filtered.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">No transactions yet</td></tr>
+              : filtered.map((p,i)=>(
               <tr key={i} className="hover:bg-white/5 transition-all">
                 <td className="px-4 py-3 text-xs font-semibold text-gray-300">#{p._id?.slice(-8).toUpperCase()}</td>
                 <td className="px-4 py-3 text-sm text-white">{p.user?.name||"—"}</td>
