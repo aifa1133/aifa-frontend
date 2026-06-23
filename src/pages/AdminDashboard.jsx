@@ -522,7 +522,35 @@ function ListBootcampAdmin({ onSelect, token }) {
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <button onClick={()=>setShowCreateModal(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
-              <button onClick={()=>{setShowCreateModal(false);setCreateSuccess(true);setTimeout(()=>setCreateSuccess(false),3000);setNewBC({name:"",code:"",price:"",duration:"",status:"ACTIVE"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">CREATE BOOTCAMP</button>
+              <button onClick={async()=>{
+                if (!newBC.name.trim()) { alert("Bootcamp name is required."); return; }
+                try {
+                  const res = await fetch("/api/bootcamps", {
+                    method: "POST",
+                    headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
+                    body: JSON.stringify({
+                      title: newBC.name,
+                      batchCode: newBC.code,
+                      price: Number(newBC.price) || 0,
+                      duration: newBC.duration,
+                      isPublished: newBC.status === "ACTIVE",
+                      description: "",
+                    }),
+                  });
+                  if (res.ok) {
+                    const created = await res.json();
+                    setBootcamps(prev => [...prev, created]);
+                    setShowCreateModal(false);
+                    setCreateSuccess(true);
+                    setTimeout(() => setCreateSuccess(false), 3000);
+                    setNewBC({ name:"", code:"", price:"", duration:"", status:"ACTIVE" });
+                    setStatusFilter("All"); // reset filter so new bootcamp is visible
+                  } else {
+                    const d = await res.json();
+                    alert(d.message || "Failed to create bootcamp.");
+                  }
+                } catch { alert("Network error. Please try again."); }
+              }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">CREATE BOOTCAMP</button>
             </div>
           </div>
         </div>
@@ -555,7 +583,7 @@ function ListBootcampAdmin({ onSelect, token }) {
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="bg-[#0F1112] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none hover:border-white/20">
             {["Default","Name A-Z","Students"].map(o=><option key={o}>{o}</option>)}
           </select>
-          <span className="text-[10px] text-gray-600">{filtered.length} of {BC_CARDS.length} bootcamps</span>
+          <span className="text-[10px] text-gray-600">{filtered.length} of {bootcamps.length} bootcamps</span>
         </div>
         {loadingBC ? (
           <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading bootcamps...</p>
