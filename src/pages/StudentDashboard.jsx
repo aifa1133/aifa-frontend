@@ -263,7 +263,7 @@ export default function StudentDashboard() {
               {activePage === "community" && <CommunitySection token={token} profile={profile} />}
               {activePage === "hire-talent" && <HireTalentSection token={token} />}
               {activePage === "profile" && <ProfileSection profile={profile} token={token} onUpdated={setProfile} />}
-              {activePage === "settings" && <SettingsSection token={token} />}
+              {activePage === "settings" && <SettingsSection token={token} profile={profile} />}
               {activePage === "billing" && <BillingSection onViewInvoice={setInvoiceItem} profile={profile} />}
             </>
           )}
@@ -1914,7 +1914,7 @@ function ProfileSection({ profile, token, onUpdated }) {
 /* ════════════════════════════════════════════
    SETTINGS SECTION
 ════════════════════════════════════════════ */
-function SettingsSection({ token }) {
+function SettingsSection({ token, profile }) {
   const [tab, setTab] = useState("password");
   const [current, setCurrent] = useState("");
   const [newPwd, setNewPwd] = useState("");
@@ -1923,7 +1923,13 @@ function SettingsSection({ token }) {
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [prefs, setPrefs] = useState({ newCourses: true, workshopAlerts: true, progressEmails: false, promotions: true });
+  const DEFAULT_PREFS = { newCourses: true, workshopAlerts: true, progressEmails: false, promotions: true };
+  const [prefs, setPrefs] = useState(() => ({ ...DEFAULT_PREFS, ...(profile?.notificationPrefs || {}) }));
+
+  /* Sync prefs when profile loads */
+  useEffect(() => {
+    if (profile?.notificationPrefs) setPrefs(p => ({ ...DEFAULT_PREFS, ...profile.notificationPrefs }));
+  }, [profile]);
   const [prefMsg, setPrefMsg] = useState("");
   const [prefSaving, setPrefSaving] = useState(false);
 
