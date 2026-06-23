@@ -4034,6 +4034,8 @@ function CertificatesAdmin({ token }) {
   const [manualApproval, setManualApproval] = useState(false);
   const [idFormat, setIdFormat]         = useState("AIFA-[COURSE_CODE]-[YEAR]-[ID]");
   const [editingFormat, setEditingFormat] = useState(false);
+  const [certSearch, setCertSearch]     = useState("");
+  const [certTypeFilter, setCertTypeFilter] = useState("All");
 
   useEffect(() => {
     const h = { Authorization:`Bearer ${token}` };
@@ -4046,7 +4048,12 @@ function CertificatesAdmin({ token }) {
     setSaving(true); setMsg("");
     const res = await fetch("/api/certificates", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(form) });
     const data = await res.json();
-    if (res.ok) { setCerts(c=>[data,...c]); setShowForm(false); setMsg(""); setForm({ userId:"", title:"Certificate of Achievement", courseTitle:"", itemType:"course" }); }
+    if (res.ok) {
+      /* Enrich newly-created cert with populated user so table shows name immediately */
+      const issuedUser = users.find(u => u._id === form.userId) || null;
+      setCerts(c=>[{ ...data, user: issuedUser }, ...c]);
+      setShowForm(false); setMsg(""); setForm({ userId:"", title:"Certificate of Achievement", courseTitle:"", itemType:"course" });
+    }
     else setMsg(data.message || "Failed.");
     setSaving(false);
   };
@@ -4168,6 +4175,18 @@ function CertificatesAdmin({ token }) {
               <I name="plus" size={14}/>{showForm?"← Back":"+ Issue Certificate"}
             </button>
           </div>
+          {/* Search + Type filter */}
+          {!showForm && (
+            <div className="flex gap-3 mb-4">
+              <div className="relative flex-1 max-w-xs">
+                <input value={certSearch} onChange={e=>setCertSearch(e.target.value)} placeholder="Search by student or course..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+                <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+              </div>
+              <select value={certTypeFilter} onChange={e=>setCertTypeFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+                {["All","course","bootcamp","workshop"].map(o=><option key={o} value={o}>{o==="All"?"All Types":o.charAt(0).toUpperCase()+o.slice(1)}</option>)}
+              </select>
+            </div>
+          )}
           {showForm && (
             <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-5 max-w-lg space-y-3">
               <h3 className="text-sm font-semibold text-white">Issue New Certificate</h3>
@@ -4202,9 +4221,15 @@ function CertificatesAdmin({ token }) {
                   {["Student","Course / Program","Type","Certificate ID","Issued",""].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
                 </tr></thead>
                 <tbody className="divide-y divide-white/5">
-                  {certs.length === 0
-                    ? <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No certificates issued yet</td></tr>
-                    : certs.map((c) => (
+                  {(() => {
+                    const certsFiltered = certs.filter(c => {
+                      const q = certSearch.toLowerCase();
+                      const matchSearch = !q || (c.user?.name||"").toLowerCase().includes(q) || (c.courseTitle||"").toLowerCase().includes(q);
+                      const matchType = certTypeFilter==="All" || c.itemType===certTypeFilter;
+                      return matchSearch && matchType;
+                    });
+                    if(certsFiltered.length===0) return <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">{certs.length===0?"No certificates issued yet":"No certificates match your filters"}</td></tr>;
+                    return certsFiltered.map((c) => (
                     <tr key={c._id} className="hover:bg-white/5 transition-all">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -4218,7 +4243,8 @@ function CertificatesAdmin({ token }) {
                       <td className="px-4 py-3 text-sm text-gray-400">{new Date(c.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3"><button onClick={()=>handleDelete(c._id)} className="text-gray-600 hover:text-red-400 transition-all"><I name="trash" size={13}/></button></td>
                     </tr>
-                  ))}
+                  ));
+                  })()}
                 </tbody>
               </table>
             </div>
