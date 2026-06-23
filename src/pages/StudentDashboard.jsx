@@ -250,7 +250,7 @@ export default function StudentDashboard() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
           {invoiceItem ? (
-            <InvoiceView item={invoiceItem} onBack={() => setInvoiceItem(null)} />
+            <InvoiceView item={invoiceItem} onBack={() => setInvoiceItem(null)} profile={profile} />
           ) : (
             <>
               {activePage === "dashboard" && <DashboardHome profile={profile} token={token} onNavigate={setActivePage} />}
@@ -264,7 +264,7 @@ export default function StudentDashboard() {
               {activePage === "hire-talent" && <HireTalentSection token={token} />}
               {activePage === "profile" && <ProfileSection profile={profile} token={token} onUpdated={setProfile} />}
               {activePage === "settings" && <SettingsSection token={token} />}
-              {activePage === "billing" && <BillingSection onViewInvoice={setInvoiceItem} />}
+              {activePage === "billing" && <BillingSection onViewInvoice={setInvoiceItem} profile={profile} />}
             </>
           )}
         </main>
@@ -1543,11 +1543,19 @@ function JobsSection({ token }) {
 /* ════════════════════════════════════════════
    BILLING & PAYMENTS SECTION
 ════════════════════════════════════════════ */
-function BillingSection({ onViewInvoice }) {
+function BillingSection({ onViewInvoice, profile }) {
   const [openMenu, setOpenMenu] = useState(null);
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("aifa_token");
+  const menuRef = useRef(null);
+
+  /* Click-outside closes three-dot menu */
+  useEffect(() => {
+    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenu(null); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     fetch("/api/payments/history", { headers:{ Authorization:`Bearer ${token}` } })
@@ -1620,11 +1628,11 @@ function BillingSection({ onViewInvoice }) {
                       <Ic name="more" size={18} />
                     </button>
                     {openMenu === i && (
-                      <div className="absolute right-6 top-8 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden w-[160px]">
+                      <div ref={menuRef} className="absolute right-6 top-8 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden w-[160px]">
                         <button onClick={() => { onViewInvoice(p); setOpenMenu(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                           <Ic name="eye" size={14} className="text-gray-400" />View Invoice
                         </button>
-                        <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                        <button onClick={() => { alert("Invoice PDF download coming soon!"); setOpenMenu(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                           <Ic name="download" size={14} className="text-gray-400" />Download Invoice
                         </button>
                       </div>
@@ -1641,7 +1649,7 @@ function BillingSection({ onViewInvoice }) {
 }
 
 /* ─── INVOICE VIEW ─── */
-function InvoiceView({ item, onBack }) {
+function InvoiceView({ item, onBack, profile }) {
   return (
     <div className="p-6 bg-[#F5F7FA] min-h-full">
       <div className="flex items-center justify-between mb-6">
@@ -1686,9 +1694,9 @@ function InvoiceView({ item, onBack }) {
 
         <div className="mb-6">
           <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1">BILLED TO</p>
-          <p className="text-sm font-bold text-gray-900">Alex Johnson</p>
-          <p className="text-xs text-blue-500">alex.johnson@example.com</p>
-          <p className="text-xs text-gray-500">Student ID: STU-994821</p>
+          <p className="text-sm font-bold text-gray-900">{profile?.name || "Student"}</p>
+          <p className="text-xs text-blue-500">{profile?.email || "—"}</p>
+          <p className="text-xs text-gray-500">Student ID: STU-{String(profile?._id || "000000").slice(-6).toUpperCase()}</p>
         </div>
 
         <table className="w-full mb-4">
@@ -1708,10 +1716,10 @@ function InvoiceView({ item, onBack }) {
 
         <div className="space-y-1 ml-auto w-48">
           <div className="flex justify-between text-sm text-gray-500"><span>Subtotal</span><span>{item.amount}</span></div>
-          <div className="flex justify-between text-sm text-gray-500"><span>Tax (0%)</span><span>$0.00</span></div>
+          <div className="flex justify-between text-sm text-gray-500"><span>Tax (0%)</span><span>₹0</span></div>
           <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-200 pt-2 mt-2"><span>Total</span><span>{item.amount}</span></div>
           <div className="flex justify-between text-sm text-green-600"><span>Amount Paid</span><span>-{item.amount}</span></div>
-          <div className="flex justify-between text-sm font-bold text-gray-900"><span>Balance Due</span><span>$0.00</span></div>
+          <div className="flex justify-between text-sm font-bold text-gray-900"><span>Balance Due</span><span>₹0</span></div>
         </div>
       </div>
     </div>
