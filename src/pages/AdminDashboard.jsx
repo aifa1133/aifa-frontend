@@ -4274,22 +4274,43 @@ function JobsAdmin({ token }) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving]     = useState(false);
   const [msg, setMsg]           = useState("");
-  const [form, setForm] = useState({ title:"", type:"PART-TIME", tag:"AI Film", description:"", budget:"", timeline:"", skills:"" });
+  const [editJob, setEditJob]   = useState(null); // null = create, object = edit
+  const BLANK_FORM = { title:"", type:"PART-TIME", tag:"AI Film", description:"", budget:"", timeline:"", skills:"" };
+  const [form, setForm] = useState(BLANK_FORM);
 
   const load = () => {
     setLoading(true);
-    fetch("/api/jobs").then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setJobs(d); setLoading(false); }).catch(()=>setLoading(false));
+    /* ?all=true so admin sees inactive jobs too */
+    fetch("/api/jobs?all=true", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setJobs(d); setLoading(false); }).catch(()=>setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(load, [token]);
+
+  const openEdit = (j) => {
+    setEditJob(j);
+    setForm({ title:j.title||"", type:j.type||"PART-TIME", tag:j.tag||"AI Film", description:j.description||"", budget:j.budget||"", timeline:j.timeline||"", skills:(j.skills||[]).join(", ") });
+    setShowForm(true); setMsg("");
+  };
+  const openCreate = () => { setEditJob(null); setForm(BLANK_FORM); setShowForm(true); setMsg(""); };
+
+  const toggleActive = async (j) => {
+    const res = await fetch(`/api/jobs/${j._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isActive: !j.isActive }) });
+    if(res.ok) setJobs(js=>js.map(x=>x._id===j._id?{...x,isActive:!j.isActive}:x));
+  };
 
   const handleSave = async () => {
     if (!form.title) { setMsg("Title is required."); return; }
     setSaving(true); setMsg("");
     const body = { ...form, skills: form.skills.split(",").map(s=>s.trim()).filter(Boolean) };
-    const res = await fetch("/api/jobs", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
+    const url  = editJob ? `/api/jobs/${editJob._id}` : "/api/jobs";
+    const meth = editJob ? "PUT" : "POST";
+    const res = await fetch(url, { method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
     const data = await res.json();
-    if (res.ok) { setJobs(js=>[data,...js]); setShowForm(false); setForm({ title:"", type:"PART-TIME", tag:"AI Film", description:"", budget:"", timeline:"", skills:"" }); }
-    else setMsg(data.message || "Failed.");
+    if (res.ok) {
+      if(editJob) setJobs(js=>js.map(j=>j._id===data._id?data:j));
+      else setJobs(js=>[data,...js]);
+      setShowForm(false); setEditJob(null); setForm(BLANK_FORM);
+    } else setMsg(data.message || "Failed.");
     setSaving(false);
   };
 
@@ -4304,15 +4325,15 @@ function JobsAdmin({ token }) {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
-        <div><h1 className="text-xl font-bold text-white">Jobs</h1><p className="text-xs text-gray-400">Manage job listings · {jobs.length} active</p></div>
-        <button onClick={()=>setShowForm(!showForm)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
+        <div><h1 className="text-xl font-bold text-white">Jobs</h1><p className="text-xs text-gray-400">Manage job listings · {jobs.length} total ({jobs.filter(j=>j.isActive!==false).length} active)</p></div>
+        <button onClick={()=>{ if(showForm){setShowForm(false);setEditJob(null);setForm(BLANK_FORM);}else openCreate(); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
           <I name="plus" size={14}/>{showForm?"← Back":"+ Post New Job"}
         </button>
       </div>
 
       {showForm && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-5 max-w-lg space-y-3">
-          <h3 className="text-sm font-semibold text-white">Post New Job</h3>
+          <h3 className="text-sm font-semibold text-white">{editJob?"Edit Job":"Post New Job"}</h3>
           {msg && <p className="text-xs text-red-400">{msg}</p>}
           <Fld label="JOB TITLE" value={form.title} onChange={v=>setForm({...form,title:v})} placeholder="e.g. Create a cinematic AI short film" />
           <div className="grid grid-cols-2 gap-3">
@@ -4348,8 +4369,8 @@ function JobsAdmin({ token }) {
           </div>
           <Fld label="SKILLS (comma-separated)" value={form.skills} onChange={v=>setForm({...form,skills:v})} placeholder="Runway, Midjourney, Pika" />
           <div className="flex gap-2 pt-1">
-            <button onClick={()=>setShowForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Posting...":"Post Job"}</button>
+            <button onClick={()=>{setShowForm(false);setEditJob(null);setForm(BLANK_FORM);}} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?(editJob?"Saving...":"Posting..."):(editJob?"Save Changes":"Post Job")}</button>
           </div>
         </div>
       )}
@@ -4373,7 +4394,14 @@ function JobsAdmin({ token }) {
                     {j.timeline && <span className="text-[10px] text-gray-500">{j.timeline}</span>}
                   </div>
                 </div>
-                <button onClick={()=>handleDelete(j._id)} className="text-gray-600 hover:text-red-400 ml-4 shrink-0 transition-all"><I name="trash" size={14}/></button>
+                <div className="flex items-center gap-2 ml-4 shrink-0">
+                  <button onClick={()=>toggleActive(j)} title={j.isActive!==false?"Deactivate":"Activate"}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-all ${j.isActive!==false?"border-green-500/30 text-green-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30":"border-gray-600 text-gray-600 hover:border-green-500/30 hover:text-green-400"}`}>
+                    {j.isActive!==false?"● active":"○ inactive"}
+                  </button>
+                  <button onClick={()=>openEdit(j)} className="text-gray-400 hover:text-[#C7E36B] transition-all"><I name="edit" size={13}/></button>
+                  <button onClick={()=>handleDelete(j._id)} className="text-gray-600 hover:text-red-400 transition-all"><I name="trash" size={14}/></button>
+                </div>
               </div>
             ))}
           </div>
