@@ -71,7 +71,10 @@ export default function BootcampEnroll() {
     fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
   }, []);
 
-  const ORIGINAL = bootcamp?.price || 14000;
+  const [paying, setPaying]     = useState(false);
+  const [orderId, setOrderId]   = useState("");
+
+  const ORIGINAL  = bootcamp?.price || 14000;
   const ORIG_PRICE = bootcamp?.originalPrice || 19000;
   const DISCOUNT = (() => {
     if (!couponApplied || !couponData) return 0;
@@ -82,9 +85,6 @@ export default function BootcampEnroll() {
   const GST      = couponApplied ? 170 : 0;
   const TOTAL    = SUBTOTAL + GST;
   const ORDER    = orderId || "ORD-89241";
-
-  const [paying, setPaying]     = useState(false);
-  const [orderId, setOrderId]   = useState("");
 
   const loadRazorpay = () => new Promise(resolve => {
     if (window.Razorpay) { resolve(true); return; }
