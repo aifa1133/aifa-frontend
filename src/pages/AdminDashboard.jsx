@@ -2223,6 +2223,11 @@ function ResourcesAdmin({ token }) {
 function UsersAdmin({ token }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uSearch, setUSearch] = useState("");
+  const [uRole, setURole]     = useState("All");
+  const [uSort, setUSort]     = useState("Newest");
+  const [viewUser, setViewUser] = useState(null);
+  const adminId = JSON.parse(localStorage.getItem("aifa_user")||"{}") ._id;
 
   useEffect(() => {
     fetch("/api/users",{ headers:{ Authorization:`Bearer ${token}` } })
@@ -2236,16 +2241,87 @@ function UsersAdmin({ token }) {
   };
 
   const delUser = async id => {
+    if(String(id)===String(adminId)){ alert("You cannot delete your own admin account."); return; }
     if(!window.confirm("Delete this user permanently?")) return;
     await fetch(`/api/users/${id}`,{ method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
     setUsers(us=>us.filter(x=>x._id!==id));
+    if(viewUser?._id===id) setViewUser(null);
   };
+
+  const filtered = users
+    .filter(u => {
+      const q = uSearch.toLowerCase();
+      const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
+      const matchRole   = uRole==="All" || u.role===uRole.toLowerCase();
+      return matchSearch && matchRole;
+    })
+    .sort((a,b) => {
+      if(uSort==="Name A-Z") return (a.name||"").localeCompare(b.name||"");
+      if(uSort==="Oldest")   return new Date(a.createdAt)-new Date(b.createdAt);
+      return new Date(b.createdAt)-new Date(a.createdAt); // Newest
+    });
 
   return (
     <div className="p-6">
+      {/* User Detail Modal */}
+      {viewUser && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setViewUser(null)}>
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-[#C7E36B] text-black font-black text-lg flex items-center justify-center">{(viewUser.name||"U")[0].toUpperCase()}</div>
+              <div className="flex-1">
+                <p className="text-white font-bold">{viewUser.name}</p>
+                <p className="text-xs text-gray-400">{viewUser.email}</p>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${viewUser.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{viewUser.role}</span>
+              <button onClick={()=>setViewUser(null)} className="text-gray-400 hover:text-white ml-2">✕</button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-1">JOINED</p>
+                <p className="text-white">{new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-2">ENROLLED COURSES ({viewUser.enrolledCourses?.length||0})</p>
+                {viewUser.enrolledCourses?.length > 0
+                  ? viewUser.enrolledCourses.map((c,i)=><p key={i} className="text-white py-0.5">📹 {c?.title||String(c).slice(-8)}</p>)
+                  : <p className="text-gray-600">None</p>}
+              </div>
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-2">ENROLLED WORKSHOPS ({viewUser.enrolledWorkshops?.length||0})</p>
+                {viewUser.enrolledWorkshops?.length > 0
+                  ? viewUser.enrolledWorkshops.map((w,i)=><p key={i} className="text-white py-0.5">🎓 {w?.title||String(w).slice(-8)}</p>)
+                  : <p className="text-gray-600">None</p>}
+              </div>
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-2">ENROLLED BOOTCAMPS ({viewUser.enrolledBootcamps?.length||0})</p>
+                {viewUser.enrolledBootcamps?.length > 0
+                  ? viewUser.enrolledBootcamps.map((b,i)=><p key={i} className="text-white py-0.5">🚀 {b?.title||String(b).slice(-8)}</p>)
+                  : <p className="text-gray-600">None</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-5">
         <div><h1 className="text-xl font-bold text-white">Users</h1><p className="text-xs text-gray-400">Manage platform users and roles · {users.length} total</p></div>
       </div>
+
+      {/* Search + Filters */}
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <input value={uSearch} onChange={e=>setUSearch(e.target.value)} placeholder="Search by name or email..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+        </div>
+        <select value={uRole} onChange={e=>setURole(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          {["All","Student","Admin"].map(o=><option key={o}>{o}</option>)}
+        </select>
+        <select value={uSort} onChange={e=>setUSort(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          {["Newest","Oldest","Name A-Z"].map(o=><option key={o}>{o}</option>)}
+        </select>
+      </div>
+
       {loading ? <p className="text-gray-400 text-sm animate-pulse">Loading users...</p> : (
         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           <table className="w-full">
@@ -2253,7 +2329,8 @@ function UsersAdmin({ token }) {
               {["Name","Email","Role","Enrolled","Joined","Actions"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
             </tr></thead>
             <tbody className="divide-y divide-white/5">
-              {users.map(u=>(
+              {filtered.length===0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No users match your search</td></tr>}
+              {filtered.map(u=>(
                 <tr key={u._id} className="hover:bg-white/5 transition-all">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -2263,19 +2340,20 @@ function UsersAdmin({ token }) {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400">{u.email}</td>
                   <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{u.role}</span></td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{u.enrolledCourses?.length||0}</td>
+                  <td className="px-4 py-3 text-sm text-gray-400">{(u.enrolledCourses?.length||0)+(u.enrolledWorkshops?.length||0)+(u.enrolledBootcamps?.length||0)}</td>
                   <td className="px-4 py-3 text-sm text-gray-400">{new Date(u.createdAt||Date.now()).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
+                      <button onClick={()=>setViewUser(u)} className="text-gray-400 hover:text-[#C7E36B]"><I name="eye" size={14}/></button>
                       <button onClick={()=>toggleRole(u)} className="text-[10px] border border-white/20 text-gray-300 px-2 py-1 rounded hover:bg-white/10">→ {u.role==="admin"?"Student":"Admin"}</button>
-                      <button onClick={()=>delUser(u._id)} className="text-[10px] border border-red-500/30 text-red-400 px-2 py-1 rounded hover:bg-red-500/10"><I name="trash" size={11}/></button>
+                      <button onClick={()=>delUser(u._id)} className={`text-[10px] border px-2 py-1 rounded ${String(u._id)===String(adminId)?"border-gray-700 text-gray-700 cursor-not-allowed":"border-red-500/30 text-red-400 hover:bg-red-500/10"}`} disabled={String(u._id)===String(adminId)}><I name="trash" size={11}/></button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {users.length===0&&<p className="text-center text-gray-500 py-8 text-sm">No users found</p>}
+          {!loading&&<p className="text-xs text-gray-500 px-4 py-2">Showing {filtered.length} of {users.length} users</p>}
         </div>
       )}
     </div>
