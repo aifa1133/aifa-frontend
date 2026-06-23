@@ -75,7 +75,35 @@ export default function BootcampEnroll() {
 
   /* ── useEffect after all useState ── */
   useEffect(() => {
-    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d) && d.length > 0) {
+        const bc = d[0];
+        setBootcamp(bc);
+
+        /* If user is already logged in, check enrollment */
+        const token = localStorage.getItem("aifa_token");
+        const user  = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+        if (token && user._id) {
+          const userId = String(user._id);
+          const enrollments = (bc.enrollments || []).map(String);
+          if (enrollments.includes(userId)) {
+            /* Already enrolled — send to dashboard */
+            navigate("/dashboard");
+            return;
+          }
+          /* Logged in but not enrolled — pre-fill form and skip to Step 2 */
+          setAuthToken(token);
+          setForm(prev => ({ ...prev, name: user.name || "", email: "" }));
+          /* Fetch real email from profile */
+          fetch("/api/users/me", { headers: { Authorization: "Bearer " + token } })
+            .then(r => r.ok ? r.json() : null)
+            .then(profile => {
+              if (profile) setForm(prev => ({ ...prev, name: profile.name || prev.name, email: profile.email || "", phone: profile.phone || "" }));
+            }).catch(() => {});
+          setStep(2);
+        }
+      }
+    }).catch(() => {});
   }, []);
 
   /* ── Derived values — plain expressions, no IIFE ── */
