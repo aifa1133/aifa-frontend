@@ -1270,15 +1270,35 @@ function WorkshopsAdmin({ token }) {
   const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"Online", date:"", time:"", published:true });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+
+  const startEdit = (w) => {
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:"", time:"", published:!!w.isPublished });
+    setIsEditing(true); setView("create");
+  };
 
   const doCreate = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/workshops",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published }) });
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published };
+      const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
+      const meth = isEditing && sel?._id ? "PUT" : "POST";
+      const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
       const data = await res.json();
-      if(res.ok){ setSel(data); setSuccessMsg("Workshop Saved Successfully!"); setView("manage"); }
+      if(res.ok){
+        setSel(data); setSuccessMsg(isEditing?"Workshop Updated Successfully!":"Workshop Created Successfully!");
+        if(isEditing) setWorkshops(ws=>ws.map(w=>w._id===data._id?data:w));
+        else { setWorkshops(ws=>[data,...ws]); }
+        setIsEditing(false); setView("manage");
+      }
     } catch(e){}
     setSaving(false);
+  };
+
+  const doPublish = async (w) => {
+    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
+    const data = await res.json();
+    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop published!"); }
   };
 
   const doDelete = async (id) => {
@@ -1290,8 +1310,14 @@ function WorkshopsAdmin({ token }) {
   if(view==="create") return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <div><h1 className="text-xl font-bold text-white">Create Workshop</h1><p className="text-xs text-gray-400">Add workshop details for website display</p></div>
-        <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg" onClick={doCreate} disabled={saving}>{saving?"Publishing...":"Publish Workshop"}</button>
+        <div>
+          <h1 className="text-xl font-bold text-white">{isEditing?"Edit Workshop":"Create Workshop"}</h1>
+          <p className="text-xs text-gray-400">{isEditing?"Update workshop details":"Add workshop details for website display"}</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={()=>{ setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+          <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doCreate} disabled={saving}>{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-4">
@@ -1326,8 +1352,8 @@ function WorkshopsAdmin({ token }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})} /><span className="text-sm text-white">Published</span></div>
             <div className="flex gap-2">
-              <button onClick={()=>setView("list")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Save as Draft</button>
-              <button onClick={doCreate} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?"Publishing...":"Publish Workshop"}</button>
+              <button onClick={()=>{ setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+              <button onClick={doCreate} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
             </div>
           </div>
         </div>
@@ -1361,7 +1387,7 @@ function WorkshopsAdmin({ token }) {
       {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
       <div className="flex gap-6">
         <div className="flex-1">
-          <div className="flex gap-2 mb-3"><span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded">DRAFT</span><span className="text-[10px] text-gray-400">ONLINE</span></div>
+          <div className="flex gap-2 mb-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span><span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span></div>
           <h2 className="text-2xl font-black text-white">{sel.title}</h2>
           <div className="grid grid-cols-3 gap-3 mt-4">
             {[["PRICE",sel.price||"₹1,499"],["DURATION",sel.duration||"4 Hours"],["SEAT LIMIT","50 Seats"]].map(([k,v])=>(
@@ -1370,23 +1396,37 @@ function WorkshopsAdmin({ token }) {
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-6 mt-4 flex flex-col items-center justify-center min-h-[180px]">
             <I name="users" size={32} className="text-gray-600 mb-2"/>
-            <p className="text-sm text-gray-400 font-semibold">No registrations yet</p>
-            <p className="text-xs text-gray-500 mt-1 text-center">Once you publish the workshop, learner registrations will appear here in real-time.</p>
-            <button className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg">📣 Publish Workshop to Live</button>
+            <p className="text-sm text-gray-400 font-semibold">{sel.registrations?.length ? `${sel.registrations.length} registrations` : "No registrations yet"}</p>
+            <p className="text-xs text-gray-500 mt-1 text-center">Once published, learner registrations will appear here in real-time.</p>
+            {!sel.isPublished && (
+              <button onClick={()=>doPublish(sel)} className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300">📣 Publish Workshop to Live</button>
+            )}
+            {sel.isPublished && (
+              <span className="mt-4 text-xs text-green-400 font-semibold">✓ Published and Live</span>
+            )}
           </div>
         </div>
         <div className="w-[200px] shrink-0 space-y-3">
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <p className="text-xs font-semibold text-white mb-3">Management Actions</p>
-            {[["Edit Details","edit"],["Preview Website Card","eye"],["Copy Registration Link","copy"],["Delete Workshop","trash"]].map(([l,ic])=>(
-              <button key={l} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")?"text-red-400":"text-gray-300"} hover:text-white`}>
+            {[
+              ["Edit Details","edit",()=>startEdit(sel)],
+              ["Preview Website Card","eye",()=>window.open("/workshops","_blank")],
+              ["Copy Registration Link","copy",()=>{ navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`); alert("Link copied!"); }],
+              ["Delete Workshop","trash",()=>{ doDelete(sel._id); setView("list"); }],
+            ].map(([l,ic,fn])=>(
+              <button key={l} onClick={fn} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")?"text-red-400":"text-gray-300"} hover:text-white`}>
                 <I name={ic} size={12}/>{l}
               </button>
             ))}
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <p className="text-xs font-semibold text-white mb-3">Schedule Summary</p>
-            {[["DATE","October 24, 2023"],["TIME","10:00 - 12:00 PM IST"],["LOCATION","Google Meet (Link Pending)"]].map(([k,v])=>(
+            {[
+              ["DATE", sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleDateString("en-IN") : "Not scheduled"],
+              ["DURATION", sel.duration || "—"],
+              ["MODE", sel.mode || "ONLINE"],
+            ].map(([k,v])=>(
               <div key={k} className="mb-2"><p className="text-[9px] text-gray-500 font-semibold">{k}</p><p className="text-xs text-white">{v}</p></div>
             ))}
           </div>
