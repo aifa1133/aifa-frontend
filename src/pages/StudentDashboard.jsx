@@ -739,7 +739,7 @@ function BootcampSection({ token, profile }) {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <h3 className="text-xs font-semibold text-white mb-3">Your Mentors</h3>
-                {(bootcampData?.mentors?.length > 0 ? bootcampData.mentors : [{name:"David Fincher AI",role:"Lead Instructor"},{name:"Sarah Jenkins",role:"Technical Mentor"}]).map((m,i)=>(
+                {bootcampData?.mentors?.length > 0 ? bootcampData.mentors.map((m,i)=>(
                   <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">{m.name[0]}</div>
@@ -747,7 +747,7 @@ function BootcampSection({ token, profile }) {
                     </div>
                     <button onClick={()=>alert("Messaging feature coming soon! Reach your mentor via Discord for now.")} className="text-gray-400 hover:text-[#7C3AED]"><Ic name="message" size={13}/></button>
                   </div>
-                ))}
+                )) : <p className="text-[11px] text-gray-500 py-2">No mentors assigned yet.</p>}
               </div>
             </div>
           </div>

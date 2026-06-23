@@ -396,7 +396,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
     setTimeout(() => setProjSaved(false), 2000);
   };
 
-  const displayList = projects.length > 0 ? projects : BC_PROJS_DATA;
+  const displayList = projects;
 
   return (
     <div className="flex gap-5 h-full">
@@ -615,57 +615,16 @@ function ListBootcampAdmin({ onSelect, token }) {
 
 /* ── BOOTCAMP ADMIN ── */
 const BC_ST={ACTIVE:"bg-green-500/20 text-green-400",COMPLETED:"bg-blue-500/20 text-blue-400",CANCELLED:"bg-red-500/20 text-red-400","COMING SOON":"bg-yellow-500/20 text-yellow-400",DROPPED:"bg-red-500/20 text-red-400",PUBLISHED:"bg-green-500/20 text-green-400",SCHEDULED:"bg-yellow-500/20 text-yellow-400",DRAFT:"bg-gray-500/20 text-gray-400"};
-const BC_CARDS=[
-  {_id:"b1",code:"B01",title:"AI Filmmaking Bootcamp",desc:"Master AI-powered filmmaking from script to screen in 12 intensive weeks.",students:21,price:"₹6,499",duration:"12 Weeks",status:"ACTIVE"},
-  {_id:"b2",code:"B02",title:"Advanced VFX with AI",desc:"Deep dive into visual effects using generative AI tools and pipelines.",students:14,price:"₹4,999",duration:"8 Weeks",status:"COMPLETED"},
-  {_id:"b3",code:"B03",title:"AI Screenwriting Workshop",desc:"Learn to write compelling scripts using AI-assisted tools and prompting.",students:0,price:"₹3,499",duration:"4 Weeks",status:"COMING SOON"},
-];
-const BC_SESS=[
-  {no:1,name:"Introduction to AI Filmmaking",status:"COMPLETED"},{no:2,name:"Storyboarding with Midjourney",status:"COMPLETED"},
-  {no:3,name:"Generative Video Fundamentals",status:"COMPLETED"},{no:4,name:"Prompt Engineering for Video",status:"COMPLETED"},
-  {no:5,name:"Cinematic Camera Movements",status:"COMPLETED"},{no:6,name:"AI Audio & Soundscapes",status:"COMPLETED"},
-  {no:7,name:"Color Grading with AI Tools",status:"COMPLETED"},{no:8,name:"Character Consistency in AI",status:"COMPLETED"},
-  {no:9,name:"Editing Workflows for AI Film",status:"COMPLETED"},{no:10,name:"VFX Compositing Basics",status:"COMPLETED"},
-  {no:11,name:"Narrative Structure in AI Cinema",status:"COMPLETED"},{no:12,name:"Generative Video with Sora & Midjourney",status:"ACTIVE"},
-  {no:13,name:"Advanced Temporal Consistency",status:"COMING SOON"},{no:14,name:"Multi-Scene Storytelling",status:"COMING SOON"},
-];
-const BC_STUDS=[
-  {name:"Rajesh Kumar",email:"rajesh@gmail.com",mobile:"+91 98765 43210",joinDate:"Oct 1, 2024",status:"ACTIVE"},
-  {name:"Priya Sharma",email:"priya@gmail.com",mobile:"+91 87654 32109",joinDate:"Oct 1, 2024",status:"ACTIVE"},
-  {name:"Amit Patel",email:"amit@gmail.com",mobile:"+91 76543 21098",joinDate:"Oct 3, 2024",status:"COMPLETED"},
-  {name:"Sneha Reddy",email:"sneha@gmail.com",mobile:"+91 65432 10987",joinDate:"Oct 5, 2024",status:"DROPPED"},
-  {name:"Vikram Singh",email:"vikram@gmail.com",mobile:"+91 54321 09876",joinDate:"Oct 1, 2024",status:"ACTIVE"},
-];
-const BC_PROJS_DATA=[
-  {no:"PROJECT 01",title:"AI-Generated Cinematic Storyboard",desc:"Create a 10-frame storyboard using Midjourney or DALL-E 3 depicting a sci-fi landscape.",req:["Minimum 10 story frames","Consistent character design throughout","Export as high-resolution PDF","Include prompt annotations"],res:["Storyboard_Template.pdf","Reference_Guide.zip"]},
-  {no:"PROJECT 02",title:"Generative Video Short (30s)",desc:"Produce a 30-second short film using Runway Gen-2 or Pika Labs focusing on environmental storytelling.",req:["Minimum 30 seconds runtime","At least 3 distinct scenes","Original AI-generated audio","Submit as MP4 1080p"],res:["Video_Spec_Sheet.pdf","Audio_Guidelines.pdf"]},
-  {no:"PROJECT 03",title:"AI Soundscapes & Scoring",desc:"Compose an original background score for your short film using Udio or Suno AI.",req:["Minimum 2-minute composition","3 distinct emotional shifts","Submission format: MP3 or WAV (320kbps)"],res:["Music_Brief.pdf"]},
-  {no:"PROJECT 04",title:"Character Arc Visual Narrative",desc:"Create a complete character visual narrative using AI image generation tools.",req:["5 character state images","Consistent visual style","Clear story progression"],res:["Character_Sheet.pdf","Style_Reference.zip"]},
-  {no:"PROJECT 05",title:"Final AI Film Portfolio",desc:"A 3-minute capstone film integrating all bootcamp skills learned throughout the program.",req:["Minimum 3 minutes runtime","All previous techniques integrated","Original score","Professional color grade"],res:["Portfolio_Rubric.pdf","Submission_Guide.pdf"]},
-];
-const BC_ANNS_DATA=[
-  {id:1,title:"New Resource: AI Cinematography Guide",date:"Nov 15, 2024",status:"PUBLISHED",content:"I've just uploaded the comprehensive guide for Module 5. Please review it before today's live session at 7 PM EST."},
-  {id:2,title:"Workshop Rescheduled: 1-on-1 Mentoring",date:"Nov 12, 2024",status:"PUBLISHED",content:"The Friday mentorship slot has been moved to 3:00 PM EST. Check the Mentorship tab for updates."},
-  {id:3,title:"Upcoming: Guest Lecture by AI Director",date:"Nov 20, 2024",status:"SCHEDULED",content:"We have a special guest lecture coming up. A renowned AI film director will join us for a Q&A session."},
-  {id:4,title:"Project 03 Deadline Extended",date:"Nov 10, 2024",status:"DRAFT",content:"Due to popular request, the deadline for Project 03 has been extended by one week."},
-];
-const BC_RESS=[
-  {name:"AI Filmmaking Syllabus",category:"Course Material",type:"PDF",size:"2.4 MB",uploaded:"Oct 1",dl:145},
-  {name:"Midjourney Prompt Cheatsheet",category:"Reference",type:"PDF",size:"1.2 MB",uploaded:"Oct 5",dl:203},
-  {name:"Session Recording – Week 1",category:"Recording",type:"MP4",size:"1.8 GB",uploaded:"Oct 7",dl:67},
-  {name:"Runway Gen-2 Tutorial Pack",category:"Project Files",type:"ZIP",size:"240 MB",uploaded:"Oct 10",dl:89},
-  {name:"Color Grading LUTs Pack",category:"Project Files",type:"ZIP",size:"85 MB",uploaded:"Oct 15",dl:112},
-  {name:"AIFA Community Discord",category:"External",type:"LINK",size:"—",uploaded:"Oct 1",dl:0},
-];
+/* All BC_CARDS / BC_SESS / BC_STUDS / BC_PROJS_DATA / BC_ANNS_DATA / BC_RESS removed — data comes from API only */
 function BootcampAdmin({ token }) {
   const [view,setView]=useState("list");
   const [sel,setSel]=useState(null);
   const [tab,setTab]=useState("overview");
-  const [selProj,setSelProj]=useState(BC_PROJS_DATA[0]);
+  const [selProj,setSelProj]=useState(null);
   const [selAnn,setSelAnn]=useState(null);
   const [annF,setAnnF]=useState({title:"",content:""});
   const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true});
-  const [mentors,setMentors]=useState([{name:"David Fincher AI",role:"Lead Instructor"},{name:"Sarah Jenkins",role:"Technical Mentor"}]);
+  const [mentors,setMentors]=useState([]);
   const [newMentor,setNewMentor]=useState("");
   /* Feature 5: sessions modal + search */
   const [editSession,setEditSession]=useState(null);
@@ -700,7 +659,7 @@ function BootcampAdmin({ token }) {
   const [editStudent,setEditStudent]=useState(null);
   const [editStudNote,setEditStudNote]=useState("");
   /* J/K/L/M: Projects */
-  const [localProj,setLocalProj]=useState(BC_PROJS_DATA[0]);
+  const [localProj,setLocalProj]=useState(null);
   const [projSaved,setProjSaved]=useState(false);
   const projFileRef=useRef(null);
   /* N: Resources upload */
@@ -2751,15 +2710,8 @@ function CommunityAdmin({ token }) {
         {/* Community Pulse */}
         <div>
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Community Pulse</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white/5 rounded-xl p-3">
-              <p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">New Users</p>
-              <p className="text-base font-bold text-[#C7E36B]">+242</p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-3">
-              <p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Total Posts</p>
-              <p className="text-base font-bold text-white">1.2k</p>
-            </div>
+          <div className="bg-white/5 rounded-xl p-3 text-center">
+            <p className="text-[10px] text-gray-500">Stats update as students post and join threads.</p>
           </div>
         </div>
       </div>
