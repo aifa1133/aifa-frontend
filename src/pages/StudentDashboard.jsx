@@ -2253,7 +2253,7 @@ function ResourcesSection({ token }) {
                   Get Deal →
                 </a>
               ) : (
-                <button className="text-xs bg-black text-white font-bold py-2 px-3 rounded-lg hover:opacity-80 transition-all">
+                <button onClick={() => alert("Deal link coming soon!")} className="text-xs bg-black text-white font-bold py-2 px-3 rounded-lg hover:opacity-80 transition-all">
                   Get Deal →
                 </button>
               )}
