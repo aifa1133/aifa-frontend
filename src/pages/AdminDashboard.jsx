@@ -3118,7 +3118,7 @@ function SalesConsultAdmin({ token }) {
             </div>
             <div className="flex gap-3">
               <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Changes"}</button>
-              <button onClick={()=>console.log("Send confirmation email to", selected.email)} className="text-xs border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-500/10">Send Confirmation</button>
+              <button onClick={()=>alert(`Confirmation would be sent to ${selected.email}. Configure SMTP in Platform Settings to enable email sending.`)} className="text-xs border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-500/10">Send Confirmation</button>
               <button onClick={handleDelete} className="text-xs border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10">Delete</button>
             </div>
           </div>
