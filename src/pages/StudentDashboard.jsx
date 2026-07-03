@@ -678,7 +678,7 @@ function BootcampSection({ token, profile }) {
         <span className="text-[10px] font-bold bg-[#7C3AED] text-white px-2.5 py-1 rounded-full">IN PROGRESS</span>
         <div>
           <h2 className="text-sm font-bold text-white">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h2>
-          <p className="text-[10px] text-gray-400">{bootcampData?.batchLabel || "Batch 2024"} · {bootcampData?.enrollments?.length || bootcampData?.enrolledCount || 0} students enrolled</p>
+          <p className="text-[10px] text-gray-400">{bootcampData?.batchLabel || "Batch 2024"}</p>
         </div>
       </div>
       <div className="flex border-b border-white/10 bg-[#0F1112] px-6 shrink-0">
@@ -706,17 +706,28 @@ function BootcampSection({ token, profile }) {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <h3 className="text-sm font-semibold text-white mb-3">Your Bootcamp Progress</h3>
-                <div className="flex items-center gap-4 mb-3">
-                  <span className="text-3xl font-black text-white">65%</span>
-                  <div className="flex-1">
-                    <div className="w-full bg-white/10 rounded-full h-2 mb-1"><div className="bg-[#7C3AED] h-2 rounded-full" style={{width:"65%"}}/></div>
-                    <p className="text-[10px] text-gray-500">Overall completion</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-base font-bold text-white">08/22</p><p className="text-[10px] text-gray-400 mt-0.5">Sessions Completed</p></div>
-                  <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-base font-bold text-white">04/12</p><p className="text-[10px] text-gray-400 mt-0.5">Projects Done</p></div>
-                </div>
+                {(() => {
+                  const totalSessions = sessions.length || 0;
+                  const doneSessions  = sessions.filter(s => s.recordingUrl).length;
+                  const totalProjects = projects.length || 0;
+                  const doneProjects  = projects.filter(p => p.status === "submitted" || p.status === "completed").length;
+                  const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0;
+                  return (
+                    <>
+                      <div className="flex items-center gap-4 mb-3">
+                        <span className="text-3xl font-black text-white">{pct}%</span>
+                        <div className="flex-1">
+                          <div className="w-full bg-white/10 rounded-full h-2 mb-1"><div className="bg-[#7C3AED] h-2 rounded-full" style={{width:`${pct}%`}}/></div>
+                          <p className="text-[10px] text-gray-500">Overall completion</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-base font-bold text-white">{doneSessions}/{totalSessions}</p><p className="text-[10px] text-gray-400 mt-0.5">Sessions Completed</p></div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-base font-bold text-white">{doneProjects}/{totalProjects}</p><p className="text-[10px] text-gray-400 mt-0.5">Projects Done</p></div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
