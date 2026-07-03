@@ -568,7 +568,8 @@ function BootcampSection({ token, profile }) {
 
   /* Derive enrollment from DB — user's _id must be in bootcamp.enrollments */
   const userId = profile?._id || JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
-  const enrolled = !!(bootcampData && userId && bootcampData.enrollments?.some(
+  const bcLoaded  = bootcampData !== null;
+  const enrolled  = !!(bootcampData && userId && bootcampData.enrollments?.some(
     id => String(id) === String(userId)
   ));
 
@@ -597,6 +598,15 @@ function BootcampSection({ token, profile }) {
       .then(d => { if (Array.isArray(d) && d.length > 0) setDrawerFiles(d.map(r => ({ icon:"📄", color:"text-gray-400", name:r.title||r.name, meta:`${r.fileSize||"—"} • ${r.type||"PDF"}`, type:r.type==="LINK"?"link":"download" }))); })
       .catch(() => {});
   }, [enrolled, bootcampData?._id]);
+
+  if (!bcLoaded) return (
+    <div className="flex-1 flex items-center justify-center bg-[#0B0F10]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/>
+        <p className="text-gray-400 text-sm">Loading bootcamp...</p>
+      </div>
+    </div>
+  );
 
   if (!enrolled) return (
     <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
