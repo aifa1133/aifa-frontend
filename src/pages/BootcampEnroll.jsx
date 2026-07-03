@@ -439,10 +439,21 @@ export default function BootcampEnroll() {
           </div>
         </div>
 
-        <button onClick={() => setStep(4)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
-          CREATE MY AIFA ACCOUNT
-        </button>
-        <p className="text-center text-gray-500 text-xs">We will use your enrollment email to set up your account.</p>
+        {authToken ? (
+          <>
+            <button onClick={() => window.location.href = "/dashboard"} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
+              GO TO MY BOOTCAMP →
+            </button>
+            <p className="text-center text-gray-500 text-xs">You're already logged in. Your enrollment is confirmed.</p>
+          </>
+        ) : (
+          <>
+            <button onClick={() => setStep(4)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
+              CREATE MY AIFA ACCOUNT
+            </button>
+            <p className="text-center text-gray-500 text-xs">We will use your enrollment email to set up your account.</p>
+          </>
+        )}
       </div>
     </div>
   );
