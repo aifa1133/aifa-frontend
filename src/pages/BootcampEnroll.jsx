@@ -55,7 +55,6 @@ export default function BootcampEnroll() {
   const [step, setStep]           = useState(1);
   const [form, setForm]           = useState({ name: "", email: "", phone: "" });
   const [errors, setErrors]       = useState({});
-  const [payMethod, setPayMethod] = useState("upi");
   const [coupon, setCoupon]       = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponData, setCouponData]       = useState(null);
@@ -65,8 +64,6 @@ export default function BootcampEnroll() {
   const [confirmPw, setConfirmPw]         = useState("");
   const [showPw, setShowPw]               = useState(false);
   const [showCPw, setShowCPw]             = useState(false);
-  const [upiId, setUpiId]                 = useState("");
-  const [upiVerified, setUpiVerified]     = useState(false);
   const [bootcamp, setBootcamp]           = useState(null);
   const [authToken, setAuthToken]         = useState(() => localStorage.getItem("aifa_token") || "");
   const [tempPw, setTempPw]               = useState("");
@@ -323,52 +320,7 @@ export default function BootcampEnroll() {
 
           <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 space-y-5">
             <h2 className="text-xl font-bold text-white">Complete Your Enrollment</h2>
-            <p className="text-gray-400 text-sm">Choose your preferred payment method to reserve your seat.</p>
-
-            {/* Payment method */}
-            <div className="space-y-2">
-              {[
-                { id:"upi",  label:"UPI", badge:"Recommended", extra:"Instant Confirmation" },
-                { id:"card", label:"Credit / Debit Cards" },
-                { id:"nb",   label:"Net Banking & Wallets" },
-                { id:"bnpl", label:"Buy Now Pay Later" },
-              ].map(pm => (
-                <div key={pm.id} onClick={() => setPayMethod(pm.id)}
-                  className={"border rounded-xl p-4 cursor-pointer transition-all " + (payMethod === pm.id ? "border-[#C7E36B]/60 bg-[#C7E36B]/5" : "border-white/10 hover:border-white/20")}>
-                  <div className="flex items-center gap-3">
-                    <div className={"w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 " + (payMethod === pm.id ? "border-[#C7E36B]" : "border-white/30")}>
-                      {payMethod === pm.id && <span className="w-2 h-2 rounded-full bg-[#C7E36B]" />}
-                    </div>
-                    <span className="text-sm text-white font-medium">{pm.label}</span>
-                    {pm.badge && <span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full ml-auto">{pm.badge}</span>}
-                  </div>
-                  {pm.id === "upi" && payMethod === "upi" && (
-                    <div className="mt-3 pl-7 flex gap-2">
-                      <input
-                        value={upiId}
-                        onChange={e => { setUpiId(e.target.value); setUpiVerified(false); }}
-                        placeholder="example@upi"
-                        className={"flex-1 bg-[#1A1D1E] border rounded-lg px-3 py-2 text-sm text-white outline-none transition-colors " + (upiVerified ? "border-green-500/50" : "border-white/20 focus:border-[#C7E36B]")}
-                      />
-                      {upiVerified
-                        ? <span className="text-xs bg-green-500/20 text-green-400 font-bold px-3 py-2 rounded-lg border border-green-500/30">✓ Verified</span>
-                        : <button onClick={() => { if (!upiId.includes("@")) { alert("Enter a valid UPI ID (e.g. name@upi)"); } else { setUpiVerified(true); } }} className="text-xs bg-white/10 text-white px-3 py-2 rounded-lg hover:bg-white/20 font-semibold">Verify</button>
-                      }
-                    </div>
-                  )}
-                  {pm.id === "bnpl" && payMethod === "bnpl" && (
-                    <div className="mt-3 pl-7 grid grid-cols-2 gap-2">
-                      {[{ name: "LazyPay", desc: "Pay in easy monthly installments" }, { name: "SimplPay", desc: "Pay later with one-click checkout" }].map(b => (
-                        <div key={b.name} className="bg-[#1A1D1E] border border-white/10 rounded-xl px-3 py-2.5">
-                          <p className="text-xs font-bold text-white">{b.name}</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{b.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <p className="text-gray-400 text-sm">Apply a coupon if you have one, then proceed to pay securely via Razorpay.</p>
 
             {/* Coupon */}
             <div>
