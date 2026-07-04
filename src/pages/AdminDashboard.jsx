@@ -565,11 +565,20 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
               <p className="text-[10px] text-gray-400 font-semibold uppercase">Project Downloads</p>
               <button onClick={()=>projFileRef.current?.click()} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="upload" size={11}/>Upload File</button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              {(localProj.res||[]).length===0&&(
+                <div className="border-2 border-dashed border-white/10 rounded-lg py-6 text-center">
+                  <p className="text-gray-600 text-xs">No files uploaded yet.</p>
+                  <button onClick={()=>projFileRef.current?.click()} className="mt-2 text-[10px] text-[#C7E36B] underline">Click to upload</button>
+                </div>
+              )}
               {(localProj.res||[]).map((f,i)=>(
                 <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
                   <span className="text-lg">📄</span>
-                  <span className="text-xs text-white flex-1 truncate">{typeof f==="string"?f:f.name||f}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-white truncate">{typeof f==="string"?f:f.name||f}</p>
+                    {(f.size||f.fileType)&&<p className="text-[10px] text-gray-500">{f.fileType||""} {f.size||""}</p>}
+                  </div>
                   <button onClick={()=>setLocalProj(p=>({...p,res:(p.res||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
                 </div>
               ))}
@@ -1262,6 +1271,11 @@ function BootcampAdmin({ token }) {
         )}
 
         {tab==="announcement"&&(
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-white">Announcements</h2>
+              <p className="text-gray-400 text-xs mt-0.5">Create and manage announcements visible to students in this batch.</p>
+            </div>
           <div className="flex gap-5">
             {/* Left sidebar — list */}
             <div className="w-[280px] shrink-0 space-y-2">
@@ -1344,6 +1358,7 @@ function BootcampAdmin({ token }) {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         )}
 
