@@ -107,6 +107,15 @@ export default function BootcampEnroll() {
     }).catch(() => setChecking(false));
   }, []);
 
+  /* ── Browser back-button: go back one step instead of leaving the page ── */
+  useEffect(() => {
+    if (step === 1) return;
+    window.history.pushState({ enrollStep: step }, "");
+    const handlePop = () => { setStep(s => Math.max(1, s - 1)); };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, [step]);
+
   /* ── Derived values — plain expressions, no IIFE ── */
   const ORIGINAL   = (bootcamp && bootcamp.price)         ? bootcamp.price         : 14000;
   const ORIG_PRICE = (bootcamp && bootcamp.originalPrice) ? bootcamp.originalPrice : 19000;

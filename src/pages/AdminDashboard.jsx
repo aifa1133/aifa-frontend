@@ -75,6 +75,10 @@ export default function AdminDashboard() {
   const [adminNotifs, setAdminNotifs] = useState([]);
   const [adminNotifCount, setAdminNotifCount] = useState(0);
 
+  const navigate = useNavigate();
+  const token = localStorage.getItem("aifa_token");
+  const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+
   useEffect(() => {
     if (!token || user.role !== "admin") return;
     const load = () => {
@@ -92,9 +96,6 @@ export default function AdminDashboard() {
     const interval = setInterval(load, 60000);
     return () => clearInterval(interval);
   }, [token]);
-  const navigate = useNavigate();
-  const token = localStorage.getItem("aifa_token");
-  const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
 
   useEffect(() => {
     if (!token) { navigate("/"); return; }
@@ -721,17 +722,19 @@ function ListBootcampAdmin({ onSelect, token }) {
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {filtered.map(b=>(
-              <div key={b._id} onClick={()=>onSelect(b.raw || b)} className="bg-[#0F1112] border border-white/10 rounded-xl p-5 cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-                <div className="flex items-start justify-between mb-3">
-                  <span className="text-[10px] bg-white/10 text-gray-400 font-bold px-2 py-0.5 rounded">{b.code}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[b.status]||"bg-gray-500/20 text-gray-400"}`}>{b.status}</span>
+              <div key={b._id} onClick={()=>onSelect(b.raw || b)} className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-all">
+                <div className="relative h-[110px] bg-white/5 flex items-center justify-center">
+                  <span className="text-5xl font-black text-white/20 tracking-wider">{b.code}</span>
+                  <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${BC_ST[b.status]||"bg-gray-500/20 text-gray-400"}`}>{b.status}</span>
                 </div>
-                <h3 className="text-sm font-bold text-white mb-1">{b.title}</h3>
-                <p className="text-[11px] text-gray-400 mb-4 line-clamp-2">{b.desc}</p>
-                <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
-                  {[["Students",b.students],["Price",b.price],["Duration",b.duration]].map(([l,v])=>(
-                    <div key={l}><p className="text-[10px] text-gray-500 uppercase">{l}</p><p className="text-xs font-bold text-white mt-0.5">{v}</p></div>
-                  ))}
+                <div className="p-4">
+                  <h3 className="text-sm font-bold text-white mb-1">{b.title}</h3>
+                  <p className="text-[11px] text-gray-400 mb-4 line-clamp-2">{b.desc}</p>
+                  <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
+                    {[["Students",b.students],["Price",b.price],["Duration",b.duration]].map(([l,v])=>(
+                      <div key={l}><p className="text-[10px] text-gray-500 uppercase">{l}</p><p className="text-xs font-bold text-white mt-0.5">{v}</p></div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -743,7 +746,7 @@ function ListBootcampAdmin({ onSelect, token }) {
 }
 
 /* ── BOOTCAMP ADMIN ── */
-const BC_ST={ACTIVE:"bg-green-500/20 text-green-400",COMPLETED:"bg-blue-500/20 text-blue-400",CANCELLED:"bg-red-500/20 text-red-400","COMING SOON":"bg-yellow-500/20 text-yellow-400",DROPPED:"bg-red-500/20 text-red-400",PUBLISHED:"bg-green-500/20 text-green-400",SCHEDULED:"bg-yellow-500/20 text-yellow-400",DRAFT:"bg-gray-500/20 text-gray-400"};
+const BC_ST={ACTIVE:"bg-yellow-500/20 text-yellow-400",COMPLETED:"bg-green-500/20 text-green-400",CANCELLED:"bg-red-500/20 text-red-400","COMING SOON":"bg-gray-500/20 text-gray-400",DROPPED:"bg-red-500/20 text-red-400",PUBLISHED:"bg-green-500/20 text-green-400",SCHEDULED:"bg-yellow-500/20 text-yellow-400",DRAFT:"bg-gray-500/20 text-gray-400"};
 /* All BC_CARDS / BC_SESS / BC_STUDS / BC_PROJS_DATA / BC_ANNS_DATA / BC_RESS removed — data comes from API only */
 function BootcampAdmin({ token }) {
   const [view,setView]=useState("list");
@@ -765,12 +768,14 @@ function BootcampAdmin({ token }) {
         setShowAddSession(false);
         setViewStudent(null);
         setEditStudent(null);
+        setShowAddStudent(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
   const [sessSearch,setSessSearch]=useState("");
+  const [sessStatusFilter,setSessStatusFilter]=useState("All Status");
   /* Feature 7A: students filter/sort */
   const [studStatus,setStudStatus]=useState("All Status");
   const [studSort,setStudSort]=useState("Latest Joined");
@@ -800,6 +805,10 @@ function BootcampAdmin({ token }) {
   /* I: Edit Student */
   const [editStudent,setEditStudent]=useState(null);
   const [editStudNote,setEditStudNote]=useState("");
+  /* Add Student modal */
+  const [showAddStudent,setShowAddStudent]=useState(false);
+  const [addStudentEmail,setAddStudentEmail]=useState("");
+  const [addStudentMsg,setAddStudentMsg]=useState({text:"",type:""});
   /* J/K/L/M: Projects */
   const [localProj,setLocalProj]=useState(null);
   const [projSaved,setProjSaved]=useState(false);
@@ -906,6 +915,12 @@ function BootcampAdmin({ token }) {
   return(
     <div className="flex flex-col h-full">
       <div className="px-6 pt-5 pb-0 border-b border-white/5">
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+          <button onClick={()=>setView("list")} className="hover:text-white transition-all">Bootcamps</button>
+          <span>›</span>
+          <span className="text-white font-medium">{sel?.title || "Bootcamp Details"}</span>
+          {tab!=="overview"&&<><span>›</span><span className="text-gray-400 capitalize">{tab}</span></>}
+        </div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <button onClick={()=>setView("list")} className="text-gray-400 hover:text-white p-1"><I name="back" size={18}/></button>
@@ -1066,12 +1081,18 @@ function BootcampAdmin({ token }) {
               </div>
             )}
 
-            <div className="flex items-center justify-between mb-2 gap-3">
-              <div className="relative flex-1 max-w-xs">
-                <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
-                <input value={sessSearch} onChange={e=>setSessSearch(e.target.value)} placeholder="Search Sessions..." className="w-full bg-[#0F1112] border border-white/10 rounded-lg pl-9 pr-4 py-2 text-xs text-white outline-none placeholder-gray-600"/>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-white">All Sessions</h3>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+                  <input value={sessSearch} onChange={e=>setSessSearch(e.target.value)} placeholder="Search Sessions..." className="w-[240px] bg-[#0F1112] border border-white/10 rounded-lg pl-9 pr-4 py-2 text-xs text-white outline-none placeholder-gray-600"/>
+                </div>
+                <select value={sessStatusFilter} onChange={e=>setSessStatusFilter(e.target.value)} className="bg-[#0F1112] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-2 outline-none shrink-0">
+                  {["All Status","COMPLETED","ACTIVE","COMING SOON","CANCELLED"].map(o=><option key={o}>{o}</option>)}
+                </select>
+                <button onClick={()=>setShowAddSession(true)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg flex items-center gap-1 shrink-0"><I name="plus" size={12}/>Add Session</button>
               </div>
-              <button onClick={()=>setShowAddSession(true)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shrink-0"><I name="plus" size={12}/>Add Session</button>
             </div>
             {sessAdded&&<p className="text-green-400 text-xs mb-3 flex items-center gap-1">✓ Session added!</p>}
             {sessLoading ? (
@@ -1085,7 +1106,10 @@ function BootcampAdmin({ token }) {
                   <tbody>
                     {sessions.length === 0 ? (
                       <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-xs">No sessions yet. Click '+ Add Session' to create the first one.</td></tr>
-                    ) : sessions.filter(s=>!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())).map(s=>(
+                    ) : sessions.filter(s=>
+                      (!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())) &&
+                      (sessStatusFilter==="All Status"||s.status===sessStatusFilter)
+                    ).map(s=>(
                       <tr key={s._id||s.no} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
                         <td className="px-4 py-3 text-gray-400">{String(s.no).padStart(2,"0")}</td>
                         <td className="px-4 py-3 text-white font-medium truncate max-w-xs" title={s.name}>{s.name}</td>
@@ -1151,9 +1175,44 @@ function BootcampAdmin({ token }) {
                 </div>
               </div>
             )}
+            {showAddStudent&&(
+              <div className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-16 px-4" onClick={()=>setShowAddStudent(false)}>
+                <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <p className="text-white font-bold">Add Student to Bootcamp</p>
+                    <button onClick={()=>setShowAddStudent(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-4">The student must already have an AIFA account. Enter their registered email to enroll them in this bootcamp.</p>
+                  <div className="mb-4">
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Student Email</p>
+                    <input value={addStudentEmail} onChange={e=>setAddStudentEmail(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")document.getElementById("addStudentSubmit")?.click();}} placeholder="student@example.com" className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B] placeholder-gray-600"/>
+                  </div>
+                  {addStudentMsg.text&&<p className={`text-xs mb-4 ${addStudentMsg.type==="success"?"text-green-400":"text-red-400"}`}>{addStudentMsg.text}</p>}
+                  <div className="flex justify-end gap-2">
+                    <button onClick={()=>setShowAddStudent(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
+                    <button id="addStudentSubmit" onClick={async()=>{
+                      if(!addStudentEmail.trim()){setAddStudentMsg({text:"Please enter a student email.",type:"error"});return;}
+                      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addStudentEmail)){setAddStudentMsg({text:"Please enter a valid email address.",type:"error"});return;}
+                      try{
+                        const res=await fetch(`/api/bootcamps/${sel._id}/enroll-by-email`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({email:addStudentEmail.trim()})});
+                        const data=await res.json();
+                        if(res.ok){
+                          setAddStudentMsg({text:`✓ ${data.message||"Student enrolled successfully."}`,type:"success"});
+                          const updated=await fetch(`/api/bootcamps/${sel._id}/students`,{headers:h}).then(r=>r.ok?r.json():[]).catch(()=>[]);
+                          if(Array.isArray(updated))setStudents(updated);
+                          setTimeout(()=>setShowAddStudent(false),1500);
+                        } else {
+                          setAddStudentMsg({text:data.message||"Could not enroll student. Check the email and try again.",type:"error"});
+                        }
+                      }catch{setAddStudentMsg({text:"Network error. Please try again.",type:"error"});}
+                    }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">ENROLL STUDENT</button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-white">Enrolled Students ({students.length})</h2>
-              <button onClick={()=>alert("Enter student email to add:\n(Invite feature — student must sign up first, then admin can assign them to this bootcamp.)")} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Student</button>
+              <button onClick={()=>{setAddStudentEmail("");setAddStudentMsg({text:"",type:""});setShowAddStudent(true);}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Student</button>
             </div>
             <div className="flex gap-2 mb-4">
               <select value={studStatus} onChange={e=>setStudStatus(e.target.value)} className="bg-[#0F1112] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">

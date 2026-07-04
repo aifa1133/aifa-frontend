@@ -82,9 +82,14 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (!token) { navigate("/"); return; }
+    const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+    if (storedUser.role === "admin") { navigate("/admin"); return; }
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
-      .then(d => { setProfile(d); setLoading(false); })
+      .then(d => {
+        if (d.role === "admin") { navigate("/admin"); return; }
+        setProfile(d); setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [navigate, token]);
 
@@ -558,6 +563,7 @@ function BootcampSection({ token, profile }) {
   const [drawerFiles, setDrawerFiles]   = useState(BC_FILES);
   const [activeSession, setActiveSession] = useState(null);
   const [activeProject, setActiveProject] = useState(null);
+  const [sessFilter, setSessFilter] = useState("All Sessions");
 
   useEffect(() => {
     fetch("/api/bootcamps")
@@ -578,7 +584,12 @@ function BootcampSection({ token, profile }) {
     const id = bootcampData._id;
     fetch(`/api/bootcamps/${id}/sessions`)
       .then(r => r.ok ? r.json() : [])
-      .then(d => { if (Array.isArray(d) && d.length > 0) { setSessions(d); setActiveSession(d[0]); } else { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); } })
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          const mapped = d.map(s => ({ ...s, title: s.title || s.name || "", tag: s.tag || "" }));
+          setSessions(mapped); setActiveSession(mapped[0]);
+        } else { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); }
+      })
       .catch(() => { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); });
     fetch(`/api/bootcamps/${id}/projects`)
       .then(r => r.ok ? r.json() : [])
@@ -684,22 +695,22 @@ function BootcampSection({ token, profile }) {
   return (
     <>
     <div className="flex flex-col h-full">
-      <div className="bg-[#7C3AED]/10 border-b border-[#7C3AED]/20 px-6 py-3 shrink-0 flex items-center gap-3">
+      <div className="bg-white border-b border-gray-100 px-6 py-3 shrink-0 flex items-center gap-3">
         <span className="text-[10px] font-bold bg-[#7C3AED] text-white px-2.5 py-1 rounded-full">IN PROGRESS</span>
         <div>
-          <h2 className="text-sm font-bold text-white">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h2>
-          <p className="text-[10px] text-gray-400">{bootcampData?.batchLabel || "Batch 2024"}</p>
+          <h2 className="text-sm font-bold text-gray-900">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h2>
+          <p className="text-[10px] text-gray-500">{bootcampData?.batchLabel || "Batch 2024"}</p>
         </div>
       </div>
-      <div className="flex border-b border-white/10 bg-[#0F1112] px-6 shrink-0">
+      <div className="flex border-b border-gray-100 bg-white px-6 shrink-0">
         {["overview","sessions","projects"].map(t=>(
-          <button key={t} onClick={()=>setTab(t)} className={`capitalize text-sm font-medium px-4 py-3 border-b-2 transition-all ${tab===t?"border-[#7C3AED] text-[#7C3AED]":"border-transparent text-gray-400 hover:text-white"}`}>{t}</button>
+          <button key={t} onClick={()=>setTab(t)} className={`capitalize text-sm font-medium px-4 py-3 border-b-2 transition-all ${tab===t?"border-[#7C3AED] text-[#7C3AED]":"border-transparent text-gray-400 hover:text-gray-900"}`}>{t}</button>
         ))}
       </div>
       <div className="flex-1 overflow-hidden">
 
         {tab==="overview"&&(
-          <div className="flex gap-5 p-6 h-full overflow-y-auto">
+          <div className="flex gap-5 p-6 h-full overflow-y-auto bg-gray-50">
             <div className="flex-1 space-y-4 min-w-0">
               <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-5">
                 <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full w-fit mb-3">
@@ -710,12 +721,11 @@ function BootcampSection({ token, profile }) {
                   <span>📅 {bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt).toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "TBA"}</span>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={()=>window.open(bootcampData?.zoomLink||"https://zoom.us","_blank")} className="bg-[#7C3AED] text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-purple-600">Join Session Now →</button>
-                  <button onClick={()=>setWatched(true)} className={`text-sm font-semibold px-5 py-2 rounded-xl transition-all ${watched?"bg-green-500/20 text-green-400 border border-green-500/30":"bg-white/20 text-white hover:bg-white/30"}`}>{watched?"✓ Marked as Watched":"Mark as Watched"}</button>
+                  <button onClick={()=>window.open(bootcampData?.zoomLink||"https://zoom.us","_blank")} className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2 rounded-xl hover:bg-gray-100">Join Session Now →</button>
                 </div>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-white mb-3">Your Bootcamp Progress</h3>
+              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Bootcamp Progress</h3>
                 {(() => {
                   const totalSessions = sessions.length || 0;
                   const doneSessions  = sessions.filter(s => s.recordingUrl).length;
@@ -725,100 +735,121 @@ function BootcampSection({ token, profile }) {
                   return (
                     <>
                       <div className="flex items-center gap-4 mb-3">
-                        <span className="text-3xl font-black text-white">{pct}%</span>
+                        <span className="text-3xl font-black text-gray-900">{pct}%</span>
                         <div className="flex-1">
-                          <div className="w-full bg-white/10 rounded-full h-2 mb-1"><div className="bg-[#7C3AED] h-2 rounded-full" style={{width:`${pct}%`}}/></div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mb-1"><div className="bg-[#7C3AED] h-2 rounded-full" style={{width:`${pct}%`}}/></div>
                           <p className="text-[10px] text-gray-500">Overall completion</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-base font-bold text-white">{doneSessions}/{totalSessions}</p><p className="text-[10px] text-gray-400 mt-0.5">Sessions Completed</p></div>
-                        <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-base font-bold text-white">{doneProjects}/{totalProjects}</p><p className="text-[10px] text-gray-400 mt-0.5">Projects Done</p></div>
+                        <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-base font-bold text-gray-900">{doneSessions}/{totalSessions}</p><p className="text-[10px] text-gray-500 mt-0.5">Sessions Completed</p></div>
+                        <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-base font-bold text-gray-900">{doneProjects}/{totalProjects}</p><p className="text-[10px] text-gray-500 mt-0.5">Projects Done</p></div>
                       </div>
                     </>
                   );
                 })()}
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-white">Announcements</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Announcements</h3>
                   {announcements.length > 2 && <button onClick={()=>setShowAllAnn(v=>!v)} className="text-xs text-[#7C3AED] hover:underline">{showAllAnn?"Show Less":"View All"}</button>}
                 </div>
                 {announcements.length === 0 ? (
-                  <div className="text-center py-4"><p className="text-xs text-gray-500">No announcements yet.</p></div>
+                  <div className="text-center py-4"><p className="text-xs text-gray-400">No announcements yet.</p></div>
                 ) : null}
                 {(showAllAnn ? announcements : announcements.slice(0,2)).map((a,i)=>(
-                  <div key={i} className="border-b border-white/5 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
-                    <div className="flex items-center justify-between"><p className="text-xs font-semibold text-white">{a.title}</p><span className="text-[10px] text-gray-500 shrink-0 ml-2">{a.createdAt?timeAgo(a.createdAt):a.time}</span></div>
-                    <p className="text-[11px] text-gray-400 mt-1">{a.content||a.desc}</p>
+                  <div key={i} className="border-b border-gray-100 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
+                    <div className="flex items-center justify-between"><p className="text-xs font-semibold text-gray-900">{a.title}</p><span className="text-[10px] text-gray-400 shrink-0 ml-2">{a.createdAt?timeAgo(a.createdAt):a.time}</span></div>
+                    <p className="text-[11px] text-gray-500 mt-1">{a.content||a.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
             <div className="w-[210px] shrink-0 space-y-4">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <h3 className="text-xs font-semibold text-white mb-3">Bootcamp Resources</h3>
+              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <h3 className="text-xs font-semibold text-gray-900 mb-3">Bootcamp Resources</h3>
                 {["Filmmaking Syllabus.pdf","Resource Engineering.zip","Weekly Reading List.pdf"].map((r,i)=>(
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                    <span className="text-[10px] text-gray-300 truncate flex-1 mr-1">📄 {r}</span>
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                    <span className="text-[10px] text-gray-600 truncate flex-1 mr-1">📄 {r}</span>
                     <button onClick={()=>alert(`Downloading ${r}...`)} className="text-gray-400 hover:text-[#7C3AED] shrink-0"><Ic name="download" size={13}/></button>
                   </div>
                 ))}
                 <button onClick={() => setShowDrawer(true)} className="text-xs text-[#7C3AED] hover:underline mt-2">View All Files</button>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <h3 className="text-xs font-semibold text-white mb-3">Your Mentors</h3>
+              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <h3 className="text-xs font-semibold text-gray-900 mb-3">Your Mentors</h3>
                 {bootcampData?.mentors?.length > 0 ? bootcampData.mentors.map((m,i)=>(
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">{m.name[0]}</div>
-                      <div><p className="text-[10px] font-semibold text-white">{m.name}</p><p className="text-[9px] text-gray-500">{m.role}</p></div>
+                      <div><p className="text-[10px] font-semibold text-gray-900">{m.name}</p><p className="text-[9px] text-gray-400">{m.role}</p></div>
                     </div>
                     <button onClick={()=>alert("Messaging feature coming soon! Reach your mentor via Discord for now.")} className="text-gray-400 hover:text-[#7C3AED]"><Ic name="message" size={13}/></button>
                   </div>
-                )) : <p className="text-[11px] text-gray-500 py-2">No mentors assigned yet.</p>}
+                )) : <p className="text-[11px] text-gray-400 py-2">No mentors assigned yet.</p>}
               </div>
             </div>
           </div>
         )}
 
         {tab==="sessions"&&(
-          <div className="flex h-full">
-            <div className="w-[270px] shrink-0 border-r border-white/10 overflow-y-auto">
+          <div className="flex h-full bg-gray-50">
+            <div className="w-[270px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
+              <div className="px-4 py-3 border-b border-gray-100 shrink-0">
+                <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Course Sessions</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto">
               {(sessions.length > 0 ? sessions : BC_SESSION_LIST).map((s,i)=>(
-                <button key={i} onClick={()=>!s.locked&&setActiveSession(s)} disabled={s.locked} className={`w-full flex items-center gap-3 px-4 py-3 border-b border-white/5 text-left transition-all ${activeSession?.no===s.no&&!s.locked?"bg-[#7C3AED]/10 border-l-2 border-l-[#7C3AED]":"hover:bg-white/5"} ${s.locked?"opacity-40 cursor-not-allowed":""}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[9px] font-bold ${s.locked?"bg-white/5 text-gray-600":s.no<=10?"bg-green-500/20 text-green-400":"bg-[#7C3AED]/20 text-[#7C3AED]"}`}>
-                    {s.locked?<Ic name="lock" size={11} className="text-gray-500"/>:s.no<=10?<Ic name="check" size={11} className="text-green-400"/>:s.no}
+                <button key={i} onClick={()=>!s.locked&&setActiveSession(s)} disabled={s.locked} className={`w-full flex items-center gap-3 px-4 py-3 border-b border-gray-100 text-left transition-all ${activeSession?.no===s.no&&!s.locked?"bg-[#7C3AED]/5 border-l-2 border-l-[#7C3AED]":"hover:bg-gray-50"} ${s.locked?"opacity-40 cursor-not-allowed":""}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${s.locked?"bg-gray-100":s.recordingUrl||s.status==="COMPLETED"?"bg-green-100":"bg-[#7C3AED]/10"}`}>
+                    {s.locked?<Ic name="lock" size={11} className="text-gray-400"/>:s.recordingUrl||s.status==="COMPLETED"?<Ic name="check" size={11} className="text-green-600"/>:<Ic name="play" size={11} className="text-[#7C3AED] ml-0.5"/>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[11px] font-semibold truncate ${activeSession?.no===s.no&&!s.locked?"text-[#7C3AED]":"text-white"}`}>Session {s.no}</p>
-                    <p className="text-[10px] text-gray-500 truncate">{s.tag}</p>
+                    <p className={`text-[11px] font-semibold truncate ${activeSession?.no===s.no&&!s.locked?"text-[#7C3AED]":"text-gray-900"}`}>Session {s.no}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{s.title}</p>
                   </div>
                 </button>
               ))}
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              <div className="aspect-video bg-black rounded-xl flex items-center justify-center border border-white/5">
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3">
-                    <Ic name="play" size={28} className="text-white ml-1"/>
+              <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-200">
+                {activeSession?.recordingUrl ? (
+                  <iframe
+                    src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=", "embed/") : activeSession.recordingUrl}
+                    className="w-full h-full"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    title={activeSession.title}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
+                        <Ic name="play" size={28} className="text-white ml-1"/>
+                      </div>
+                      <p className="text-xs text-gray-300 max-w-[200px]">{activeSession?.title}</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Recording not yet available</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 max-w-[200px]">{activeSession?.title}</p>
-                </div>
+                )}
               </div>
               <div>
-                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">Session {String(activeSession?.no||1).padStart(2,"0")}</p>
-                <h2 className="text-lg font-bold text-white mb-2">{activeSession?.title}</h2>
-                <p className="text-sm text-gray-400 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
+                <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider">Session {String(activeSession?.no||1).padStart(2,"0")}</p>
+                <h2 className="text-lg font-bold text-gray-900 mb-2">{activeSession?.title}</h2>
+                <p className="text-sm text-gray-500 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
               </div>
               <div>
-                <h4 className="text-xs font-semibold text-white mb-3">Lesson Attachments</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {["Lesson_Notes.pdf","Reference_Materials.zip","Exercise_Files.pdf"].map((f,i)=>(
-                    <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 cursor-pointer hover:border-[#7C3AED]/30 transition-all">
-                      <span className="text-base">📄</span>
-                      <span className="text-xs text-gray-300 flex-1 truncate">{f}</span>
-                      <Ic name="download" size={13} className="text-gray-400 hover:text-[#7C3AED] shrink-0"/>
+                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Lesson Attachments</h4>
+                <div className="space-y-2">
+                  {(activeSession?.resources?.length > 0 ? activeSession.resources.map(r=>r.name||r) : ["Lesson_Notes.pdf","Reference_Materials.zip","Exercise_Files.pdf"]).map((f,i)=>(
+                    <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm cursor-pointer hover:border-[#7C3AED]/30 transition-all">
+                      <span className={`text-xl shrink-0 ${typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"text-blue-500":"text-red-500"}`}>{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"📦":"📄"}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{f}</p>
+                        <p className="text-[10px] text-gray-400">{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"ZIP Archive":"PDF Document"}</p>
+                      </div>
+                      <Ic name="download" size={14} className="text-gray-400 hover:text-[#7C3AED] shrink-0"/>
                     </div>
                   ))}
                 </div>
@@ -828,50 +859,63 @@ function BootcampSection({ token, profile }) {
         )}
 
         {tab==="projects"&&(
-          <div className="flex h-full">
-            <div className="w-[250px] shrink-0 border-r border-white/10 overflow-y-auto p-3 space-y-2">
+          <div className="flex h-full bg-gray-50">
+            <div className="w-[260px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
+              <div className="px-4 pt-4 pb-3 shrink-0 border-b border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900">Bootcamp Projects</h3>
+                <p className="text-[11px] text-gray-400 mt-0.5">Select a project to view resources.</p>
+              </div>
+              <div className="flex-1 overflow-y-auto px-3 pb-3 pt-2 space-y-2">
               {(projects.length > 0 ? projects : BC_PROJECT_LIST).map((p,i)=>(
-                <div key={i} onClick={()=>setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no?"border-[#7C3AED]/50 bg-[#7C3AED]/5":"border-white/10 hover:border-white/20"}`}>
-                  <p className="text-[10px] text-[#7C3AED] font-bold uppercase">{p.no}</p>
-                  <p className="text-xs font-bold text-white mt-0.5">{p.title}</p>
-                  <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{p.desc}</p>
+                <div key={i} onClick={()=>setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no?"border-[#7C3AED]/40 bg-[#7C3AED]/5":"border-gray-100 hover:border-gray-200 bg-white"}`}>
+                  <p className="text-[10px] text-[#7C3AED] font-bold uppercase">{p.no || `Project ${i+1}`}</p>
+                  <p className="text-xs font-bold text-gray-900 mt-0.5">{p.title}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 line-clamp-2">{p.desc}</p>
                 </div>
               ))}
+              </div>
             </div>
-            {activeProject&&(
-              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {activeProject ? (
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 <div>
-                  <p className="text-[10px] text-[#7C3AED] font-bold uppercase mb-1">{activeProject.no}</p>
-                  <h2 className="text-xl font-bold text-white mb-2">{activeProject.title}</h2>
-                  <p className="text-sm text-gray-400 leading-relaxed">{activeProject.desc}</p>
+                  <p className="text-[10px] text-[#7C3AED] font-bold uppercase mb-1">{activeProject.no || "Project"}</p>
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">{activeProject.title}</h2>
+                  <p className="text-sm text-gray-500 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white mb-3">Requirements</h4>
-                  <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Requirements</h4>
+                  <div className="space-y-2">
                     {activeProject.req.map((r,i)=>(
-                      <div key={i} className="flex items-center gap-2.5">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${r.done?"border-[#7C3AED] bg-[#7C3AED]":"border-white/20"}`}>
-                          {r.done&&<Ic name="check" size={11} className="text-white"/>}
+                      <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3">
+                        <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 transition-all ${r.done?"bg-[#7C3AED]":"border-2 border-gray-300"}`}>
+                          {r.done&&<Ic name="check" size={10} className="text-white"/>}
                         </div>
-                        <p className={`text-xs ${r.done?"text-gray-500 line-through":"text-white"}`}>{r.text}</p>
+                        <p className={`text-sm ${r.done?"text-gray-400 line-through":"text-gray-700"}`}>{r.text}</p>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white mb-3">Project Resources</h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Project Resources</h4>
+                  <div className="grid grid-cols-2 gap-3">
                     {activeProject.res.map((f,i)=>(
-                      <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-3 cursor-pointer hover:border-[#7C3AED]/40 transition-all">
-                        <span className="text-xl shrink-0">📄</span>
+                      <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-3 py-3 cursor-pointer hover:border-[#7C3AED]/40 shadow-sm transition-all">
+                        <span className={`text-xl shrink-0 ${typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"text-blue-500":"text-red-500"}`}>{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"📦":"📄"}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-white font-medium truncate">{f}</p>
-                          <p className="text-[10px] text-gray-500">Download</p>
+                          <p className="text-xs text-gray-900 font-medium truncate">{f}</p>
+                          <p className="text-[10px] text-gray-400">{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"ZIP Archive":"PDF Document"}</p>
                         </div>
-                        <Ic name="download" size={14} className="text-[#7C3AED] shrink-0"/>
+                        <Ic name="download" size={14} className="text-gray-400 hover:text-[#7C3AED] shrink-0"/>
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-center p-8">
+                <div>
+                  <p className="text-gray-500 text-sm mb-1">Select a project from the list</p>
+                  <p className="text-gray-400 text-xs">Complete assignments to unlock more projects.</p>
                 </div>
               </div>
             )}
