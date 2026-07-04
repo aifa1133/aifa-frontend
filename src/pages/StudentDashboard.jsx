@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 /* ─── ICONS (inline SVG keeps bundle tiny) ─── */
 const Icon = ({ d, size = 18, className = "" }) => (
@@ -67,7 +67,8 @@ const NAV = [
    MAIN LAYOUT
 ════════════════════════════════════════════ */
 export default function StudentDashboard() {
-  const [activePage, setActivePage] = useState("dashboard");
+  const location = useLocation();
+  const [activePage, setActivePage] = useState(location.state?.page || "dashboard");
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNotif, setShowNotif] = useState(false);
@@ -825,13 +826,13 @@ function BootcampSection({ token, profile }) {
                     title={activeSession.title}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-full h-full flex items-center justify-center cursor-pointer group" onClick={()=>activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink?window.open(bootcampData.zoomLink,"_blank"):alert("Recording not yet available for this session. Check back after the live session.")}>
                     <div className="text-center">
-                      <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
+                      <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
                         <Ic name="play" size={28} className="text-white ml-1"/>
                       </div>
                       <p className="text-xs text-gray-300 max-w-[200px]">{activeSession?.title}</p>
-                      <p className="text-[10px] text-gray-500 mt-1">Recording not yet available</p>
+                      <p className="text-[10px] text-gray-500 mt-1">{activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink?"Click to join live session":"Recording not yet available"}</p>
                     </div>
                   </div>
                 )}

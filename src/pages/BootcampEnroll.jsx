@@ -450,7 +450,7 @@ export default function BootcampEnroll() {
 
         {authToken ? (
           <>
-            <button onClick={() => window.location.href = "/dashboard"} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
+            <button onClick={() => navigate("/dashboard", { state: { page: "bootcamp" } })} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
               GO TO MY BOOTCAMP →
             </button>
             <p className="text-center text-gray-500 text-xs">You're already logged in. Your enrollment is confirmed.</p>

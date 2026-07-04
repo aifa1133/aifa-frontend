@@ -1249,7 +1249,11 @@ function BootcampAdmin({ token }) {
                   ) : null}
                   {students
                     .filter(s=>studStatus==="All Status"||s.status===studStatus.toUpperCase()||(studStatus==="Active"&&s.status==="ACTIVE")||(studStatus==="Completed"&&s.status==="COMPLETED")||(studStatus==="Dropped"&&s.status==="DROPPED"))
-                    .sort((a,b)=>studSort==="Name A-Z"?a.name.localeCompare(b.name):0)
+                    .sort((a,b)=>{
+                      if(studSort==="Name A-Z") return a.name.localeCompare(b.name);
+                      if(studSort==="Oldest First") return new Date(a.joinDate||0)-new Date(b.joinDate||0);
+                      return new Date(b.joinDate||0)-new Date(a.joinDate||0); // Latest Joined
+                    })
                     .map((s,i)=>(
                     <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
                       <td className="px-4 py-3"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] text-[10px] font-bold">{s.name[0]}</div><span className="text-white font-medium">{s.name}</span></div></td>

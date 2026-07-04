@@ -47,6 +47,7 @@ export default function UserLogin() {
       const phoneDigits = form.phone.replace(/\D/g, "");
       if (phoneDigits.length < 10) { setError("Please enter a valid phone number."); return; }
       if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+      if (/\s/.test(form.password)) { setError("Password cannot contain spaces."); return; }
 
       const res = await fetch("/api/auth/send-email-otp", {
         method: "POST",
