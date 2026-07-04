@@ -39,6 +39,7 @@ const ICONS = {
   copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z",
   link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
   settings: "M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08s-.03-.74-.07-1.08l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.34-.07.69-.07 1.08s.03.74.07 1.08l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z",
+  videocam: "M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z",
 };
 const I = ({ name, size = 16, className = "" }) => <Ic d={ICONS[name] || ICONS.dashboard} size={size} className={className} />;
 
@@ -565,9 +566,9 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
               <p className="text-[10px] text-gray-400 font-semibold uppercase">Project Downloads</p>
               <button onClick={()=>projFileRef.current?.click()} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="upload" size={11}/>Upload File</button>
             </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {(localProj.res||[]).length===0&&(
-                <div className="border-2 border-dashed border-white/10 rounded-lg py-6 text-center">
+                <div className="col-span-2 border-2 border-dashed border-white/10 rounded-lg py-6 text-center">
                   <p className="text-gray-600 text-xs">No files uploaded yet.</p>
                   <button onClick={()=>projFileRef.current?.click()} className="mt-2 text-[10px] text-[#C7E36B] underline">Click to upload</button>
                 </div>
@@ -944,7 +945,6 @@ function BootcampAdmin({ token }) {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={()=>window.open("/dashboard","_blank")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">PREVIEW STUDENT VIEW</button>
             {tab==="announcement"&&(
               <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={13}/>Create Announcement</button>
             )}
@@ -971,7 +971,7 @@ function BootcampAdmin({ token }) {
                 {icon:"users",    label:"TOTAL STUDENTS",    val: sel?.enrollments?.length ?? students.length ?? 0},
                 {icon:"payments", label:"TOTAL REVENUE",     val: "₹"+((sel?.price||0)*(sel?.enrollments?.length||students.length||0)).toLocaleString("en-IN")},
                 {icon:"check",    label:"SESSIONS COMPLETED",val: sessions.filter(s=>s.status==="COMPLETED").length+"/"+sessions.length || "0/0"},
-                {icon:"resources",label:"PROJECTS",          val: projects.length},
+                {icon:"check",    label:"PROJECT COMPLETED",  val: "0/"+projects.length},
               ].map(s=>(
                 <div key={s.label} className="bg-[#0F1112] border border-white/10 rounded-xl p-4">
                   <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center mb-3"><I name={s.icon} size={18} className="text-gray-400"/></div>
@@ -997,7 +997,7 @@ function BootcampAdmin({ token }) {
                 </div>
               </div>
               <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center ml-6 shrink-0">
-                <I name="video" size={36} className="text-white"/>
+                <I name="videocam" size={36} className="text-white"/>
               </div>
             </div>
           </div>
@@ -1098,7 +1098,7 @@ function BootcampAdmin({ token }) {
             )}
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-white">All Sessions</h3>
+              <h3 className="text-sm font-bold text-white">All Session</h3>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
@@ -1130,7 +1130,7 @@ function BootcampAdmin({ token }) {
                         <td className="px-4 py-3 text-gray-400">{String(s.no).padStart(2,"0")}</td>
                         <td className="px-4 py-3 text-white font-medium truncate max-w-xs" title={s.name}>{s.name}</td>
                         <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
-                        <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="text-[#C7E36B] hover:underline text-xs">Edit Details</button></td>
+                        <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="flex items-center gap-1 text-[#C7E36B] hover:underline text-xs"><I name="edit" size={12}/>Edit Details</button></td>
                         <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>s.recordingUrl?window.open(s.recordingUrl,"_blank"):alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
                       </tr>
                     ))}

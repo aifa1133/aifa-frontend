@@ -695,11 +695,21 @@ function BootcampSection({ token, profile }) {
   return (
     <>
     <div className="flex flex-col h-full">
-      <div className="bg-white border-b border-gray-100 px-6 py-3 shrink-0 flex items-center gap-3">
-        <span className="text-[10px] font-bold bg-[#7C3AED] text-white px-2.5 py-1 rounded-full">IN PROGRESS</span>
-        <div>
-          <h2 className="text-sm font-bold text-gray-900">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h2>
-          <p className="text-[10px] text-gray-500">{bootcampData?.batchLabel || "Batch 2024"}</p>
+      <div className="relative bg-gradient-to-r from-[#0B0F1A] via-[#1a1040] to-[#0B0F1A] shrink-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80')] bg-cover bg-center opacity-20"/>
+        <div className="relative px-6 py-5">
+          <div className="flex items-center gap-2 mb-2 text-[10px] text-white/60">
+            <span>← Back to Bootcamps</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">IN PROGRESS</span>
+            <span className="text-[10px] text-white/60">{bootcampData?.batchLabel || "Batch 2024"}</span>
+          </div>
+          <h1 className="text-2xl font-black text-white mb-1">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h1>
+          <div className="flex items-center gap-4 text-[11px] text-white/60">
+            <span>📅 {bootcampData?.duration || "12 Weeks"} • {bootcampData?.schedule || "Mon & Wed"}</span>
+            {bootcampData?.mentor && <span>👤 Mentor: <span className="text-white/80 font-medium">{bootcampData.mentor}</span></span>}
+          </div>
         </div>
       </div>
       <div className="flex border-b border-gray-100 bg-white px-6 shrink-0">
@@ -733,19 +743,11 @@ function BootcampSection({ token, profile }) {
                   const doneProjects  = projects.filter(p => p.status === "submitted" || p.status === "completed").length;
                   const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0;
                   return (
-                    <>
-                      <div className="flex items-center gap-4 mb-3">
-                        <span className="text-3xl font-black text-gray-900">{pct}%</span>
-                        <div className="flex-1">
-                          <div className="w-full bg-gray-200 rounded-full h-2 mb-1"><div className="bg-[#7C3AED] h-2 rounded-full" style={{width:`${pct}%`}}/></div>
-                          <p className="text-[10px] text-gray-500">Overall completion</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-base font-bold text-gray-900">{doneSessions}/{totalSessions}</p><p className="text-[10px] text-gray-500 mt-0.5">Sessions Completed</p></div>
-                        <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-base font-bold text-gray-900">{doneProjects}/{totalProjects}</p><p className="text-[10px] text-gray-500 mt-0.5">Projects Done</p></div>
-                      </div>
-                    </>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="border border-gray-200 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Overall Completed</p><p className="text-lg font-black text-gray-900">{pct}%</p></div>
+                      <div className="border border-gray-200 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Sessions Completed</p><p className="text-lg font-black text-gray-900">{String(doneSessions).padStart(2,"0")}/{totalSessions}</p></div>
+                      <div className="border border-gray-200 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Projects</p><p className="text-lg font-black text-gray-900">{String(doneProjects).padStart(2,"0")}/{totalProjects}</p></div>
+                    </div>
                   );
                 })()}
               </div>
