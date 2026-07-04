@@ -853,7 +853,7 @@ function BootcampAdmin({ token }) {
         }).catch(()=>setAnnsLoading(false));
     }
     if (tab === "resources") {
-      fetch("/api/resources", { headers:h })
+      fetch(`/api/bootcamps/${sel._id}/resources`, { headers:h })
         .then(r=>r.ok?r.json():[]).then(d=>{ if(Array.isArray(d)) setResources(d); }).catch(()=>{});
     }
     if (tab === "projects") {
@@ -891,7 +891,9 @@ function BootcampAdmin({ token }) {
 
   /* Settings save functions wired to real API */
   const saveBatchInfo = async () => {
-    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0 }) });
+    const body = { batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0 };
+    const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
+    if (r.ok) { const updated = await r.json(); setSel(prev=>({...prev,...updated})); }
     save(setSavedBatch);
   };
   const saveZoomSettings = async () => {
@@ -934,10 +936,15 @@ function BootcampAdmin({ token }) {
           </div>
           <div className="flex gap-2">
             <button onClick={()=>window.open("/dashboard","_blank")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">PREVIEW STUDENT VIEW</button>
-            <button onClick={()=>{
-              if(tab==="settings") save(setSavedBatch);
-              else alert("Use the tab-specific save button below (e.g. 'Save Project', 'Save Change', 'Publish Now') to save changes in the current tab.");
-            }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>{savedBatch?"✓ SAVED":"SAVE CHANGES"}</button>
+            {tab==="announcement"&&(
+              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={13}/>Create Announcement</button>
+            )}
+            {tab!=="announcement"&&(
+              <button onClick={()=>{
+                if(tab==="settings") save(setSavedBatch);
+                else alert("Use the tab-specific save button below (e.g. 'Save Project', 'Save Change', 'Publish Now') to save changes in the current tab.");
+              }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>{savedBatch?"✓ SAVED":"SAVE CHANGES"}</button>
+            )}
           </div>
         </div>
         <div className="flex gap-0">
@@ -1256,141 +1263,164 @@ function BootcampAdmin({ token }) {
 
         {tab==="announcement"&&(
           <div className="flex gap-5">
-            <div className="w-[260px] shrink-0 space-y-2">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-white">Announcements</h3>
-                <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Create Announcement</button>
-              </div>
-              <div className="relative mb-2">
+            {/* Left sidebar — list */}
+            <div className="w-[280px] shrink-0 space-y-2">
+              <div className="relative mb-3">
                 <I name="search" size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
                 <input value={annSearch} onChange={e=>setAnnSearch(e.target.value)} placeholder="Search Announcements..." className="w-full bg-[#0F1112] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none placeholder-gray-600"/>
               </div>
               {anns.filter(a=>!annSearch||a.title.toLowerCase().includes(annSearch.toLowerCase())).map(a=>(
-                <div key={a.id} onClick={()=>{setSelAnn(a);setAnnF({title:a.title,content:a.content,status:a.status});}} className={`p-3 border rounded-xl cursor-pointer transition-all ${selAnn?.id===a.id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-bold text-white line-clamp-1 flex-1 pr-1">{a.title}</p>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${BC_ST[a.status]}`}>{a.status}</span>
+                <div key={a._id} onClick={()=>{setSelAnn(a);setAnnF({title:a.title,content:a.content,status:a.status});}} className={`p-3 border rounded-xl cursor-pointer transition-all ${selAnn?._id===a._id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${BC_ST[a.status]||"bg-gray-500/20 text-gray-400"}`}>{a.status}</span>
+                    <p className="text-[10px] text-gray-500">{a.createdAt?new Date(a.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):a.date||""}</p>
                   </div>
-                  <p className="text-[10px] text-gray-500">{a.date}</p>
+                  <p className="text-xs font-bold text-white line-clamp-1 mb-1">{a.title}</p>
+                  {a.content&&<p className="text-[10px] text-gray-500 line-clamp-2">{a.content}</p>}
                 </div>
               ))}
+              {anns.length===0&&<p className="text-[11px] text-gray-600 text-center py-6">No announcements yet.</p>}
             </div>
-            <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-4">
-              <Fld label="Announcement Title" value={annF.title} onChange={v=>setAnnF({...annF,title:v})} placeholder="Enter announcement title..." />
-              <div>
-                <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Content</p>
-                <div className="border border-white/10 rounded-lg overflow-hidden">
-                  <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-white/[0.03]">
-                    {["B","I","U","Link"].map(t=><button key={t} className={`text-[11px] px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-white/10 ${t==="B"?"font-bold":""}`}>{t}</button>)}
-                  </div>
-                  <textarea value={annF.content} onChange={e=>setAnnF({...annF,content:e.target.value})} className="w-full bg-transparent px-3 py-3 text-xs text-white outline-none resize-none" rows={7} placeholder="Write your announcement here..." />
+            {/* Right — editor */}
+            <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden flex flex-col">
+              {/* top meta bar */}
+              <div className="flex items-center gap-4 px-5 py-3 border-b border-white/10 bg-white/[0.02]">
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${BC_ST[annF.status||"DRAFT"]||"bg-gray-500/20 text-gray-400"}`}>{annF.status||"DRAFT"}</span>
+                {selAnn?.createdAt&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="users" size={10}/>Created {new Date(selAnn.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
+                {selAnn?.updatedAt&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="clock" size={10}/>Last modified {new Date(selAnn.updatedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
+              </div>
+              <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+                {/* Title */}
+                <div>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Announcement Title</p>
+                  <input value={annF.title} onChange={e=>setAnnF({...annF,title:e.target.value})} placeholder="Enter announcement title..." className="w-full bg-transparent text-xl font-bold text-white outline-none placeholder-gray-600 border-b border-white/10 pb-2"/>
                 </div>
-              </div>
-              <div className="border-2 border-dashed border-white/10 rounded-lg p-3 text-center hover:border-[#C7E36B]/30 cursor-pointer transition-all">
-                <I name="upload" size={18} className="mx-auto text-gray-500 mb-1"/>
-                <p className="text-[11px] text-gray-400">Attach files (PDF, ZIP, etc.)</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={async()=>{
-                  const body={title:annF.title,content:annF.content,status:"DRAFT"};
-                  if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
-                  else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
-                }} className="flex-1 border border-white/20 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">Save Draft</button>
-                <button onClick={async()=>{
-                  const body={title:annF.title,content:annF.content,status:"PUBLISHED"};
-                  if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
-                  else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
-                  /* Broadcast notification to all enrolled students */
-                  if(annF.title) fetch("/api/notifications/broadcast",{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({title:annF.title,message:annF.content||"New announcement from AIFA.",type:"announcement",bootcampId:sel._id})}).catch(()=>{});
-                }} className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Publish Now</button>
-              </div>
-              {/* Gap 3: Preview Panel */}
-              {(annF.title||annF.content)&&(
-                <div className="border border-white/10 rounded-xl overflow-hidden">
-                  <div className="bg-white/5 px-4 py-2 border-b border-white/10 flex items-center gap-2">
-                    <I name="eye" size={12} className="text-gray-500"/>
-                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Preview</p>
-                  </div>
-                  <div className="p-4 bg-[#0F1112]">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full">{annF.status||"DRAFT"}</span>
-                      <span className="text-[10px] text-gray-500">Preview</span>
+                {/* Message Content */}
+                <div>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Message Content</p>
+                  <div className="border border-white/10 rounded-lg overflow-hidden">
+                    <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-white/[0.03]">
+                      {["B","I","U","|","Link","🖼","|","≡","≡≡"].map((t,i)=><button key={i} className={`text-[11px] px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-white/10 ${t==="B"?"font-bold":""} ${t==="|"?"text-white/10 cursor-default hover:bg-transparent":""}`}>{t}</button>)}
                     </div>
-                    {annF.title&&<p className="text-sm font-bold text-white mb-1">{annF.title}</p>}
-                    {annF.content&&<p className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">{annF.content}</p>}
+                    <textarea value={annF.content} onChange={e=>setAnnF({...annF,content:e.target.value})} className="w-full bg-transparent px-3 py-3 text-sm text-white outline-none resize-none" rows={8} placeholder="Write your announcement here..."/>
                   </div>
                 </div>
-              )}
+                {/* File attachment */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Announcements (Optional)</p>
+                    <p className="text-[10px] text-gray-600">0 / 3 FILES</p>
+                  </div>
+                  <label className="block border-2 border-dashed border-white/15 rounded-xl p-6 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
+                    <input type="file" multiple accept=".pdf,.zip,.docx" className="hidden"/>
+                    <div className="text-2xl mb-2">⬆</div>
+                    <p className="text-sm font-semibold text-white mb-1">Click to upload or drag and drop</p>
+                    <p className="text-xs text-gray-500">Supported: PDF, ZIP, DOCX (Max 50MB)</p>
+                  </label>
+                </div>
+                {/* Action buttons */}
+                <div className="flex items-center justify-between pt-1">
+                  <button onClick={async()=>{
+                    if(!selAnn?._id)return;
+                    if(!confirm("Delete this announcement?"))return;
+                    const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"DELETE",headers:h});
+                    if(r.ok){setAnns(prev=>prev.filter(a=>a._id!==selAnn._id));setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}
+                  }} className="text-xs text-red-400 hover:text-red-300 font-semibold px-1 disabled:opacity-30" disabled={!selAnn?._id}>Delete</button>
+                  <div className="flex gap-2">
+                    <button onClick={async()=>{
+                      if(!annF.title.trim())return;
+                      const body={title:annF.title,content:annF.content,status:"DRAFT"};
+                      if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
+                      else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
+                    }} className="border border-white/20 text-gray-300 text-xs font-semibold px-5 py-2 rounded-lg hover:bg-white/5">Save Draft</button>
+                    <button onClick={async()=>{
+                      if(!annF.title.trim())return;
+                      const body={title:annF.title,content:annF.content,status:"PUBLISHED"};
+                      if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
+                      else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
+                      if(annF.title) fetch("/api/notifications/broadcast",{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({title:annF.title,message:annF.content||"New announcement from AIFA.",type:"announcement",bootcampId:sel._id})}).catch(()=>{});
+                    }} className="bg-[#C7E36B] text-black text-xs font-bold px-5 py-2 rounded-lg hover:bg-lime-300">Publish Now</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {tab==="resources"&&(
           <div className="space-y-5">
-            <input type="file" multiple ref={resFileRef} className="hidden"/>
-            {/* Feature 6: redesigned header */}
-            <div className="flex items-start justify-between">
+            {/* Header */}
+            <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white">Resources</h2>
                 <p className="text-gray-400 text-xs mt-0.5">Manage all downloadable resources available to students.</p>
               </div>
-              <div className="flex gap-2">
-                <button onClick={()=>setShowFolderInput(v=>!v)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CREATE FOLDER</button>
-                <button onClick={()=>resFileRef.current?.click()} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1"><I name="upload" size={12}/>Upload Resources</button>
-              </div>
+              <label className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 cursor-pointer">
+                <I name="upload" size={13}/> Upload Assets
+                <input type="file" multiple accept=".pdf,.zip,.docx,.pptx,.mp4" className="hidden" onChange={async e=>{
+                  const files=Array.from(e.target.files||[]);
+                  for(const f of files){
+                    const typeMap={pdf:"PDF Document",zip:"Compressed Archive",docx:"Word Document",pptx:"Presentation",mp4:"MP4 Video"};
+                    const ext=(f.name.split(".").pop()||"").toLowerCase();
+                    const payload={name:f.name,fileType:typeMap[ext]||"File",fileSize:(f.size/1024/1024).toFixed(1)+" MB",category:"General"};
+                    const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(payload)});
+                    if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
+                  }
+                  e.target.value="";
+                }}/>
+              </label>
             </div>
-            {showFolderInput&&(
-              <div className="flex items-center gap-2 bg-[#0F1112] border border-white/10 rounded-xl px-4 py-3">
-                <span className="text-lg">📁</span>
-                <input value={folderName} onChange={e=>setFolderName(e.target.value)} placeholder="New folder name..." className="flex-1 bg-transparent text-sm text-white outline-none placeholder-gray-600"/>
-                <button onClick={()=>{setShowFolderInput(false);setFolderName("");setFolderSaved(true);setTimeout(()=>setFolderSaved(false),2000);}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg">Create</button>
-                <button onClick={()=>{setShowFolderInput(false);setFolderName("");}} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
-              </div>
-            )}
-            {folderSaved&&<p className="text-green-400 text-xs flex items-center gap-1">✓ Folder created!</p>}
-
-            {/* Drag & Drop Zone */}
-            <label className="block border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-              <input type="file" multiple className="hidden"/>
-              <div className="text-3xl mb-2">↑</div>
-              <p className="text-white font-bold text-sm mb-1">Drag & Drop to Upload</p>
-              <p className="text-gray-400 text-xs mb-4">or click to browse from your computer</p>
-              <div className="flex justify-center gap-2 flex-wrap">
-                {["PDF","ZIP","DOCX","PPTX","MEDIA"].map(t=>(
-                  <span key={t} className="bg-white/10 text-gray-400 text-xs px-3 py-1 rounded-full">{t}</span>
-                ))}
-              </div>
-            </label>
-
-            {/* All Resources list */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-white text-sm font-bold">All Resources</p>
-                <div className="relative">
-                  <I name="search" size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
-                  <input className="bg-[#0F1112] border border-white/10 rounded-xl pl-8 pr-4 py-2 text-xs text-white outline-none placeholder-gray-600 w-[200px]" placeholder="Search resources..."/>
+            {/* Stat boxes */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                {icon:"📄",count:resources.filter(r=>r.fileType?.includes("PDF")||r.name?.toLowerCase().endsWith(".pdf")).length,label:"PDF DOCUMENTS"},
+                {icon:"🔗",count:resources.filter(r=>r.link&&!r.fileUrl).length,label:"EXTERNAL LINKS"},
+                {icon:"📦",count:resources.filter(r=>r.fileType?.includes("Archive")||r.name?.toLowerCase().endsWith(".zip")).length,label:"PROJECT FILES"},
+              ].map(s=>(
+                <div key={s.label} className="bg-[#0F1112] border border-white/10 rounded-xl p-4 flex items-center gap-4">
+                  <span className="text-3xl">{s.icon}</span>
+                  <div><p className="text-2xl font-black text-white">{String(s.count).padStart(2,"0")}</p><p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">{s.label}</p></div>
+                </div>
+              ))}
+            </div>
+            {/* Table */}
+            <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <p className="text-sm font-bold text-white">All Resources</p>
+                <div className="flex items-center gap-2">
+                  <select className="bg-[#1A1D1E] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">
+                    {["All Category","PDF Document","Compressed Archive","External URL","MP4 Video"].map(o=><option key={o}>{o}</option>)}
+                  </select>
+                  <button className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="search" size={12}/>Filter</button>
                 </div>
               </div>
-              <div className="divide-y divide-white/5">
-                {resources.length === 0 && (
-                  <p className="text-gray-500 text-xs text-center py-6">No resources uploaded yet.</p>
-                )}
-                {resources.map((r,i)=>(
-                  <div key={r._id||i} className="flex items-center gap-3 py-3">
-                    <I name="resources" size={16} className="text-gray-500 shrink-0"/>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{r.title||r.name}</p>
-                      <p className="text-gray-500 text-xs">{r.category||r.type}</p>
-                    </div>
-                    <span className="text-gray-400 text-xs shrink-0">{r.fileSize||r.size||"—"}</span>
-                    <span className="text-gray-400 text-xs shrink-0">{r.createdAt?new Date(r.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"—"}</span>
-                    <div className="flex gap-2 shrink-0">
-                      <button className="text-gray-400 hover:text-[#C7E36B]"><I name="edit" size={13}/></button>
-                      <button className="text-gray-400 hover:text-red-400"><I name="trash" size={13}/></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <table className="w-full text-xs">
+                <thead><tr className="border-b border-white/10 text-gray-500 font-semibold uppercase text-[10px]">
+                  {["Name & Category","Type","Size / Link","Uploaded","Downloads","Actions"].map(c=><th key={c} className="text-left px-4 py-3">{c}</th>)}
+                </tr></thead>
+                <tbody>
+                  {resources.length===0&&<tr><td colSpan={6} className="px-4 py-8 text-center text-gray-600 text-xs">No resources uploaded yet. Click "Upload Assets" to add files.</td></tr>}
+                  {resources.map((r,i)=>(
+                    <tr key={r._id||i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
+                      <td className="px-4 py-3">
+                        <p className="text-white font-semibold">{r.name}</p>
+                        <p className="text-gray-600 text-[10px] uppercase font-bold mt-0.5">{r.category||"General"}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-400">{r.fileType||"File"}</td>
+                      <td className="px-4 py-3 text-gray-400">{r.link||r.fileSize||"—"}</td>
+                      <td className="px-4 py-3 text-gray-400">{r.createdAt?new Date(r.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"—"}</td>
+                      <td className="px-4 py-3 text-gray-400 font-bold">{r.downloads||0}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {r.fileUrl&&<button onClick={()=>window.open(r.fileUrl,"_blank")} className="text-gray-400 hover:text-[#C7E36B]"><I name="download" size={13}/></button>}
+                          <button onClick={()=>{const name=prompt("Rename resource:",r.name);if(name&&name.trim()){fetch(`/api/bootcamps/${sel._id}/resources/${r._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({name:name.trim()})}).then(res=>res.ok&&setResources(prev=>prev.map(x=>x._id===r._id?{...x,name:name.trim()}:x)));} }} className="text-gray-400 hover:text-[#C7E36B]"><I name="edit" size={13}/></button>
+                          <button onClick={async()=>{if(!confirm(`Delete "${r.name}"?`))return;const res=await fetch(`/api/bootcamps/${sel._id}/resources/${r._id}`,{method:"DELETE",headers:h});if(res.ok)setResources(prev=>prev.filter(x=>x._id!==r._id));}} className="text-gray-400 hover:text-red-400"><I name="trash" size={13}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -1401,8 +1431,8 @@ function BootcampAdmin({ token }) {
               <div className="grid grid-cols-2 gap-4">
                 <Fld label="Bootcamp Name" value={stgs.name} onChange={v=>setStgs({...stgs,name:v})} />
                 <Fld label="Batch Code" value={stgs.code} onChange={v=>setStgs({...stgs,code:v})} />
-                <Fld label="Start Date" value={stgs.startDate} onChange={v=>setStgs({...stgs,startDate:v})} />
-                <Fld label="End Date" value={stgs.endDate} onChange={v=>setStgs({...stgs,endDate:v})} />
+                <Fld label="Start Date" type="date" value={stgs.startDate} onChange={v=>setStgs({...stgs,startDate:v})} />
+                <Fld label="End Date" type="date" value={stgs.endDate} onChange={v=>setStgs({...stgs,endDate:v})} />
                 <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs({...stgs,price:v})} placeholder="e.g. 14000" />
                 <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs({...stgs,originalPrice:v})} placeholder="e.g. 19000" />
               </div>
@@ -2847,7 +2877,7 @@ function Sect({ icon, title, children }) {
   );
 }
 
-function Fld({ label, value, onChange, textarea, placeholder, prefix }) {
+function Fld({ label, value, onChange, textarea, placeholder, prefix, type }) {
   const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600";
   return (
     <div>
@@ -2856,7 +2886,7 @@ function Fld({ label, value, onChange, textarea, placeholder, prefix }) {
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
           ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 ${prefix?"pl-7":""}`}/>
-          : <input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} ${prefix?"pl-7":""}`}/>
+          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
         }
       </div>
     </div>
