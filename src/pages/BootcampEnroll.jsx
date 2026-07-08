@@ -86,8 +86,8 @@ export default function BootcampEnroll() {
           const enrollments = (bc.enrollments || []).map(String);
 
           if (enrollments.includes(userId)) {
-            /* Already enrolled → go to dashboard, no flash */
-            navigate("/dashboard");
+            /* Already enrolled → go to dashboard bootcamp tab */
+            navigate("/dashboard", { replace: true, state: { page: "bootcamp" } });
             return;
           }
 
@@ -121,7 +121,7 @@ export default function BootcampEnroll() {
   const ORIG_PRICE = (bootcamp && bootcamp.originalPrice) ? bootcamp.originalPrice : 19000;
   const DISCOUNT   = (!couponApplied || !couponData)      ? 0
     : couponData.discountType === "percent"
-      ? Math.round(ORIGINAL * couponData.discountValue / 100)
+      ? Math.floor(ORIGINAL * couponData.discountValue / 100)
       : couponData.discountValue;
   const SUBTOTAL = ORIGINAL - DISCOUNT;
   const GST      = couponApplied ? 170 : 0;

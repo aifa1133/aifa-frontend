@@ -568,9 +568,10 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
             </div>
             <div className="grid grid-cols-2 gap-2">
               {(localProj.res||[]).length===0&&(
-                <div className="col-span-2 border-2 border-dashed border-white/10 rounded-lg py-6 text-center">
-                  <p className="text-gray-600 text-xs">No files uploaded yet.</p>
-                  <button onClick={()=>projFileRef.current?.click()} className="mt-2 text-[10px] text-[#C7E36B] underline">Click to upload</button>
+                <div className="col-span-2 border-2 border-dashed border-white/20 rounded-lg py-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all" onClick={()=>projFileRef.current?.click()}>
+                  <p className="text-2xl mb-2">📎</p>
+                  <p className="text-gray-400 text-xs font-semibold">No files uploaded yet.</p>
+                  <p className="mt-1.5 text-[10px] text-[#C7E36B] font-bold underline">Click to upload files</p>
                 </div>
               )}
               {(localProj.res||[]).map((f,i)=>(
@@ -815,6 +816,7 @@ function BootcampAdmin({ token }) {
   /* I: Edit Student */
   const [editStudent,setEditStudent]=useState(null);
   const [editStudNote,setEditStudNote]=useState("");
+  const [editStudStatus,setEditStudStatus]=useState("ACTIVE");
   /* Add Student modal */
   const [showAddStudent,setShowAddStudent]=useState(false);
   const [addStudentEmail,setAddStudentEmail]=useState("");
@@ -825,6 +827,7 @@ function BootcampAdmin({ token }) {
   const projFileRef=useRef(null);
   /* N: Resources upload */
   const resFileRef=useRef(null);
+  const [annFiles,setAnnFiles]=useState([]);
   /* O: Create Folder */
   const [showFolderInput,setShowFolderInput]=useState(false);
   const [folderName,setFolderName]=useState("");
@@ -900,7 +903,13 @@ function BootcampAdmin({ token }) {
   }, [tab, sel?._id]);
 
   /* Settings save functions wired to real API */
+  const [batchErr, setBatchErr] = useState("");
   const saveBatchInfo = async () => {
+    if (stgs.startDate && stgs.endDate && stgs.endDate < stgs.startDate) {
+      setBatchErr("End date cannot be earlier than start date.");
+      return;
+    }
+    setBatchErr("");
     const body = { batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0 };
     const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
     if (r.ok) { const updated = await r.json(); setSel(prev=>({...prev,...updated})); }
@@ -946,7 +955,7 @@ function BootcampAdmin({ token }) {
           </div>
           <div className="flex gap-2">
             {tab==="announcement"&&(
-              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={13}/>Create Announcement</button>
+              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});setAnnFiles([]);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={13}/>Create Announcement</button>
             )}
             {tab!=="announcement"&&(
               <button onClick={()=>{
@@ -1175,7 +1184,7 @@ function BootcampAdmin({ token }) {
                   <div className="space-y-4">
                     <div>
                       <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Status</p>
-                      <select defaultValue={editStudent.status} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
+                      <select value={editStudStatus} onChange={e=>setEditStudStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
                         {["ACTIVE","COMPLETED","DROPPED"].map(o=><option key={o}>{o}</option>)}
                       </select>
                     </div>
@@ -1186,7 +1195,11 @@ function BootcampAdmin({ token }) {
                   </div>
                   <div className="flex justify-end gap-2 mt-6">
                     <button onClick={()=>setEditStudent(null)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
-                    <button onClick={()=>{setEditStudent(null);setEditStudNote("");}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">SAVE CHANGES</button>
+                    <button onClick={async()=>{
+                      await fetch(`/api/bootcamps/${sel._id}/students/${editStudent._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({status:editStudStatus,notes:editStudNote})});
+                      setStudents(prev=>prev.map(s=>s._id===editStudent._id?{...s,status:editStudStatus,notes:editStudNote}:s));
+                      setEditStudent(null);setEditStudNote("");setEditStudStatus("ACTIVE");
+                    }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">SAVE CHANGES</button>
                   </div>
                 </div>
               </div>
@@ -1261,7 +1274,7 @@ function BootcampAdmin({ token }) {
                       <td className="px-4 py-3 text-gray-400">{s.mobile}</td>
                       <td className="px-4 py-3 text-gray-400">{s.joinDate}</td>
                       <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
-                      <td className="px-4 py-3"><div className="flex gap-2"><button onClick={()=>setViewStudent(s)} className="text-gray-400 hover:text-[#C7E36B]"><I name="eye" size={14}/></button><button onClick={()=>{setEditStudent(s);setEditStudNote("");}} className="text-gray-400 hover:text-[#C7E36B]"><I name="edit" size={14}/></button></div></td>
+                      <td className="px-4 py-3"><div className="flex gap-2"><button onClick={()=>setViewStudent(s)} className="text-gray-400 hover:text-[#C7E36B]"><I name="eye" size={14}/></button><button onClick={()=>{setEditStudent(s);setEditStudNote(s.notes||"");setEditStudStatus(s.status||"ACTIVE");}} className="text-gray-400 hover:text-[#C7E36B]"><I name="edit" size={14}/></button></div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1327,14 +1340,28 @@ function BootcampAdmin({ token }) {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Announcements (Optional)</p>
-                    <p className="text-[10px] text-gray-600">0 / 3 FILES</p>
+                    <p className="text-[10px] text-gray-600">{annFiles.length} / 3 FILES</p>
                   </div>
                   <label className="block border-2 border-dashed border-white/15 rounded-xl p-6 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-                    <input type="file" multiple accept=".pdf,.zip,.docx" className="hidden"/>
+                    <input type="file" multiple accept=".pdf,.zip,.docx" className="hidden" onChange={e=>{
+                      const files=Array.from(e.target.files||[]);
+                      if(files.length) setAnnFiles(prev=>[...prev,...files.map(f=>({name:f.name,size:(f.size/1024/1024).toFixed(1)+"MB"}))]);
+                      e.target.value="";
+                    }}/>
                     <div className="text-2xl mb-2">⬆</div>
                     <p className="text-sm font-semibold text-white mb-1">Click to upload or drag and drop</p>
                     <p className="text-xs text-gray-500">Supported: PDF, ZIP, DOCX (Max 50MB)</p>
                   </label>
+                  {annFiles.length>0&&(
+                    <div className="mt-3 space-y-1.5">
+                      {annFiles.map((f,i)=>(
+                        <div key={i} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                          <span className="text-xs text-white truncate flex-1">📎 {f.name} <span className="text-gray-500 ml-1">{f.size}</span></span>
+                          <button onClick={()=>setAnnFiles(prev=>prev.filter((_,j)=>j!==i))} className="text-gray-500 hover:text-red-400 ml-2 text-sm leading-none">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {/* Action buttons */}
                 <div className="flex items-center justify-between pt-1">
@@ -1374,20 +1401,43 @@ function BootcampAdmin({ token }) {
                 <h2 className="text-xl font-bold text-white">Resources</h2>
                 <p className="text-gray-400 text-xs mt-0.5">Manage all downloadable resources available to students.</p>
               </div>
-              <label className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 cursor-pointer">
-                <I name="upload" size={13}/> Upload Assets
-                <input type="file" multiple accept=".pdf,.zip,.docx,.pptx,.mp4" className="hidden" onChange={async e=>{
-                  const files=Array.from(e.target.files||[]);
-                  for(const f of files){
-                    const typeMap={pdf:"PDF Document",zip:"Compressed Archive",docx:"Word Document",pptx:"Presentation",mp4:"MP4 Video"};
-                    const ext=(f.name.split(".").pop()||"").toLowerCase();
-                    const payload={name:f.name,fileType:typeMap[ext]||"File",fileSize:(f.size/1024/1024).toFixed(1)+" MB",category:"General"};
-                    const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(payload)});
-                    if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
-                  }
-                  e.target.value="";
-                }}/>
-              </label>
+              <div className="flex items-center gap-2">
+                {showFolderInput?(
+                  <div className="flex items-center gap-2">
+                    <input autoFocus value={folderName} onChange={e=>setFolderName(e.target.value)} onKeyDown={async e=>{
+                      if(e.key==="Enter"&&folderName.trim()){
+                        const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({name:folderName.trim(),fileType:"Folder",fileSize:"—",category:"General"})});
+                        if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
+                        setFolderName("");setShowFolderInput(false);
+                      }
+                      if(e.key==="Escape"){setShowFolderInput(false);setFolderName("");}
+                    }} placeholder="Folder name..." className="bg-[#1A1D1E] border border-white/20 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B] w-36 placeholder-gray-600"/>
+                    <button onClick={async()=>{
+                      if(!folderName.trim())return;
+                      const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({name:folderName.trim(),fileType:"Folder",fileSize:"—",category:"General"})});
+                      if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
+                      setFolderName("");setShowFolderInput(false);
+                    }} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300">Create</button>
+                    <button onClick={()=>{setShowFolderInput(false);setFolderName("");}} className="text-xs text-gray-400 hover:text-white px-2 py-1.5">Cancel</button>
+                  </div>
+                ):(
+                  <button onClick={()=>setShowFolderInput(true)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5">📁 Create Folder</button>
+                )}
+                <label className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 cursor-pointer">
+                  <I name="upload" size={13}/> Upload Assets
+                  <input type="file" multiple accept=".pdf,.zip,.docx,.pptx,.mp4" className="hidden" onChange={async e=>{
+                    const files=Array.from(e.target.files||[]);
+                    for(const f of files){
+                      const typeMap={pdf:"PDF Document",zip:"Compressed Archive",docx:"Word Document",pptx:"Presentation",mp4:"MP4 Video"};
+                      const ext=(f.name.split(".").pop()||"").toLowerCase();
+                      const payload={name:f.name,fileType:typeMap[ext]||"File",fileSize:(f.size/1024/1024).toFixed(1)+" MB",category:"General"};
+                      const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(payload)});
+                      if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
+                    }
+                    e.target.value="";
+                  }}/>
+                </label>
+              </div>
             </div>
             {/* Stat boxes */}
             <div className="grid grid-cols-3 gap-4">
@@ -1464,6 +1514,7 @@ function BootcampAdmin({ token }) {
                 </div>
               </div>
               {/* Feature 7C: per-section save */}
+              {batchErr&&<p className="text-red-400 text-xs font-semibold">{batchErr}</p>}
               <div className="flex justify-end items-center gap-3 pt-1">
                 {savedBatch&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
                 <button onClick={saveBatchInfo} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Change</button>

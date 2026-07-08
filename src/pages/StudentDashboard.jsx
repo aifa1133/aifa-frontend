@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
+
 /* ─── ICONS (inline SVG keeps bundle tiny) ─── */
 const Icon = ({ d, size = 18, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -565,6 +566,7 @@ function BootcampSection({ token, profile }) {
   const [activeSession, setActiveSession] = useState(null);
   const [activeProject, setActiveProject] = useState(null);
   const [sessFilter, setSessFilter] = useState("All Sessions");
+  const [videoMsg, setVideoMsg] = useState("");
 
   useEffect(() => {
     fetch("/api/bootcamps")
@@ -682,7 +684,7 @@ function BootcampSection({ token, profile }) {
                   <div key={t} className="flex items-center gap-2"><span className="text-[#C7E36B] font-bold">✓</span>{t}</div>
                 ))}
               </div>
-              <button onClick={()=>navigate("/bootcamp/enroll")} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
+              <button onClick={()=>navigate("/bootcamp/enroll", { state: { from: "bootcamp" } })} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
                 ENROLL NOW →
               </button>
               <p className="text-center text-gray-500 text-[11px]">🔒 Secure payment via Razorpay</p>
@@ -700,7 +702,7 @@ function BootcampSection({ token, profile }) {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80')] bg-cover bg-center opacity-20"/>
         <div className="relative px-6 py-5">
           <div className="flex items-center gap-2 mb-2 text-[10px] text-white/60">
-            <span>← Back to Bootcamps</span>
+            <button onClick={()=>setActivePage("bootcamp")} className="hover:text-white transition-colors">← Back to Bootcamps</button>
           </div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">IN PROGRESS</span>
@@ -826,13 +828,24 @@ function BootcampSection({ token, profile }) {
                     title={activeSession.title}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center cursor-pointer group" onClick={()=>activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink?window.open(bootcampData.zoomLink,"_blank"):alert("Recording not yet available for this session. Check back after the live session.")}>
+                  <div className="w-full h-full flex items-center justify-center cursor-pointer group" onClick={()=>{
+                    if(activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink){
+                      window.open(bootcampData.zoomLink,"_blank");
+                    } else {
+                      setVideoMsg("Recording not yet available for this session. Check back after the live class.");
+                      setTimeout(()=>setVideoMsg(""),4000);
+                    }
+                  }}>
                     <div className="text-center">
                       <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
                         <Ic name="play" size={28} className="text-white ml-1"/>
                       </div>
                       <p className="text-xs text-gray-300 max-w-[200px]">{activeSession?.title}</p>
-                      <p className="text-[10px] text-gray-500 mt-1">{activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink?"Click to join live session":"Recording not yet available"}</p>
+                      {videoMsg ? (
+                        <p className="text-[11px] text-yellow-400 mt-1 max-w-[220px]">{videoMsg}</p>
+                      ) : (
+                        <p className="text-[10px] text-gray-500 mt-1">{activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink?"Click to join live session":"Recording not yet available"}</p>
+                      )}
                     </div>
                   </div>
                 )}
