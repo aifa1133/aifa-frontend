@@ -40,6 +40,9 @@ const ICONS = {
   link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
   settings: "M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08s-.03-.74-.07-1.08l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.34-.07.69-.07 1.08s.03.74.07 1.08l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z",
   videocam: "M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z",
+  checkCircle: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z",
+  clipboardCheck: "M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z",
+  clock: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
 };
 const I = ({ name, size = 16, className = "" }) => <Ic d={ICONS[name] || ICONS.dashboard} size={size} className={className} />;
 
@@ -954,9 +957,6 @@ function BootcampAdmin({ token }) {
             </div>
           </div>
           <div className="flex gap-2">
-            {tab==="announcement"&&(
-              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});setAnnFiles([]);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={13}/>Create Announcement</button>
-            )}
             {tab!=="announcement"&&(
               <button onClick={()=>{
                 if(tab==="settings") save(setSavedBatch);
@@ -979,8 +979,8 @@ function BootcampAdmin({ token }) {
               {[
                 {icon:"users",    label:"TOTAL STUDENTS",    val: sel?.enrollments?.length ?? students.length ?? 0},
                 {icon:"payments", label:"TOTAL REVENUE",     val: "₹"+((sel?.price||0)*(sel?.enrollments?.length||students.length||0)).toLocaleString("en-IN")},
-                {icon:"check",    label:"SESSIONS COMPLETED",val: sessions.filter(s=>s.status==="COMPLETED").length+"/"+sessions.length || "0/0"},
-                {icon:"check",    label:"PROJECT COMPLETED",  val: "0/"+projects.length},
+                {icon:"checkCircle",  label:"SESSIONS COMPLETED",val: sessions.filter(s=>s.status==="COMPLETED").length+"/"+sessions.length || "0/0"},
+                {icon:"clipboardCheck",label:"PROJECT COMPLETED",  val: "0/"+projects.length},
               ].map(s=>(
                 <div key={s.label} className="bg-[#0F1112] border border-white/10 rounded-xl p-4">
                   <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center mb-3"><I name={s.icon} size={18} className="text-gray-400"/></div>
@@ -1289,9 +1289,12 @@ function BootcampAdmin({ token }) {
 
         {tab==="announcement"&&(
           <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-white">Announcements</h2>
-              <p className="text-gray-400 text-xs mt-0.5">Create and manage announcements visible to students in this batch.</p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Announcements</h2>
+                <p className="text-gray-400 text-xs mt-0.5">Create and manage announcements visible to students in this batch.</p>
+              </div>
+              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});setAnnFiles([]);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 shrink-0"><I name="plus" size={13}/>Create Announcement</button>
             </div>
           <div className="flex gap-5">
             {/* Left sidebar — list */}
@@ -1317,7 +1320,7 @@ function BootcampAdmin({ token }) {
               {/* top meta bar */}
               <div className="flex items-center gap-4 px-5 py-3 border-b border-white/10 bg-white/[0.02]">
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${BC_ST[annF.status||"DRAFT"]||"bg-gray-500/20 text-gray-400"}`}>{annF.status||"DRAFT"}</span>
-                {selAnn?.createdAt&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="users" size={10}/>Created {new Date(selAnn.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
+                {(selAnn?.createdBy||selAnn?.createdAt)&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="users" size={10}/>Created by {selAnn?.createdBy||"Admin"}{selAnn?.createdAt?` · ${new Date(selAnn.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}`:""}</span>}
                 {selAnn?.updatedAt&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="clock" size={10}/>Last modified {new Date(selAnn.updatedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
               </div>
               <div className="flex-1 p-5 space-y-4 overflow-y-auto">
