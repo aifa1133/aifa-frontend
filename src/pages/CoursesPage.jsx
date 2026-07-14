@@ -35,7 +35,8 @@ export default function CoursesPage() {
   const [search, setSearch]               = useState("");
   const [sortOpen, setSortOpen]           = useState(false);
   const [selected, setSelected]           = useState("Newest");
-  const [courses, setCourses]             = useState(MOCK_COURSES);
+  const [courses, setCourses]             = useState([]);
+  const [loading, setLoading]             = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const navigate = useNavigate();
 
@@ -45,8 +46,9 @@ export default function CoursesPage() {
   useEffect(() => {
     fetch("/api/courses")
       .then(r => r.json())
-      .then(data => { if (Array.isArray(data) && data.length > 0) setCourses(data); })
-      .catch(() => {});
+      .then(data => { if (Array.isArray(data)) setCourses(data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
 
     if (isLoggedIn) {
       fetch("/api/courses/enrolled", { headers: { Authorization: `Bearer ${token}` } })
@@ -159,8 +161,33 @@ export default function CoursesPage() {
               </div>
             )}
 
+            {/* LOADING */}
+            {loading && activeTab === "all" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] w-full">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-full rounded-[8px] border border-[#414243] bg-[#0F1112] overflow-hidden animate-pulse">
+                    <div className="w-full h-[240px] bg-[#1A1F22]" />
+                    <div className="p-6 flex flex-col gap-4">
+                      <div className="h-5 bg-[#1A1F22] rounded w-3/4" />
+                      <div className="h-4 bg-[#1A1F22] rounded w-full" />
+                      <div className="h-10 bg-[#1A1F22] rounded mt-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* EMPTY STATE — All Courses */}
+            {!loading && activeTab === "all" && displayCourses.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-24 gap-3">
+                <span className="text-5xl">🎬</span>
+                <p className="text-white font-semibold text-lg">No courses available</p>
+                <p className="text-gray-400 text-sm">Check back soon — new courses are being added.</p>
+              </div>
+            )}
+
             {/* EMPTY STATE */}
-            {activeTab !== "all" && displayCourses.length === 0 && (
+            {!loading && activeTab !== "all" && displayCourses.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <span className="text-5xl">🎬</span>
                 <p className="text-white font-semibold text-lg">{emptyMessages[activeTab]?.title}</p>
@@ -174,7 +201,7 @@ export default function CoursesPage() {
             )}
 
             {/* GRID */}
-            {displayCourses.length > 0 && (
+            {!loading && displayCourses.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] w-full max-sm:gap-[16px]">
                 {displayCourses.map((course, i) => (
                   <CourseCard
