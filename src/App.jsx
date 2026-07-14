@@ -150,8 +150,10 @@ import UserLogin from "./pages/UserLogin";
 import CoursePlayer from "./pages/CoursePlayer";
 import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
+import CourseEnroll from "./pages/CourseEnroll";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
+const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/];
 
 function AppShell() {
   const [showLogin, setShowLogin] = useState(false);
@@ -160,7 +162,7 @@ function AppShell() {
 
   const isFullScreen =
     FULLSCREEN_PATHS.includes(location.pathname) ||
-    /^\/courses\/.+\/watch$/.test(location.pathname);
+    FULLSCREEN_PATTERNS.some(p => p.test(location.pathname));
 
   return (
     <div className={`w-full min-h-screen bg-[#0B0F10] overflow-x-hidden`}>
@@ -198,6 +200,7 @@ function AppShell() {
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/login" element={<UserLogin />} />
           <Route path="/courses/:id/watch" element={<CoursePlayer />} />
+          <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </main>

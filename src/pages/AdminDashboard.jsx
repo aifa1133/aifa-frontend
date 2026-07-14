@@ -908,15 +908,25 @@ function BootcampAdmin({ token }) {
   /* Settings save functions wired to real API */
   const [batchErr, setBatchErr] = useState("");
   const saveBatchInfo = async () => {
-    if (stgs.startDate && stgs.endDate && stgs.endDate < stgs.startDate) {
+    if (stgs.startDate && stgs.endDate && new Date(stgs.endDate) < new Date(stgs.startDate)) {
       setBatchErr("End date cannot be earlier than start date.");
       return;
     }
     setBatchErr("");
     const body = { batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0 };
-    const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
-    if (r.ok) { const updated = await r.json(); setSel(prev=>({...prev,...updated})); }
-    save(setSavedBatch);
+    try {
+      const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
+      if (r.ok) {
+        const updated = await r.json();
+        setSel(prev=>({...prev,...updated}));
+        save(setSavedBatch);
+      } else {
+        const data = await r.json();
+        setBatchErr(data.message || "Failed to save batch information.");
+      }
+    } catch {
+      setBatchErr("Network error. Please try again.");
+    }
   };
   const saveZoomSettings = async () => {
     await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink, zoomId:stgs.zoomId, zoomPass:stgs.zoomPass }) });
@@ -1501,18 +1511,18 @@ function BootcampAdmin({ token }) {
           <div className="max-w-2xl space-y-5">
             <Sect icon="bootcamp" title="Batch Information">
               <div className="grid grid-cols-2 gap-4">
-                <Fld label="Bootcamp Name" value={stgs.name} onChange={v=>setStgs({...stgs,name:v})} />
-                <Fld label="Batch Code" value={stgs.code} onChange={v=>setStgs({...stgs,code:v})} />
-                <Fld label="Start Date" type="date" value={stgs.startDate} onChange={v=>setStgs({...stgs,startDate:v})} />
-                <Fld label="End Date" type="date" value={stgs.endDate} onChange={v=>setStgs({...stgs,endDate:v})} />
-                <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs({...stgs,price:v})} placeholder="e.g. 14000" />
-                <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs({...stgs,originalPrice:v})} placeholder="e.g. 19000" />
+                <Fld label="Bootcamp Name" value={stgs.name} onChange={v=>setStgs(p=>({...p,name:v}))} />
+                <Fld label="Batch Code" value={stgs.code} onChange={v=>setStgs(p=>({...p,code:v}))} />
+                <Fld label="Start Date" type="date" value={stgs.startDate} onChange={v=>setStgs(p=>({...p,startDate:v}))} />
+                <Fld label="End Date" type="date" value={stgs.endDate} onChange={v=>setStgs(p=>({...p,endDate:v}))} />
+                <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs(p=>({...p,price:v}))} placeholder="e.g. 14000" />
+                <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs(p=>({...p,originalPrice:v}))} placeholder="e.g. 19000" />
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Batch Status</p>
                 <div className="flex gap-2 flex-wrap">
                   {["ACTIVE","COMPLETED","COMING SOON","CANCELLED"].map(s=>(
-                    <button key={s} onClick={()=>setStgs({...stgs,status:s})} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${stgs.status===s?"bg-[#C7E36B] text-black border-[#C7E36B]":"border-white/20 text-gray-400 hover:border-white/40"}`}>{s}</button>
+                    <button key={s} onClick={()=>setStgs(p=>({...p,status:s}))} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${stgs.status===s?"bg-[#C7E36B] text-black border-[#C7E36B]":"border-white/20 text-gray-400 hover:border-white/40"}`}>{s}</button>
                   ))}
                 </div>
               </div>
