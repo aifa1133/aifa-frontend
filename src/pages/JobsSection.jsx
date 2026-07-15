@@ -55,6 +55,7 @@ export default function JobsSection() {
   const [catFilter, setCatFilter]   = useState([]);
   const [budgetFilter, setBudgetFilter] = useState([]);
   const [timelineFilter, setTimelineFilter] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   // Fallback static jobs for when DB has no data yet
   const STATIC_JOBS = [
@@ -152,7 +153,7 @@ export default function JobsSection() {
                 <h3 className="text-base font-semibold text-white mb-2 leading-tight">{job.title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed flex-1 mb-4">{job.description || job.desc}</p>
 
-                <button className="text-[#C7E36B] text-sm font-medium hover:underline text-left mb-4">
+                <button onClick={() => setSelectedJob(job)} className="text-[#C7E36B] text-sm font-medium hover:underline text-left mb-4">
                   View Details →
                 </button>
 
@@ -183,6 +184,42 @@ export default function JobsSection() {
           </div>
         )}
       </div>
+
+      {/* Job Detail Modal */}
+      {selectedJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setSelectedJob(null)}>
+          <div className="bg-[#111] border border-white/15 rounded-2xl max-w-lg w-full p-6 relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setSelectedJob(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-lg leading-none">✕</button>
+
+            <div className="flex items-start gap-3 mb-4">
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[selectedJob.tag] || "bg-white/10 text-white"}`}>
+                {selectedJob.tag || selectedJob.category}
+              </span>
+              {selectedJob.type && (
+                <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase self-center">
+                  {selectedJob.type}
+                </span>
+              )}
+            </div>
+
+            <h2 className="text-lg font-bold text-white mb-3">{selectedJob.title}</h2>
+            <p className="text-gray-300 text-sm leading-relaxed mb-5">{selectedJob.description || selectedJob.desc}</p>
+
+            <div className="flex flex-wrap gap-2 mb-5">
+              {selectedJob.budget && <span className="border border-white/20 text-white text-xs px-3 py-1 rounded-md">{selectedJob.budget}</span>}
+              {selectedJob.timeline && <span className="border border-white/20 text-gray-300 text-xs px-3 py-1 rounded-md">{selectedJob.timeline}</span>}
+              {selectedJob.category && <span className="border border-white/20 text-gray-300 text-xs px-3 py-1 rounded-md">{selectedJob.category}</span>}
+            </div>
+
+            <button
+              onClick={() => selectedJob.link ? window.open(selectedJob.link, "_blank") : setSelectedJob(null)}
+              className="w-full bg-[#C7E36B] text-black py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
+            >
+              {selectedJob.link ? "Apply Now →" : "Contact to Apply"}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

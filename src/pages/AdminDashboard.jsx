@@ -1596,7 +1596,7 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"Online", date:"", time:"", published:true });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", published:true });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);

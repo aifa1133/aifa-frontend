@@ -25,11 +25,15 @@ export default function Projects() {
           <h2 className="text-2xl md:text-3xl font-semibold">PROJECTS</h2>
 
           <div className="flex gap-3 w-full md:w-auto">
-            <select className="bg-[#111] border border-white/10 px-4 py-2 rounded-md w-full md:w-auto">
-              <option>All</option>
-              <option>AI Film</option>
-              <option>Editing</option>
-              <option>VFX</option>
+            <select value={category} onChange={e => setCategory(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-2 rounded-md w-full md:w-auto text-white">
+              <option value="All">All</option>
+              <option value="AI Film">AI Film</option>
+              <option value="Editing">Editing</option>
+              <option value="VFX">VFX</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Music Video">Music Video</option>
+              <option value="Documentary">Documentary</option>
+              <option value="Animation">Animation</option>
             </select>
 
             <select className="bg-[#111] border border-white/10 px-4 py-2 rounded-md w-full md:w-auto">
@@ -40,7 +44,7 @@ export default function Projects() {
 
         {/* 🔥 GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.map((item, i) => (
+          {data.filter(item => category === "All" || item.tags.includes(category)).map((item, i) => (
             <div
               key={i}
               className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden group hover:border-[#C7E36B]/40 transition"

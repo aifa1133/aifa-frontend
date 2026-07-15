@@ -6,8 +6,7 @@ const categories = [
   "Video",
   "Design",
   "Marketing",
-  "Voice",
-  "Automation",
+  "Image",
 ];
 
 const deals = [
