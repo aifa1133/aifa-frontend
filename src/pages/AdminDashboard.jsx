@@ -831,6 +831,8 @@ function BootcampAdmin({ token }) {
   /* N: Resources upload */
   const resFileRef=useRef(null);
   const [annFiles,setAnnFiles]=useState([]);
+  const [annSaving,setAnnSaving]=useState(false);
+  const [annSavedMsg,setAnnSavedMsg]=useState("");
   /* O: Create Folder */
   const [showFolderInput,setShowFolderInput]=useState(false);
   const [folderName,setFolderName]=useState("");
@@ -1331,6 +1333,7 @@ function BootcampAdmin({ token }) {
               <div className="flex items-center gap-4 px-5 py-3 border-b border-white/10 bg-white/[0.02]">
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${BC_ST[annF.status||"DRAFT"]||"bg-gray-500/20 text-gray-400"}`}>{annF.status||"DRAFT"}</span>
                 {(selAnn?.createdBy||selAnn?.createdAt)&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="users" size={10}/>Created by {selAnn?.createdBy||"Admin"}{selAnn?.createdAt?` · ${new Date(selAnn.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}`:""}</span>}
+                {selAnn?.status==="PUBLISHED"&&selAnn?.updatedAt&&<span className="text-[10px] text-green-400 flex items-center gap-1"><I name="eye" size={10}/>Published {new Date(selAnn.updatedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
                 {selAnn?.updatedAt&&<span className="text-[10px] text-gray-500 flex items-center gap-1"><I name="clock" size={10}/>Last modified {new Date(selAnn.updatedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
               </div>
               <div className="flex-1 p-5 space-y-4 overflow-y-auto">
@@ -1357,8 +1360,11 @@ function BootcampAdmin({ token }) {
                   </div>
                   <label className="block border-2 border-dashed border-white/15 rounded-xl p-6 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
                     <input type="file" multiple accept=".pdf,.zip,.docx" className="hidden" onChange={e=>{
+                      const ALLOWED=["pdf","zip","docx"];
                       const files=Array.from(e.target.files||[]);
-                      if(files.length) setAnnFiles(prev=>[...prev,...files.map(f=>({name:f.name,size:(f.size/1024/1024).toFixed(1)+"MB"}))]);
+                      const bad=files.filter(f=>!ALLOWED.includes((f.name.split(".").pop()||"").toLowerCase()));
+                      if(bad.length){alert(`Unsupported file type: ${bad.map(f=>f.name).join(", ")}.\nAllowed: PDF, ZIP, DOCX only.`);e.target.value="";return;}
+                      if(files.length) setAnnFiles(prev=>[...prev,...files.map(f=>({file:f,name:f.name,size:(f.size/1024/1024).toFixed(1)+"MB"}))]);
                       e.target.value="";
                     }}/>
                     <div className="text-2xl mb-2">⬆</div>
@@ -1384,20 +1390,46 @@ function BootcampAdmin({ token }) {
                     const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"DELETE",headers:h});
                     if(r.ok){setAnns(prev=>prev.filter(a=>a._id!==selAnn._id));setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}
                   }} className="text-xs text-red-400 hover:text-red-300 font-semibold px-1 disabled:opacity-30" disabled={!selAnn?._id}>Delete</button>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    {annSavedMsg&&<span className="text-[10px] text-green-400 font-semibold">{annSavedMsg}</span>}
                     <button onClick={async()=>{
                       if(!annF.title.trim())return;
-                      const body={title:annF.title,content:annF.content,status:"DRAFT"};
-                      if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
-                      else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
-                    }} className="border border-white/20 text-gray-300 text-xs font-semibold px-5 py-2 rounded-lg hover:bg-white/5">Save Draft</button>
+                      setAnnSaving(true);
+                      const saveBody = async(status)=>{
+                        let body={title:annF.title,content:annF.content,status};
+                        if(annFiles.length>0){
+                          const fd=new FormData();
+                          fd.append("title",annF.title);fd.append("content",annF.content);fd.append("status",status);
+                          annFiles.forEach(f=>fd.append("files",f.file));
+                          if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:h,body:fd});return r;}
+                          else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:h,body:fd});return r;}
+                        }
+                        if(selAnn?._id){return fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
+                        else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
+                      };
+                      const r=await saveBody("DRAFT");
+                      if(r?.ok){const d=await r.json();if(selAnn?._id)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...d}:a));else{setAnns(prev=>[d,...prev]);setSelAnn(d);}setAnnFiles([]);setAnnSavedMsg("Draft saved!");setTimeout(()=>setAnnSavedMsg(""),3000);}
+                      setAnnSaving(false);
+                    }} disabled={annSaving} className="border border-white/20 text-gray-300 text-xs font-semibold px-5 py-2 rounded-lg hover:bg-white/5 disabled:opacity-50">Save Draft</button>
                     <button onClick={async()=>{
                       if(!annF.title.trim())return;
-                      const body={title:annF.title,content:annF.content,status:"PUBLISHED"};
-                      if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...body}:a));}
-                      else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){const d=await r.json();setAnns(prev=>[d,...prev]);setSelAnn(d);}}
-                      if(annF.title) fetch("/api/notifications/broadcast",{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({title:annF.title,message:annF.content||"New announcement from AIFA.",type:"announcement",bootcampId:sel._id})}).catch(()=>{});
-                    }} className="bg-[#C7E36B] text-black text-xs font-bold px-5 py-2 rounded-lg hover:bg-lime-300">Publish Now</button>
+                      setAnnSaving(true);
+                      const saveBody = async(status)=>{
+                        if(annFiles.length>0){
+                          const fd=new FormData();
+                          fd.append("title",annF.title);fd.append("content",annF.content);fd.append("status",status);
+                          annFiles.forEach(f=>fd.append("files",f.file));
+                          if(selAnn?._id){return fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:h,body:fd});}
+                          else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:h,body:fd});}
+                        }
+                        const body={title:annF.title,content:annF.content,status};
+                        if(selAnn?._id){return fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
+                        else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
+                      };
+                      const r=await saveBody("PUBLISHED");
+                      if(r?.ok){const d=await r.json();if(selAnn?._id)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...d}:a));else{setAnns(prev=>[d,...prev]);setSelAnn(d);}setAnnFiles([]);setAnnSavedMsg("Published!");setTimeout(()=>setAnnSavedMsg(""),3000);fetch("/api/notifications/broadcast",{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({title:annF.title,message:annF.content||"New announcement from AIFA.",type:"announcement",bootcampId:sel._id})}).catch(()=>{});}
+                      setAnnSaving(false);
+                    }} disabled={annSaving} className="bg-[#C7E36B] text-black text-xs font-bold px-5 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-50">{annSaving?"Saving...":"Publish Now"}</button>
                   </div>
                 </div>
               </div>
