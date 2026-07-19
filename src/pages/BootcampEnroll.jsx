@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const CHECKLIST = [
   "1 Month Program",
@@ -50,6 +50,9 @@ function LeftCard({ step, couponApplied, subtotal, original, origPrice, couponCo
 
 export default function BootcampEnroll() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const backTo   = location.state?.from || "/bootcamp";
+  const backPage = location.state?.fromPage || null;
 
   /* ── ALL useState hooks together ── */
   const [step, setStep]           = useState(1);
@@ -87,6 +90,7 @@ export default function BootcampEnroll() {
 
           if (enrollments.includes(userId)) {
             /* Already enrolled → go to dashboard bootcamp tab */
+            sessionStorage.setItem("aifa_dashTab", "bootcamp");
             navigate("/dashboard", { replace: true, state: { page: "bootcamp" } });
             return;
           }
@@ -114,7 +118,7 @@ export default function BootcampEnroll() {
   const ORIG_PRICE = (bootcamp && bootcamp.originalPrice) ? bootcamp.originalPrice : 19000;
   const DISCOUNT   = (!couponApplied || !couponData)      ? 0
     : couponData.discountType === "percent"
-      ? Math.floor(ORIGINAL * couponData.discountValue / 100)
+      ? Math.round(ORIGINAL * couponData.discountValue / 100)
       : couponData.discountValue;
   const SUBTOTAL = ORIGINAL - DISCOUNT;
   const GST      = couponApplied ? 170 : 0;
@@ -254,7 +258,8 @@ export default function BootcampEnroll() {
         }
       }
     } catch { /* ignore */ }
-    navigate("/dashboard");
+    if (backPage) sessionStorage.setItem("aifa_dashTab", backPage);
+    navigate(backTo, { state: backPage ? { page: backPage } : undefined });
   };
   /* ── Show loading until enrollment check completes — prevents Step 1 flash ── */
   if (checking) return (
@@ -267,6 +272,7 @@ export default function BootcampEnroll() {
   if (step === 1) return (
     <div className="min-h-screen bg-[#0B0F10] py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        <button onClick={()=>navigate(backTo,{state:backPage?{page:backPage}:undefined})} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
         <div className="grid md:grid-cols-[320px_1fr] gap-6">
           <LeftCard step={1} couponApplied={false} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
 

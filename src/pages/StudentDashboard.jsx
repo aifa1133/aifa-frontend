@@ -69,12 +69,11 @@ const NAV = [
 ════════════════════════════════════════════ */
 export default function StudentDashboard() {
   const location = useLocation();
-  const [activePage, setActivePage] = useState(location.state?.page || "dashboard");
-
-  // Sync active tab when navigated back with state (e.g. ← Back from /bootcamp/enroll)
-  useEffect(() => {
-    if (location.state?.page) setActivePage(location.state.page);
-  }, [location.state?.page]);
+  const [activePage, setActivePage] = useState(() => {
+    const saved = sessionStorage.getItem("aifa_dashTab");
+    if (saved) { sessionStorage.removeItem("aifa_dashTab"); return saved; }
+    return location.state?.page || "dashboard";
+  });
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNotif, setShowNotif] = useState(false);
