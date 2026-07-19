@@ -70,6 +70,11 @@ const NAV = [
 export default function StudentDashboard() {
   const location = useLocation();
   const [activePage, setActivePage] = useState(location.state?.page || "dashboard");
+
+  // Sync active tab when navigated back with state (e.g. ← Back from /bootcamp/enroll)
+  useEffect(() => {
+    if (location.state?.page) setActivePage(location.state.page);
+  }, [location.state?.page]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNotif, setShowNotif] = useState(false);
@@ -571,8 +576,8 @@ function BootcampSection({ token, profile }) {
   useEffect(() => {
     fetch("/api/bootcamps")
       .then(r => r.ok ? r.json() : [])
-      .then(d => { if (Array.isArray(d) && d.length > 0) setBootcampData(d[0]); })
-      .catch(() => {});
+      .then(d => { if (Array.isArray(d) && d.length > 0) setBootcampData(d[0]); else setBootcampData({}); })
+      .catch(() => { setBootcampData({}); });
   }, []);
 
   /* Derive enrollment from DB — user's _id must be in bootcamp.enrollments */
@@ -657,18 +662,31 @@ function BootcampSection({ token, profile }) {
               </div>
             </div>
 
-            {/* Video preview placeholder */}
-            <div className="relative bg-black rounded-2xl overflow-hidden aspect-video border border-white/10 cursor-pointer group">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#4C1D95]/60 via-[#7C3AED]/40 to-[#1e1b4b]/80 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Ic name="play" size={28} className="text-white ml-1"/>
+            {/* Video preview */}
+            {bootcampData?.previewVideoUrl ? (
+              <div className="rounded-2xl overflow-hidden aspect-video border border-white/10">
+                <iframe
+                  src={bootcampData.previewVideoUrl.includes("watch?v=") ? bootcampData.previewVideoUrl.replace("watch?v=","embed/") : bootcampData.previewVideoUrl}
+                  className="w-full h-full"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  title="Bootcamp Preview"
+                />
+              </div>
+            ) : (
+              <div className="relative bg-black rounded-2xl overflow-hidden aspect-video border border-white/10 cursor-pointer group" onClick={()=>{setVideoMsg("Preview video coming soon. Join a live session to get started!");setTimeout(()=>setVideoMsg(""),4000);}}>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#4C1D95]/60 via-[#7C3AED]/40 to-[#1e1b4b]/80 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Ic name="play" size={28} className="text-white ml-1"/>
+                  </div>
                 </div>
+                <div className="absolute bottom-4 left-4">
+                  <p className="text-white font-bold text-sm">Watch Bootcamp Preview</p>
+                  <p className="text-white/60 text-xs">2 min overview</p>
+                </div>
+                {videoMsg&&<div className="absolute inset-x-4 top-4 bg-black/80 text-white text-xs rounded-lg px-3 py-2 text-center">{videoMsg}</div>}
               </div>
-              <div className="absolute bottom-4 left-4">
-                <p className="text-white font-bold text-sm">Watch Bootcamp Preview</p>
-                <p className="text-white/60 text-xs">2 min overview</p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Right: price card + CTA */}
@@ -684,7 +702,7 @@ function BootcampSection({ token, profile }) {
                   <div key={t} className="flex items-center gap-2"><span className="text-[#C7E36B] font-bold">✓</span>{t}</div>
                 ))}
               </div>
-              <button onClick={()=>navigate("/bootcamp/enroll", { state: { from: "bootcamp" } })} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
+              <button onClick={()=>navigate("/bootcamp/enroll", { state: { from: "/dashboard", fromPage: "bootcamp" } })} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
                 ENROLL NOW →
               </button>
               <p className="text-center text-gray-500 text-[11px]">🔒 Secure payment via Razorpay</p>
