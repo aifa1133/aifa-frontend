@@ -272,7 +272,7 @@ export default function BootcampEnroll() {
   if (step === 1) return (
     <div className="min-h-screen bg-[#0B0F10] py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        <button onClick={()=>navigate(backTo,{state:backPage?{page:backPage}:undefined})} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
+        <button onClick={()=>{ sessionStorage.setItem("aifa_dashTab", backPage||"bootcamp"); navigate(backTo,{state:{page:backPage||"bootcamp"}}); }} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
         <div className="grid md:grid-cols-[320px_1fr] gap-6">
           <LeftCard step={1} couponApplied={false} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
 
@@ -323,6 +323,7 @@ export default function BootcampEnroll() {
   if (step === 2) return (
     <div className="min-h-screen bg-[#0B0F10] py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        <button onClick={()=>{ sessionStorage.setItem("aifa_dashTab", backPage||"bootcamp"); navigate(backTo,{state:{page:backPage||"bootcamp"}}); }} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
         <div className="grid md:grid-cols-[320px_1fr] gap-6">
           <LeftCard step={2} couponApplied={couponApplied} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
 
