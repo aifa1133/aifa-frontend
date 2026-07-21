@@ -618,12 +618,13 @@ function ListBootcampAdmin({ onSelect, token }) {
   const [bootcamps, setBootcamps] = useState([]);
   const [loadingBC, setLoadingBC] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/bootcamps", { headers:{ Authorization:`Bearer ${token}` } })
+  const loadBCs = () => {
+    fetch("/api/bootcamps/all", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setBootcamps(d); setLoadingBC(false); })
       .catch(() => setLoadingBC(false));
-  }, [token]);
+  };
+  useEffect(() => { loadBCs(); }, [token]);
 
   const cards = bootcamps.map(b => ({
     _id: b._id, code: b.batchCode || "B??", title: b.title,
@@ -1557,6 +1558,7 @@ function BootcampAdmin({ token }) {
                     <button key={s} onClick={()=>setStgs(p=>({...p,status:s}))} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${stgs.status===s?"bg-[#C7E36B] text-black border-[#C7E36B]":"border-white/20 text-gray-400 hover:border-white/40"}`}>{s}</button>
                   ))}
                 </div>
+                {stgs.status==="ACTIVE"&&<p className="text-[10px] text-yellow-400 mt-2">⚠ Only one bootcamp can be ACTIVE at a time. Saving will deactivate all other bootcamps on the website.</p>}
               </div>
               {/* Feature 7C: per-section save */}
               {batchErr&&<p className="text-red-400 text-xs font-semibold">{batchErr}</p>}
