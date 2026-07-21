@@ -102,7 +102,7 @@ export default function AdminDashboard() {
   }, [token]);
 
   useEffect(() => {
-    if (!token) { navigate("/"); return; }
+    if (!token) { navigate("/adminlogin"); return; }
     if (user.role !== "admin") { navigate("/dashboard"); return; }
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(setProfile).catch(() => {});
