@@ -1969,18 +1969,15 @@ function VideoCoursesAdmin({ token }) {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-bold text-white">Lesson Videos</h2>
-              <p className="text-xs text-gray-400">{editLessons.length} lessons · Add YouTube or Vimeo embed URLs</p>
+              <p className="text-xs text-gray-400">{editLessons.length} lessons · Add Vimeo embed URLs</p>
             </div>
             <button onClick={() => setEditLessons([...editLessons, { title: "", videoUrl: "", duration: "", isFree: false }])} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/> Add Lesson</button>
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-xs text-gray-400">
-            <p className="font-semibold text-gray-300 mb-1">Supported video URL formats:</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div><p className="text-[#C7E36B] font-semibold">YouTube Embed:</p><code className="text-[10px]">https://www.youtube.com/embed/VIDEO_ID</code></div>
-              <div><p className="text-[#C7E36B] font-semibold">Vimeo Embed:</p><code className="text-[10px]">https://player.vimeo.com/video/VIDEO_ID</code></div>
-            </div>
-            <p className="mt-2 text-[10px] text-gray-500">To get YouTube embed URL: Open video → Share → Embed → copy the src URL (starts with https://www.youtube.com/embed/)</p>
+            <p className="font-semibold text-gray-300 mb-1">Vimeo embed URL format:</p>
+            <code className="text-[10px] text-[#C7E36B]">https://player.vimeo.com/video/VIDEO_ID</code>
+            <p className="mt-1.5 text-[10px] text-gray-500">In Vimeo: open your video → Share → Embed → copy the <strong className="text-gray-400">src</strong> value from the iframe code.</p>
           </div>
 
           <div className="space-y-3">
@@ -1994,7 +1991,7 @@ function VideoCoursesAdmin({ token }) {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
                     <p className="text-[10px] text-gray-500 font-semibold mb-1">VIDEO URL</p>
-                    <input value={lesson.videoUrl || ""} onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, videoUrl: e.target.value } : l))} placeholder="https://www.youtube.com/embed/..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"/>
+                    <input value={lesson.videoUrl || ""} onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, videoUrl: e.target.value } : l))} placeholder="https://player.vimeo.com/video/..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"/>
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-500 font-semibold mb-1">DURATION</p>
@@ -2096,11 +2093,20 @@ function VideoCoursesAdmin({ token }) {
                         <span className="text-[10px] text-gray-400">PUBLISHED</span><Tog value={true} onChange={()=>{}}/>
                       </div>
                     </div>
-                    <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all">
-                      <I name="upload" size={24} className="mx-auto text-gray-500 mb-2"/>
-                      <p className="text-xs text-gray-400">Upload lesson video</p>
-                      <p className="text-[10px] text-gray-500">Drag and drop or click to browse. Max 2GB</p>
-                      <button className="mt-3 bg-[#C7E36B] text-black text-xs font-bold px-4 py-1.5 rounded-lg">SELECT FILE</button>
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-gray-400 font-semibold uppercase">Vimeo Video URL</p>
+                      <input
+                        value={les.videoUrl||""}
+                        onChange={e=>updLesson("videoUrl",e.target.value)}
+                        placeholder="https://player.vimeo.com/video/VIDEO_ID"
+                        className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"
+                      />
+                      <p className="text-[10px] text-gray-500">Paste the Vimeo embed URL — e.g. https://player.vimeo.com/video/123456789</p>
+                      {les.videoUrl&&les.videoUrl.includes("vimeo")&&(
+                        <div className="rounded-xl overflow-hidden aspect-video border border-white/10 mt-2">
+                          <iframe src={les.videoUrl} className="w-full h-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title="Lesson preview"/>
+                        </div>
+                      )}
                     </div>
                     <Fld label="Lesson Title" value={les.title} onChange={v=>updLesson("title",v)}/>
                     <div className="grid grid-cols-2 gap-3">
