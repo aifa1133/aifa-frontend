@@ -64,7 +64,6 @@ const MGMT_ITEMS = [
   { id: "users",      label: "Users",      icon: "users"      },
   { id: "payments",   label: "Payments",   icon: "payments"   },
   { id: "enrolments", label: "Enrolments", icon: "enrolments" },
-  { id: "analytics",  label: "Analytics",  icon: "analytics"  },
   { id: "membership", label: "Membership", icon: "membership" },
 ];
 
@@ -241,7 +240,6 @@ export default function AdminDashboard() {
           {activePage === "users"           && <UsersAdmin token={token} />}
           {activePage === "payments"        && <PaymentsAdmin token={token} />}
           {activePage === "enrolments"      && <EnrolmentsAdmin token={token} />}
-          {activePage === "analytics"       && <AnalyticsAdmin token={token} />}
           {activePage === "certificates"    && <CertificatesAdmin token={token} />}
           {activePage === "jobs"            && <JobsAdmin token={token} />}
           {activePage === "profile"         && <AdminProfile token={token} profile={profile} onUpdated={setProfile} />}

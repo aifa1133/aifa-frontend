@@ -58,9 +58,15 @@ export default function BootcampEnroll() {
   const [step, setStep]           = useState(1);
   const [form, setForm]           = useState({ name: "", email: "", phone: "" });
   const [errors, setErrors]       = useState({});
-  const [coupon, setCoupon]       = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [couponData, setCouponData]       = useState(null);
+  const [coupon, setCoupon]       = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("aifa_enroll_coupon") || "{}").code || ""; } catch { return ""; }
+  });
+  const [couponApplied, setCouponApplied] = useState(() => {
+    try { return !!JSON.parse(sessionStorage.getItem("aifa_enroll_coupon") || "{}").applied; } catch { return false; }
+  });
+  const [couponData, setCouponData]       = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("aifa_enroll_coupon") || "{}").data || null; } catch { return null; }
+  });
   const [couponMsg, setCouponMsg]         = useState("");
   const [showSummary, setShowSummary]     = useState(false);
   const [password, setPassword]           = useState("");
@@ -201,6 +207,7 @@ export default function BootcampEnroll() {
             });
             const verifyData = await verifyRes.json();
             if (verifyRes.ok && verifyData.success) {
+              sessionStorage.removeItem("aifa_enroll_coupon");
               setStep(3);
             } else {
               alert("Payment verification failed. Contact support with your payment ID: " + response.razorpay_payment_id);
@@ -222,8 +229,10 @@ export default function BootcampEnroll() {
     try {
       const res  = await fetch("/api/coupons/validate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ code: coupon.trim().toUpperCase() }) });
       const data = await res.json();
-      if (data.valid) { setCouponApplied(true); setCouponData(data); }
-      else { setCouponMsg(data.message || "Invalid coupon code"); }
+      if (data.valid) {
+        setCouponApplied(true); setCouponData(data);
+        sessionStorage.setItem("aifa_enroll_coupon", JSON.stringify({ code: coupon.trim().toUpperCase(), applied: true, data }));
+      } else { setCouponMsg(data.message || "Invalid coupon code"); }
     } catch { setCouponMsg("Could not validate coupon. Try again."); }
   };
 
