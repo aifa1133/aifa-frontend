@@ -68,47 +68,6 @@ export default function CoursePlayer() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* VIDEO PLAYER */}
-          <div className="flex-1">
-            <div className="w-full aspect-video bg-black rounded-xl overflow-hidden mb-4">
-              {activeLesson ? (
-                getVimeoEmbed(activeLesson) ? (
-                  <iframe
-                    src={getVimeoEmbed(activeLesson)}
-                    className="w-full h-full"
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowFullScreen
-                    title={activeLesson.title}
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400">
-                    <div className="text-6xl">🎬</div>
-                    <p className="text-lg font-semibold">{activeLesson.title}</p>
-                    <p className="text-sm">No video URL configured for this lesson.</p>
-                    <p className="text-xs text-gray-500">Add a Vimeo ID in the Admin Dashboard to enable playback.</p>
-                  </div>
-                )
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <p>Select a lesson to start watching</p>
-                </div>
-              )}
-            </div>
-
-            {activeLesson && (
-              <div>
-                <h1 className="text-xl font-bold mb-1">{activeLesson.title}</h1>
-                <p className="text-gray-400 text-sm">{activeLesson.duration}</p>
-              </div>
-            )}
-
-            {course.lessons?.length === 0 && (
-              <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm">
-                No lessons have been added to this course yet. The admin needs to add video lessons via the Admin Dashboard.
-              </div>
-            )}
-          </div>
-
           {/* LESSON LIST */}
           <div className="w-full lg:w-[340px] shrink-0">
             <h2 className="text-lg font-semibold mb-4">Course Content</h2>
@@ -178,6 +137,47 @@ export default function CoursePlayer() {
                 >
                   Next →
                 </button>
+              </div>
+            )}
+          </div>
+
+          {/* VIDEO PLAYER */}
+          <div className="flex-1">
+            <div className="w-full aspect-video bg-black rounded-xl overflow-hidden mb-4">
+              {activeLesson ? (
+                getVimeoEmbed(activeLesson) ? (
+                  <iframe
+                    src={getVimeoEmbed(activeLesson)}
+                    className="w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                    title={activeLesson.title}
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400">
+                    <div className="text-6xl">🎬</div>
+                    <p className="text-lg font-semibold">{activeLesson.title}</p>
+                    <p className="text-sm">No video URL configured for this lesson.</p>
+                    <p className="text-xs text-gray-500">Add a Vimeo ID in the Admin Dashboard to enable playback.</p>
+                  </div>
+                )
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <p>Select a lesson to start watching</p>
+                </div>
+              )}
+            </div>
+
+            {activeLesson && (
+              <div>
+                <h1 className="text-xl font-bold mb-1">{activeLesson.title}</h1>
+                <p className="text-gray-400 text-sm">{activeLesson.duration}</p>
+              </div>
+            )}
+
+            {course.lessons?.length === 0 && (
+              <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm">
+                No lessons have been added to this course yet. The admin needs to add video lessons via the Admin Dashboard.
               </div>
             )}
           </div>
