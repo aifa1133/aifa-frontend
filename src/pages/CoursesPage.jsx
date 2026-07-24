@@ -75,7 +75,7 @@ export default function CoursesPage() {
   });
 
   const handleBuy = (course) => {
-    navigate(`/courses/${course._id}/pay`);
+    navigate(`/courses/${course._id}`);
   };
 
   const displayCourses =
@@ -284,10 +284,10 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue }) {
 
         {/* BUTTONS */}
         <div className="flex flex-col gap-2 self-stretch mt-auto">
-          {/* All Courses — enrolled: Continue Learning */}
+          {/* All Courses — enrolled: View Details */}
           {tab === "all" && isEnrolled && (
-            <button onClick={onContinue} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] bg-[#C7E36B] text-black text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-lime-300">
-              Continue Learning
+            <button onClick={onBuy} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] border border-[#414243] text-white text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white/5">
+              View Details
             </button>
           )}
 
@@ -298,10 +298,10 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue }) {
             </button>
           )}
 
-          {/* My Courses: Continue Learning */}
+          {/* My Courses: Continue Watching */}
           {tab === "my" && (
-            <button onClick={onContinue} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] bg-[#C7E36B] text-black text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-lime-300">
-              Continue Learning
+            <button onClick={onContinue} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] border border-[#414243] text-white text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white/5">
+              Continue Watching
             </button>
           )}
 

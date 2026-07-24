@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 export default function CoursePlayer() {
@@ -8,6 +8,8 @@ export default function CoursePlayer() {
   const [activeLesson, setActiveLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [completedLessons, setCompletedLessons] = useState([]);
+  const [markingComplete, setMarkingComplete] = useState(false);
 
   const token = localStorage.getItem("aifa_token");
 
@@ -42,6 +44,25 @@ export default function CoursePlayer() {
 
   if (!course) return null;
 
+  const isLessonComplete = (lessonId) => completedLessons.includes(String(lessonId));
+
+  const markComplete = async () => {
+    if (!activeLesson || markingComplete) return;
+    const lessonId = activeLesson._id;
+    const alreadyDone = isLessonComplete(lessonId);
+    setMarkingComplete(true);
+    try {
+      const res = await fetch(`/api/courses/${id}/progress`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lessonId, completed: !alreadyDone }),
+      });
+      const data = await res.json();
+      if (data.completedLessons) setCompletedLessons(data.completedLessons.map(String));
+    } catch {}
+    setMarkingComplete(false);
+  };
+
   const getVimeoEmbed = (lesson) => {
     if (lesson.vimeoId) {
       return `https://player.vimeo.com/video/${lesson.vimeoId}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
@@ -61,10 +82,14 @@ export default function CoursePlayer() {
       <div className="max-w-[1366px] mx-auto px-4 py-6">
 
         {/* BREADCRUMB */}
-        <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-          <Link to="/dashboard" className="hover:text-white">Dashboard</Link>
-          <span>/</span>
-          <span className="text-white">{course.title}</span>
+        <div className="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
+          <Link to="/" className="hover:text-white">Home</Link>
+          <span>›</span>
+          <Link to="/courses" className="hover:text-white">Video Courses</Link>
+          <span>›</span>
+          <Link to="/courses" className="hover:text-white">My Courses</Link>
+          <span>›</span>
+          <span className="text-[#C7E36B]">{course.title}</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
@@ -92,9 +117,11 @@ export default function CoursePlayer() {
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${
                         activeLesson?._id === lesson._id || activeLesson?.title === lesson.title
                           ? "bg-[#C7E36B] text-black"
+                          : isLessonComplete(lesson._id)
+                          ? "bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/50"
                           : "bg-white/10 text-gray-400"
                       }`}>
-                        {idx + 1}
+                        {isLessonComplete(lesson._id) ? "✓" : idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`font-medium text-sm truncate ${
@@ -169,9 +196,24 @@ export default function CoursePlayer() {
             </div>
 
             {activeLesson && (
-              <div>
-                <h1 className="text-xl font-bold mb-1">{activeLesson.title}</h1>
-                <p className="text-gray-400 text-sm">{activeLesson.duration}</p>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h1 className="text-xl font-bold mb-1">{activeLesson.title}</h1>
+                  {activeLesson.duration && (
+                    <p className="text-gray-400 text-sm flex items-center gap-1">⏱ {activeLesson.duration}</p>
+                  )}
+                </div>
+                <button
+                  onClick={markComplete}
+                  disabled={markingComplete}
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    isLessonComplete(activeLesson._id)
+                      ? "bg-[#C7E36B] text-black hover:bg-lime-300"
+                      : "border border-[#C7E36B] text-[#C7E36B] hover:bg-[#C7E36B]/10"
+                  }`}
+                >
+                  {isLessonComplete(activeLesson._id) ? "✓ Marked as Complete" : "Mark as Complete"}
+                </button>
               </div>
             )}
 

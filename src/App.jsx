@@ -148,12 +148,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import UserLogin from "./pages/UserLogin";
 import CoursePlayer from "./pages/CoursePlayer";
+import CourseDetail from "./pages/CourseDetail";
 import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
+import CourseSetup from "./pages/CourseSetup";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
-const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/];
+const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
 
 function AppShell() {
   const [showLogin, setShowLogin] = useState(false);
@@ -199,8 +201,10 @@ function AppShell() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/login" element={<UserLogin />} />
+          <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/courses/:id/watch" element={<CoursePlayer />} />
           <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
+          <Route path="/courses/:id/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </main>
