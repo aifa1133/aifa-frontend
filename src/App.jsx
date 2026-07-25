@@ -157,6 +157,12 @@ import CourseSetup from "./pages/CourseSetup";
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
 const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function AppShell() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
@@ -168,6 +174,7 @@ function AppShell() {
 
   return (
     <div className={`w-full min-h-screen bg-[#0B0F10] overflow-x-hidden`}>
+      <ScrollToTop />
       {!isFullScreen && (
         <Navbar
           onLoginClick={() => { setShowSignup(false); setShowLogin(true); }}

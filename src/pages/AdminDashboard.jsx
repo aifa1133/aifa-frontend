@@ -2182,11 +2182,11 @@ function VideoCoursesAdmin({ token }) {
             </div>
             <Fld label="Short Description" value={f.shortDesc} onChange={v=>setF({...f,shortDesc:v})} placeholder="A brief hook for your course..." />
             <Fld label="Full Description" value={f.fullDesc} onChange={v=>setF({...f,fullDesc:v})} textarea placeholder="Explain what students will learn..." />
-            <div className="grid grid-cols-4 gap-3">
-              <Fld label="Category" value={f.category} onChange={v=>setF({...f,category:v})} />
+            <div className="grid grid-cols-6 gap-3">
+              <div className="col-span-2"><Fld label="Category" value={f.category} onChange={v=>setF({...f,category:v})} /></div>
               <Fld label="Level" value={f.level} onChange={v=>setF({...f,level:v})} />
               <Fld label="Language" value={f.language} onChange={v=>setF({...f,language:v})} />
-              <Fld label="Instructor" value={f.instructor} onChange={v=>setF({...f,instructor:v})} placeholder="Instructor Name" />
+              <div className="col-span-2"><Fld label="Instructor" value={f.instructor} onChange={v=>setF({...f,instructor:v})} placeholder="Instructor Name" /></div>
             </div>
           </div>
         )}
