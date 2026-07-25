@@ -2129,8 +2129,9 @@ function VideoCoursesAdmin({ token }) {
               <input
                 value={f.thumbnail&&f.thumbnail.startsWith("data:")?"":(f.thumbnail||"")}
                 onChange={e=>setF(p=>({...p,thumbnail:e.target.value}))}
-                placeholder="https://... (paste image URL)"
-                className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"
+                disabled={!!(f.thumbnail&&f.thumbnail.startsWith("data:"))}
+                placeholder={f.thumbnail&&f.thumbnail.startsWith("data:")?"Image uploaded — remove it to paste a URL instead":"https://... (paste image URL)"}
+                className={`w-full bg-[#1A1D1E] border rounded-lg px-3 py-2.5 text-sm placeholder-gray-600 outline-none transition-all ${f.thumbnail&&f.thumbnail.startsWith("data:")?"border-white/5 text-gray-600 cursor-not-allowed opacity-50":"border-white/10 text-white focus:border-[#C7E36B]/50"}`}
               />
             </div>
             <Fld label="Short Description" value={f.shortDesc} onChange={v=>setF({...f,shortDesc:v})} placeholder="A brief hook for your course..." />
