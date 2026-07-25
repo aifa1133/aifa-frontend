@@ -2421,8 +2421,8 @@ function VideoCoursesAdmin({ token }) {
                   <button onClick={async()=>{
                     const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
                     if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
-                  }} className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all ${c.isPublished?"bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400":"bg-yellow-500/20 text-yellow-400 hover:bg-green-500/20 hover:text-green-400"}`}>
-                    {c.isPublished?"● live":"○ draft"}
+                  }} className={`text-xs font-bold px-3 py-1 rounded-lg transition-all ${c.isPublished?"bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400":"bg-[#C7E36B] text-black animate-pulse hover:animate-none hover:bg-lime-300"}`}>
+                    {c.isPublished?"● Live":"Publish"}
                   </button>
                 </div>
                 <div className="flex gap-2">
