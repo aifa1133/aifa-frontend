@@ -2142,7 +2142,7 @@ function VideoCoursesAdmin({ token }) {
                       <button className="text-xs text-gray-400 hover:text-white flex items-center gap-1"><I name="upload" size={12}/>+ Add Attachment</button>
                       <div className="flex gap-2">
                         <button onClick={()=>updLesson("_reset",null)} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5">Discard Changes</button>
-                        <button onClick={()=>alert("Lesson updated locally. Click Publish Course on Step 4 to save all lessons to DB.")} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300">Save & Update Lesson</button>
+                        <button onClick={()=>{}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300">Save & Update Lesson</button>
                       </div>
                     </div>
                   </div>
