@@ -1889,6 +1889,8 @@ function VideoCoursesAdmin({ token }) {
     category: f.category, level: f.level, language: f.language,
     instructor: f.instructor, price: parseFloat(f.price)||0,
     originalPrice: parseFloat(f.discPrice)||0, image: f.thumbnail||"",
+    accessType: f.accessType, currency: f.currency||"INR (₹)",
+    ...(f.accessType==="Limited" && { accessFrom: f.accessFrom, accessTo: f.accessTo }),
     lessons: sections.flatMap((s,si)=>s.lessons.map((l,li)=>({
       title:l.title, duration:l.duration, videoUrl:l.videoUrl||"",
       order:si*100+li, isFree:l.isFree||false, type:"Video"
@@ -2180,7 +2182,20 @@ function VideoCoursesAdmin({ token }) {
               <div className="flex gap-2 mb-3">
                 {["Lifetime","Limited"].map(t=><button key={t} onClick={()=>setF({...f,accessType:t})} className={`px-4 py-2 text-xs font-semibold rounded-lg ${f.accessType===t?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-300"}`}>{t}</button>)}
               </div>
-              <Fld label="Currency" value="INR (₹)" onChange={()=>{}}/>
+              {f.accessType==="Limited"&&(
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <Fld label="From Date" type="date" value={f.accessFrom||""} onChange={v=>setF({...f,accessFrom:v})}/>
+                  <Fld label="To Date (Expiry)" type="date" value={f.accessTo||""} onChange={v=>setF({...f,accessTo:v})}/>
+                </div>
+              )}
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Currency</p>
+                <div className="flex gap-2">
+                  {["INR (₹)","USD ($)"].map(c=>(
+                    <button key={c} onClick={()=>setF({...f,currency:c})} className={`px-4 py-2 text-xs font-semibold rounded-lg ${(f.currency||"INR (₹)")===c?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-300"}`}>{c}</button>
+                  ))}
+                </div>
+              </div>
             </Sect>
             <Sect icon="cert" title="Course Features">
               <div className="grid grid-cols-2 gap-3">
