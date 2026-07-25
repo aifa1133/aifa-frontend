@@ -276,14 +276,9 @@ lg:py-[20px]
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-2 w-[200px] bg-[#0F1112] border border-[#414243] rounded-[8px] overflow-hidden z-50">
-                  <Link to="/dashboard" onClick={() => setShowUserMenu(false)} className="block px-4 py-3 text-[#F0F0F0] text-sm hover:bg-white/10 border-b border-[#414243]">
+                  <Link to={user.role === "admin" ? "/admin" : "/dashboard"} onClick={() => setShowUserMenu(false)} className="block px-4 py-3 text-[#F0F0F0] text-sm hover:bg-white/10 border-b border-[#414243]">
                     My Dashboard
                   </Link>
-                  {user.role === "admin" && (
-                    <Link to="/admin" onClick={() => setShowUserMenu(false)} className="block px-4 py-3 text-[#C7E36B] text-sm hover:bg-white/10 border-b border-[#414243]">
-                      Admin Dashboard
-                    </Link>
-                  )}
                   <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-red-400 text-sm hover:bg-white/10">
                     Logout
                   </button>
@@ -428,14 +423,9 @@ h-[40px]
           <div className="flex flex-col gap-[12px] pt-[8px]">
             {user ? (
               <>
-                <Link to="/dashboard" onClick={() => setOpen(false)} className="h-[48px] rounded-[10px] bg-[#C7E36B] text-black text-[14px] font-bold flex items-center justify-center">
+                <Link to={user.role === "admin" ? "/admin" : "/dashboard"} onClick={() => setOpen(false)} className="h-[48px] rounded-[10px] bg-[#C7E36B] text-black text-[14px] font-bold flex items-center justify-center">
                   My Dashboard
                 </Link>
-                {user.role === "admin" && (
-                  <Link to="/admin" onClick={() => setOpen(false)} className="h-[48px] rounded-[10px] border border-[#C7E36B] text-[#C7E36B] text-[14px] font-bold flex items-center justify-center">
-                    Admin Dashboard
-                  </Link>
-                )}
                 <button onClick={handleLogout} className="h-[48px] rounded-[10px] border border-red-400 text-red-400 text-[14px] font-bold">
                   Logout
                 </button>
