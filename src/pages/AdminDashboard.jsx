@@ -1991,12 +1991,17 @@ function VideoCoursesAdmin({ token }) {
           {editMsg && <p className={`text-xs ${editMsg === "Saved!" ? "text-green-400" : "text-red-400"}`}>{editMsg}</p>}
           <button onClick={async () => {
             setEditSaving(true); setEditMsg("");
-            const res = await fetch(`/api/courses/${editCourse._id}/lessons`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ lessons: editLessons.map((l, i) => ({ ...l, order: i })) }),
-            });
-            if (res.ok) { setEditMsg("Saved!"); loadCourses(); }
+            const [infoRes, lessonsRes] = await Promise.all([
+              Object.keys(editInfo).length > 0
+                ? fetch(`/api/courses/${editCourse._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(editInfo) })
+                : Promise.resolve({ ok: true }),
+              fetch(`/api/courses/${editCourse._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ lessons: editLessons.map((l, i) => ({ ...l, order: i })) }),
+              }),
+            ]);
+            if (lessonsRes.ok) { const d = await lessonsRes.json(); setEditCourse(d); setEditMsg("Saved!"); loadCourses(); }
             else setEditMsg("Save failed.");
             setEditSaving(false);
             setTimeout(() => setEditMsg(""), 3000);
