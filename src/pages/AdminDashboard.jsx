@@ -2173,7 +2173,7 @@ function VideoCoursesAdmin({ token }) {
             <Sect icon="payments" title="Course Pricing">
               <div className="grid grid-cols-2 gap-4">
                 <Fld label="Base Price (₹)" value={f.price} onChange={v=>setF({...f,price:v})} prefix="₹" placeholder="0"/>
-                <Fld label="Discounted Price (₹, Optional)" value={f.discPrice} onChange={v=>setF({...f,discPrice:v})} prefix="₹"/>
+                <Fld label="Discounted Price (₹ Optional)" value={f.discPrice} onChange={v=>setF({...f,discPrice:v})} prefix="₹"/>
               </div>
             </Sect>
             <Sect icon="eye" title="Access & Expiry">
