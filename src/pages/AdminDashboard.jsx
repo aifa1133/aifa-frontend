@@ -1870,11 +1870,13 @@ function VideoCoursesAdmin({ token }) {
 
   const loadCourses = () => {
     setCoursesLoading(true);
-    fetch("/api/courses", { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCourses(d); setCoursesLoading(false); }).catch(()=>setCoursesLoading(false));
+    return fetch("/api/courses", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCourses([...d].reverse()); setCoursesLoading(false); }).catch(()=>setCoursesLoading(false));
   };
   useEffect(loadCourses, [token]);
-  const [f, setF] = useState({ title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true });
+  const [f, setF] = useState({ title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false });
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
   const [sections, setSections] = useState([{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }]);
   const [activeL, setActiveL] = useState({ s:0, l:0 });
   const [saving, setSaving]       = useState(false);
@@ -1884,13 +1886,15 @@ function VideoCoursesAdmin({ token }) {
   const [editMsg, setEditMsg]     = useState("");
   const STEPS = ["Basic Info","Curriculum","Pricing","Publish"];
 
-  const buildPayload = (isPublished) => ({
+  const buildPayload = (isPublished, scheduledAt=null) => ({
     title: f.title, description: f.fullDesc, shortDesc: f.shortDesc,
     category: f.category, level: f.level, language: f.language,
     instructor: f.instructor, price: parseFloat(f.price)||0,
     originalPrice: parseFloat(f.discPrice)||0, image: f.thumbnail||"",
     accessType: f.accessType, currency: f.currency||"INR (₹)",
+    generateCertificate: f.genCert, allowCoupons: f.allowCoupons||false,
     ...(f.accessType==="Limited" && { accessFrom: f.accessFrom, accessTo: f.accessTo }),
+    ...(scheduledAt && { scheduledAt }),
     lessons: sections.flatMap((s,si)=>s.lessons.map((l,li)=>({
       title:l.title, duration:l.duration, videoUrl:l.videoUrl||"",
       order:si*100+li, isFree:l.isFree||false, type:"Video"
@@ -1902,7 +1906,7 @@ function VideoCoursesAdmin({ token }) {
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false)) });
-      if(res.ok){ loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
@@ -1911,9 +1915,19 @@ function VideoCoursesAdmin({ token }) {
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(true)) });
-      if(res.ok){ loadCourses(); }
+      if(res.ok){ await loadCourses(); setView("list"); }
     } catch(e){}
-    setSaving(false); setView("list");
+    setSaving(false);
+  };
+
+  const schedulePublish = async () => {
+    if(!scheduleDate) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false, scheduleDate)) });
+      if(res.ok){ await loadCourses(); setView("list"); }
+    } catch(e){}
+    setSaving(false);
   };
 
   const deleteCourse = async id => {
@@ -1922,7 +1936,7 @@ function VideoCoursesAdmin({ token }) {
     setCourses(cs=>cs.filter(c=>c._id!==id));
   };
 
-  const addLesson = si => { const u=[...sections]; u[si].lessons.push({title:"New Lesson",duration:"",type:"Video",desc:"",isFree:false}); setSections(u); setActiveL({s:si,l:u[si].lessons.length-1}); };
+  const addLesson = si => { const u=[...sections]; u[si].lessons.push({title:"New Lesson",duration:"",type:"Video",desc:"",isFree:false,_editing:true}); setSections(u); setActiveL({s:si,l:u[si].lessons.length-1}); };
   const updLesson = (key,val) => setSections(sections.map((s,si)=>si===activeL.s?{...s,lessons:s.lessons.map((l,li)=>li===activeL.l?{...l,[key]:val}:l)}:s));
 
   const fetchVideoDuration = async (url) => {
@@ -2163,9 +2177,29 @@ function VideoCoursesAdmin({ token }) {
                     </div>
                   )}
                   {sec.lessons.map((les,li)=>(
-                    <button key={li} onClick={()=>setActiveL({s:si,l:li})} className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-[10px] rounded mb-0.5 transition-all ${activeL.s===si&&activeL.l===li?"bg-[#C7E36B]/10 text-[#C7E36B]":"text-gray-400 hover:bg-white/5"}`}>
-                      <I name="check" size={9} className="text-green-400 shrink-0"/>{les.title}
-                    </button>
+                    <div key={li} className="mb-0.5">
+                      {les._editing?(
+                        <div className="flex items-center gap-1">
+                          <input
+                            autoFocus
+                            value={les.title}
+                            onChange={e=>{const u=sections.map((s,si2)=>si2===si?{...s,lessons:s.lessons.map((l,li2)=>li2===li?{...l,title:e.target.value}:l)}:s);setSections(u);}}
+                            onKeyDown={e=>{if(e.key==="Enter"){const u=sections.map((s,si2)=>si2===si?{...s,lessons:s.lessons.map((l,li2)=>li2===li?{...l,_editing:false}:l)}:s);setSections(u);}}}
+                            className="flex-1 bg-[#1A1D1E] border border-[#C7E36B]/50 rounded-lg px-2 py-1 text-[10px] text-white outline-none min-w-0"
+                          />
+                          <button onClick={()=>{const u=sections.map((s,si2)=>si2===si?{...s,lessons:s.lessons.map((l,li2)=>li2===li?{...l,_editing:false}:l)}:s);setSections(u);}} className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-1 rounded-lg">✓</button>
+                        </div>
+                      ):(
+                        <div className={`w-full flex items-center gap-1 px-2 py-1.5 text-[10px] rounded ${activeL.s===si&&activeL.l===li?"bg-[#C7E36B]/10 text-[#C7E36B]":"text-gray-400 hover:bg-white/5"}`}>
+                          <button onClick={()=>setActiveL({s:si,l:li})} className="flex items-center gap-1.5 flex-1 text-left min-w-0">
+                            <I name="check" size={9} className="text-green-400 shrink-0"/>
+                            <span className="truncate">{les.title}</span>
+                          </button>
+                          <button onClick={()=>{const u=sections.map((s,si2)=>si2===si?{...s,lessons:s.lessons.map((l,li2)=>li2===li?{...l,_editing:true}:l)}:s);setSections(u);setActiveL({s:si,l:li});}} className="text-gray-600 hover:text-[#C7E36B] shrink-0 transition-all" title="Rename"><I name="edit" size={9}/></button>
+                          <button onClick={()=>{const u=sections.map((s,si2)=>si2===si?{...s,lessons:s.lessons.filter((_,li2)=>li2!==li)}:s);setSections(u);if(activeL.s===si&&activeL.l===li)setActiveL({s:si,l:0});}} className="text-gray-600 hover:text-red-400 shrink-0 transition-all" title="Delete lesson"><I name="trash" size={9}/></button>
+                        </div>
+                      )}
+                    </div>
                   ))}
                   <button onClick={()=>addLesson(si)} className="w-full text-left text-[10px] text-gray-500 hover:text-[#C7E36B] px-3 py-1 flex items-center gap-1"><I name="plus" size={9}/>Add Lesson</button>
                 </div>
@@ -2229,8 +2263,8 @@ function VideoCoursesAdmin({ token }) {
               </div>
               {f.accessType==="Limited"&&(
                 <div className="grid grid-cols-2 gap-3 mb-3">
-                  <Fld label="From Date" type="date" value={f.accessFrom||""} onChange={v=>setF({...f,accessFrom:v})}/>
-                  <Fld label="To Date (Expiry)" type="date" value={f.accessTo||""} onChange={v=>setF({...f,accessTo:v})}/>
+                  <Fld label="From Date" type="date" min={new Date().toISOString().split("T")[0]} value={f.accessFrom||""} onChange={v=>setF({...f,accessFrom:v,accessTo:(f.accessTo&&f.accessTo<v)?v:f.accessTo})}/>
+                  <Fld label="To Date (Expiry)" type="date" min={f.accessFrom||new Date().toISOString().split("T")[0]} value={f.accessTo||""} onChange={v=>setF({...f,accessTo:v})}/>
                 </div>
               )}
               <div>
@@ -2245,7 +2279,7 @@ function VideoCoursesAdmin({ token }) {
             <Sect icon="cert" title="Course Features">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between"><p className="text-xs text-white">Generate Certificate</p><Tog value={f.genCert} onChange={v=>setF({...f,genCert:v})}/></div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between"><p className="text-xs text-white">Allow Coupons</p><Tog value={false} onChange={()=>{}}/></div>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between"><p className="text-xs text-white">Allow Coupons</p><Tog value={f.allowCoupons||false} onChange={v=>setF({...f,allowCoupons:v})}/></div>
               </div>
             </Sect>
           </div>
@@ -2277,18 +2311,27 @@ function VideoCoursesAdmin({ token }) {
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <p className="text-xs font-semibold text-white mb-1">Ready to Launch?</p>
                 <p className="text-[11px] text-gray-400 mb-3">Your course will be visible on the AIFA marketplace once published.</p>
-                <button onClick={publish} disabled={saving} className="w-full bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300 mb-2">{saving?"Publishing...":"Publish Course Now"}</button>
-                <button className="w-full border border-white/20 text-gray-300 text-xs py-2 rounded-lg hover:bg-white/5">SCHEDULE FOR LATER</button>
+                <button onClick={publish} disabled={saving} className="w-full bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300 mb-2 disabled:opacity-50">{saving?"Publishing...":"Publish Course Now"}</button>
+                {showSchedule?(
+                  <div className="space-y-2">
+                    <input type="datetime-local" value={scheduleDate} min={new Date().toISOString().slice(0,16)} onChange={e=>setScheduleDate(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-white outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]"/>
+                    <div className="flex gap-1.5">
+                      <button onClick={schedulePublish} disabled={saving||!scheduleDate} className="flex-1 bg-[#C7E36B]/20 border border-[#C7E36B]/40 text-[#C7E36B] text-[10px] font-bold py-1.5 rounded-lg hover:bg-[#C7E36B]/30 disabled:opacity-50">{saving?"Saving...":"Confirm"}</button>
+                      <button onClick={()=>setShowSchedule(false)} className="border border-white/20 text-gray-400 text-[10px] px-2 py-1.5 rounded-lg hover:bg-white/5">✕</button>
+                    </div>
+                  </div>
+                ):(
+                  <button onClick={()=>setShowSchedule(true)} className="w-full border border-white/20 text-gray-300 text-xs py-2 rounded-lg hover:bg-white/5">SCHEDULE FOR LATER</button>
+                )}
               </div>
             </div>
           </div>
         )}
         <div className="flex justify-between mt-6 pt-4 border-t border-white/5">
-          {step>1&&<button onClick={()=>setStep(s=>s-1)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">← Back</button>}
-          <div className="ml-auto flex gap-2">
+          <button onClick={()=>step>1?setStep(s=>s-1):setView("list")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">← Back</button>
+          <div className="flex gap-2">
             <button onClick={saveDraft} disabled={saving} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 disabled:opacity-50">{saving?"Saving...":"SAVE DRAFT"}</button>
-            {step<4?<button onClick={()=>setStep(s=>s+1)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Continue →</button>
-              :<button onClick={publish} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?"Publishing...":"Publish Course"}</button>}
+            <button onClick={publish} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-50">{saving?"Publishing...":"Publish Course"}</button>
           </div>
         </div>
       </div>
@@ -3101,7 +3144,7 @@ function Sect({ icon, title, children }) {
   );
 }
 
-function Fld({ label, value, onChange, textarea, placeholder, prefix, type }) {
+function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min }) {
   const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600";
   return (
     <div>
@@ -3110,7 +3153,7 @@ function Fld({ label, value, onChange, textarea, placeholder, prefix, type }) {
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
           ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 ${prefix?"pl-7":""}`}/>
-          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
+          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
         }
       </div>
     </div>
