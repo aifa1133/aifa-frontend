@@ -2016,10 +2016,28 @@ function VideoCoursesAdmin({ token }) {
           </div>
           <Fld label="Description" value={editInfo.description ?? editCourse.description ?? ""} onChange={v=>setEditInfo(i=>({...i,description:v}))} textarea />
           <Fld label="Thumbnail URL" value={editInfo.image ?? editCourse.image ?? ""} onChange={v=>setEditInfo(i=>({...i,image:v}))} placeholder="https://..." />
-          <div className="flex items-center gap-3">
-            <Tog value={editInfo.isPublished ?? editCourse.isPublished ?? false} onChange={v=>setEditInfo(i=>({...i,isPublished:v}))} />
-            <span className="text-xs text-gray-300">Published (visible to students)</span>
-          </div>
+          {(() => {
+            const isLive = editInfo.isPublished ?? editCourse.isPublished ?? false;
+            return (
+              <div className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5">
+                <div className="flex items-center gap-3">
+                  <Tog value={isLive} onChange={v=>setEditInfo(i=>({...i,isPublished:v}))} />
+                  <div>
+                    <p className="text-xs font-semibold text-white">{isLive ? "● Live — visible to students" : "○ Draft — hidden from students"}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{isLive ? "Toggle off to unpublish" : "Toggle on then Save Changes to publish"}</p>
+                  </div>
+                </div>
+                <button onClick={async()=>{
+                  const newVal = !isLive;
+                  setEditInfo(i=>({...i,isPublished:newVal}));
+                  const res = await fetch(`/api/courses/${editCourse._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:newVal})});
+                  if(res.ok){const d=await res.json();setEditCourse(d);setEditMsg(newVal?"Published!":"Unpublished");loadCourses();setTimeout(()=>setEditMsg(""),3000);}
+                }} className={`text-xs font-bold px-4 py-2 rounded-lg transition-all ${isLive?"border border-red-400/50 text-red-400 hover:bg-red-500/10":"bg-[#C7E36B] text-black hover:bg-lime-300"}`}>
+                  {isLive ? "Unpublish" : "Publish Now"}
+                </button>
+              </div>
+            );
+          })()}
         </Sect>
 
         <div>
