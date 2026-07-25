@@ -2020,14 +2020,9 @@ function VideoCoursesAdmin({ token }) {
           </div>
           <Fld label="Description" value={editInfo.description ?? editCourse.description ?? ""} onChange={v=>setEditInfo(i=>({...i,description:v}))} textarea />
           <Fld label="Thumbnail URL" value={editInfo.image ?? editCourse.image ?? ""} onChange={v=>setEditInfo(i=>({...i,image:v}))} placeholder="https://..." />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Tog value={editInfo.isPublished ?? editCourse.isPublished ?? false} onChange={v=>setEditInfo(i=>({...i,isPublished:v}))} />
-              <span className="text-xs text-gray-300">Published (visible to students)</span>
-            </div>
-            <button onClick={saveEditInfo} disabled={editSaving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-60">
-              {editSaving ? "Saving…" : "Save Course Info"}
-            </button>
+          <div className="flex items-center gap-3">
+            <Tog value={editInfo.isPublished ?? editCourse.isPublished ?? false} onChange={v=>setEditInfo(i=>({...i,isPublished:v}))} />
+            <span className="text-xs text-gray-300">Published (visible to students)</span>
           </div>
         </Sect>
 
