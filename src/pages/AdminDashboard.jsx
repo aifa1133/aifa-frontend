@@ -2080,7 +2080,7 @@ function VideoCoursesAdmin({ token }) {
               </div>
             ))}
           </div>
-          <button className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg">SAVE AS DRAFT</button>
+          <button onClick={saveDraft} disabled={saving} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5 disabled:opacity-50">{saving?"Saving...":"SAVE AS DRAFT"}</button>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
