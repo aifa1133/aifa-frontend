@@ -2146,7 +2146,23 @@ function VideoCoursesAdmin({ token }) {
       <div className="flex-1 overflow-y-auto p-6">
         {step===1 && (
           <div className="max-w-2xl space-y-4">
-            <Fld label="Course Title" value={f.title} onChange={v=>setF({...f,title:v})} placeholder="e.g. Master AI Filmmaking in 30..." />
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Course Title</p>
+              {(() => {
+                const isDupe = f.title.trim() && courses.some(c => c.title.trim().toLowerCase() === f.title.trim().toLowerCase());
+                return (
+                  <>
+                    <input
+                      value={f.title}
+                      onChange={e=>setF({...f,title:e.target.value})}
+                      placeholder="e.g. Master AI Filmmaking in 30..."
+                      className={`w-full bg-[#1A1D1E] border rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-all ${isDupe?"border-red-500 focus:border-red-500":"border-white/10 focus:border-[#C7E36B]/50"}`}
+                    />
+                    {isDupe && <p className="text-red-400 text-[11px] mt-1 flex items-center gap-1">⚠ A course with this name already exists</p>}
+                  </>
+                );
+              })()}
+            </div>
             <div>
               <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Course Thumbnail (16:9)</p>
               <input type="file" accept="image/*" className="hidden" id="thumbUpload" onChange={e=>{
