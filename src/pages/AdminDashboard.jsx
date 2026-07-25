@@ -2061,7 +2061,28 @@ function VideoCoursesAdmin({ token }) {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
                     <p className="text-[10px] text-gray-500 font-semibold mb-1">VIDEO URL</p>
-                    <input value={lesson.videoUrl || ""} onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, videoUrl: e.target.value } : l))} placeholder="https://player.vimeo.com/video/..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"/>
+                    <input
+                      value={lesson.videoUrl || ""}
+                      onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, videoUrl: e.target.value } : l))}
+                      onBlur={async e => {
+                        const url = e.target.value;
+                        if (!url) return;
+                        const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+                        if (vimeoMatch) {
+                          try {
+                            const r = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vimeoMatch[1]}`);
+                            const d = await r.json();
+                            if (d.duration) {
+                              const m = Math.floor(d.duration / 60);
+                              const s = String(d.duration % 60).padStart(2, "0");
+                              setEditLessons(ls => ls.map((l, i) => i === idx && !l.duration ? { ...l, duration: `${m}:${s}` } : l));
+                            }
+                          } catch {}
+                        }
+                      }}
+                      placeholder="https://player.vimeo.com/video/...  or  https://www.youtube.com/embed/..."
+                      className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"
+                    />
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-500 font-semibold mb-1">DURATION</p>
