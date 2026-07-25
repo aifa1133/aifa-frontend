@@ -2111,10 +2111,7 @@ function VideoCoursesAdmin({ token }) {
                   <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-white">Edit Lesson</p>
-                      <div className="flex items-center gap-4">
-                        <span className="text-[10px] text-gray-400">FREE PREVIEW</span><Tog value={les.isFree} onChange={v=>updLesson("isFree",v)}/>
-                        <span className="text-[10px] text-gray-400">PUBLISHED</span><Tog value={true} onChange={()=>{}}/>
-                      </div>
+                      <div />
                     </div>
                     <div className="space-y-2">
                       <p className="text-[10px] text-gray-400 font-semibold uppercase">Video URL (Vimeo or YouTube)</p>
