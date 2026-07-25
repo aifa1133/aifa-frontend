@@ -1870,7 +1870,7 @@ function VideoCoursesAdmin({ token }) {
 
   const loadCourses = () => {
     setCoursesLoading(true);
-    return fetch("/api/courses", { headers:{ Authorization:`Bearer ${token}` } })
+    return fetch("/api/courses?all=true", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCourses([...d].reverse()); setCoursesLoading(false); }).catch(()=>setCoursesLoading(false));
   };
   useEffect(loadCourses, [token]);
