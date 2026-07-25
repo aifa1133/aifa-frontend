@@ -2086,15 +2086,39 @@ function VideoCoursesAdmin({ token }) {
       <div className="flex-1 overflow-y-auto p-6">
         {step===1 && (
           <div className="max-w-2xl space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Fld label="Course Title" value={f.title} onChange={v=>setF({...f,title:v})} placeholder="e.g. Master AI Filmmaking in 30..." />
-              <div><p className="text-[10px] text-gray-400 mb-1">Course Thumbnail (16:9)</p>
-                <div className="border-2 border-dashed border-white/20 rounded-xl h-[100px] flex flex-col items-center justify-center cursor-pointer hover:border-[#C7E36B]/50">
-                  <I name="upload" size={20} className="text-gray-500 mb-1"/><p className="text-[10px] text-gray-500">Click to upload</p>
+            <Fld label="Course Title" value={f.title} onChange={v=>setF({...f,title:v})} placeholder="e.g. Master AI Filmmaking in 30..." />
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Course Thumbnail (16:9)</p>
+              <input type="file" accept="image/*" className="hidden" id="thumbUpload" onChange={e=>{
+                const file=e.target.files?.[0]; if(!file) return;
+                const reader=new FileReader();
+                reader.onload=ev=>setF(p=>({...p,thumbnail:ev.target.result}));
+                reader.readAsDataURL(file); e.target.value="";
+              }}/>
+              {f.thumbnail?(
+                <div className="relative rounded-xl overflow-hidden border border-white/10 w-full mb-2" style={{aspectRatio:"16/9"}}>
+                  <img src={f.thumbnail} alt="Thumbnail" className="w-full h-full object-cover"/>
+                  <button onClick={()=>setF(p=>({...p,thumbnail:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
                 </div>
+              ):(
+                <label htmlFor="thumbUpload" className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[120px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
+                  <I name="upload" size={22} className="text-gray-500 mb-1"/>
+                  <p className="text-xs text-gray-400 font-semibold">Click to upload image</p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">PNG, JPG, WEBP</p>
+                </label>
+              )}
+              <div className="flex items-center gap-2 my-2">
+                <div className="flex-1 h-[1px] bg-white/10"/>
+                <span className="text-[10px] text-gray-500">or paste URL</span>
+                <div className="flex-1 h-[1px] bg-white/10"/>
               </div>
+              <input
+                value={f.thumbnail&&f.thumbnail.startsWith("data:")?"":(f.thumbnail||"")}
+                onChange={e=>setF(p=>({...p,thumbnail:e.target.value}))}
+                placeholder="https://... (paste image URL)"
+                className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"
+              />
             </div>
-            <Fld label="Thumbnail URL" value={f.thumbnail||""} onChange={v=>setF({...f,thumbnail:v})} placeholder="https://... (paste image URL)" />
             <Fld label="Short Description" value={f.shortDesc} onChange={v=>setF({...f,shortDesc:v})} placeholder="A brief hook for your course..." />
             <Fld label="Full Description" value={f.fullDesc} onChange={v=>setF({...f,fullDesc:v})} textarea placeholder="Explain what students will learn..." />
             <div className="grid grid-cols-4 gap-3">
