@@ -71,7 +71,8 @@ const MGMT_ITEMS = [
    MAIN
 ═══════════════════════════════════════════════════ */
 export default function AdminDashboard() {
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] = useState(() => sessionStorage.getItem("adminPage") || "dashboard");
+  const setPage = (p) => { sessionStorage.setItem("adminPage", p); setPage(p); };
   const [profile, setProfile] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -127,7 +128,7 @@ export default function AdminDashboard() {
           {[...NAV_ITEMS, { _divider: true }, ...MGMT_ITEMS].map((item, idx) => {
             if (item._divider) return <p key="div" className="text-[9px] text-gray-600 font-bold uppercase px-3 pt-3 pb-1 tracking-wider">Management</p>;
             return (
-              <button key={item.id} onClick={() => !item.soon && setActivePage(item.id)}
+              <button key={item.id} onClick={() => !item.soon && setPage(item.id)}
                 disabled={item.soon} title={item.soon ? "Coming soon" : undefined}
                 className={`w-full flex items-center justify-between px-3 py-2 text-left text-[11px] font-medium transition-all ${item.soon ? "text-gray-600 cursor-not-allowed" : activePage === item.id ? "bg-[#C7E36B]/10 text-[#C7E36B] border-r-2 border-[#C7E36B]" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
                 <span className="flex items-center gap-2"><I name={item.icon} size={13} />{item.label}</span>
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
             );
           })}
         </nav>
-        <div onClick={() => setActivePage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left cursor-pointer">
+        <div onClick={() => setPage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left cursor-pointer">
           <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
             {profile?.profilePicture
               ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
@@ -199,7 +200,7 @@ export default function AdminDashboard() {
                     }
                   </div>
                   <div className="px-4 py-2 border-t border-white/10">
-                    <button onClick={()=>{ setShowNotifPanel(false); setActivePage("platform-settings"); }} className="text-xs text-[#C7E36B] hover:underline">Manage Notifications →</button>
+                    <button onClick={()=>{ setShowNotifPanel(false); setPage("platform-settings"); }} className="text-xs text-[#C7E36B] hover:underline">Manage Notifications →</button>
                   </div>
                 </div>
               )}
@@ -221,8 +222,8 @@ export default function AdminDashboard() {
                     <span className="text-[9px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full mt-1 inline-block">Super Admin</span>
                   </div>
                   <div className="py-1">
-                    <button onClick={()=>{ setShowProfileMenu(false); setActivePage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
-                    <button onClick={()=>{ setShowProfileMenu(false); setActivePage("platform-settings"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="settings" size={13}/>Settings</button>
+                    <button onClick={()=>{ setShowProfileMenu(false); setPage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
+                    <button onClick={()=>{ setShowProfileMenu(false); setPage("platform-settings"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="settings" size={13}/>Settings</button>
                     <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
                   </div>
                 </div>
