@@ -40,9 +40,6 @@
     fbq('init', '965166646012649');
     fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=965166646012649&ev=PageView&noscript=1"
-    /></noscript>
     <!-- End Meta Pixel Code -->
   </head>
 
@@ -54,6 +51,11 @@
     "
   >
     <div id="root"></div>
+
+    <!-- Meta Pixel noscript (must be in body) -->
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=965166646012649&ev=PageView&noscript=1"
+    /></noscript>
 
     <!-- REACT ENTRY -->
     <script type="module" src="/src/main.jsx"></script>
