@@ -42,10 +42,9 @@ export default function CoursesPage() {
 
   const token     = localStorage.getItem("aifa_token");
   const isLoggedIn = !!token;
-  const isAdmin = JSON.parse(localStorage.getItem("aifa_user") || "{}").role === "admin";
 
   useEffect(() => {
-    fetch(isAdmin ? "/api/courses?all=true" : "/api/courses")
+    fetch("/api/courses")
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setCourses(data); })
       .catch(() => {})
