@@ -2415,7 +2415,14 @@ function VideoCoursesAdmin({ token }) {
         {["Sort By ▼","Level ▼","Category ▼"].map(f=><select key={f} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none"><option>{f}</option></select>)}
       </div>
       {coursesLoading
-        ? <p className="text-gray-500 text-sm animate-pulse py-6">Loading courses...</p>
+        ? <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="relative">
+              <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-12 animate-pulse" onError={e=>{e.target.style.display='none';}} />
+              <div className="absolute -inset-3 rounded-full border-2 border-[#C7E36B]/30 animate-ping"/>
+              <div className="absolute -inset-5 rounded-full border border-[#C7E36B]/10 animate-ping" style={{animationDelay:"0.3s"}}/>
+            </div>
+            <p className="text-gray-500 text-xs tracking-widest uppercase animate-pulse">Loading courses</p>
+          </div>
         : courses.length === 0
         ? <div className="text-center py-12"><p className="text-gray-400 text-sm">No courses yet.</p><button onClick={()=>{setView("create");setStep(1);}} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Create First Course</button></div>
         : (
