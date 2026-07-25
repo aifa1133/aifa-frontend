@@ -2134,22 +2134,34 @@ function VideoCoursesAdmin({ token }) {
             <div className="w-[250px] shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-white">CURRICULUM</p>
-                <button onClick={()=>setSections([...sections,{title:`Section ${sections.length+1}`,lessons:[]}])} className="text-[#C7E36B] text-[10px] flex items-center gap-1 hover:underline"><I name="plus" size={11}/>Section</button>
               </div>
               {sections.map((sec,si)=>(
                 <div key={si} className="mb-3">
-                  <div className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 mb-1 flex items-center gap-1">
-                    <input
-                      value={sec.title}
-                      onChange={e=>setSections(sections.map((s,i)=>i===si?{...s,title:e.target.value}:s))}
-                      className="flex-1 bg-transparent text-[11px] font-semibold text-white outline-none min-w-0"
-                    />
-                    {sections.length>1&&(
-                      <button onClick={()=>{const u=sections.filter((_,i)=>i!==si);setSections(u);setActiveL({s:0,l:0});}} className="text-gray-600 hover:text-red-400 transition-all shrink-0 ml-1" title="Delete section">
-                        <I name="trash" size={10}/>
+                  {sec._editing?(
+                    <div className="flex items-center gap-1 mb-1">
+                      <input
+                        autoFocus
+                        value={sec.title}
+                        onChange={e=>setSections(sections.map((s,i)=>i===si?{...s,title:e.target.value}:s))}
+                        onKeyDown={e=>{if(e.key==="Enter")setSections(sections.map((s,i)=>i===si?{...s,_editing:false}:s));}}
+                        placeholder="Section name..."
+                        className="flex-1 bg-[#1A1D1E] border border-[#C7E36B]/50 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-white outline-none min-w-0"
+                      />
+                      <button onClick={()=>setSections(sections.map((s,i)=>i===si?{...s,_editing:false}:s))} className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-1.5 rounded-lg hover:bg-lime-300">✓</button>
+                    </div>
+                  ):(
+                    <div className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 mb-1 flex items-center gap-1 group">
+                      <p className="flex-1 text-[11px] font-semibold text-white truncate">{sec.title}</p>
+                      <button onClick={()=>setSections(sections.map((s,i)=>i===si?{...s,_editing:true}:s))} className="text-gray-600 hover:text-[#C7E36B] shrink-0 transition-all" title="Rename">
+                        <I name="edit" size={10}/>
                       </button>
-                    )}
-                  </div>
+                      {sections.length>1&&(
+                        <button onClick={()=>{const u=sections.filter((_,i)=>i!==si);setSections(u);setActiveL({s:0,l:0});}} className="text-gray-600 hover:text-red-400 shrink-0 transition-all ml-0.5" title="Delete section">
+                          <I name="trash" size={10}/>
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {sec.lessons.map((les,li)=>(
                     <button key={li} onClick={()=>setActiveL({s:si,l:li})} className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-[10px] rounded mb-0.5 transition-all ${activeL.s===si&&activeL.l===li?"bg-[#C7E36B]/10 text-[#C7E36B]":"text-gray-400 hover:bg-white/5"}`}>
                       <I name="check" size={9} className="text-green-400 shrink-0"/>{les.title}
@@ -2158,7 +2170,7 @@ function VideoCoursesAdmin({ token }) {
                   <button onClick={()=>addLesson(si)} className="w-full text-left text-[10px] text-gray-500 hover:text-[#C7E36B] px-3 py-1 flex items-center gap-1"><I name="plus" size={9}/>Add Lesson</button>
                 </div>
               ))}
-              <button onClick={()=>setSections([...sections,{title:`Section ${sections.length+1}`,lessons:[]}])} className="w-full text-[10px] text-gray-500 border border-dashed border-white/20 rounded-lg py-2 hover:border-[#C7E36B]/50 hover:text-[#C7E36B] transition-all">+ Add New Section</button>
+              <button onClick={()=>{setSections([...sections,{title:`Section ${sections.length+1}`,lessons:[],_editing:true}]);}} className="w-full text-[10px] text-gray-500 border border-dashed border-white/20 rounded-lg py-2 hover:border-[#C7E36B]/50 hover:text-[#C7E36B] transition-all">+ Add New Section</button>
             </div>
             <div className="flex-1">
               {sections[activeL.s]?.lessons[activeL.l] && (() => {
