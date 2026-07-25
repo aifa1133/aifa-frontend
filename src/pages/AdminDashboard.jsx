@@ -1884,11 +1884,32 @@ function VideoCoursesAdmin({ token }) {
   const [editMsg, setEditMsg]     = useState("");
   const STEPS = ["Basic Info","Curriculum","Pricing","Publish"];
 
+  const buildPayload = (isPublished) => ({
+    title: f.title, description: f.fullDesc, shortDesc: f.shortDesc,
+    category: f.category, level: f.level, language: f.language,
+    instructor: f.instructor, price: parseFloat(f.price)||0,
+    originalPrice: parseFloat(f.discPrice)||0, image: f.thumbnail||"",
+    lessons: sections.flatMap((s,si)=>s.lessons.map((l,li)=>({
+      title:l.title, duration:l.duration, videoUrl:l.videoUrl||"",
+      order:si*100+li, isFree:l.isFree||false, type:"Video"
+    }))),
+    isPublished,
+  });
+
+  const saveDraft = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false)) });
+      if(res.ok){ loadCourses(); setView("list"); }
+    } catch(e){}
+    setSaving(false);
+  };
+
   const publish = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ title:f.title, description:f.fullDesc, shortDesc:f.shortDesc, category:f.category, level:f.level, language:f.language, instructor:f.instructor, price:parseFloat(f.price)||0, originalPrice:parseFloat(f.discPrice)||0, image:f.thumbnail||"", lessons:sections.flatMap((s,si)=>s.lessons.map((l,li)=>({title:l.title,duration:l.duration,order:si*100+li,isFree:l.isFree}))), isPublished:true }) });
-      if(res.ok) { loadCourses(); }
+      const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(true)) });
+      if(res.ok){ loadCourses(); }
     } catch(e){}
     setSaving(false); setView("list");
   };
@@ -2139,11 +2160,7 @@ function VideoCoursesAdmin({ token }) {
                     </div>
                     <Fld label="Description" value={les.desc} onChange={v=>updLesson("desc",v)} textarea placeholder="What will students learn in this..."/>
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
-                      <button className="text-xs text-gray-400 hover:text-white flex items-center gap-1"><I name="upload" size={12}/>+ Add Attachment</button>
-                      <div className="flex gap-2">
-                        <button onClick={()=>updLesson("_reset",null)} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5">Discard Changes</button>
-                        <button onClick={()=>{}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300">Save & Update Lesson</button>
-                      </div>
+                      <div />
                     </div>
                   </div>
                 );
@@ -2209,7 +2226,7 @@ function VideoCoursesAdmin({ token }) {
         <div className="flex justify-between mt-6 pt-4 border-t border-white/5">
           {step>1&&<button onClick={()=>setStep(s=>s-1)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">← Back</button>}
           <div className="ml-auto flex gap-2">
-            <button className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">SAVE DRAFT</button>
+            <button onClick={saveDraft} disabled={saving} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 disabled:opacity-50">{saving?"Saving...":"SAVE DRAFT"}</button>
             {step<4?<button onClick={()=>setStep(s=>s+1)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Continue →</button>
               :<button onClick={publish} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?"Publishing...":"Publish Course"}</button>}
           </div>
