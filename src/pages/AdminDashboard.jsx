@@ -2035,9 +2035,19 @@ function VideoCoursesAdmin({ token }) {
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-xs text-gray-400">
-            <p className="font-semibold text-gray-300 mb-1">Vimeo embed URL format:</p>
-            <code className="text-[10px] text-[#C7E36B]">https://player.vimeo.com/video/VIDEO_ID</code>
-            <p className="mt-1.5 text-[10px] text-gray-500">In Vimeo: open your video → Share → Embed → copy the <strong className="text-gray-400">src</strong> value from the iframe code.</p>
+            <p className="font-semibold text-gray-300 mb-1">Supported embed URL formats:</p>
+            <div className="space-y-1.5">
+              <div>
+                <p className="text-[10px] text-gray-500 mb-0.5">Vimeo:</p>
+                <code className="text-[10px] text-[#C7E36B]">https://player.vimeo.com/video/VIDEO_ID</code>
+                <p className="mt-0.5 text-[10px] text-gray-500">In Vimeo: open your video → Share → Embed → copy the <strong className="text-gray-400">src</strong> value from the iframe code.</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 mb-0.5">YouTube:</p>
+                <code className="text-[10px] text-[#C7E36B]">https://www.youtube.com/embed/VIDEO_ID</code>
+                <p className="mt-0.5 text-[10px] text-gray-500">In YouTube: open your video → Share → Embed → copy the <strong className="text-gray-400">src</strong> value from the iframe code.</p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-3">
