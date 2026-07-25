@@ -2138,8 +2138,17 @@ function VideoCoursesAdmin({ token }) {
               </div>
               {sections.map((sec,si)=>(
                 <div key={si} className="mb-3">
-                  <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-1 flex items-center justify-between">
-                    <p className="text-[11px] font-semibold text-white truncate">{sec.title}</p>
+                  <div className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 mb-1 flex items-center gap-1">
+                    <input
+                      value={sec.title}
+                      onChange={e=>setSections(sections.map((s,i)=>i===si?{...s,title:e.target.value}:s))}
+                      className="flex-1 bg-transparent text-[11px] font-semibold text-white outline-none min-w-0"
+                    />
+                    {sections.length>1&&(
+                      <button onClick={()=>{const u=sections.filter((_,i)=>i!==si);setSections(u);setActiveL({s:0,l:0});}} className="text-gray-600 hover:text-red-400 transition-all shrink-0 ml-1" title="Delete section">
+                        <I name="trash" size={10}/>
+                      </button>
+                    )}
                   </div>
                   {sec.lessons.map((les,li)=>(
                     <button key={li} onClick={()=>setActiveL({s:si,l:li})} className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-[10px] rounded mb-0.5 transition-all ${activeL.s===si&&activeL.l===li?"bg-[#C7E36B]/10 text-[#C7E36B]":"text-gray-400 hover:bg-white/5"}`}>
