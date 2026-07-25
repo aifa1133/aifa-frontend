@@ -730,7 +730,7 @@ function ListBootcampAdmin({ onSelect, token }) {
           <span className="text-[10px] text-gray-600">{filtered.length} of {bootcamps.length} bootcamps</span>
         </div>
         {loadingBC ? (
-          <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading bootcamps...</p>
+          <AdminLoader label="Loading Bootcamps" />
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-500 text-sm">No bootcamps found. Create your first one!</div>
         ) : (
@@ -1133,7 +1133,7 @@ function BootcampAdmin({ token }) {
             </div>
             {sessAdded&&<p className="text-green-400 text-xs mb-3 flex items-center gap-1">✓ Session added!</p>}
             {sessLoading ? (
-              <p className="text-gray-500 text-sm animate-pulse text-center py-6">Loading sessions...</p>
+              <AdminLoader label="Loading Sessions" />
             ) : (
               <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
@@ -1825,7 +1825,7 @@ function WorkshopsAdmin({ token }) {
           <option>All</option><option>Published</option><option>Draft</option>
         </select>
       </div>
-      {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading workshops...</p> : (
+      {loading ? <AdminLoader label="Loading Workshops" /> : (
         <div className="space-y-3">
           {filtered.length===0 && <p className="text-gray-500 text-sm py-8 text-center">No workshops found</p>}
           {filtered.map(w=>(
@@ -2415,14 +2415,7 @@ function VideoCoursesAdmin({ token }) {
         {["Sort By ▼","Level ▼","Category ▼"].map(f=><select key={f} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none"><option>{f}</option></select>)}
       </div>
       {coursesLoading
-        ? <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="relative">
-              <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-12 animate-pulse" onError={e=>{e.target.style.display='none';}} />
-              <div className="absolute -inset-3 rounded-full border-2 border-[#C7E36B]/30 animate-ping"/>
-              <div className="absolute -inset-5 rounded-full border border-[#C7E36B]/10 animate-ping" style={{animationDelay:"0.3s"}}/>
-            </div>
-            <p className="text-gray-500 text-xs tracking-widest uppercase animate-pulse">Loading courses</p>
-          </div>
+        ? <AdminLoader label="Loading Courses" />
         : courses.length === 0
         ? <div className="text-center py-12"><p className="text-gray-400 text-sm">No courses yet.</p><button onClick={()=>{setView("create");setStep(1);}} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Create First Course</button></div>
         : (
@@ -2728,7 +2721,7 @@ function ResourcesAdmin({ token }) {
             <input value={projectSearch} onChange={e=>setProjectSearch(e.target.value)} placeholder="Search projects..."
               className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none max-w-[240px]"/>
           </div>
-          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
+          {loading ? <AdminLoader /> : (
             resources.length===0 ? (
               <div className="text-center py-12"><p className="text-gray-500 text-sm">No projects yet</p><button onClick={openAddForm} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First Project</button></div>
             ) : (
@@ -2755,7 +2748,7 @@ function ResourcesAdmin({ token }) {
       {/* Other tabs: list/deal view */}
       {tab!=="project" && (
         <>
-          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
+          {loading ? <AdminLoader /> : (
             <>
               {resources.length===0 && (
                 <div className="text-center py-12"><p className="text-gray-500 text-sm">No {RES_TABS.find(t=>t.key===tab)?.label} resources yet</p><button onClick={openAddForm} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First</button></div>
@@ -2913,7 +2906,7 @@ function UsersAdmin({ token }) {
         </select>
       </div>
 
-      {loading ? <p className="text-gray-400 text-sm animate-pulse">Loading users...</p> : (
+      {loading ? <AdminLoader label="Loading Users" /> : (
         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           <table className="w-full">
             <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
@@ -3005,7 +2998,7 @@ function PaymentsAdmin({ token }) {
             {["Transaction ID","User","Program","Type","Date","Amount","Status"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
           </tr></thead>
           <tbody className="divide-y divide-white/5">
-            {loading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm animate-pulse">Loading...</td></tr>
+            {loading ? <tr><td colSpan={7}><AdminLoader /></td></tr>
               : filtered.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">No transactions yet</td></tr>
               : filtered.map((p,i)=>(
               <tr key={i} className="hover:bg-white/5 transition-all">
@@ -3075,7 +3068,7 @@ function EnrolmentsAdmin({ token }) {
             {["Student","Program","Type","Enrolled On","Amount"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
           </tr></thead>
           <tbody className="divide-y divide-white/5">
-            {loading ? <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm animate-pulse">Loading...</td></tr>
+            {loading ? <tr><td colSpan={5}><AdminLoader /></td></tr>
               : filtered.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No enrollments found</td></tr>
               : filtered.map((e,i) => (
               <tr key={i} className="hover:bg-white/5 transition-all">
@@ -3138,7 +3131,7 @@ function AnalyticsAdmin({ token }) {
         {/* Enrollments by month bar chart */}
         <div className="bg-white/5 border border-white/10 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-4">Enrollments (Last 6 Months)</h3>
-          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p>
+          {loading ? <AdminLoader />
             : monthlyRows.length === 0
             ? <p className="text-gray-500 text-sm text-center py-8">No enrollment data yet</p>
             : (
@@ -3161,7 +3154,7 @@ function AnalyticsAdmin({ token }) {
         {/* Top courses */}
         <div className="bg-white/5 border border-white/10 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-4">Top Courses by Enrollment</h3>
-          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p>
+          {loading ? <AdminLoader />
             : topCourses.length === 0
             ? <p className="text-gray-500 text-sm text-center py-8">No course data yet</p>
             : (
@@ -3210,6 +3203,19 @@ function Sect({ icon, title, children }) {
     <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-2 pb-2 border-b border-white/5"><I name={icon} size={14} className="text-gray-400"/><h3 className="text-sm font-semibold text-white">{title}</h3></div>
       {children}
+    </div>
+  );
+}
+
+function AdminLoader({ label = "Loading" }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="relative">
+        <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-12 animate-pulse" onError={e=>{e.target.style.display='none';}} />
+        <div className="absolute -inset-3 rounded-full border-2 border-[#C7E36B]/30 animate-ping"/>
+        <div className="absolute -inset-5 rounded-full border border-[#C7E36B]/10 animate-ping" style={{animationDelay:"0.3s"}}/>
+      </div>
+      <p className="text-gray-500 text-xs tracking-widest uppercase animate-pulse">{label}</p>
     </div>
   );
 }
@@ -3404,7 +3410,7 @@ function CommunityAdmin({ token }) {
         {/* Thread list */}
         <div className="space-y-3">
           {threadsLoading ? (
-            <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading threads...</p>
+            <AdminLoader label="Loading Threads" />
           ) : threads.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-3xl mb-3">💬</p>
@@ -3539,7 +3545,7 @@ function ServiceRequestAdmin({ token }) {
             ))}
           </div>
         </div>
-        {loading ? <p className="text-gray-500 text-sm animate-pulse p-4">Loading...</p> : (
+        {loading ? <AdminLoader /> : (
           <div className="divide-y divide-white/5">
             {filtered.length===0 && <p className="text-gray-500 text-sm p-4">No requests</p>}
             {filtered.map(r=>(
@@ -3656,7 +3662,7 @@ function SalesConsultAdmin({ token }) {
             ))}
           </div>
         </div>
-        {loading ? <p className="text-gray-500 text-sm animate-pulse p-4">Loading...</p> : (
+        {loading ? <AdminLoader /> : (
           <div className="divide-y divide-white/5">
             {filtered.length===0 && <p className="text-gray-500 text-sm p-4">No consultations</p>}
             {filtered.map(c=>(
@@ -3807,7 +3813,7 @@ function HireTalentAdmin({ token }) {
         <div><h1 className="text-xl font-bold text-white">Hire Talent</h1><p className="text-xs text-gray-400">Manage talent profiles · {talents.length} total</p></div>
         <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Add Talent</button>
       </div>
-      {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
+      {loading ? <AdminLoader /> : (
         talents.length===0 ? (
           <div className="text-center py-12"><p className="text-gray-500 text-sm mb-3">No talent profiles yet</p><button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First</button></div>
         ) : (
@@ -3981,7 +3987,7 @@ function MembershipAdmin({ token }) {
             </div>
           </div>
         ) : (
-          loading ? <p className="text-gray-500 text-sm animate-pulse">Loading plans...</p> : (
+          loading ? <AdminLoader label="Loading Plans" /> : (
             <div className="grid grid-cols-3 gap-4">
               {plans.map(p=>(
                 <div key={p._id} className="bg-white/5 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all">
@@ -4020,7 +4026,7 @@ function MembershipAdmin({ token }) {
             <p className="text-sm text-gray-400">{members.length} members</p>
             <input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="Search members..." className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none w-[220px]"/>
           </div>
-          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading members...</p> : (
+          {loading ? <AdminLoader label="Loading Members" /> : (
             <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
@@ -4203,7 +4209,7 @@ function PlatformSettings({ token }) {
     );
   };
 
-  if (loading) return <div className="p-6 text-gray-500 text-sm animate-pulse">Loading settings...</div>;
+  if (loading) return <AdminLoader label="Loading Settings" />;
 
   return (
     <div className="p-6 max-w-3xl">
@@ -4813,7 +4819,7 @@ function CertificatesAdmin({ token }) {
               </div>
             </div>
           )}
-          {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
+          {loading ? <AdminLoader /> : (
             <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
@@ -4974,7 +4980,7 @@ function JobsAdmin({ token }) {
         </div>
       )}
 
-      {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
+      {loading ? <AdminLoader /> : (
         jobs.length === 0 ? (
           <div className="text-center py-12"><p className="text-gray-500 text-sm">No jobs posted yet</p><button onClick={()=>setShowForm(true)} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Post First Job</button></div>
         ) : (
