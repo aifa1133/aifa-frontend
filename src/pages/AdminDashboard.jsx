@@ -71,8 +71,8 @@ const MGMT_ITEMS = [
    MAIN
 ═══════════════════════════════════════════════════ */
 export default function AdminDashboard() {
-  const [activePage, setActivePage] = useState(() => sessionStorage.getItem("adminPage") || "dashboard");
-  const setPage = (p) => { sessionStorage.setItem("adminPage", p); setPage(p); };
+  const [activePage, _setActivePage] = useState(() => sessionStorage.getItem("adminPage") || "dashboard");
+  const setPage = (p) => { sessionStorage.setItem("adminPage", p); _setActivePage(p); };
   const [profile, setProfile] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
