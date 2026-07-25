@@ -1812,7 +1812,7 @@ function WorkshopsAdmin({ token }) {
           <p className="text-xs text-gray-400">Manage all your published and draft workshops in one place.</p>
         </div>
         <button onClick={()=>setView("create")} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-          <I name="plus" size={14}/>+ Create New Workshop
+          <I name="plus" size={14}/>Create New Workshop
         </button>
       </div>
       <div className="flex gap-3 mb-4">
@@ -2342,7 +2342,7 @@ function VideoCoursesAdmin({ token }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-white">Video Courses</h1>
-        <button onClick={()=>{setView("create");setStep(1);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>+ Create New Course</button>
+        <button onClick={()=>{setView("create");setStep(1);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>Create New Course</button>
       </div>
       <div className="flex gap-3 mb-4">
         <div className="relative">
@@ -2520,7 +2520,7 @@ function ResourcesAdmin({ token }) {
             <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Steps Builder</p>
-                <button onClick={()=>setSteps([...steps,{title:"",description:""}])} className="text-[10px] text-[#C7E36B] border border-dashed border-[#C7E36B]/40 px-2 py-1 rounded-lg hover:bg-[#C7E36B]/10 flex items-center gap-1"><I name="plus" size={10}/>+ Add Step</button>
+                <button onClick={()=>setSteps([...steps,{title:"",description:""}])} className="text-[10px] text-[#C7E36B] border border-dashed border-[#C7E36B]/40 px-2 py-1 rounded-lg hover:bg-[#C7E36B]/10 flex items-center gap-1"><I name="plus" size={10}/>Add Step</button>
               </div>
               <div className="space-y-3">
                 {steps.map((s,i) => (
@@ -2539,7 +2539,7 @@ function ResourcesAdmin({ token }) {
                 ))}
               </div>
               <button onClick={()=>setSteps([...steps,{title:"",description:""}])} className="w-full border-2 border-dashed border-white/10 text-gray-500 hover:border-[#C7E36B]/30 hover:text-[#C7E36B] text-xs py-2.5 rounded-xl transition-all flex items-center justify-center gap-1">
-                <I name="plus" size={12}/> + Add Another Step
+                <I name="plus" size={12}/> Add Another Step
               </button>
             </div>
           )}
@@ -2635,7 +2635,7 @@ function ResourcesAdmin({ token }) {
       <div className="flex items-center justify-between mb-4">
         <div><h1 className="text-xl font-bold text-white">Resources</h1><p className="text-xs text-gray-400">Manage all learning resources by category</p></div>
         <button onClick={openAddForm} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-          <I name="plus" size={14}/>{tab==="project"?"+ Add Project":"+ Add Resource"}
+          <I name="plus" size={14}/>{tab==="project"?"Add Project":"Add Resource"}
         </button>
       </div>
 
@@ -3735,7 +3735,7 @@ function HireTalentAdmin({ token }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div><h1 className="text-xl font-bold text-white">Hire Talent</h1><p className="text-xs text-gray-400">Manage talent profiles · {talents.length} total</p></div>
-        <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>+ Add Talent</button>
+        <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>Add Talent</button>
       </div>
       {loading ? <p className="text-gray-500 text-sm animate-pulse">Loading...</p> : (
         talents.length===0 ? (
@@ -3854,7 +3854,7 @@ function MembershipAdmin({ token }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-white">Membership</h1>
-        {tab==="plans" && !showForm && <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>+ Create Plan</button>}
+        {tab==="plans" && !showForm && <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>Create Plan</button>}
       </div>
 
       {/* Tab bar */}
