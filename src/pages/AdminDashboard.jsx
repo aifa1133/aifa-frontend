@@ -1902,6 +1902,31 @@ function VideoCoursesAdmin({ token }) {
   const addLesson = si => { const u=[...sections]; u[si].lessons.push({title:"New Lesson",duration:"",type:"Video",desc:"",isFree:false}); setSections(u); setActiveL({s:si,l:u[si].lessons.length-1}); };
   const updLesson = (key,val) => setSections(sections.map((s,si)=>si===activeL.s?{...s,lessons:s.lessons.map((l,li)=>li===activeL.l?{...l,[key]:val}:l)}:s));
 
+  const fetchVideoDuration = async (url) => {
+    if (!url) return;
+    try {
+      const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if (vimeoMatch) {
+        const res = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vimeoMatch[1]}`);
+        const data = await res.json();
+        if (data.duration) {
+          const m = Math.floor(data.duration / 60);
+          const s = String(data.duration % 60).padStart(2,"0");
+          updLesson("duration", `${m}:${s}`);
+        }
+        return;
+      }
+      const ytMatch = url.match(/youtube\.com\/embed\/([^?]+)/);
+      if (ytMatch) {
+        const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytMatch[1]}&format=json`);
+        const data = await res.json();
+        if (data.title && !sections[activeL.s]?.lessons[activeL.l]?.title?.trim()) {
+          updLesson("title", data.title);
+        }
+      }
+    } catch {}
+  };
+
   const [editInfo, setEditInfo] = useState({});
   const saveEditInfo = async () => {
     setEditSaving(true); setEditMsg("");
@@ -2092,15 +2117,16 @@ function VideoCoursesAdmin({ token }) {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[10px] text-gray-400 font-semibold uppercase">Vimeo Video URL</p>
+                      <p className="text-[10px] text-gray-400 font-semibold uppercase">Video URL (Vimeo or YouTube)</p>
                       <input
                         value={les.videoUrl||""}
                         onChange={e=>updLesson("videoUrl",e.target.value)}
-                        placeholder="https://player.vimeo.com/video/VIDEO_ID"
+                        onBlur={e=>fetchVideoDuration(e.target.value)}
+                        placeholder="https://player.vimeo.com/video/ID  or  https://www.youtube.com/embed/ID"
                         className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"
                       />
-                      <p className="text-[10px] text-gray-500">Paste the Vimeo embed URL — e.g. https://player.vimeo.com/video/123456789</p>
-                      {les.videoUrl&&les.videoUrl.includes("vimeo")&&(
+                      <p className="text-[10px] text-gray-500">Paste Vimeo or YouTube embed URL — duration auto-fills for Vimeo</p>
+                      {les.videoUrl&&(les.videoUrl.includes("vimeo")||les.videoUrl.includes("youtube"))&&(
                         <div className="rounded-xl overflow-hidden aspect-video border border-white/10 mt-2">
                           <iframe src={les.videoUrl} className="w-full h-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title="Lesson preview"/>
                         </div>
@@ -2108,8 +2134,11 @@ function VideoCoursesAdmin({ token }) {
                     </div>
                     <Fld label="Lesson Title" value={les.title} onChange={v=>updLesson("title",v)}/>
                     <div className="grid grid-cols-2 gap-3">
-                      <Fld label="Duration (Minutes)" value={les.duration} onChange={v=>updLesson("duration",v)}/>
-                      <Fld label="Lesson Type" value={les.type} onChange={v=>updLesson("type",v)}/>
+                      <Fld label="Duration (auto-filled)" value={les.duration} onChange={v=>updLesson("duration",v)} placeholder="e.g. 9:45"/>
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Type</p>
+                        <div className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-400">Video</div>
+                      </div>
                     </div>
                     <Fld label="Description" value={les.desc} onChange={v=>updLesson("desc",v)} textarea placeholder="What will students learn in this..."/>
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
