@@ -1874,7 +1874,7 @@ function VideoCoursesAdmin({ token }) {
     return fetch("/api/courses?all=true", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCourses([...d].reverse()); setCoursesLoading(false); }).catch(()=>setCoursesLoading(false));
   };
-  useEffect(loadCourses, [token]);
+  useEffect(() => { loadCourses(); }, [token]);
   const [f, setF] = useState({ title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false });
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
