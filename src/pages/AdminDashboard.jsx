@@ -1629,14 +1629,24 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(() => { loadWorkshops(); }, [token]);
-  const CF_DEFAULT = { title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", seats:"50", date:"", time:"", published:true };
+  const fmtDur = (mins) => { const m=parseInt(mins)||120; if(m<60) return `${m} Min`; const h=Math.floor(m/60),r=m%60; return r?`${h} Hr ${r} Min`:`${h} ${h===1?"Hour":"Hours"}`; };
+  const CF_DEFAULT = { title:"", shortDesc:"", duration:"120", currency:"INR", price:"999", mode:"ONLINE", seats:"50", date:"", time:"", published:true, image:"", ctaText:"Reserve Spot", ctaType:"INTERNAL", ctaUrl:"" };
   const [cf, setCf] = useState(CF_DEFAULT);
+  const [imgUploading, setImgUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
+  const parseDurToMins = (dur) => {
+    if(!dur) return "120";
+    const lower = dur.toLowerCase();
+    const num = parseInt(dur);
+    if(isNaN(num)) return "120";
+    if(lower.includes("hour")||lower.includes("hr")) return String(num*60);
+    return String(num); // already minutes
+  };
   const startEdit = (w) => {
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:"", time:"", published:!!w.isPublished });
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:parseDurToMins(w.duration)||"120", currency:w.currency||"INR", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:"", time:"", published:!!w.isPublished, image:w.image||"", ctaText:w.ctaText||"Reserve Spot", ctaType:w.ctaType||"INTERNAL", ctaUrl:w.ctaUrl||"" });
     setIsEditing(true); setSuccessMsg(""); setView("create");
   };
 
@@ -1649,7 +1659,7 @@ function WorkshopsAdmin({ token }) {
         const d = new Date(`${cf.date}${cf.time ? "T"+cf.time : "T00:00"}`);
         if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, ...(scheduledAt && { scheduledAt }) };
+      const body = { title:cf.title, description:cf.shortDesc, duration:fmtDur(cf.duration), currency:cf.currency, price:parseFloat(String(cf.price).replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, image:cf.image||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:cf.ctaType||"INTERNAL", ctaUrl:cf.ctaUrl||"", ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1684,7 +1694,7 @@ function WorkshopsAdmin({ token }) {
   };
 
   if(view==="create") return (
-    <div className="p-6 max-w-3xl">
+    <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-white">{isEditing?"Edit Workshop":"Create Workshop"}</h1>
@@ -1695,19 +1705,76 @@ function WorkshopsAdmin({ token }) {
           <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doCreate} disabled={saving}>{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-4">
+      <div className="grid grid-cols-4 gap-6">
+        <div className="col-span-3 space-y-4">
           <Sect icon="resources" title="Basic Information">
             <Fld label="Workshop Title" value={cf.title} onChange={v=>setCf({...cf,title:v})} placeholder="AI Cinematography Masterclass" />
             <Fld label="Short Description" value={cf.shortDesc} onChange={v=>setCf({...cf,shortDesc:v})} textarea placeholder="Master the art of visual storytelling..." />
-            <div className="border-2 border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all">
-              <I name="upload" size={20} className="mx-auto text-gray-500 mb-1"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP (Max 5MB)</p>
+            {/* IMAGE UPLOAD */}
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">THUMBNAIL IMAGE</p>
+              <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer transition-all ${cf.image?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/20 hover:border-[#C7E36B]/50 hover:bg-white/5"} ${imgUploading?"opacity-60 pointer-events-none":""}`}
+                style={{ minHeight: cf.image ? 0 : "90px" }}>
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setImgUploading(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append("image", file);
+                    const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd });
+                    const data = await res.json();
+                    if (res.ok) setCf(c=>({...c, image: data.url}));
+                    else alert(data.message || "Upload failed");
+                  } catch { alert("Upload failed. Please try again."); }
+                  setImgUploading(false);
+                  e.target.value = "";
+                }} />
+                {cf.image ? (
+                  <div className="relative w-full">
+                    <img src={cf.image} alt="thumbnail" className="w-full h-[140px] object-cover rounded-[10px]" />
+                    <button type="button" onClick={e=>{ e.preventDefault(); setCf(c=>({...c,image:""})); }}
+                      className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500/80">✕</button>
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-[#C7E36B] text-[10px] font-bold px-2 py-0.5 rounded">Click to change</div>
+                  </div>
+                ) : imgUploading ? (
+                  <div className="py-5 flex flex-col items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/>
+                    <p className="text-[11px] text-gray-400">Uploading...</p>
+                  </div>
+                ) : (
+                  <div className="py-5 flex flex-col items-center gap-1">
+                    <I name="upload" size={20} className="text-gray-500"/>
+                    <p className="text-[11px] text-gray-400">Click to upload or drag and drop</p>
+                    <p className="text-[10px] text-gray-500">PNG, JPG or WEBP · Max 5MB</p>
+                  </div>
+                )}
+              </label>
             </div>
           </Sect>
           <Sect icon="service" title="Key Details">
-            <div className="grid grid-cols-4 gap-3">
-              <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} />
-              <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* DURATION — minutes dropdown */}
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">DURATION</p>
+                <select value={cf.duration} onChange={e=>setCf({...cf,duration:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]">
+                  {[30,45,60,90,120,150,180,210,240,300,360].map(m=>(
+                    <option key={m} value={String(m)}>{fmtDur(m)}</option>
+                  ))}
+                </select>
+              </div>
+              {/* PRICING — currency + amount */}
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">PRICING</p>
+                <div className="flex rounded-lg overflow-hidden border border-white/10 focus-within:border-[#C7E36B]/50">
+                  <select value={cf.currency} onChange={e=>setCf({...cf,currency:e.target.value})} className="bg-[#252829] text-white text-xs px-2 py-2 outline-none border-r border-white/10 shrink-0 [color-scheme:dark]">
+                    <option value="INR">₹ INR</option>
+                    <option value="USD">$ USD</option>
+                  </select>
+                  <input type="number" value={cf.price} onChange={e=>setCf({...cf,price:e.target.value})} placeholder="999" min="0" className="flex-1 bg-[#1A1D1E] text-white text-sm px-3 py-2 outline-none min-w-0" />
+                </div>
+              </div>
+              {/* MODE */}
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">MODE</p>
                 <select value={cf.mode} onChange={e=>setCf({...cf,mode:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
@@ -1715,15 +1782,24 @@ function WorkshopsAdmin({ token }) {
                   <option value="OFFLINE">OFFLINE</option>
                 </select>
               </div>
+              {/* SEAT LIMIT */}
               <Fld label="SEAT LIMIT" value={cf.seats} onChange={v=>setCf({...cf,seats:v.replace(/\D/g,"")})} placeholder="50" />
             </div>
           </Sect>
           <Sect icon="link" title="CTA Section">
             <div className="grid grid-cols-2 gap-3">
-              <Fld label="Button Text" value="Reserve Spot" onChange={()=>{}} />
-              <div><p className="text-[10px] text-gray-400 mb-1">Action Type</p><div className="flex gap-2"><button className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg">External Link</button><button className="flex-1 bg-white/10 text-gray-300 text-xs py-2 rounded-lg">Internal Checkout</button></div></div>
+              <Fld label="Button Text" value={cf.ctaText} onChange={v=>setCf({...cf,ctaText:v})} placeholder="Reserve Spot" />
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">Action Type</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={()=>setCf({...cf,ctaType:"EXTERNAL"})} className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${cf.ctaType==="EXTERNAL"?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-300 hover:bg-white/20"}`}>External Link</button>
+                  <button type="button" onClick={()=>setCf({...cf,ctaType:"INTERNAL"})} className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${cf.ctaType==="INTERNAL"?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-300 hover:bg-white/20"}`}>Internal Checkout</button>
+                </div>
+              </div>
             </div>
-            <Fld label="Redirect URL" value="https://checkout.aifa.com/workshop-id" onChange={()=>{}} />
+            {cf.ctaType==="EXTERNAL" && (
+              <Fld label="Redirect URL" value={cf.ctaUrl} onChange={v=>setCf({...cf,ctaUrl:v})} placeholder="https://checkout.aifa.com/workshop-id" />
+            )}
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
@@ -1743,12 +1819,13 @@ function WorkshopsAdmin({ token }) {
         <div>
           <p className="text-[10px] text-green-400 font-semibold mb-2">● LIVE PREVIEW</p>
           <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+            {cf.image && <img src={cf.image} alt="" className="w-full h-[100px] object-cover rounded-lg mb-2"/>}
             <span className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-0.5 rounded">WORKSHOP</span>
             <p className="text-sm font-bold text-white mt-2">{cf.title||"Workshop Title"}</p>
             <p className="text-[11px] text-gray-400 mt-1">{cf.shortDesc||"Short description..."}</p>
             <div className="grid grid-cols-3 gap-1 mt-2 text-[10px] text-gray-400">
-              <div><span className="text-gray-500 block">DURATION</span>{cf.duration}</div>
-              <div><span className="text-gray-500 block">PRICE</span>{cf.price}</div>
+              <div><span className="text-gray-500 block">DURATION</span>{fmtDur(cf.duration)}</div>
+              <div><span className="text-gray-500 block">PRICE</span>{cf.currency==="USD"?"$":"₹"}{cf.price}</div>
               <div><span className="text-gray-500 block">MODE</span>{cf.mode}</div>
             </div>
             <button className="w-full bg-[#C7E36B] text-black text-[11px] font-bold py-1.5 rounded-lg mt-2">RESERVE SPOT</button>
@@ -1773,7 +1850,7 @@ function WorkshopsAdmin({ token }) {
           <div className="flex gap-2 mb-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span><span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span></div>
           <h2 className="text-2xl font-black text-white">{sel.title}</h2>
           <div className="grid grid-cols-3 gap-3 mt-4">
-            {[["PRICE",sel.price||"₹1,499"],["DURATION",sel.duration||"4 Hours"],["SEAT LIMIT",`${sel.seats||50} Seats`]].map(([k,v])=>(
+            {[["PRICE",`${sel.currency==="USD"?"$":"₹"}${sel.price||1499}`],["DURATION",sel.duration||"—"],["SEAT LIMIT",`${sel.seats||50} Seats`]].map(([k,v])=>(
               <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-3"><p className="text-[10px] text-gray-400 font-semibold">{k}</p><p className="text-base font-bold text-white">{v}</p></div>
             ))}
           </div>
@@ -1870,7 +1947,7 @@ function WorkshopsAdmin({ token }) {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className="text-base font-bold text-white">₹{w.price}</span>
+                <span className="text-base font-bold text-white">{w.currency==="USD"?"$":"₹"}{w.price}</span>
                 <div className="flex gap-2">
                   <button onClick={()=>{ setSel(w); setSuccessMsg(""); setView("manage"); }} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
                     {w.isPublished?"Manage Workshop":"Continue Editing"}
@@ -1888,6 +1965,9 @@ function WorkshopsAdmin({ token }) {
 }
 
 /* ── VIDEO COURSES ADMIN ── */
+const VCA_F_DEFAULT = { title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false };
+const VCA_S_DEFAULT = [{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }];
+
 function VideoCoursesAdmin({ token }) {
   const [view, setView] = useState("list");
   const [step, setStep] = useState(1);
@@ -1900,10 +1980,10 @@ function VideoCoursesAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCourses([...d].reverse()); setCoursesLoading(false); }).catch(()=>setCoursesLoading(false));
   };
   useEffect(() => { loadCourses(); }, [token]);
-  const [f, setF] = useState({ title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false });
+  const [f, setF] = useState(VCA_F_DEFAULT);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
-  const [sections, setSections] = useState([{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }]);
+  const [sections, setSections] = useState(VCA_S_DEFAULT);
   const [activeL, setActiveL] = useState({ s:0, l:0 });
   const [saving, setSaving]       = useState(false);
   const [editCourse, setEditCourse] = useState(null);
@@ -1928,30 +2008,35 @@ function VideoCoursesAdmin({ token }) {
     isPublished,
   });
 
+  const resetCreateForm = () => { setF(VCA_F_DEFAULT); setSections(VCA_S_DEFAULT); setStep(1); setScheduleDate(""); setShowSchedule(false); };
+
   const saveDraft = async () => {
+    if (!f.title.trim()) { alert("Please enter a course title before saving."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false)) });
-      if(res.ok){ await loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); resetCreateForm(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
 
   const publish = async () => {
+    if (!f.title.trim()) { alert("Please enter a course title before publishing."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(true)) });
-      if(res.ok){ await loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); resetCreateForm(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
 
   const schedulePublish = async () => {
     if(!scheduleDate) return;
+    if (!f.title.trim()) { alert("Please enter a course title before scheduling."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false, scheduleDate)) });
-      if(res.ok){ await loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); resetCreateForm(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
@@ -2430,7 +2515,7 @@ function VideoCoursesAdmin({ token }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-white">Video Courses</h1>
-        <button onClick={()=>{setView("create");setStep(1);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Create New Course</button>
+        <button onClick={()=>{resetCreateForm();setView("create");}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Create New Course</button>
       </div>
       <div className="flex gap-3 mb-4">
         <div className="relative">

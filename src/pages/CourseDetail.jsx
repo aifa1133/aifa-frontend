@@ -24,7 +24,7 @@ export default function CourseDetail() {
       .then(data => {
         if (data.message) { navigate("/courses"); return; }
         setCourse(data);
-        setIsEnrolled(Array.isArray(data.lessons) && data.lessons.length > 0);
+        setIsEnrolled(data.isEnrolled === true);
         setLoading(false);
       })
       .catch(() => { navigate("/courses"); });

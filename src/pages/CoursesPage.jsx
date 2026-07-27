@@ -38,6 +38,7 @@ export default function CoursesPage() {
   const [courses, setCourses]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [enrolledLoading, setEnrolledLoading] = useState(true);
   const navigate = useNavigate();
 
   const token     = localStorage.getItem("aifa_token");
@@ -54,7 +55,10 @@ export default function CoursesPage() {
       fetch("/api/courses/enrolled", { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then(data => { if (Array.isArray(data)) setEnrolledCourses(data); })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setEnrolledLoading(false));
+    } else {
+      setEnrolledLoading(false);
     }
   }, []);
 
@@ -186,8 +190,24 @@ export default function CoursesPage() {
               </div>
             )}
 
+            {/* LOADING — My Courses / Completed */}
+            {enrolledLoading && activeTab !== "all" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] w-full">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-full rounded-[8px] border border-[#414243] bg-[#0F1112] overflow-hidden animate-pulse">
+                    <div className="w-full h-[240px] bg-[#1A1F22]" />
+                    <div className="p-6 flex flex-col gap-4">
+                      <div className="h-5 bg-[#1A1F22] rounded w-3/4" />
+                      <div className="h-4 bg-[#1A1F22] rounded w-full" />
+                      <div className="h-10 bg-[#1A1F22] rounded mt-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* EMPTY STATE */}
-            {!loading && activeTab !== "all" && displayCourses.length === 0 && (
+            {!enrolledLoading && activeTab !== "all" && displayCourses.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <span className="text-5xl">🎬</span>
                 <p className="text-white font-semibold text-lg">{emptyMessages[activeTab]?.title}</p>
@@ -201,7 +221,7 @@ export default function CoursesPage() {
             )}
 
             {/* GRID */}
-            {!loading && displayCourses.length > 0 && (
+            {!(activeTab === "all" ? loading : enrolledLoading) && displayCourses.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] w-full max-sm:gap-[16px]">
                 {displayCourses.map((course, i) => (
                   <CourseCard

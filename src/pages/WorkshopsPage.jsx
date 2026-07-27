@@ -142,7 +142,7 @@ export default function WorkshopsPage() {
                             </div>
                             <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
                               <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⊞ Pricing</p>
-                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">₹{item.price}</p>
+                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">{item.currency==="USD"?"$":"₹"}{item.price}</p>
                             </div>
                             <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
                               <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⌨ Mode</p>
