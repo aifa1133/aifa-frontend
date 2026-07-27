@@ -1625,11 +1625,12 @@ function WorkshopsAdmin({ token }) {
 
   const loadWorkshops = () => {
     setLoading(true);
-    fetch("/api/workshops", { headers:{ Authorization:`Bearer ${token}` } })
+    fetch("/api/workshops?all=true", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
-  useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", seats:"50", date:"", time:"", published:true });
+  useEffect(() => { loadWorkshops(); }, [token]);
+  const CF_DEFAULT = { title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", seats:"50", date:"", time:"", published:true };
+  const [cf, setCf] = useState(CF_DEFAULT);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -1640,9 +1641,11 @@ function WorkshopsAdmin({ token }) {
   };
 
   const doCreate = async () => {
+    if(!cf.title.trim()) { alert("Workshop title is required."); return; }
     setSaving(true);
     try {
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published };
+      const scheduledAt = cf.date ? new Date(`${cf.date}${cf.time ? "T"+cf.time : "T00:00"}`).toISOString() : null;
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1650,17 +1653,24 @@ function WorkshopsAdmin({ token }) {
       if(res.ok){
         setSel(data); setSuccessMsg(isEditing?"Workshop Updated Successfully!":"Workshop Created Successfully!");
         if(isEditing) setWorkshops(ws=>ws.map(w=>w._id===data._id?data:w));
-        else { setWorkshops(ws=>[data,...ws]); }
-        setIsEditing(false); setView("manage");
-      }
-    } catch(e){}
+        else setWorkshops(ws=>[data,...ws]);
+        setCf(CF_DEFAULT); setIsEditing(false); setView("manage");
+      } else { alert(data.message||"Failed to save workshop."); }
+    } catch(e){ alert("Network error. Please try again."); }
     setSaving(false);
   };
 
   const doPublish = async (w) => {
     const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
     const data = await res.json();
-    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop published!"); }
+    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop is now live!"); }
+  };
+
+  const doUnpublish = async (w) => {
+    if(!window.confirm("Unpublish this workshop? It will be hidden from students.")) return;
+    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:false }) });
+    const data = await res.json();
+    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop moved to draft."); }
   };
 
   const doDelete = async (id) => {
@@ -1677,7 +1687,7 @@ function WorkshopsAdmin({ token }) {
           <p className="text-xs text-gray-400">{isEditing?"Update workshop details":"Add workshop details for website display"}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={()=>{ setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+          <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
           <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doCreate} disabled={saving}>{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
         </div>
       </div>
@@ -1715,7 +1725,7 @@ function WorkshopsAdmin({ token }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})} /><span className="text-sm text-white">Published</span></div>
             <div className="flex gap-2">
-              <button onClick={()=>{ setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+              <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
               <button onClick={doCreate} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
             </div>
           </div>
@@ -1766,7 +1776,10 @@ function WorkshopsAdmin({ token }) {
               <button onClick={()=>doPublish(sel)} className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300">📣 Publish Workshop to Live</button>
             )}
             {sel.isPublished && (
-              <span className="mt-4 text-xs text-green-400 font-semibold">✓ Published and Live</span>
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <span className="text-xs text-green-400 font-semibold">✓ Published and Live</span>
+                <button onClick={()=>doUnpublish(sel)} className="text-xs border border-red-500/40 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-all">Unpublish (move to draft)</button>
+              </div>
             )}
           </div>
         </div>
@@ -1814,7 +1827,7 @@ function WorkshopsAdmin({ token }) {
           <h1 className="text-xl font-bold text-white mt-1">Workshop Repository</h1>
           <p className="text-xs text-gray-400">Manage all your published and draft workshops in one place.</p>
         </div>
-        <button onClick={()=>setView("create")} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">
+        <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setSuccessMsg(""); setView("create"); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">
           Create New Workshop
         </button>
       </div>

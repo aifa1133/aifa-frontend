@@ -17,8 +17,10 @@ export default function WorkshopsPage() {
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(null);
+  const [reserved, setReserved] = useState(new Set());
   const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem("aifa_token");
+  const token = localStorage.getItem("aifa_token");
+  const isLoggedIn = !!token;
 
   useEffect(() => {
     fetch("/api/workshops")
@@ -29,6 +31,16 @@ export default function WorkshopsPage() {
       })
       .catch(() => { setWorkshops(MOCK_WORKSHOPS); })
       .finally(() => setLoading(false));
+
+    if (token) {
+      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(u => {
+          if (u?.enrolledWorkshops?.length > 0)
+            setReserved(new Set(u.enrolledWorkshops.map(String)));
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const handleReserve = async (workshop) => {
@@ -40,15 +52,21 @@ export default function WorkshopsPage() {
       alert("Booking coming soon!");
       return;
     }
+    if (reserved.has(workshop._id)) return;
     setEnrolling(workshop._id);
     try {
-      const token = localStorage.getItem("aifa_token");
       const res = await fetch(`/api/workshops/${workshop._id}/register`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (res.ok) {
+        setReserved(prev => new Set([...prev, workshop._id]));
+        setWorkshops(prev => prev.map(w =>
+          w._id === workshop._id
+            ? { ...w, registrations: [...(w.registrations || []), "me"] }
+            : w
+        ));
         alert("Spot reserved! Check your dashboard.");
         navigate("/dashboard");
       } else {
@@ -153,14 +171,21 @@ export default function WorkshopsPage() {
                 {/* BUTTON */}
                 {(() => {
                   const isFull = !item._id?.startsWith("mw") && (item.registrations?.length||0) >= (item.seats||50);
+                  const isReserved = reserved.has(item._id);
                   return (
                     <button
                       onClick={() => handleReserve(item)}
-                      disabled={enrolling === item._id || isFull}
-                      className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[25px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition disabled:opacity-60 ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
+                      disabled={enrolling === item._id || isFull || isReserved}
+                      className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[25px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
+                        ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
+                        : isFull ? "bg-gray-400 text-white cursor-not-allowed"
+                        : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
                     >
-                      {enrolling === item._id ? "Reserving..." : isFull ? "SOLD OUT" : "RESERVE SPOT"}
-                      {!isFull && <span className="text-[22px]">→</span>}
+                      {enrolling === item._id ? "Reserving..."
+                        : isReserved ? "✓ Reserved"
+                        : isFull ? "SOLD OUT"
+                        : "RESERVE SPOT"}
+                      {!isFull && !isReserved && <span className="text-[22px]">→</span>}
                     </button>
                   );
                 })()}
