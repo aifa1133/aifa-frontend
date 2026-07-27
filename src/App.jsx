@@ -154,8 +154,9 @@ import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
 import CourseSetup from "./pages/CourseSetup";
+import InfluencerDashboard from "./pages/InfluencerDashboard";
 
-const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
+const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll", "/influencer"];
 const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
 
 function ScrollToTop() {
@@ -215,6 +216,7 @@ function AppShell() {
           <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
           <Route path="/courses/:id/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/influencer" element={<InfluencerDashboard />} />
         </Routes>
       </main>
 

@@ -387,40 +387,57 @@ function DashboardHome({ profile, token, onNavigate }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
+  const [upcomingWorkshops, setUpcomingWorkshops] = useState([]);
+  const [certCount, setCertCount] = useState(0);
 
   useEffect(() => {
     const h = { Authorization: `Bearer ${token}` };
     fetch("/api/users/me/stats", { headers: h }).then(r => r.json()).then(setStats).catch(() => {});
     fetch("/api/courses/enrolled", { headers: h }).then(r => r.json()).then(d => { if (Array.isArray(d)) setEnrolledCourses(d); }).catch(() => {});
-    Promise.all([
-      fetch("/api/workshops", { headers: h }).then(r => r.json()),
-      fetch("/api/bootcamps", { headers: h }).then(r => r.json()),
-    ]).then(([ws, bc]) => {
-      const now = Date.now();
-      const wsItems = Array.isArray(ws) ? ws.filter(w => w.isPublished).map(w => ({ ...w, _kind: "Workshop" })) : [];
-      const bcItems = Array.isArray(bc) ? bc.filter(b => b.isPublished).map(b => ({ ...b, _kind: "Bootcamp" })) : [];
-      setUpcoming([...wsItems, ...bcItems].slice(0, 4));
+    fetch("/api/certificates", { headers: h }).then(r => r.json()).then(d => { if (Array.isArray(d)) setCertCount(d.length); }).catch(() => {});
+    fetch("/api/workshops", { headers: h }).then(r => r.json()).then(ws => {
+      if (!Array.isArray(ws)) return;
+      const userId = JSON.parse(localStorage.getItem("aifa_user")||"{}")._id;
+      const myUpcoming = ws.filter(w =>
+        w.isPublished &&
+        w.registrations?.some(r => String(r.user||r) === String(userId)) &&
+        new Date(w.scheduledAt) > new Date()
+      );
+      setUpcomingWorkshops(myUpcoming.slice(0, 3));
     }).catch(() => {});
   }, [token]);
 
+  const fmtDateBadge = d => {
+    try {
+      const dt = new Date(d);
+      const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dt.getMonth()];
+      const h = dt.getHours();
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${String(dt.getDate()).padStart(2,"0")}-${mon}-${dt.getFullYear()} | ${h12} ${ampm}`;
+    } catch { return "—"; }
+  };
+
+  const coursesEnrolled   = stats?.enrolledCourses   ?? profile?.enrolledCourses?.length   ?? 0;
+  const workshopsAttended = stats?.enrolledWorkshops  ?? profile?.enrolledWorkshops?.length ?? 0;
+
   const statCards = [
-    { icon: "🎓", label: "Courses Enrolled",   value: stats?.enrolledCourses  ?? profile?.enrolledCourses?.length  ?? 0 },
-    { icon: "✅", label: "Completed",           value: stats?.completedCourses ?? 0 },
-    { icon: "🏕️", label: "Workshops Attended",  value: stats?.enrolledWorkshops?? profile?.enrolledWorkshops?.length?? 0 },
+    { icon: "video",    label: "Courses Enrolled",   value: coursesEnrolled,   color: "text-blue-400",   bg: "bg-blue-500/10"   },
+    { icon: "cert",     label: "Certificates Earned", value: certCount,         color: "text-[#C7E36B]",  bg: "bg-[#C7E36B]/10"  },
+    { icon: "workshop", label: "Workshops Attended",  value: workshopsAttended, color: "text-purple-400", bg: "bg-purple-500/10" },
   ];
 
   return (
     <div className="p-6 space-y-6">
-      {/* STATS */}
+      {/* 3 STAT CARDS */}
       <div className="grid grid-cols-3 gap-4">
         {statCards.map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
-            <span className="text-3xl">{s.icon}</span>
-            <div>
-              <p className="text-2xl font-bold text-white">{s.value}</p>
-              <p className="text-xs text-gray-400">{s.label}</p>
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+              <Ic name={s.icon} size={18} className={s.color}/>
             </div>
+            <p className="text-2xl font-black text-white">{s.value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
@@ -428,8 +445,8 @@ function DashboardHome({ profile, token, onNavigate }) {
       {/* CONTINUE LEARNING */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-white">Continue Learning</h2>
-          <button onClick={() => onNavigate("video-courses")} className="text-xs text-[#C7E36B] hover:underline">View My Courses →</button>
+          <h2 className="text-base font-bold text-white">Continue Learning</h2>
+          <button onClick={() => onNavigate("video-courses")} className="text-xs text-[#C7E36B] hover:underline">View My Courses &gt;</button>
         </div>
         {enrolledCourses.length === 0 ? (
           <div className="bg-white/5 border border-dashed border-white/10 rounded-xl p-8 text-center">
@@ -438,63 +455,66 @@ function DashboardHome({ profile, token, onNavigate }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {enrolledCourses.slice(0, 3).map((c, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#C7E36B]/30 transition-all">
-                <div className="relative h-32">
-                  <img src={c.image || `/courses/v${(i % 6) + 1}.png`} alt={c.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-semibold text-white mb-2 leading-tight">{c.title}</h3>
-                  <div className="w-full bg-white/10 rounded-full h-1.5 mb-1">
-                    <div className="bg-[#7C3AED] h-1.5 rounded-full" style={{ width: `${c.percentComplete || 0}%` }} />
+            {enrolledCourses.slice(0, 3).map((c, i) => {
+              const pct = c.percentComplete || 0;
+              const lessons = c.totalLessons || c.lessons?.length || 0;
+              const done    = Math.round((pct/100)*lessons);
+              return (
+                <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#C7E36B]/30 transition-all">
+                  <div className="relative h-28">
+                    {c.image ? <img src={c.image} alt={c.title} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-purple-900/60 to-blue-900/40"/>}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"/>
                   </div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] text-gray-400">{c.percentComplete || 0}% completed</span>
-                    <span className="text-[10px] text-gray-400">{c.duration}</span>
+                  <div className="p-3">
+                    <h3 className="text-sm font-semibold text-white mb-2 line-clamp-1">{c.title}</h3>
+                    <div className="w-full bg-white/10 rounded-full h-1.5 mb-1.5">
+                      <div className="bg-[#C7E36B] h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] text-gray-400">{pct}% complete</span>
+                      {lessons > 0 && <span className="text-[10px] text-gray-400">{done}/{lessons} lessons</span>}
+                    </div>
+                    <button onClick={() => navigate(`/courses/${c._id}/watch`)}
+                      className="w-full bg-[#C7E36B] hover:bg-[#d4f070] text-black text-xs font-bold py-2 rounded-lg transition-all">
+                      Continue
+                    </button>
                   </div>
-                  <button onClick={() => navigate(`/courses/${c._id}/watch`)} className="w-full bg-[#7C3AED] hover:bg-purple-700 text-white text-xs font-semibold py-2 rounded-lg transition-all">
-                    Continue
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* UPCOMING BOOTCAMPS & WORKSHOPS */}
+      {/* UPCOMING WORKSHOPS */}
       <div>
-        <h2 className="text-base font-semibold text-white mb-4">Upcoming Bootcamps & Workshops</h2>
-        {upcoming.length === 0 ? (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-white">Upcoming Workshops</h2>
+          <button onClick={() => onNavigate("workshops")} className="text-xs text-[#C7E36B] hover:underline">View All &gt;</button>
+        </div>
+        {upcomingWorkshops.length === 0 ? (
           <div className="bg-white/5 border border-dashed border-white/10 rounded-xl p-6 text-center">
-            <p className="text-gray-400 text-sm">No upcoming sessions scheduled.</p>
+            <p className="text-gray-400 text-sm">No upcoming registered workshops.</p>
+            <button onClick={() => onNavigate("workshops")} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Browse Workshops</button>
           </div>
         ) : (
           <div className="space-y-3">
-            {upcoming.map((u, i) => {
-              const date = u.scheduledAt || u.startDate;
-              const mode = u.mode || "ONLINE";
-              return (
-                <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-start gap-4">
-                  <div className="w-16 h-16 bg-white/10 rounded-lg shrink-0 overflow-hidden">
-                    <img src={u.image || `/courses/v${(i % 6) + 1}.png`} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${mode === "ONLINE" ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"}`}>{mode}</span>
-                      <span className="text-[10px] text-gray-500">{u._kind}</span>
-                      {date && <span className="text-[10px] text-gray-500">{new Date(date).toLocaleDateString()}</span>}
-                    </div>
-                    <h3 className="text-sm font-semibold text-white">{u.title}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{u.description}</p>
-                  </div>
-                  <button onClick={() => onNavigate(u._kind === "Bootcamp" ? "bootcamp" : "workshops")} className="text-xs border border-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all shrink-0">
-                    View Details
-                  </button>
+            {upcomingWorkshops.map((w, i) => (
+              <div key={i} className="bg-white/5 border border-[#C7E36B]/20 rounded-xl p-4 flex items-start gap-4 hover:border-[#C7E36B]/40 transition-all">
+                <div className="w-14 h-14 rounded-xl bg-white/10 shrink-0 overflow-hidden">
+                  {w.image ? <img src={w.image} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-gradient-to-br from-[#C7E36B]/20 to-transparent flex items-center justify-center"><Ic name="workshop" size={22} className="text-[#C7E36B]"/></div>}
                 </div>
-              );
-            })}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-[#C7E36B] font-bold mb-0.5">📅 {fmtDateBadge(w.scheduledAt)}</p>
+                  <h3 className="text-sm font-semibold text-white line-clamp-1">{w.title}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{w.description}</p>
+                </div>
+                <button onClick={() => w._id && navigate(`/workshops/${w._id}`)}
+                  className="text-xs border border-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all shrink-0">
+                  View Details
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -1481,28 +1501,36 @@ function CertificatesSection({ token, profile }) {
               <p className="text-gray-500 text-xs mt-2">Issued {new Date(viewCert.issuedAt).toLocaleDateString("en",{day:"numeric",month:"long",year:"numeric"})}</p>
               <code className="mt-3 text-[10px] text-[#C7E36B] font-mono bg-[#C7E36B]/10 px-3 py-1 rounded-full">{viewCert.certificateId}</code>
             </div>
-            <div className="p-4 flex gap-2">
-              <button
-                onClick={() => { navigator.clipboard.writeText(viewCert.certificateId); }}
-                className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 transition-all"
-              >
-                📋 Copy ID
-              </button>
-              <button
-                onClick={() => { navigator.share ? navigator.share({ title: viewCert.courseTitle, text: `AIFA Certificate: ${viewCert.certificateId}` }) : navigator.clipboard.writeText(`AIFA Certificate ID: ${viewCert.certificateId}`); }}
-                className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 transition-all"
-              >
-                🔗 Share
-              </button>
-              <button
-                onClick={() => alert("PDF download coming soon!")}
-                className="flex-1 text-xs bg-[#C7E36B] text-black font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all"
-              >
-                ↓ Download
-              </button>
-            </div>
-            <div className="px-4 pb-4">
-              <button onClick={() => setViewCert(null)} className="w-full text-xs border border-white/10 text-gray-500 py-2 rounded-xl hover:bg-white/5">Close</button>
+            {/* Right: Details */}
+            <div className="p-5 space-y-3">
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase font-semibold">Student Name</p>
+                <p className="text-sm font-bold text-white">{profile?.name || "Student"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase font-semibold">Issued Date</p>
+                <p className="text-sm text-white">{new Date(viewCert.issuedAt).toLocaleDateString("en",{day:"numeric",month:"long",year:"numeric"})}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-semibold">Type</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${typeBadge(viewCert.itemType)}`}>{viewCert.itemType}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase font-semibold">Certificate ID</p>
+                <p className="text-xs text-[#C7E36B] font-mono">{viewCert.certificateId}</p>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => navigator.clipboard.writeText(viewCert.certificateId)}
+                  className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 transition-all">
+                  View Certificate
+                </button>
+                <button onClick={() => alert("PDF download coming soon!")}
+                  className="flex-1 text-xs bg-[#C7E36B] text-black font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
+                  Download PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1585,15 +1613,10 @@ function CertificatesSection({ token, profile }) {
                 <div className="border-t border-white/8 pt-3 mb-3">
                   <p className="text-[10px] text-gray-600 font-mono">CERT ID: {c.certificateId}</p>
                 </div>
-                <div className="flex gap-2 mt-auto">
-                  <button onClick={() => { navigator.share ? navigator.share({ title: c.courseTitle, text: `I earned a certificate from AIFA: ${c.courseTitle}` }) : navigator.clipboard.writeText(c.certificateId); }}
-                    className="flex items-center justify-center gap-1 text-xs border border-white/20 text-gray-400 py-1.5 px-3 rounded-lg hover:bg-white/5 transition-all">
-                    <Ic name="share" size={12}/>Share
-                  </button>
-                  <button onClick={() => setViewCert(c)} className="flex-1 text-xs text-[#7C3AED] hover:text-purple-400 font-semibold transition-all text-center">
-                    View →
-                  </button>
-                </div>
+                <button onClick={() => setViewCert(c)}
+                  className="w-full text-xs bg-white/10 hover:bg-white/20 text-white font-semibold py-2 rounded-lg transition-all mt-auto border border-white/10">
+                  View
+                </button>
               </div>
             </div>
           ))}

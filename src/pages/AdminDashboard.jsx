@@ -76,6 +76,7 @@ export default function AdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [adminNotifs, setAdminNotifs] = useState([]);
   const [adminNotifCount, setAdminNotifCount] = useState(0);
 
@@ -113,11 +114,28 @@ export default function AdminDashboard() {
     localStorage.removeItem("aifa_user");
     navigate("/");
   };
+  const confirmLogout = () => { setShowProfileMenu(false); setShowLogoutModal(true); };
 
   const name = profile?.name || user?.name || "Alex Rivera";
 
   return (
     <div className="flex h-screen bg-[#0B0F10] text-white overflow-hidden">
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-xs p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+              <I name="logout" size={22} className="text-red-400"/>
+            </div>
+            <h3 className="text-white font-bold text-base mb-1">Log Out?</h3>
+            <p className="text-xs text-gray-400 mb-6">You will be signed out of your admin account. Any unsaved changes will be lost.</p>
+            <div className="flex gap-3">
+              <button onClick={()=>setShowLogoutModal(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">Cancel</button>
+              <button onClick={handleLogout} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors">Log Out</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* SIDEBAR */}
       <aside className="w-[160px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         <div className="px-4 py-5 border-b border-white/5">
@@ -224,7 +242,7 @@ export default function AdminDashboard() {
                   <div className="py-1">
                     <button onClick={()=>{ setShowProfileMenu(false); setPage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
                     <button onClick={()=>{ setShowProfileMenu(false); setPage("platform-settings"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="settings" size={13}/>Settings</button>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
+                    <button onClick={confirmLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
                   </div>
                 </div>
               )}
@@ -274,10 +292,10 @@ function AdminOverview({ token, onNavigate }) {
   const fmtPct = (n, total) => total ? ((n/total)*100).toFixed(1)+"%" : "0%";
 
   const topCards = [
-    { label:"Total Revenue",     value: fmtRev(stats.revenue??0),     icon:"payments",   color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10", trend:"+12.5%", up:true  },
-    { label:"Total Enrollments", value: stats.enrollments??0,          icon:"enrolments", color:"text-blue-400",  bg:"bg-blue-500/10",  trend:"+8.2%",  up:true  },
-    { label:"Active Users",      value: stats.users??0,                icon:"users",      color:"text-green-400", bg:"bg-green-500/10", trend:"+4.1%",  up:true  },
-    { label:"Courses",           value: (stats.courses??0)+(stats.workshops??0)+(stats.bootcamps??0), icon:"video", color:"text-purple-400", bg:"bg-purple-500/10", trend:"-2.4%", up:false },
+    { label:"Total Revenue",     value: fmtRev(stats.revenue??0),                           icon:"payments",   color:"text-[#C7E36B]",  bg:"bg-[#C7E36B]/10"  },
+    { label:"Total Enrollments", value: (stats.enrollments??0).toLocaleString("en-IN"),      icon:"enrolments", color:"text-blue-400",   bg:"bg-blue-500/10"   },
+    { label:"Active Bootcamps",  value: String(stats.bootcamps??0).padStart(2,"0"),          icon:"bootcamp",   color:"text-purple-400", bg:"bg-purple-500/10" },
+    { label:"Active Workshops",  value: String(stats.workshops??0).padStart(2,"0"),          icon:"workshop",   color:"text-orange-400", bg:"bg-orange-500/10" },
   ];
 
   /* Build chart data from analytics.monthlyData (last 6 points) */
@@ -293,10 +311,9 @@ function AdminOverview({ token, onNavigate }) {
   const topCourses = analytics?.topCourses ?? [];
 
   const quickActions = [
-    { label:"Add Bootcamp",    icon:"bootcamp", bg:"bg-white/5 hover:bg-white/10", page:"bootcamp"      },
-    { label:"Create Workshop", icon:"workshop", bg:"bg-white/5 hover:bg-white/10", page:"workshops"     },
-    { label:"Upload Course",   icon:"upload",   bg:"bg-white/5 hover:bg-white/10", page:"video-courses" },
-    { label:"View Users",      icon:"users",    bg:"bg-white/5 hover:bg-white/10", page:"users"         },
+    { label:"Add Bootcamp",    desc:"Setup a new cohort",    icon:"bootcamp", page:"bootcamp"      },
+    { label:"Upload Course",   desc:"Add video lessons",      icon:"upload",   page:"video-courses" },
+    { label:"Create Workshop", desc:"Schedule live session",  icon:"workshop", page:"workshops"     },
   ];
 
   /* Build activity feed from recent txs + static items */
@@ -323,9 +340,6 @@ function AdminOverview({ token, onNavigate }) {
               <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center`}>
                 <I name={s.icon} size={18} className={s.color} />
               </div>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${s.up ? "text-green-400 bg-green-500/10":"text-red-400 bg-red-500/10"}`}>
-                {s.up?"↑":"↓"} {s.trend}
-              </span>
             </div>
             <p className="text-xs text-gray-400 mb-0.5">{s.label}</p>
             <p className="text-2xl font-black text-white">{s.value}</p>
@@ -400,44 +414,23 @@ function AdminOverview({ token, onNavigate }) {
         </div>
       </div>
 
-      {/* Top Performing Courses + Quick Actions */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4">
-        {/* Top courses */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-white">Top Performing Courses</h3>
-            <button className="text-[10px] text-gray-500 hover:text-white">• • •</button>
-          </div>
-          {topCourses.length === 0 ? (
-            <p className="text-xs text-gray-500 text-center py-6">No course enrollments yet</p>
-          ) : topCourses.map((c,i) => (
-            <div key={i} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                  <I name="video" size={15} className="text-gray-400" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-white line-clamp-1">{c._id}</p>
-                  <p className="text-[10px] text-gray-500">Course · {c.count} students</p>
-                </div>
-              </div>
-              <div className="text-right shrink-0 ml-3">
-                <p className="text-xs font-bold text-white">{fmtRev(c.revenue)}</p>
-                <p className="text-[10px] text-green-400">+ growth</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions grid (2×2) */}
-        <div className="grid grid-cols-2 gap-3 content-start" style={{minWidth:"260px"}}>
-          {quickActions.map(({label,icon,bg,page}) => (
+      {/* Quick Actions — 3 vertical cards */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+        <h3 className="text-sm font-bold text-white mb-3">Quick Actions</h3>
+        <div className="space-y-3">
+          {quickActions.map(({label,desc,icon,page}) => (
             <button key={label} onClick={() => onNavigate(page)}
-              className={`${bg} border border-white/10 rounded-xl p-4 flex flex-col items-center gap-2 text-xs font-semibold text-white hover:border-white/20 transition-all`}>
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                <I name={icon} size={18} className="text-gray-300" />
+              className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#C7E36B]/30 rounded-xl px-4 py-3 transition-all group">
+              <div className="w-10 h-10 rounded-full bg-[#C7E36B]/10 flex items-center justify-center shrink-0 group-hover:bg-[#C7E36B]/20 transition-colors">
+                <I name={icon} size={18} className="text-[#C7E36B]" />
               </div>
-              <span className="text-center leading-tight">{label}</span>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-semibold text-white">{label}</p>
+                <p className="text-[11px] text-gray-500">{desc}</p>
+              </div>
+              <svg className="w-4 h-4 text-gray-500 group-hover:text-[#C7E36B] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           ))}
         </div>
@@ -3143,143 +3136,191 @@ function UsersAdmin({ token }) {
   const [loading, setLoading] = useState(true);
   const [uSearch, setUSearch] = useState("");
   const [uRole, setURole]     = useState("All");
-  const [uSort, setUSort]     = useState("Newest");
+  const [uStatus, setUStatus] = useState("All");
   const [viewUser, setViewUser] = useState(null);
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") setViewUser(null);
-    };
+    const handleEsc = (e) => { if (e.key === "Escape") setViewUser(null); };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-  const adminId = JSON.parse(localStorage.getItem("aifa_user")||"{}") ._id;
 
   useEffect(() => {
-    fetch("/api/users",{ headers:{ Authorization:`Bearer ${token}` } })
+    fetch("/api/users", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setUsers(d); setLoading(false); }).catch(()=>setLoading(false));
-  },[token]);
+  }, [token]);
 
-  const toggleRole = async u => {
-    const newRole = u.role==="admin"?"student":"admin";
-    await fetch(`/api/users/${u._id}/role`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({role:newRole}) });
-    setUsers(us=>us.map(x=>x._id===u._id?{...x,role:newRole}:x));
+  const toggleActivate = async u => {
+    const newStatus = u.isActive === false;
+    try {
+      await fetch(`/api/users/${u._id}/status`, {
+        method:"PUT",
+        headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`},
+        body: JSON.stringify({ isActive: newStatus }),
+      });
+    } catch(e) {}
+    setUsers(us=>us.map(x=>x._id===u._id?{...x,isActive:newStatus}:x));
+    setViewUser(v=>v?{...v,isActive:newStatus}:null);
   };
 
-  const delUser = async id => {
-    if(String(id)===String(adminId)){ alert("You cannot delete your own admin account."); return; }
-    if(!window.confirm("Delete this user permanently?")) return;
-    await fetch(`/api/users/${id}`,{ method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
-    setUsers(us=>us.filter(x=>x._id!==id));
-    if(viewUser?._id===id) setViewUser(null);
-  };
+  const filtered = users.filter(u => {
+    const q = uSearch.toLowerCase();
+    const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
+    const matchRole   = uRole==="All" || u.role===uRole.toLowerCase();
+    const matchStatus = uStatus==="All" || (uStatus==="Active" ? u.isActive!==false : u.isActive===false);
+    return matchSearch && matchRole && matchStatus;
+  }).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
 
-  const filtered = users
-    .filter(u => {
-      const q = uSearch.toLowerCase();
-      const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
-      const matchRole   = uRole==="All" || u.role===uRole.toLowerCase();
-      return matchSearch && matchRole;
-    })
-    .sort((a,b) => {
-      if(uSort==="Name A-Z") return (a.name||"").localeCompare(b.name||"");
-      if(uSort==="Oldest")   return new Date(a.createdAt)-new Date(b.createdAt);
-      return new Date(b.createdAt)-new Date(a.createdAt); // Newest
-    });
+  const totalUsers    = users.length;
+  const activeUsers   = users.filter(u=>u.isActive!==false).length;
+  const inactiveUsers = users.filter(u=>u.isActive===false).length;
+
+  const ROLE_TABS = ["All","Student","Instructor"];
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-5">
       {/* User Detail Modal */}
       {viewUser && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setViewUser(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-[#C7E36B] text-black font-black text-lg flex items-center justify-center">{(viewUser.name||"U")[0].toUpperCase()}</div>
-              <div className="flex-1">
-                <p className="text-white font-bold">{viewUser.name}</p>
-                <p className="text-xs text-gray-400">{viewUser.email}</p>
-              </div>
-              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${viewUser.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{viewUser.role}</span>
-              <button onClick={()=>setViewUser(null)} className="text-gray-400 hover:text-white ml-2">✕</button>
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h3 className="text-sm font-bold text-white">User Details</h3>
+              <button onClick={()=>setViewUser(null)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
             </div>
-            <div className="space-y-3 text-xs">
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-1">JOINED</p>
-                <p className="text-white">{new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</p>
+            <div className="p-5 space-y-4">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 rounded-full bg-[#C7E36B] text-black font-black text-2xl flex items-center justify-center">
+                  {(viewUser.name||"U")[0].toUpperCase()}
+                </div>
+                <p className="text-white font-bold text-base">{viewUser.name}</p>
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${viewUser.isActive!==false?"bg-[#0B5F2A] text-[#C7E36B]":"bg-white/10 text-gray-400"}`}>
+                  {viewUser.isActive!==false?"Active":"Inactive"}
+                </span>
               </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-2">ENROLLED COURSES ({viewUser.enrolledCourses?.length||0})</p>
-                {viewUser.enrolledCourses?.length > 0
-                  ? viewUser.enrolledCourses.map((c,i)=><p key={i} className="text-white py-0.5">📹 {c?.title||String(c).slice(-8)}</p>)
-                  : <p className="text-gray-600">None</p>}
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                  <span className="text-gray-400">Email</span>
+                  <span className="text-white font-semibold truncate ml-3 max-w-[180px]">{viewUser.email}</span>
+                </div>
+                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                  <span className="text-gray-400">Phone</span>
+                  <span className="text-white font-semibold">{viewUser.phone||"—"}</span>
+                </div>
+                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                  <span className="text-gray-400">Joined</span>
+                  <span className="text-white font-semibold">{new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
+                </div>
+                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                  <span className="text-gray-400">Role</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${viewUser.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":viewUser.role==="instructor"?"bg-gray-500/20 text-gray-300":"bg-[#0B5F2A] text-[#C7E36B]"}`}>
+                    {viewUser.role||"student"}
+                  </span>
+                </div>
               </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-2">ENROLLED WORKSHOPS ({viewUser.enrolledWorkshops?.length||0})</p>
-                {viewUser.enrolledWorkshops?.length > 0
-                  ? viewUser.enrolledWorkshops.map((w,i)=><p key={i} className="text-white py-0.5">🎓 {w?.title||String(w).slice(-8)}</p>)
-                  : <p className="text-gray-600">None</p>}
-              </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-2">ENROLLED BOOTCAMPS ({viewUser.enrolledBootcamps?.length||0})</p>
-                {viewUser.enrolledBootcamps?.length > 0
-                  ? viewUser.enrolledBootcamps.map((b,i)=><p key={i} className="text-white py-0.5">🚀 {b?.title||String(b).slice(-8)}</p>)
-                  : <p className="text-gray-600">None</p>}
-              </div>
+            </div>
+            <div className="p-4 border-t border-white/10">
+              {viewUser.isActive!==false ? (
+                <button onClick={()=>toggleActivate(viewUser)}
+                  className="w-full py-2.5 rounded-xl bg-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/30 transition-colors border border-red-500/20">
+                  DEACTIVATE
+                </button>
+              ) : (
+                <button onClick={()=>toggleActivate(viewUser)}
+                  className="w-full py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4f070] transition-colors">
+                  ACTIVATE STUDENT
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-5">
-        <div><h1 className="text-xl font-bold text-white">Users</h1><p className="text-xs text-gray-400">Manage platform users and roles · {users.length} total</p></div>
+      <div>
+        <h1 className="text-xl font-bold text-white">Users</h1>
+        <p className="text-xs text-gray-400">Manage platform users and roles</p>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <input value={uSearch} onChange={e=>setUSearch(e.target.value)} placeholder="Search by name or email..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
-          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+      {/* 3 stat cards */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label:"Total Users",    value:totalUsers,    color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10" },
+          { label:"Active Users",   value:activeUsers,   color:"text-green-400", bg:"bg-green-500/10"  },
+          { label:"Inactive Users", value:inactiveUsers, color:"text-gray-400",  bg:"bg-white/10"      },
+        ].map(s=>(
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+              <I name="users" size={18} className={s.color}/>
+            </div>
+            <p className="text-xs text-gray-400 mb-0.5">{s.label}</p>
+            <p className="text-2xl font-black text-white">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Search + Status + Role tabs */}
+      <div className="space-y-3">
+        <div className="flex gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <input value={uSearch} onChange={e=>setUSearch(e.target.value)} placeholder="Search Users..."
+              className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+            <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+          </div>
+          <select value={uStatus} onChange={e=>setUStatus(e.target.value)}
+            className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+            {["All","Active","Inactive"].map(o=><option key={o}>{o}</option>)}
+          </select>
         </div>
-        <select value={uRole} onChange={e=>setURole(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-          {["All","Student","Admin"].map(o=><option key={o}>{o}</option>)}
-        </select>
-        <select value={uSort} onChange={e=>setUSort(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-          {["Newest","Oldest","Name A-Z"].map(o=><option key={o}>{o}</option>)}
-        </select>
+        <div className="flex gap-1">
+          {ROLE_TABS.map(tab=>(
+            <button key={tab} onClick={()=>setURole(tab)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${uRole===tab?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10"}`}>
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Table */}
       {loading ? <AdminLoader label="Loading Users" /> : (
         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           <table className="w-full">
             <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-              {["Name","Email","Role","Enrolled","Joined","Actions"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
+              {["USERS","NUMBER","ROLE","STATUS","ACTIONS"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
             </tr></thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.length===0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No users match your search</td></tr>}
+              {filtered.length===0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No users match your search</td></tr>}
               {filtered.map(u=>(
                 <tr key={u._id} className="hover:bg-white/5 transition-all">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(u.name||"U")[0].toUpperCase()}</div>
-                      <span className="text-sm text-white font-semibold">{u.name}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center shrink-0">{(u.name||"U")[0].toUpperCase()}</div>
+                      <div>
+                        <p className="text-sm text-white font-semibold">{u.name}</p>
+                        <p className="text-[11px] text-gray-400">{u.email}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{u.email}</td>
-                  <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{u.role}</span></td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{(u.enrolledCourses?.length||0)+(u.enrolledWorkshops?.length||0)+(u.enrolledBootcamps?.length||0)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{new Date(u.createdAt||Date.now()).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-sm text-gray-400">{u.phone||"—"}</td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button onClick={()=>setViewUser(u)} className="text-gray-400 hover:text-[#C7E36B]"><I name="eye" size={14}/></button>
-                      <button onClick={()=>toggleRole(u)} className="text-[10px] border border-white/20 text-gray-300 px-2 py-1 rounded hover:bg-white/10">→ {u.role==="admin"?"Student":"Admin"}</button>
-                      <button onClick={()=>delUser(u._id)} className={`text-[10px] border px-2 py-1 rounded ${String(u._id)===String(adminId)?"border-gray-700 text-gray-700 cursor-not-allowed":"border-red-500/30 text-red-400 hover:bg-red-500/10"}`} disabled={String(u._id)===String(adminId)}><I name="trash" size={11}/></button>
-                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full capitalize ${u.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":u.role==="instructor"?"bg-gray-500/20 text-gray-300":"bg-[#0B5F2A] text-[#C7E36B]"}`}>
+                      {u.role||"Student"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.isActive!==false?"bg-amber-500/10 text-amber-400":"bg-white/5 text-gray-500"}`}>
+                      {u.isActive!==false?"Active":"Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button onClick={()=>setViewUser(u)} className="text-xs font-semibold text-[#C7E36B] hover:underline">
+                      View Details
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {!loading&&<p className="text-xs text-gray-500 px-4 py-2">Showing {filtered.length} of {users.length} users</p>}
+          {!loading && <p className="text-xs text-gray-500 px-4 py-2">Showing {filtered.length} of {users.length} users</p>}
         </div>
       )}
     </div>
@@ -3365,71 +3406,194 @@ function EnrolmentsAdmin({ token }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
+  const [selEnrollment, setSelEnrollment] = useState(null);
+  const [ePage, setEPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === "Escape") setSelEnrollment(null); };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   useEffect(() => {
     fetch("/api/admin/enrollments", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setEnrollments(d); setLoading(false); }).catch(()=>setLoading(false));
   }, [token]);
 
+  const typeBadge = t => t==="bootcamp"?"bg-purple-500/20 text-purple-400":t==="workshop"?"bg-green-500/20 text-green-400":"bg-blue-500/20 text-blue-400";
+  const typeIcon  = t => t==="bootcamp"?"bootcamp":t==="workshop"?"workshop":"video";
+
   const filtered = enrollments.filter(e => {
-    const matchSearch = (e.user?.name||"").toLowerCase().includes(search.toLowerCase()) || (e.item||"").toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "All" || e.type === typeFilter;
+    const q = search.toLowerCase();
+    const matchSearch = !q || (e.user?.name||"").toLowerCase().includes(q) || (e.user?.email||"").toLowerCase().includes(q) || (e.item||"").toLowerCase().includes(q);
+    const matchType = typeFilter==="All" || e.type===typeFilter.toLowerCase().replace(" ","_").replace(" course","");
     return matchSearch && matchType;
   });
 
-  const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
+  const totalAmount  = enrollments.reduce((s,e)=>s+(e.price||0),0);
+  const totalPages   = Math.ceil(filtered.length/PAGE_SIZE);
+  const paginated    = filtered.slice((ePage-1)*PAGE_SIZE, ePage*PAGE_SIZE);
+
+  const fmtInvDate = d => { try { return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}); } catch{return "—";} };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div><h1 className="text-xl font-bold text-white">Enrolments</h1><p className="text-xs text-gray-400">All student enrollments · {enrollments.length} total</p></div>
+    <div className="p-6 space-y-5">
+      {/* Enrollment Detail Modal */}
+      {selEnrollment && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setSelEnrollment(null)}>
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div>
+                <h3 className="text-sm font-bold text-white">Enrollment Details</h3>
+                <p className="text-[11px] text-gray-500">Payment ID: #{(selEnrollment._id||selEnrollment.paymentId||"—").toString().slice(-12).toUpperCase()}</p>
+              </div>
+              <button onClick={()=>setSelEnrollment(null)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
+            </div>
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* Student Info */}
+              <div className="bg-white/5 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Student Information</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#C7E36B] text-black font-black text-base flex items-center justify-center shrink-0">
+                    {(selEnrollment.user?.name||"U")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{selEnrollment.user?.name||"—"}</p>
+                    <p className="text-xs text-gray-400">{selEnrollment.user?.email||"—"}</p>
+                    <p className="text-xs text-gray-500">{selEnrollment.user?.phone||"No phone"}</p>
+                  </div>
+                </div>
+              </div>
+              {/* Purchase Details */}
+              <div className="bg-white/5 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Purchase Details</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0">
+                    <I name={typeIcon(selEnrollment.type)} size={18} className="text-[#C7E36B]"/>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-white">{selEnrollment.item||"—"}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-full ${typeBadge(selEnrollment.type)}`}>{selEnrollment.type}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Enrolled: {fmtInvDate(selEnrollment.enrolledAt)}</p>
+                  </div>
+                </div>
+              </div>
+              {/* Order Summary */}
+              <div className="bg-white/5 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Order Summary</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">Total Amount</span>
+                  <span className="text-sm font-bold text-white">{selEnrollment.price ? `₹${selEnrollment.price.toLocaleString("en-IN")}` : "—"}</span>
+                </div>
+              </div>
+              {/* Invoice */}
+              <div className="bg-white/5 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Invoice</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between"><span className="text-gray-400">Invoice #</span><span className="text-white font-semibold">INV-{(selEnrollment._id||"").toString().slice(-8).toUpperCase()}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Date</span><span className="text-white">{fmtInvDate(selEnrollment.enrolledAt)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Amount</span><span className="text-white font-bold">{selEnrollment.price ? `₹${selEnrollment.price.toLocaleString("en-IN")}` : "Free"}</span></div>
+                </div>
+                <button className="mt-3 w-full py-2 rounded-lg bg-[#C7E36B]/10 border border-[#C7E36B]/20 text-[#C7E36B] text-xs font-semibold hover:bg-[#C7E36B]/20 transition-colors">
+                  Download Invoice
+                </button>
+              </div>
+            </div>
+            <div className="p-4 border-t border-white/10">
+              <button onClick={()=>setSelEnrollment(null)} className="w-full py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h1 className="text-xl font-bold text-white">Enrolments</h1>
+        <p className="text-xs text-gray-400">All student enrollments</p>
       </div>
-      <div className="grid grid-cols-3 gap-4 mb-5">
-        {[["Total Enrolments", enrollments.length, "enrolments"],["Course Enrolments", enrollments.filter(e=>e.type==="course").length,"video"],["Bootcamp Enrolments",enrollments.filter(e=>e.type==="bootcamp").length,"bootcamp"]].map(([l,v,ic])=>(
-          <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0"><I name={ic} size={20} className="text-[#C7E36B]"/></div>
-            <div><p className="text-2xl font-bold text-white">{v}</p><p className="text-xs text-gray-400">{l}</p></div>
+
+      {/* 5 stat cards */}
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        {[
+          { label:"Total Enrollments",       value: enrollments.length,                                    icon:"enrolments", color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10"  },
+          { label:"Bootcamp Enrollments",    value: enrollments.filter(e=>e.type==="bootcamp").length,     icon:"bootcamp",   color:"text-purple-400", bg:"bg-purple-500/10" },
+          { label:"Video Course Enrollments",value: enrollments.filter(e=>e.type==="course").length,       icon:"video",      color:"text-blue-400",   bg:"bg-blue-500/10"   },
+          { label:"Workshop Enrollments",    value: enrollments.filter(e=>e.type==="workshop").length,     icon:"workshop",   color:"text-green-400",  bg:"bg-green-500/10"  },
+          { label:"Total Amount",            value: `₹${totalAmount.toLocaleString("en-IN")}`,            icon:"payments",   color:"text-[#C7E36B]",  bg:"bg-[#C7E36B]/10"  },
+        ].map(s=>(
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+              <I name={s.icon} size={18} className={s.color}/>
+            </div>
+            <p className="text-xs text-gray-400 mb-0.5 leading-snug">{s.label}</p>
+            <p className="text-xl font-black text-white">{s.value}</p>
           </div>
         ))}
       </div>
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-xs">
-          <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by student or program..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+
+      {/* Search + Type filter */}
+      <div className="flex gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <input type="text" value={search} onChange={e=>{ setSearch(e.target.value); setEPage(1); }} placeholder="Search by student or program..."
+            className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
           <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
         </div>
-        <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+        <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setEPage(1); }}
+          className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
           <option value="All">All Types</option>
-          <option value="course">Course</option>
-          <option value="workshop">Workshop</option>
           <option value="bootcamp">Bootcamp</option>
+          <option value="course">Video Course</option>
+          <option value="workshop">Workshop</option>
         </select>
       </div>
+
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
         <table className="w-full">
           <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-            {["Student","Program","Type","Enrolled On","Amount"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
+            {["STUDENT","PROGRAM","TYPE","AMOUNT","DATE","ACTIONS"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
           </tr></thead>
           <tbody className="divide-y divide-white/5">
-            {loading ? <tr><td colSpan={5}><AdminLoader /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No enrollments found</td></tr>
-              : filtered.map((e,i) => (
+            {loading ? <tr><td colSpan={6}><AdminLoader /></td></tr>
+              : paginated.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No enrollments found</td></tr>
+              : paginated.map((e,i) => (
               <tr key={i} className="hover:bg-white/5 transition-all">
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(e.user?.name||"U")[0]}</div>
-                    <div><p className="text-xs font-semibold text-white">{e.user?.name||"—"}</p><p className="text-[10px] text-gray-500">{e.user?.email||""}</p></div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center shrink-0">{(e.user?.name||"U")[0].toUpperCase()}</div>
+                    <div>
+                      <p className="text-xs font-semibold text-white">{e.user?.name||"—"}</p>
+                      <p className="text-[10px] text-gray-500">{e.user?.email||""}</p>
+                    </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-300 max-w-[200px] truncate">{e.item||"—"}</td>
-                <td className="px-4 py-3"><span className={`text-[10px] font-bold capitalize px-2 py-1 rounded-full ${typeBadge(e.type)}`}>{e.type}</span></td>
-                <td className="px-4 py-3 text-sm text-gray-400">{new Date(e.enrolledAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-sm font-bold text-white">{e.price ? `₹${e.price}` : "—"}</td>
+                <td className="px-4 py-3 text-sm text-gray-300 max-w-[200px]"><p className="truncate">{e.item||"—"}</p></td>
+                <td className="px-4 py-3"><span className={`text-[10px] font-bold capitalize px-2 py-1 rounded-full ${typeBadge(e.type)}`}>{e.type==="course"?"Video Course":e.type}</span></td>
+                <td className="px-4 py-3 text-sm font-bold text-white">{e.price ? `₹${e.price.toLocaleString("en-IN")}` : "—"}</td>
+                <td className="px-4 py-3 text-sm text-gray-400">{fmtInvDate(e.enrolledAt)}</td>
+                <td className="px-4 py-3">
+                  <button onClick={()=>setSelEnrollment(e)} className="text-xs font-semibold text-[#C7E36B] hover:underline">View</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-gray-500 mt-3">Showing {filtered.length} of {enrollments.length} enrollments</p>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>Showing {(ePage-1)*PAGE_SIZE+1}–{Math.min(ePage*PAGE_SIZE,filtered.length)} of {filtered.length}</span>
+          <div className="flex gap-1">
+            <button disabled={ePage===1} onClick={()=>setEPage(p=>p-1)} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">← Prev</button>
+            {Array.from({length:totalPages},(_, i)=>i+1).map(p=>(
+              <button key={p} onClick={()=>setEPage(p)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${ePage===p?"bg-[#C7E36B] text-black":"bg-white/5 hover:bg-white/10 text-gray-400"}`}>{p}</button>
+            ))}
+            <button disabled={ePage===totalPages} onClick={()=>setEPage(p=>p+1)} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">Next →</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4849,8 +5013,11 @@ function Placeholder({ title }) {
 
 /* ── ADMIN PROFILE ── */
 function AdminProfile({ token, profile, onUpdated }) {
+  const [subPage, setSubPage]     = useState("profile");
   const [editing, setEditing]     = useState(false);
   const [name, setName]           = useState(profile?.name || "");
+  const [email, setEmail]         = useState(profile?.email || "");
+  const [phone, setPhone]         = useState(profile?.phone || "");
   const [saving, setSaving]       = useState(false);
   const [msg, setMsg]             = useState("");
   const [current, setCurrent]     = useState("");
@@ -4860,8 +5027,6 @@ function AdminProfile({ token, profile, onUpdated }) {
   const [pwdSaving, setPwdSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
-
-  const memberId = `AIFA-ADMIN-${String(profile?._id || "00001").slice(-5).toUpperCase()}`;
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -4879,7 +5044,7 @@ function AdminProfile({ token, profile, onUpdated }) {
 
   const handleSave = async () => {
     setSaving(true); setMsg("");
-    const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ name }) });
+    const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ name, phone }) });
     const data = await res.json();
     if (res.ok) { onUpdated(data); localStorage.setItem("aifa_user", JSON.stringify({ name:data.name, _id:data._id, role:data.role })); setMsg("Saved!"); setEditing(false); }
     else setMsg(data.message || "Failed.");
@@ -4898,62 +5063,103 @@ function AdminProfile({ token, profile, onUpdated }) {
     setPwdSaving(false);
   };
 
+  const startEdit = () => { setName(profile?.name||""); setEmail(profile?.email||""); setPhone(profile?.phone||""); setMsg(""); setEditing(true); };
+
   return (
-    <div className="p-6 max-w-2xl space-y-5">
-      <h1 className="text-xl font-bold text-white">Admin Profile</h1>
+    <div className="p-6 max-w-xl mx-auto space-y-5">
+      {/* Sub-page tabs */}
+      <div className="flex gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+        {[["profile","My Profile"],["settings","Settings"]].map(([key,label])=>(
+          <button key={key} onClick={()=>{ setSubPage(key); setEditing(false); setMsg(""); setPwdMsg(""); }}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${subPage===key?"bg-[#C7E36B] text-black":"text-gray-400 hover:text-white"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {/* Identity card */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-        <div className="flex items-center gap-4 mb-5">
-          <div className="relative">
-            <div className="w-14 h-14 rounded-full overflow-hidden">
-              {profile?.profilePicture
-                ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-                : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold">{(profile?.name||"A")[0]}</span>
-              }
-            </div>
-            {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
-            <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all" title="Change photo">
-              <I name="edit" size={10} className="text-black" />
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-          </div>
+      {subPage === "profile" && (
+        <>
           <div>
-            <p className="text-sm font-bold text-white">{profile?.name}</p>
-            <p className="text-xs text-gray-400">{profile?.email}</p>
-            <span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full mt-1 inline-block">Super Admin</span>
+            <h1 className="text-xl font-bold text-white">My Profile</h1>
+            <p className="text-xs text-gray-400">Manage your personal information</p>
           </div>
-        </div>
-        <div className="flex gap-6 mb-4 text-xs text-gray-400">
-          <div><p className="text-[9px] text-gray-600 font-semibold uppercase mb-0.5">Member ID</p><p className="text-white font-semibold">{memberId}</p></div>
-          <div><p className="text-[9px] text-gray-600 font-semibold uppercase mb-0.5">Member Since</p><p className="text-white font-semibold">{new Date(profile?.createdAt||Date.now()).toLocaleDateString("en-US",{year:"numeric",month:"long"})}</p></div>
-          <div><p className="text-[9px] text-gray-600 font-semibold uppercase mb-0.5">Status</p><span className="flex items-center gap-1 text-green-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-green-400"/>Active</span></div>
-        </div>
-        {editing ? (
-          <div className="space-y-3">
-            <Fld label="DISPLAY NAME" value={name} onChange={setName} />
-            {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
-            <div className="flex gap-2">
-              <button onClick={()=>setEditing(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save"}</button>
+
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full overflow-hidden">
+                  {profile?.profilePicture
+                    ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                    : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-2xl font-black">{(profile?.name||"A")[0]}</span>
+                  }
+                </div>
+                {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
+                {editing && (
+                  <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                    className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all shadow-lg" title="Change photo">
+                    <I name="edit" size={12} className="text-black" />
+                  </button>
+                )}
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </div>
+              {editing && <button onClick={() => fileRef.current?.click()} className="text-xs text-[#C7E36B] underline">Change Picture</button>}
+            </div>
+
+            {editing ? (
+              /* Edit mode */
+              <div className="space-y-3">
+                <Fld label="FULL NAME" value={name} onChange={setName} />
+                <Fld label="EMAIL ADDRESS" value={email} onChange={setEmail} type="email" />
+                <Fld label="PHONE NUMBER" value={phone} onChange={setPhone} placeholder="+91 XXXXX XXXXX" />
+                <div className="bg-white/5 rounded-lg p-3">
+                  <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Role</p>
+                  <span className="text-xs font-bold text-[#C7E36B] bg-[#C7E36B]/10 px-2 py-0.5 rounded-full">Super Admin</span>
+                </div>
+                {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
+                <div className="flex gap-3 pt-2">
+                  <button onClick={()=>setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/20 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors">Cancel</button>
+                  <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4f070] disabled:opacity-60 transition-colors">{saving?"Saving...":"Save Changes"}</button>
+                </div>
+              </div>
+            ) : (
+              /* View mode */
+              <div className="space-y-3">
+                {[["Full Name",profile?.name||"—"],["Email Address",profile?.email||"—"],["Phone Number",profile?.phone||"Not set"],["Role","Super Admin"]].map(([label,value])=>(
+                  <div key={label} className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3">
+                    <span className="text-xs text-gray-400">{label}</span>
+                    <span className={`text-xs font-semibold ${label==="Role"?"text-[#C7E36B]":"text-white"}`}>{value}</span>
+                  </div>
+                ))}
+                <button onClick={startEdit} className="w-full mt-2 py-2.5 rounded-xl border border-white/20 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                  <I name="edit" size={14}/>Edit Profile
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {subPage === "settings" && (
+        <>
+          <div>
+            <h1 className="text-xl font-bold text-white">Settings</h1>
+            <p className="text-xs text-gray-400">Manage your account security</p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+            <h3 className="text-sm font-bold text-white mb-1">Change Password</h3>
+            <p className="text-xs text-gray-500 mb-5">Update your password to keep your account secure</p>
+            <div className="space-y-3">
+              <Fld label="CURRENT PASSWORD" value={current} onChange={setCurrent} type="password" placeholder="••••••••" />
+              <Fld label="NEW PASSWORD" value={newPwd} onChange={setNewPwd} type="password" placeholder="••••••••" />
+              <Fld label="CONFIRM NEW PASSWORD" value={confirm} onChange={setConfirm} type="password" placeholder="••••••••" />
+              {pwdMsg && <p className={`text-xs ${pwdMsg.includes("updated")?"text-green-400":"text-red-400"}`}>{pwdMsg}</p>}
+              <button onClick={handlePwd} disabled={pwdSaving} className="w-full py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4f070] disabled:opacity-60 transition-colors mt-2">{pwdSaving?"Updating...":"Update Password"}</button>
             </div>
           </div>
-        ) : (
-          <button onClick={()=>{ setName(profile?.name||""); setEditing(true); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5"><I name="edit" size={12}/>Edit Name</button>
-        )}
-      </div>
-
-      {/* Change password */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-white mb-4">Change Password</h3>
-        <div className="space-y-3 max-w-sm">
-          <Fld label="CURRENT PASSWORD" value={current} onChange={setCurrent} placeholder="••••••••" />
-          <Fld label="NEW PASSWORD" value={newPwd} onChange={setNewPwd} placeholder="••••••••" />
-          <Fld label="CONFIRM NEW PASSWORD" value={confirm} onChange={setConfirm} placeholder="••••••••" />
-          {pwdMsg && <p className={`text-xs ${pwdMsg.includes("updated")?"text-green-400":"text-red-400"}`}>{pwdMsg}</p>}
-          <button onClick={handlePwd} disabled={pwdSaving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{pwdSaving?"Updating...":"Update Password"}</button>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
