@@ -13,6 +13,25 @@ const MOCK_WORKSHOPS = [
 
 const FALLBACK_IMAGES = ["/courses/v1.png","/courses/v2.png","/courses/v3.png","/courses/v4.png"];
 
+const getStatus = (w) => {
+  if (w.isCancelled) return "Cancelled";
+  if (!w.isPublished) return "Draft";
+  if (!w.scheduledAt) return "Upcoming";
+  const now = Date.now();
+  const start = new Date(w.scheduledAt).getTime();
+  const durMins = (() => { const d = w.duration || ""; const n = parseInt(d); if (!n) return 120; if (d.toLowerCase().includes("hour") || d.toLowerCase().includes("hr")) return n * 60; return n; })();
+  const end = start + durMins * 60000;
+  if (now < start) return "Upcoming";
+  if (now >= start && now <= end) return "Live";
+  return "Completed";
+};
+const STATUS_STYLE = {
+  Live:      "bg-green-500 text-white",
+  Upcoming:  "bg-blue-500/80 text-white",
+  Completed: "bg-gray-500 text-white",
+  Cancelled: "bg-red-500 text-white",
+};
+
 export default function WorkshopsPage() {
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,94 +133,111 @@ export default function WorkshopsPage() {
                 <div className="h-[52px] bg-white/10"/>
               </div>
             ))}
-            {!loading && workshops.map((item, i) => (
-              <div key={item._id || i} id={item._id} className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${highlighted===item._id?"border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]":"border-[#0F1112]"}`}>
-                {/* TOP SECTION */}
-                <div className="flex flex-col md:flex-row gap-[6px] w-full">
-                  {/* IMAGE */}
-                  <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[#1a1e1f]">
-                    <img
-                      src={item.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
-                      alt={item.title}
-                      className="w-full h-full object-cover object-center"
-                      onError={e => { e.target.src = FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]; }}
-                    />
-                  </div>
+            {!loading && workshops.map((item, i) => {
+              const registered = item.registrations?.length || 0;
+              const seats = item.seats || 50;
+              const remaining = seats - registered;
+              const isFull = remaining <= 0;
+              const isMock = item._id?.startsWith("mw");
+              const isReserved = reserved.has(item._id);
+              const sym = item.currency === "USD" ? "$" : "₹";
+              const status = isMock ? null : getStatus(item);
+              const dt = item.scheduledAt ? new Date(item.scheduledAt) : null;
+              const fmtDate = dt ? dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
+              const fmtTime = dt ? dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : null;
+              const timeRange = fmtTime ? (item.endTime ? `${fmtTime} – ${item.endTime}` : fmtTime) : null;
 
-                  {/* RIGHT SIDE */}
-                  <div className="flex-1 flex flex-col gap-[6px]">
-                    {/* TITLE */}
-                    <div className="flex h-[105px] px-[12px] py-[10px] flex-col justify-center items-start gap-[10px] self-stretch rounded-tr-[20px] bg-[#DCDCDC]">
-                      <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[26px] leading-[34px] md:text-[56px] md:leading-[60px] font-black">
-                        {item.title}
-                      </h3>
+              return (
+                <div key={item._id || i} id={item._id} className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${highlighted===item._id?"border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]":"border-[#0F1112]"}`}>
+                  {/* TOP SECTION */}
+                  <div className="flex flex-col md:flex-row gap-[6px] w-full">
+                    {/* IMAGE */}
+                    <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[#1a1e1f]">
+                      <img
+                        src={item.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
+                        alt={item.title}
+                        className="w-full h-full object-cover object-center"
+                        onError={e => { e.target.src = FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]; }}
+                      />
                     </div>
 
-                    {/* INFO BOXES */}
-                    {(() => {
-                      const registered = item.registrations?.length || 0;
-                      const seats = item.seats || 50;
-                      const remaining = seats - registered;
-                      const isFull = remaining <= 0;
-                      const isMock = item._id?.startsWith("mw");
-                      return (
-                        <>
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-[8px]">
-                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⏱ Duration</p>
-                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold uppercase">{item.duration}</p>
-                            </div>
-                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⊞ Pricing</p>
-                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">{item.currency==="USD"?"$":"₹"}{item.price}</p>
-                            </div>
-                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⌨ Mode</p>
-                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold uppercase">{item.mode}</p>
-                            </div>
-                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">🪑 Seats</p>
-                              {isMock ? (
-                                <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">Limited</p>
-                              ) : isFull ? (
-                                <p className="text-red-600 font-[Montserrat] text-[16px] leading-[22px] font-bold">FULL</p>
-                              ) : (
-                                <>
-                                  <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">{remaining} left</p>
-                                  <div className="w-full bg-gray-300 rounded-full h-1 mt-1"><div className="bg-[#2B2D30] h-1 rounded-full" style={{width:`${Math.min(100,(registered/seats)*100)}%`}}/></div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
+                    {/* RIGHT SIDE */}
+                    <div className="flex-1 flex flex-col gap-[6px]">
+                      {/* TITLE + META */}
+                      <div className="px-[12px] py-[10px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[20px] bg-[#DCDCDC] min-h-[105px]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {item.sessionCode && <span className="text-[11px] bg-[#2B2D30] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">{item.sessionCode}</span>}
+                          {status && status !== "Draft" && status !== "Completed" && (
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${STATUS_STYLE[status] || "bg-gray-500 text-white"}`}>
+                              {status === "Live" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>}{status}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[24px] leading-[30px] md:text-[48px] md:leading-[54px] font-black">
+                          {item.title}
+                        </h3>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#6E7072] font-semibold">
+                          {fmtDate && <span>📅 {fmtDate}{timeRange ? ` · ${timeRange}` : ""}</span>}
+                          {item.trainer && <span>👤 {item.trainer}</span>}
+                        </div>
+                      </div>
 
-                {/* BUTTON */}
-                {(() => {
-                  const isFull = !item._id?.startsWith("mw") && (item.registrations?.length||0) >= (item.seats||50);
-                  const isReserved = reserved.has(item._id);
-                  return (
+                      {/* INFO BOXES */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-[6px]">
+                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-[#2B2D30] font-[Montserrat] text-[14px] leading-[20px] font-bold uppercase">{item.duration || "—"}</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⊞ Pricing</p>
+                          <p className="text-[#2B2D30] font-[Montserrat] text-[14px] leading-[20px] font-bold">{sym}{item.price}</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⌨ Mode</p>
+                          <p className="text-[#2B2D30] font-[Montserrat] text-[14px] leading-[20px] font-bold uppercase">{item.mode || "ONLINE"}</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">🪑 Seats</p>
+                          {isMock ? (
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">Limited</p>
+                          ) : isFull ? (
+                            <p className="text-red-600 font-[Montserrat] text-[14px] font-bold">FULL</p>
+                          ) : (
+                            <>
+                              <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">{remaining} left</p>
+                              <div className="w-full bg-gray-300 rounded-full h-1 mt-1"><div className="bg-[#2B2D30] h-1 rounded-full" style={{width:`${Math.min(100,(registered/seats)*100)}%`}}/></div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BOTTOM — Zoom link if reserved, else Reserve button */}
+                  {isReserved && item.zoomLink ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3 bg-green-500/10 border-t-2 border-green-500/20">
+                      <span className="text-green-400 font-bold text-sm font-[Montserrat]">✓ Spot Reserved</span>
+                      <a href={item.zoomLink} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-2 bg-[#D0E46A] text-[#0F1112] font-black text-sm uppercase px-5 py-2 rounded-xl hover:opacity-90 transition font-[Montserrat]">
+                        Join Zoom Meeting →
+                      </a>
+                    </div>
+                  ) : (
                     <button
                       onClick={() => handleReserve(item)}
                       disabled={enrolling === item._id || isFull || isReserved}
-                      className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[25px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
+                      className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
                         ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
                         : isFull ? "bg-gray-400 text-white cursor-not-allowed"
                         : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
                     >
-                      {enrolling === item._id ? "Reserving..."
-                        : isReserved ? "✓ Reserved"
-                        : isFull ? "SOLD OUT"
-                        : "RESERVE SPOT"}
+                      {enrolling === item._id ? "Reserving..." : isReserved ? "✓ Reserved" : isFull ? "SOLD OUT" : "RESERVE SPOT"}
                       {!isFull && !isReserved && <span className="text-[22px]">→</span>}
                     </button>
-                  );
-                })()}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

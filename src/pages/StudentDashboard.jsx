@@ -1155,15 +1155,35 @@ function WorkshopsSection({ token }) {
                   </div>
                   <div className="flex-1 flex flex-col gap-[6px]">
                     {/* TITLE */}
-                    <div className="flex flex-col justify-center px-4 py-3 min-h-[80px] bg-[#DCDCDC] rounded-tr-[20px]">
-                      <h3 className="text-[#2B2D30] font-black text-2xl md:text-3xl leading-tight">{w.title}</h3>
-                      {(w.scheduledAt || w.trainer) && (
-                        <div className="flex gap-3 mt-1 text-[11px] text-gray-600 flex-wrap">
-                          {w.scheduledAt && <span>📅 {new Date(w.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
-                          {w.trainer && <span>👤 {w.trainer}</span>}
+                    {(() => {
+                      const status = isMock ? null : (() => {
+                        if (!w.isPublished) return null;
+                        if (!w.scheduledAt) return "Upcoming";
+                        const now = Date.now(), start = new Date(w.scheduledAt).getTime();
+                        const dur = (() => { const d=w.duration||""; const n=parseInt(d); if(!n) return 120; if(d.toLowerCase().includes("hour")||d.toLowerCase().includes("hr")) return n*60; return n; })();
+                        const end = start + dur*60000;
+                        if (now < start) return "Upcoming";
+                        if (now >= start && now <= end) return "Live";
+                        return "Completed";
+                      })();
+                      const dtStr = w.scheduledAt ? new Date(w.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : null;
+                      const tmStr = w.scheduledAt ? new Date(w.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
+                      const timeDisplay = tmStr ? (w.endTime ? `${tmStr} – ${w.endTime}` : tmStr) : null;
+                      return (
+                        <div className="flex flex-col justify-center px-4 py-3 min-h-[90px] bg-[#DCDCDC] rounded-tr-[20px] gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {w.sessionCode && <span className="text-[10px] bg-[#2B2D30] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">{w.sessionCode}</span>}
+                            {status === "Live" && <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>Live</span>}
+                            {status === "Upcoming" && <span className="text-[10px] bg-blue-500/80 text-white font-bold px-2 py-0.5 rounded-full">Upcoming</span>}
+                          </div>
+                          <h3 className="text-[#2B2D30] font-black text-xl md:text-2xl leading-tight">{w.title}</h3>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-[#6E7072] font-semibold">
+                            {dtStr && <span>📅 {dtStr}{timeDisplay ? ` · ${timeDisplay}` : ""}</span>}
+                            {w.trainer && <span>👤 {w.trainer}</span>}
+                          </div>
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                     {/* INFO BOXES */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-[6px]">
                       <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
@@ -1194,18 +1214,28 @@ function WorkshopsSection({ token }) {
                     </div>
                   </div>
                 </div>
-                {/* BUTTON */}
-                <button
-                  onClick={() => isReserved ? null : handleReserve(w)}
-                  disabled={enrolling === w._id || isFull || isReserved}
-                  className={`flex justify-center items-center gap-1 px-6 py-3 w-full rounded-b-[20px] font-black text-base uppercase transition-all
-                    ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
-                    : isFull ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
-                >
-                  {enrolling === w._id ? "Reserving..." : isReserved ? "✓ Reserved" : isFull ? "SOLD OUT" : "RESERVE SPOT"}
-                  {!isFull && !isReserved && <span className="text-xl">→</span>}
-                </button>
+                {/* BUTTON / ZOOM */}
+                {isReserved && w.zoomLink ? (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3 bg-green-500/10 border-t-2 border-green-500/20">
+                    <span className="text-green-400 font-bold text-sm">✓ Spot Reserved</span>
+                    <a href={w.zoomLink} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-2 bg-[#C7E36B] text-[#0F1112] font-black text-sm uppercase px-5 py-2 rounded-xl hover:opacity-90 transition">
+                      Join Zoom Meeting →
+                    </a>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => isReserved ? null : handleReserve(w)}
+                    disabled={enrolling === w._id || isFull || isReserved}
+                    className={`flex justify-center items-center gap-1 px-6 py-3 w-full rounded-b-[20px] font-black text-base uppercase transition-all
+                      ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
+                      : isFull ? "bg-gray-400 text-white cursor-not-allowed"
+                      : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
+                  >
+                    {enrolling === w._id ? "Reserving..." : isReserved ? "✓ Reserved" : isFull ? "SOLD OUT" : "RESERVE SPOT"}
+                    {!isFull && !isReserved && <span className="text-xl">→</span>}
+                  </button>
+                )}
               </div>
             );
           })}
