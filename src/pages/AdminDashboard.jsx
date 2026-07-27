@@ -1803,9 +1803,12 @@ function WorkshopsAdmin({ token }) {
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
-              <Fld label="Date" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} />
+              <Fld label="Date" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} min={new Date().toISOString().slice(0,10)} />
               <Fld label="Time" type="time" value={cf.time} onChange={v=>setCf({...cf,time:v})} />
-              <Fld label="Timezone" value="IST (GMT+5:30)" onChange={()=>{}} />
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">TIMEZONE</p>
+                <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 select-none">IST (GMT+5:30)</div>
+              </div>
             </div>
           </Sect>
           <div className="flex items-center justify-between">

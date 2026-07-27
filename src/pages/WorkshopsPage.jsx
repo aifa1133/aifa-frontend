@@ -18,6 +18,7 @@ export default function WorkshopsPage() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(null);
   const [reserved, setReserved] = useState(new Set());
+  const [highlighted, setHighlighted] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem("aifa_token");
   const isLoggedIn = !!token;
@@ -30,7 +31,17 @@ export default function WorkshopsPage() {
         else setWorkshops(MOCK_WORKSHOPS);
       })
       .catch(() => { setWorkshops(MOCK_WORKSHOPS); })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        const hash = window.location.hash.slice(1);
+        if (hash) {
+          setHighlighted(hash);
+          setTimeout(() => {
+            const el = document.getElementById(hash);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 300);
+        }
+      });
 
     if (token) {
       fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
@@ -104,7 +115,7 @@ export default function WorkshopsPage() {
               </div>
             ))}
             {!loading && workshops.map((item, i) => (
-              <div key={item._id || i} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112]">
+              <div key={item._id || i} id={item._id} className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${highlighted===item._id?"border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]":"border-[#0F1112]"}`}>
                 {/* TOP SECTION */}
                 <div className="flex flex-col md:flex-row gap-[6px] w-full">
                   {/* IMAGE */}
