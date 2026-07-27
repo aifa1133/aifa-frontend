@@ -11,8 +11,11 @@ const MOCK_WORKSHOPS = [
   { _id: "mw5", title: "AI Product Ad Filmmaking", image: "/courses/v4.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
 ];
 
+const FALLBACK_IMAGES = ["/courses/v1.png","/courses/v2.png","/courses/v3.png","/courses/v4.png"];
+
 export default function WorkshopsPage() {
-  const [workshops, setWorkshops] = useState(MOCK_WORKSHOPS);
+  const [workshops, setWorkshops] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(null);
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("aifa_token");
@@ -20,8 +23,12 @@ export default function WorkshopsPage() {
   useEffect(() => {
     fetch("/api/workshops")
       .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data) && data.length > 0) setWorkshops(data); })
-      .catch(() => {});
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setWorkshops(data);
+        else setWorkshops(MOCK_WORKSHOPS);
+      })
+      .catch(() => { setWorkshops(MOCK_WORKSHOPS); })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleReserve = async (workshop) => {
@@ -64,13 +71,32 @@ export default function WorkshopsPage() {
           </h2>
 
           <div className="flex flex-col gap-[20px]">
-            {workshops.map((item, i) => (
+            {loading && [1,2,3].map(n => (
+              <div key={n} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112] animate-pulse">
+                <div className="flex flex-col md:flex-row gap-[6px] w-full">
+                  <div className="w-full md:w-[266px] h-[200px] bg-white/10 rounded-tl-[20px] shrink-0"/>
+                  <div className="flex-1 flex flex-col gap-[6px]">
+                    <div className="h-[105px] bg-white/10 rounded-tr-[20px]"/>
+                    <div className="grid grid-cols-4 gap-[8px]">
+                      {[1,2,3,4].map(k=><div key={k} className="h-[80px] bg-white/10 rounded-[8px]"/>)}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[52px] bg-white/10"/>
+              </div>
+            ))}
+            {!loading && workshops.map((item, i) => (
               <div key={item._id || i} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112]">
                 {/* TOP SECTION */}
                 <div className="flex flex-col md:flex-row gap-[6px] w-full">
                   {/* IMAGE */}
-                  <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[lightgray]">
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover object-center" />
+                  <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[#1a1e1f]">
+                    <img
+                      src={item.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
+                      alt={item.title}
+                      className="w-full h-full object-cover object-center"
+                      onError={e => { e.target.src = FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]; }}
+                    />
                   </div>
 
                   {/* RIGHT SIDE */}
