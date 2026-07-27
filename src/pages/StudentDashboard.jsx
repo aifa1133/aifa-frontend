@@ -1015,16 +1015,17 @@ const WORKSHOP_DATA = [
   { title: "AI Fantasy World Builder", image: "/courses/v4.png", duration: "35 HOURS", price: "USD 999.00", mode: "ONLINE" },
 ];
 
+const FALLBACK_WS_IMAGES = ["/courses/v1.png","/courses/v2.png","/courses/v3.png","/courses/v4.png"];
+
 function WorkshopsSection({ token }) {
   const [workshops, setWorkshops] = useState(WORKSHOP_DATA);
+  const [loading, setLoading]     = useState(true);
   const [enrolling, setEnrolling] = useState(null);
   const [reserved, setReserved]   = useState(new Set());
   const [detailW, setDetailW]     = useState(null);
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") setDetailW(null);
-    };
+    const handleEsc = (e) => { if (e.key === "Escape") setDetailW(null); };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
@@ -1032,33 +1033,28 @@ function WorkshopsSection({ token }) {
   useEffect(() => {
     fetch("/api/workshops")
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (Array.isArray(d) && d.length > 0) setWorkshops(d); })
-      .catch(() => {});
-    /* Pre-populate reserved from user profile so state persists across navigation */
+      .then(d => { if (Array.isArray(d) && d.length > 0) setWorkshops(d); setLoading(false); })
+      .catch(() => setLoading(false));
     if (token) {
       fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
-        .then(u => {
-          if (u?.enrolledWorkshops?.length > 0) {
-            setReserved(new Set(u.enrolledWorkshops.map(id => String(id))));
-          }
-        })
+        .then(u => { if (u?.enrolledWorkshops?.length > 0) setReserved(new Set(u.enrolledWorkshops.map(id => String(id)))); })
         .catch(() => {});
     }
   }, [token]);
 
   const handleReserve = async (w) => {
     if (!w._id || w._id?.startsWith?.("m")) {
-      setReserved(prev => new Set([...prev, w.title]));
-      setDetailW(null);
-      return;
+      alert("Booking coming soon!"); return;
     }
+    if (reserved.has(w._id)) return;
     setEnrolling(w._id);
     try {
       const res  = await fetch(`/api/workshops/${w._id}/register`, { method:"POST", headers:{ Authorization:`Bearer ${token}` } });
       const data = await res.json();
       if (res.ok || data.message === "Already registered") {
-        setReserved(prev => new Set([...prev, w._id || w.title]));
+        setReserved(prev => new Set([...prev, w._id]));
+        setWorkshops(prev => prev.map(x => x._id===w._id ? {...x, registrations:[...(x.registrations||[]),"me"]} : x));
       } else {
         alert(data.message || "Could not reserve. Try again.");
       }
@@ -1074,13 +1070,29 @@ function WorkshopsSection({ token }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setDetailW(null)}>
           <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="relative">
-              <img src={detailW.image} alt={detailW.title} className="w-full h-44 object-cover" />
+              <img src={detailW.image || FALLBACK_WS_IMAGES[0]} alt={detailW.title} className="w-full h-44 object-cover"
+                onError={e=>{e.target.src=FALLBACK_WS_IMAGES[0];}}/>
               <button onClick={() => setDetailW(null)} className="absolute top-3 right-3 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 text-lg">✕</button>
             </div>
             <div className="p-5 space-y-4">
-              <h2 className="text-lg font-bold text-white">{detailW.title}</h2>
-              <div className="grid grid-cols-3 gap-3">
-                {[["⏱","Duration",detailW.duration],["💰","Price",detailW.price||"USD 999"],["⌨","Mode",detailW.mode||"ONLINE"]].map(([ic,l,v])=>(
+              <div>
+                <h2 className="text-lg font-bold text-white">{detailW.title}</h2>
+                {detailW.description && <p className="text-xs text-gray-400 mt-1">{detailW.description}</p>}
+              </div>
+              {detailW.scheduledAt && (
+                <div className="flex gap-3 text-xs text-gray-400">
+                  <span>📅 {new Date(detailW.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
+                  <span>⏰ {new Date(detailW.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}</span>
+                </div>
+              )}
+              {detailW.trainer && <p className="text-xs text-gray-400">👤 Trainer: <span className="text-white font-semibold">{detailW.trainer}</span></p>}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ["⏱","Duration",detailW.duration||"—"],
+                  ["💰","Price",`${detailW.currency==="USD"?"$":"₹"}${detailW.price||0}`],
+                  ["⌨","Mode",detailW.mode||"ONLINE"],
+                  ["🪑","Seats",(() => { const reg=detailW.registrations?.length||0; const seats=detailW.seats||50; return `${seats-reg} of ${seats} left`; })()],
+                ].map(([ic,l,v])=>(
                   <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
                     <div className="text-xl mb-1">{ic}</div>
                     <p className="text-[10px] text-gray-500 uppercase">{l}</p>
@@ -1088,24 +1100,18 @@ function WorkshopsSection({ token }) {
                   </div>
                 ))}
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2 text-sm text-gray-400">
-                <p>✓ Live sessions with industry experts</p>
-                <p>✓ Hands-on AI filmmaking projects</p>
-                <p>✓ Certificate of completion</p>
-                <p>✓ Session recordings included</p>
-              </div>
-              {reserved.has(detailW._id || detailW.title) ? (
+              {reserved.has(detailW._id) ? (
                 <div className="w-full bg-green-500/10 border border-green-500/30 rounded-xl py-3 text-center">
                   <p className="text-green-400 font-bold text-sm">✓ Spot Reserved!</p>
-                  <p className="text-green-300 text-xs mt-1">Check your email for confirmation details.</p>
+                  {detailW.zoomLink && <a href={detailW.zoomLink} target="_blank" rel="noreferrer" className="text-[#C7E36B] text-xs mt-1 block hover:underline">Join Zoom Meeting →</a>}
                 </div>
               ) : (
                 <button
                   onClick={() => handleReserve(detailW)}
-                  disabled={enrolling === detailW._id}
+                  disabled={enrolling === detailW._id || (detailW.registrations?.length||0) >= (detailW.seats||50)}
                   className="w-full bg-[#C7E36B] text-black font-black text-sm uppercase py-3 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-60"
                 >
-                  {enrolling === detailW._id ? "Reserving..." : "RESERVE SPOT →"}
+                  {enrolling === detailW._id ? "Reserving..." : (detailW.registrations?.length||0) >= (detailW.seats||50) ? "SOLD OUT" : "RESERVE SPOT →"}
                 </button>
               )}
             </div>
@@ -1114,47 +1120,97 @@ function WorkshopsSection({ token }) {
       )}
 
       <h1 className="text-2xl font-black text-white mb-6">AI Filmmaking Workshops</h1>
-      <div className="space-y-4">
-        {workshops.map((w, i) => (
-          <div key={i} className="bg-[#0F1112] border border-white/10 rounded-2xl overflow-hidden">
-            <div className="flex flex-col md:flex-row gap-1.5 cursor-pointer" onClick={() => setDetailW(w)}>
-              <div className="w-full md:w-[240px] h-[160px] shrink-0 overflow-hidden rounded-tl-2xl">
-                <img src={w.image} alt={w.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-              </div>
-              <div className="flex-1 flex flex-col gap-1.5">
-                <div className="bg-[#DCDCDC] rounded-tr-2xl px-4 py-3 flex items-center min-h-[80px]">
-                  <h3 className="text-black font-black text-2xl md:text-3xl leading-tight">{w.title}</h3>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[
-                    { label:"⏱ Duration", value:w.duration },
-                    { label:"⊞ Pricing",  value:w.price || "USD 999.00" },
-                    { label:"⌨ Mode",     value:w.mode || "ONLINE" },
-                  ].map(info => (
-                    <div key={info.label} className="bg-[#DCDCDC] rounded-lg p-3">
-                      <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">{info.label}</p>
-                      <p className="text-sm font-bold text-gray-800">{info.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
+      {loading && [1,2].map(n => (
+        <div key={n} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112] animate-pulse mb-4">
+          <div className="flex flex-col md:flex-row gap-[6px]">
+            <div className="w-full md:w-[240px] h-[160px] bg-white/10 shrink-0"/>
+            <div className="flex-1 flex flex-col gap-[6px]">
+              <div className="h-[80px] bg-white/10 rounded-tr-2xl"/>
+              <div className="grid grid-cols-4 gap-[6px]">{[1,2,3,4].map(k=><div key={k} className="h-[60px] bg-white/10 rounded"/>)}</div>
             </div>
-            {reserved.has(w._id || w.title) ? (
-              <div className="w-full bg-green-500/20 py-3 text-center rounded-b-2xl">
-                <p className="text-green-400 font-bold text-sm">✓ Spot Reserved!</p>
-              </div>
-            ) : (
-              <button
-                onClick={() => handleReserve(w)}
-                disabled={enrolling === w._id}
-                className="w-full bg-[#C7E36B] text-black font-black text-base uppercase py-3 rounded-b-2xl hover:bg-lime-300 transition-all disabled:opacity-60 flex items-center justify-center gap-1"
-              >
-                {enrolling === w._id ? "Reserving..." : "RESERVE SPOT"} <span className="text-xl">→</span>
-              </button>
-            )}
           </div>
-        ))}
-      </div>
+          <div className="h-[48px] bg-white/10"/>
+        </div>
+      ))}
+
+      {!loading && (
+        <div className="flex flex-col gap-[20px]">
+          {workshops.map((w, i) => {
+            const registered = w.registrations?.length || 0;
+            const seats = w.seats || 50;
+            const remaining = seats - registered;
+            const isFull = remaining <= 0;
+            const isMock = !w._id || w._id?.startsWith?.("m");
+            const isReserved = reserved.has(w._id);
+            const sym = w.currency === "USD" ? "$" : "₹";
+            return (
+              <div key={w._id || i} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112]">
+                <div className="flex flex-col md:flex-row gap-[6px] cursor-pointer" onClick={() => setDetailW(w)}>
+                  {/* IMAGE */}
+                  <div className="w-full md:w-[240px] h-[160px] shrink-0 overflow-hidden rounded-tl-[20px] bg-[#1a1e1f]">
+                    <img src={w.image || FALLBACK_WS_IMAGES[i % FALLBACK_WS_IMAGES.length]} alt={w.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      onError={e=>{e.target.src=FALLBACK_WS_IMAGES[i%FALLBACK_WS_IMAGES.length];}}/>
+                  </div>
+                  <div className="flex-1 flex flex-col gap-[6px]">
+                    {/* TITLE */}
+                    <div className="flex flex-col justify-center px-4 py-3 min-h-[80px] bg-[#DCDCDC] rounded-tr-[20px]">
+                      <h3 className="text-[#2B2D30] font-black text-2xl md:text-3xl leading-tight">{w.title}</h3>
+                      {(w.scheduledAt || w.trainer) && (
+                        <div className="flex gap-3 mt-1 text-[11px] text-gray-600 flex-wrap">
+                          {w.scheduledAt && <span>📅 {new Date(w.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
+                          {w.trainer && <span>👤 {w.trainer}</span>}
+                        </div>
+                      )}
+                    </div>
+                    {/* INFO BOXES */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-[6px]">
+                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⏱ Duration</p>
+                        <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.duration || "—"}</p>
+                      </div>
+                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                        <p className="text-[#2B2D30] text-[14px] font-bold">{sym}{w.price || 0}</p>
+                      </div>
+                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⌨ Mode</p>
+                        <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.mode || "ONLINE"}</p>
+                      </div>
+                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">🪑 Seats</p>
+                        {isMock ? (
+                          <p className="text-[#2B2D30] text-[14px] font-bold">Limited</p>
+                        ) : isFull ? (
+                          <p className="text-red-600 text-[14px] font-bold">FULL</p>
+                        ) : (
+                          <>
+                            <p className="text-[#2B2D30] text-[14px] font-bold">{remaining} left</p>
+                            <div className="w-full bg-gray-300 rounded-full h-1 mt-1"><div className="bg-[#2B2D30] h-1 rounded-full" style={{width:`${Math.min(100,(registered/seats)*100)}%`}}/></div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* BUTTON */}
+                <button
+                  onClick={() => isReserved ? null : handleReserve(w)}
+                  disabled={enrolling === w._id || isFull || isReserved}
+                  className={`flex justify-center items-center gap-1 px-6 py-3 w-full rounded-b-[20px] font-black text-base uppercase transition-all
+                    ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
+                    : isFull ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
+                >
+                  {enrolling === w._id ? "Reserving..." : isReserved ? "✓ Reserved" : isFull ? "SOLD OUT" : "RESERVE SPOT"}
+                  {!isFull && !isReserved && <span className="text-xl">→</span>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
