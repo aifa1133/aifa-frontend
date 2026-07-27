@@ -1018,17 +1018,11 @@ const WORKSHOP_DATA = [
 const FALLBACK_WS_IMAGES = ["/courses/v1.png","/courses/v2.png","/courses/v3.png","/courses/v4.png"];
 
 function WorkshopsSection({ token }) {
+  const navigate = useNavigate();
   const [workshops, setWorkshops] = useState(WORKSHOP_DATA);
   const [loading, setLoading]     = useState(true);
   const [enrolling, setEnrolling] = useState(null);
   const [reserved, setReserved]   = useState(new Set());
-  const [detailW, setDetailW]     = useState(null);
-
-  useEffect(() => {
-    const handleEsc = (e) => { if (e.key === "Escape") setDetailW(null); };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, []);
 
   useEffect(() => {
     fetch("/api/workshops")
@@ -1043,10 +1037,9 @@ function WorkshopsSection({ token }) {
     }
   }, [token]);
 
-  const handleReserve = async (w) => {
-    if (!w._id || w._id?.startsWith?.("m")) {
-      alert("Booking coming soon!"); return;
-    }
+  const handleReserve = async (w, e) => {
+    e?.stopPropagation();
+    if (!w._id || w._id?.startsWith?.("m")) { alert("Booking coming soon!"); return; }
     if (reserved.has(w._id)) return;
     setEnrolling(w._id);
     try {
@@ -1055,70 +1048,30 @@ function WorkshopsSection({ token }) {
       if (res.ok || data.message === "Already registered") {
         setReserved(prev => new Set([...prev, w._id]));
         setWorkshops(prev => prev.map(x => x._id===w._id ? {...x, registrations:[...(x.registrations||[]),"me"]} : x));
-      } else {
-        alert(data.message || "Could not reserve. Try again.");
-      }
+      } else { alert(data.message || "Could not reserve. Try again."); }
     } catch { alert("Network error. Please try again."); }
     setEnrolling(null);
-    setDetailW(null);
+  };
+
+  const fmtDateBox = (scheduledAt) => {
+    if (!scheduledAt) return "—";
+    const dt = new Date(scheduledAt);
+    const mon = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][dt.getMonth()];
+    const h = dt.getHours(); const ampm = h >= 12 ? "PM" : "AM"; const h12 = h % 12 || 12;
+    const mins = dt.getMinutes();
+    return `${String(dt.getDate()).padStart(2,"0")}-${mon}-${dt.getFullYear()} | ${h12}${mins ? ":"+String(mins).padStart(2,"0") : ""} ${ampm}`;
+  };
+
+  const googleCalLink = (w) => {
+    if (!w.scheduledAt) return null;
+    const start = new Date(w.scheduledAt);
+    const end = new Date(start.getTime() + 3 * 3600000);
+    const fmt = d => d.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(w.title)}&dates=${fmt(start)}/${fmt(end)}`;
   };
 
   return (
     <div className="p-6">
-      {/* Workshop Detail Modal */}
-      {detailW && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setDetailW(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative">
-              <img src={detailW.image || FALLBACK_WS_IMAGES[0]} alt={detailW.title} className="w-full h-44 object-cover"
-                onError={e=>{e.target.src=FALLBACK_WS_IMAGES[0];}}/>
-              <button onClick={() => setDetailW(null)} className="absolute top-3 right-3 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 text-lg">✕</button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-white">{detailW.title}</h2>
-                {detailW.description && <p className="text-xs text-gray-400 mt-1">{detailW.description}</p>}
-              </div>
-              {detailW.scheduledAt && (
-                <div className="flex gap-3 text-xs text-gray-400">
-                  <span>📅 {new Date(detailW.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
-                  <span>⏰ {new Date(detailW.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}</span>
-                </div>
-              )}
-              {detailW.trainer && <p className="text-xs text-gray-400">👤 Trainer: <span className="text-white font-semibold">{detailW.trainer}</span></p>}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  ["⏱","Duration",detailW.duration||"—"],
-                  ["💰","Price",`${detailW.currency==="USD"?"$":"₹"}${detailW.price||0}`],
-                  ["⌨","Mode",detailW.mode||"ONLINE"],
-                  ["🪑","Seats",(() => { const reg=detailW.registrations?.length||0; const seats=detailW.seats||50; return `${seats-reg} of ${seats} left`; })()],
-                ].map(([ic,l,v])=>(
-                  <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                    <div className="text-xl mb-1">{ic}</div>
-                    <p className="text-[10px] text-gray-500 uppercase">{l}</p>
-                    <p className="text-xs font-bold text-white mt-0.5">{v}</p>
-                  </div>
-                ))}
-              </div>
-              {reserved.has(detailW._id) ? (
-                <div className="w-full bg-green-500/10 border border-green-500/30 rounded-xl py-3 text-center">
-                  <p className="text-green-400 font-bold text-sm">✓ Spot Reserved!</p>
-                  {detailW.zoomLink && <a href={detailW.zoomLink} target="_blank" rel="noreferrer" className="text-[#C7E36B] text-xs mt-1 block hover:underline">Join Zoom Meeting →</a>}
-                </div>
-              ) : (
-                <button
-                  onClick={() => handleReserve(detailW)}
-                  disabled={enrolling === detailW._id || (detailW.registrations?.length||0) >= (detailW.seats||50)}
-                  className="w-full bg-[#C7E36B] text-black font-black text-sm uppercase py-3 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-60"
-                >
-                  {enrolling === detailW._id ? "Reserving..." : (detailW.registrations?.length||0) >= (detailW.seats||50) ? "SOLD OUT" : "RESERVE SPOT →"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       <h1 className="text-2xl font-black text-white mb-6">AI Filmmaking Workshops</h1>
 
       {loading && [1,2].map(n => (
@@ -1127,7 +1080,7 @@ function WorkshopsSection({ token }) {
             <div className="w-full md:w-[240px] h-[160px] bg-white/10 shrink-0"/>
             <div className="flex-1 flex flex-col gap-[6px]">
               <div className="h-[80px] bg-white/10 rounded-tr-2xl"/>
-              <div className="grid grid-cols-4 gap-[6px]">{[1,2,3,4].map(k=><div key={k} className="h-[60px] bg-white/10 rounded"/>)}</div>
+              <div className="grid grid-cols-3 gap-[6px]">{[1,2,3].map(k=><div key={k} className="h-[60px] bg-white/10 rounded"/>)}</div>
             </div>
           </div>
           <div className="h-[48px] bg-white/10"/>
@@ -1139,14 +1092,34 @@ function WorkshopsSection({ token }) {
           {workshops.map((w, i) => {
             const registered = w.registrations?.length || 0;
             const seats = w.seats || 50;
-            const remaining = seats - registered;
-            const isFull = remaining <= 0;
+            const isFull = (seats - registered) <= 0;
             const isMock = !w._id || w._id?.startsWith?.("m");
             const isReserved = reserved.has(w._id);
-            const sym = w.currency === "USD" ? "$" : "₹";
+            const cur = w.currency === "USD" ? "USD" : "INR";
+            const priceStr = `${cur} ${parseFloat(w.price || 0).toFixed(2)}`;
+            const dateBoxStr = fmtDateBox(w.scheduledAt);
+            const dt = w.scheduledAt ? new Date(w.scheduledAt) : null;
+            const fmtDateLong = dt ? dt.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}) : null;
+            const fmtTime = dt ? dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
+            const fmtTimeRange = fmtTime ? (w.endTime ? `${fmtTime} - ${w.endTime}` : fmtTime) : null;
+            const calLink = googleCalLink(w);
+            const statusBadge = isMock ? null : (() => {
+              if (!w.isPublished) return null;
+              if (!w.scheduledAt) return "Upcoming";
+              const now = Date.now(), start = new Date(w.scheduledAt).getTime();
+              const dur = (() => { const d=w.duration||""; const n=parseInt(d); if(!n) return 120; if(d.toLowerCase().includes("hour")||d.toLowerCase().includes("hr")) return n*60; return n; })();
+              const end = start + dur*60000;
+              if (now < start) return "Upcoming";
+              if (now >= start && now <= end) return "Live";
+              return null;
+            })();
+
             return (
-              <div key={w._id || i} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112]">
-                <div className="flex flex-col md:flex-row gap-[6px] cursor-pointer" onClick={() => setDetailW(w)}>
+              <div key={w._id || i}
+                className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-300 ${isReserved ? "border-[#C7E36B]/50" : "border-[#0F1112]"}`}>
+                {/* TOP */}
+                <div className="flex flex-col md:flex-row gap-[6px] cursor-pointer"
+                  onClick={() => { if (!isMock && w._id) navigate(`/workshops/${w._id}`); }}>
                   {/* IMAGE */}
                   <div className="w-full md:w-[240px] h-[160px] shrink-0 overflow-hidden rounded-tl-[20px] bg-[#1a1e1f]">
                     <img src={w.image || FALLBACK_WS_IMAGES[i % FALLBACK_WS_IMAGES.length]} alt={w.title}
@@ -1155,85 +1128,92 @@ function WorkshopsSection({ token }) {
                   </div>
                   <div className="flex-1 flex flex-col gap-[6px]">
                     {/* TITLE */}
-                    {(() => {
-                      const status = isMock ? null : (() => {
-                        if (!w.isPublished) return null;
-                        if (!w.scheduledAt) return "Upcoming";
-                        const now = Date.now(), start = new Date(w.scheduledAt).getTime();
-                        const dur = (() => { const d=w.duration||""; const n=parseInt(d); if(!n) return 120; if(d.toLowerCase().includes("hour")||d.toLowerCase().includes("hr")) return n*60; return n; })();
-                        const end = start + dur*60000;
-                        if (now < start) return "Upcoming";
-                        if (now >= start && now <= end) return "Live";
-                        return "Completed";
-                      })();
-                      const dtStr = w.scheduledAt ? new Date(w.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : null;
-                      const tmStr = w.scheduledAt ? new Date(w.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
-                      const timeDisplay = tmStr ? (w.endTime ? `${tmStr} – ${w.endTime}` : tmStr) : null;
-                      return (
-                        <div className="flex flex-col justify-center px-4 py-3 min-h-[90px] bg-[#DCDCDC] rounded-tr-[20px] gap-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {w.sessionCode && <span className="text-[10px] bg-[#2B2D30] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">{w.sessionCode}</span>}
-                            {status === "Live" && <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>Live</span>}
-                            {status === "Upcoming" && <span className="text-[10px] bg-blue-500/80 text-white font-bold px-2 py-0.5 rounded-full">Upcoming</span>}
-                          </div>
-                          <h3 className="text-[#2B2D30] font-black text-xl md:text-2xl leading-tight">{w.title}</h3>
-                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-[#6E7072] font-semibold">
-                            {dtStr && <span>📅 {dtStr}{timeDisplay ? ` · ${timeDisplay}` : ""}</span>}
-                            {w.trainer && <span>👤 {w.trainer}</span>}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                    {/* INFO BOXES */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-[6px]">
-                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⏱ Duration</p>
-                        <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.duration || "—"}</p>
+                    <div className="relative flex flex-col justify-center px-4 py-3 min-h-[90px] bg-[#DCDCDC] rounded-tr-[20px] gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {w.sessionCode && <span className="text-[10px] bg-[#2B2D30] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">{w.sessionCode}</span>}
+                        {statusBadge === "Live" && <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>Live</span>}
+                        {statusBadge === "Upcoming" && <span className="text-[10px] bg-blue-500/80 text-white font-bold px-2 py-0.5 rounded-full">Upcoming</span>}
                       </div>
-                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                        <p className="text-[#2B2D30] text-[14px] font-bold">{sym}{w.price || 0}</p>
-                      </div>
-                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⌨ Mode</p>
-                        <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.mode || "ONLINE"}</p>
-                      </div>
-                      <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] text-[10px] font-semibold uppercase">🪑 Seats</p>
-                        {isMock ? (
-                          <p className="text-[#2B2D30] text-[14px] font-bold">Limited</p>
-                        ) : isFull ? (
-                          <p className="text-red-600 text-[14px] font-bold">FULL</p>
-                        ) : (
-                          <>
-                            <p className="text-[#2B2D30] text-[14px] font-bold">{remaining} left</p>
-                            <div className="w-full bg-gray-300 rounded-full h-1 mt-1"><div className="bg-[#2B2D30] h-1 rounded-full" style={{width:`${Math.min(100,(registered/seats)*100)}%`}}/></div>
-                          </>
-                        )}
+                      {isReserved && (
+                        <span className="absolute top-3 right-3 text-[10px] bg-[#0B5F2A] text-[#C7E36B] font-black px-2.5 py-1 rounded-full border border-[#C7E36B]/40 tracking-wide">CONFIRMED</span>
+                      )}
+                      <h3 className="text-[#2B2D30] font-black text-xl md:text-2xl leading-tight pr-24">{w.title}</h3>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-[#6E7072] font-semibold">
+                        {w.trainer && <span>👤 {w.trainer}</span>}
                       </div>
                     </div>
+                    {/* INFO BOXES */}
+                    {isReserved ? (
+                      <div className="grid grid-cols-3 gap-[6px]">
+                        <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.duration || "—"}</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#0B5F2A]">
+                          <p className="text-[#C7E36B]/70 text-[10px] font-semibold uppercase">✓ Seat</p>
+                          <p className="text-[#C7E36B] text-[14px] font-bold uppercase">CONFIRMED</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⌨ Mode</p>
+                          <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-[6px]">
+                        <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-[#2B2D30] text-[14px] font-bold uppercase">{w.duration || "—"}</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                          <p className="text-[#2B2D30] text-[14px] font-bold">{priceStr}</p>
+                        </div>
+                        <div className="flex flex-col items-start gap-[4px] p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">📅 Date & Time</p>
+                          <p className="text-[#2B2D30] text-[12px] font-bold leading-tight">{dateBoxStr}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {/* BUTTON / ZOOM */}
-                {isReserved && w.zoomLink ? (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3 bg-green-500/10 border-t-2 border-green-500/20">
-                    <span className="text-green-400 font-bold text-sm">✓ Spot Reserved</span>
-                    <a href={w.zoomLink} target="_blank" rel="noreferrer"
-                      className="flex items-center gap-2 bg-[#C7E36B] text-[#0F1112] font-black text-sm uppercase px-5 py-2 rounded-xl hover:opacity-90 transition">
-                      Join Zoom Meeting →
-                    </a>
+
+                {/* BOTTOM */}
+                {isReserved ? (
+                  <div className="flex flex-col gap-3 px-4 py-4 bg-[#0B0F10] border-t border-[#C7E36B]/20">
+                    {(fmtDateLong || fmtTimeRange) && (
+                      <div className="flex items-center gap-2 text-xs text-gray-400 font-semibold">
+                        <span className="text-base">📅</span>
+                        <span>DATE: {fmtDateLong}{fmtTimeRange ? ` | at ${fmtTimeRange}` : ""}</span>
+                      </div>
+                    )}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {w.zoomLink ? (
+                        <a href={w.zoomLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                          className="flex-1 flex justify-center items-center gap-1 bg-[#C7E36B] text-black font-black text-sm uppercase py-2.5 rounded-xl hover:opacity-90 transition">
+                          Join Workshop →
+                        </a>
+                      ) : (
+                        <button disabled
+                          className="flex-1 flex justify-center items-center gap-1 bg-white/10 text-gray-500 font-black text-sm uppercase py-2.5 rounded-xl cursor-not-allowed">
+                          Join Workshop →
+                        </button>
+                      )}
+                      {calLink && (
+                        <a href={calLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                          className="flex-1 sm:flex-none flex justify-center items-center gap-1 bg-white/10 text-gray-200 font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-white/20 transition border border-white/10">
+                          📅 Add to calendar
+                        </a>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <button
-                    onClick={() => isReserved ? null : handleReserve(w)}
-                    disabled={enrolling === w._id || isFull || isReserved}
+                    onClick={(e) => handleReserve(w, e)}
+                    disabled={enrolling === w._id || isFull}
                     className={`flex justify-center items-center gap-1 px-6 py-3 w-full rounded-b-[20px] font-black text-base uppercase transition-all
-                      ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
-                      : isFull ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
+                      ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
                   >
-                    {enrolling === w._id ? "Reserving..." : isReserved ? "✓ Reserved" : isFull ? "SOLD OUT" : "RESERVE SPOT"}
-                    {!isFull && !isReserved && <span className="text-xl">→</span>}
+                    {enrolling === w._id ? "Reserving..." : isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-xl">→</span></>}
                   </button>
                 )}
               </div>

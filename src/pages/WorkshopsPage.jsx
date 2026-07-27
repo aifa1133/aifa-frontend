@@ -3,6 +3,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const fmtDateBox = (scheduledAt) => {
+  if (!scheduledAt) return "—";
+  const dt = new Date(scheduledAt);
+  const mon = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][dt.getMonth()];
+  const h = dt.getHours(); const ampm = h >= 12 ? "PM" : "AM"; const h12 = h % 12 || 12;
+  const mins = dt.getMinutes();
+  return `${String(dt.getDate()).padStart(2,"0")}-${mon}-${dt.getFullYear()} | ${h12}${mins ? ":"+String(mins).padStart(2,"0") : ""} ${ampm}`;
+};
+
+const googleCalLink = (w) => {
+  if (!w.scheduledAt) return null;
+  const start = new Date(w.scheduledAt);
+  const end = new Date(start.getTime() + 3 * 3600000);
+  const fmt = d => d.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(w.title)}&dates=${fmt(start)}/${fmt(end)}`;
+};
+
 const MOCK_WORKSHOPS = [
   { _id: "mw1", title: "AI Lego Animation Workshop", image: "/courses/v1.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
   { _id: "mw2", title: "AI Cinematic Workshop", image: "/courses/v2.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
@@ -136,27 +153,35 @@ export default function WorkshopsPage() {
             {!loading && workshops.map((item, i) => {
               const registered = item.registrations?.length || 0;
               const seats = item.seats || 50;
-              const remaining = seats - registered;
-              const isFull = remaining <= 0;
+              const isFull = (seats - registered) <= 0;
               const isMock = item._id?.startsWith("mw");
               const isReserved = reserved.has(item._id);
-              const sym = item.currency === "USD" ? "$" : "₹";
+              const cur = item.currency === "USD" ? "USD" : "INR";
+              const priceStr = `${cur} ${parseFloat(item.price || 0).toFixed(2)}`;
               const status = isMock ? null : getStatus(item);
               const dt = item.scheduledAt ? new Date(item.scheduledAt) : null;
-              const fmtDate = dt ? dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
-              const fmtTime = dt ? dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : null;
-              const timeRange = fmtTime ? (item.endTime ? `${fmtTime} – ${item.endTime}` : fmtTime) : null;
+              const fmtDate = dt ? dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : null;
+              const fmtTime = dt ? dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
+              const fmtDateLong = dt ? dt.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}) : null;
+              const fmtTimeRange = fmtTime ? (item.endTime ? `${fmtTime} - ${item.endTime}` : fmtTime) : null;
+              const dateBoxStr = fmtDateBox(item.scheduledAt);
+              const calLink = googleCalLink(item);
 
               return (
-                <div key={item._id || i} id={item._id} className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${highlighted===item._id?"border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]":"border-[#0F1112]"}`}>
+                <div key={item._id || i} id={item._id}
+                  className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${
+                    isReserved ? "border-[#C7E36B]/50" :
+                    highlighted===item._id ? "border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]" :
+                    "border-[#0F1112]"}`}>
                   {/* TOP SECTION */}
-                  <div className="flex flex-col md:flex-row gap-[6px] w-full">
+                  <div className="flex flex-col md:flex-row gap-[6px] w-full cursor-pointer"
+                    onClick={() => { if (!isMock && item._id) navigate(`/workshops/${item._id}`); }}>
                     {/* IMAGE */}
                     <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[#1a1e1f]">
                       <img
                         src={item.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
                         alt={item.title}
-                        className="w-full h-full object-cover object-center"
+                        className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                         onError={e => { e.target.src = FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]; }}
                       />
                     </div>
@@ -164,7 +189,7 @@ export default function WorkshopsPage() {
                     {/* RIGHT SIDE */}
                     <div className="flex-1 flex flex-col gap-[6px]">
                       {/* TITLE + META */}
-                      <div className="px-[12px] py-[10px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[20px] bg-[#DCDCDC] min-h-[105px]">
+                      <div className="relative px-[12px] py-[10px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[20px] bg-[#DCDCDC] min-h-[105px]">
                         <div className="flex items-center gap-2 flex-wrap">
                           {item.sessionCode && <span className="text-[11px] bg-[#2B2D30] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">{item.sessionCode}</span>}
                           {status && status !== "Draft" && status !== "Completed" && (
@@ -173,66 +198,90 @@ export default function WorkshopsPage() {
                             </span>
                           )}
                         </div>
-                        <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[24px] leading-[30px] md:text-[48px] md:leading-[54px] font-black">
+                        {isReserved && (
+                          <span className="absolute top-3 right-3 text-[10px] bg-[#0B5F2A] text-[#C7E36B] font-black px-2.5 py-1 rounded-full border border-[#C7E36B]/40 tracking-wide">CONFIRMED</span>
+                        )}
+                        <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[24px] leading-[30px] md:text-[40px] md:leading-[46px] font-black pr-20">
                           {item.title}
                         </h3>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#6E7072] font-semibold">
-                          {fmtDate && <span>📅 {fmtDate}{timeRange ? ` · ${timeRange}` : ""}</span>}
+                          {fmtDate && <span>📅 {fmtDate}</span>}
                           {item.trainer && <span>👤 {item.trainer}</span>}
                         </div>
                       </div>
 
                       {/* INFO BOXES */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-[6px]">
-                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⏱ Duration</p>
-                          <p className="text-[#2B2D30] font-[Montserrat] text-[14px] leading-[20px] font-bold uppercase">{item.duration || "—"}</p>
+                      {isReserved ? (
+                        <div className="grid grid-cols-3 gap-[6px]">
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                            <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
+                          </div>
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#0B5F2A]">
+                            <p className="text-[#C7E36B]/70 font-[Montserrat] text-[10px] font-semibold uppercase">✓ Seat</p>
+                            <p className="text-[#C7E36B] font-[Montserrat] text-[14px] font-bold uppercase">CONFIRMED</p>
+                          </div>
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                            <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⌨ Mode</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⊞ Pricing</p>
-                          <p className="text-[#2B2D30] font-[Montserrat] text-[14px] leading-[20px] font-bold">{sym}{item.price}</p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-[6px]">
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                            <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
+                          </div>
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                            <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">{priceStr}</p>
+                          </div>
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                            <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">📅 Date & Time</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[12px] font-bold leading-tight">{dateBoxStr}</p>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⌨ Mode</p>
-                          <p className="text-[#2B2D30] font-[Montserrat] text-[14px] leading-[20px] font-bold uppercase">{item.mode || "ONLINE"}</p>
-                        </div>
-                        <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
-                          <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">🪑 Seats</p>
-                          {isMock ? (
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">Limited</p>
-                          ) : isFull ? (
-                            <p className="text-red-600 font-[Montserrat] text-[14px] font-bold">FULL</p>
-                          ) : (
-                            <>
-                              <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">{remaining} left</p>
-                              <div className="w-full bg-gray-300 rounded-full h-1 mt-1"><div className="bg-[#2B2D30] h-1 rounded-full" style={{width:`${Math.min(100,(registered/seats)*100)}%`}}/></div>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* BOTTOM — Zoom link if reserved, else Reserve button */}
-                  {isReserved && item.zoomLink ? (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3 bg-green-500/10 border-t-2 border-green-500/20">
-                      <span className="text-green-400 font-bold text-sm font-[Montserrat]">✓ Spot Reserved</span>
-                      <a href={item.zoomLink} target="_blank" rel="noreferrer"
-                        className="flex items-center gap-2 bg-[#D0E46A] text-[#0F1112] font-black text-sm uppercase px-5 py-2 rounded-xl hover:opacity-90 transition font-[Montserrat]">
-                        Join Zoom Meeting →
-                      </a>
+                  {/* BOTTOM */}
+                  {isReserved ? (
+                    <div className="flex flex-col gap-3 px-4 py-4 bg-[#0B0F10] border-t border-[#C7E36B]/20">
+                      {(fmtDateLong || fmtTimeRange) && (
+                        <div className="flex items-center gap-2 text-xs text-gray-400 font-semibold">
+                          <span className="text-base">📅</span>
+                          <span>DATE: {fmtDateLong}{fmtTimeRange ? ` | at ${fmtTimeRange}` : ""}</span>
+                        </div>
+                      )}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {item.zoomLink ? (
+                          <a href={item.zoomLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                            className="flex-1 flex justify-center items-center gap-1 bg-[#C7E36B] text-black font-black text-sm uppercase py-3 rounded-xl hover:opacity-90 transition font-[Montserrat]">
+                            Join Workshop →
+                          </a>
+                        ) : (
+                          <button disabled
+                            className="flex-1 flex justify-center items-center gap-1 bg-white/10 text-gray-500 font-black text-sm uppercase py-3 rounded-xl cursor-not-allowed font-[Montserrat]">
+                            Join Workshop →
+                          </button>
+                        )}
+                        {calLink && (
+                          <a href={calLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                            className="flex-1 sm:flex-none flex justify-center items-center gap-1 bg-white/10 text-gray-200 font-bold text-sm px-4 py-3 rounded-xl hover:bg-white/20 transition border border-white/10 font-[Montserrat]">
+                            📅 Add to calendar
+                          </a>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <button
-                      onClick={() => handleReserve(item)}
-                      disabled={enrolling === item._id || isFull || isReserved}
+                      onClick={(e) => { e.stopPropagation(); handleReserve(item); }}
+                      disabled={enrolling === item._id || isFull}
                       className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
-                        ${isReserved ? "bg-green-500/20 text-green-400 cursor-default border-t-2 border-green-500/30"
-                        : isFull ? "bg-gray-400 text-white cursor-not-allowed"
-                        : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
+                        ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
                     >
-                      {enrolling === item._id ? "Reserving..." : isReserved ? "✓ Reserved" : isFull ? "SOLD OUT" : "RESERVE SPOT"}
-                      {!isFull && !isReserved && <span className="text-[22px]">→</span>}
+                      {enrolling === item._id ? "Reserving..." : isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-[22px]">→</span></>}
                     </button>
                   )}
                 </div>
