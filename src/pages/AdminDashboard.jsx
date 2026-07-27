@@ -233,7 +233,7 @@ export default function AdminDashboard() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {activePage === "dashboard"       && <AdminOverview token={token} onNavigate={setActivePage} />}
+          {activePage === "dashboard"       && <AdminOverview token={token} onNavigate={setPage} />}
           {activePage === "bootcamp"        && <BootcampAdmin token={token} />}
           {activePage === "workshops"       && <WorkshopsAdmin token={token} />}
           {activePage === "video-courses"   && <VideoCoursesAdmin token={token} />}
