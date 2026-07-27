@@ -1,0 +1,543 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+
+const CHECKLIST = [
+  "1 Month Program",
+  "Lifetime AIFA Membership (Worth ₹40,000)",
+  "Certificate of Completion",
+  "20 Assignments",
+  "Portfolio Mentorship",
+  "Session Recordings",
+];
+
+/* LeftCard receives all values as props — no closure references to outer component vars */
+function LeftCard({ step, couponApplied, subtotal, original, origPrice, couponCode }) {
+  const price    = original  || 14000;
+  const oldPrice = origPrice || 19000;
+  return (
+    <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 space-y-4">
+      <p className="text-[#C7E36B] text-[10px] uppercase font-bold tracking-wider">
+        ONLY {step === 2 ? "12" : "FEW"} SEAT LEFT
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-[#C7E36B]/10 rounded-xl flex items-center justify-center text-2xl">🎬</div>
+        <p className="text-white font-bold text-sm">AI Filmmaking Bootcamp</p>
+      </div>
+      <div className="flex items-baseline gap-3">
+        <span className="text-3xl font-bold text-white">₹{price.toLocaleString("en-IN")}</span>
+        <span className="text-gray-400 line-through text-sm">₹{oldPrice.toLocaleString("en-IN")}</span>
+      </div>
+      {step === 2 && couponApplied ? (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+          <p className="text-green-400 text-sm font-bold">Total Payable: ₹{(subtotal || 0).toLocaleString()}</p>
+          <p className="text-green-300 text-xs mt-0.5">Coupon {couponCode || ""} applied</p>
+        </div>
+      ) : (
+        <div className="space-y-2 pt-2">
+          {CHECKLIST.map(item => (
+            <div key={item} className="flex items-start gap-2">
+              <span className="text-[#C7E36B] font-bold shrink-0">✓</span>
+              <span className="text-gray-300 text-xs">{item}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function BootcampEnroll() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const backTo   = location.state?.from || "/bootcamp";
+  const backPage = location.state?.fromPage || null;
+
+  /* ── ALL useState hooks together ── */
+  const [step, setStep]           = useState(1);
+  const [form, setForm]           = useState({ name: "", email: "", phone: "" });
+  const [errors, setErrors]       = useState({});
+  const [coupon, setCoupon]       = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("aifa_enroll_coupon") || "{}").code || ""; } catch { return ""; }
+  });
+  const [couponApplied, setCouponApplied] = useState(() => {
+    try { return !!JSON.parse(sessionStorage.getItem("aifa_enroll_coupon") || "{}").applied; } catch { return false; }
+  });
+  const [couponData, setCouponData]       = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("aifa_enroll_coupon") || "{}").data || null; } catch { return null; }
+  });
+  const [couponMsg, setCouponMsg]         = useState("");
+  const [showSummary, setShowSummary]     = useState(false);
+  const [password, setPassword]           = useState("");
+  const [confirmPw, setConfirmPw]         = useState("");
+  const [showPw, setShowPw]               = useState(false);
+  const [showCPw, setShowCPw]             = useState(false);
+  const [bootcamp, setBootcamp]           = useState(null);
+  const [authToken, setAuthToken]         = useState(() => localStorage.getItem("aifa_token") || "");
+  const [tempPw, setTempPw]               = useState("");
+  const [paying, setPaying]               = useState(false);
+  const [orderId, setOrderId]             = useState("");
+  const [checking, setChecking]           = useState(true); // true until enrollment check done
+
+  /* ── useEffect after all useState ── */
+  useEffect(() => {
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(async d => {
+      if (Array.isArray(d) && d.length > 0) {
+        const bc = d[0];
+        setBootcamp(bc);
+
+        const token = localStorage.getItem("aifa_token");
+        const user  = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+
+        if (token && user._id) {
+          const userId      = String(user._id);
+          const enrollments = (bc.enrollments || []).map(String);
+
+          if (enrollments.includes(userId)) {
+            /* Already enrolled → go to dashboard bootcamp tab */
+            sessionStorage.setItem("aifa_dashTab", "bootcamp");
+            navigate("/dashboard", { replace: true, state: { page: "bootcamp" } });
+            return;
+          }
+
+          /* Logged in but not enrolled → pre-fill and go to Step 2 */
+          setAuthToken(token);
+          try {
+            const profileRes = await fetch("/api/users/me", { headers: { Authorization: "Bearer " + token } });
+            if (profileRes.ok) {
+              const profile = await profileRes.json();
+              setForm({ name: profile.name || user.name || "", email: profile.email || "", phone: profile.phone || "" });
+            }
+          } catch { /* ignore */ }
+          setStep(2);
+        }
+      }
+      setChecking(false); // done checking — show the page
+    }).catch(() => setChecking(false));
+  }, []);
+
+
+
+  /* ── Derived values — plain expressions, no IIFE ── */
+  const ORIGINAL   = (bootcamp && bootcamp.price)         ? bootcamp.price         : 14000;
+  const ORIG_PRICE = (bootcamp && bootcamp.originalPrice) ? bootcamp.originalPrice : 19000;
+  const DISCOUNT   = (!couponApplied || !couponData)      ? 0
+    : couponData.discountType === "percent"
+      ? Math.round(ORIGINAL * couponData.discountValue / 100)
+      : couponData.discountValue;
+  const SUBTOTAL = ORIGINAL - DISCOUNT;
+  const GST      = couponApplied ? 170 : 0;
+  const TOTAL    = SUBTOTAL + GST;
+  const ORDER    = orderId || "ORD-89241";
+
+  const loadRazorpay = () => new Promise(resolve => {
+    if (window.Razorpay) { resolve(true); return; }
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+
+  const handleRazorpay = async () => {
+    setPaying(true);
+    try {
+      let token = authToken;
+      if (!token) {
+        const pw = "AIFA_" + Math.random().toString(36).slice(2, 10) + "!1";
+        const sr = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: pw }),
+        });
+        const sd = await sr.json();
+        if (sd.token) {
+          token = sd.token;
+          localStorage.setItem("aifa_token", token);
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: sd._id, name: sd.name, role: sd.role || "student" }));
+          setAuthToken(token);
+          setTempPw(pw);
+        } else if (sd.message && sd.message.includes("already exists")) {
+          alert("An account with this email already exists. Please log in first at /dashboard.");
+          setPaying(false); return;
+        } else {
+          alert(sd.message || "Could not set up your account. Please try again.");
+          setPaying(false); return;
+        }
+      }
+
+      const h = { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+
+      const loaded = await loadRazorpay();
+      if (!loaded) { alert("Payment gateway failed to load. Please check your connection."); setPaying(false); return; }
+
+      const orderRes = await fetch("/api/payments/create-order", {
+        method: "POST", headers: h,
+        body: JSON.stringify({
+          amount: TOTAL,
+          itemType: "bootcamp",
+          itemTitle: (bootcamp && bootcamp.title) ? bootcamp.title : "AI Filmmaking Bootcamp",
+          itemId: bootcamp ? bootcamp._id : null,
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) { alert(orderData.message || "Could not create order. Try again."); setPaying(false); return; }
+      setOrderId(orderData.orderId || "");
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: "INR",
+        name: "AIFA Film Academy",
+        description: (bootcamp && bootcamp.title) ? bootcamp.title : "AI Filmmaking Bootcamp",
+        order_id: orderData.orderId,
+        prefill: { name: form.name, email: form.email, contact: form.phone },
+        theme: { color: "#C7E36B" },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST", headers: h,
+              body: JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+                txId: orderData.txId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.success) {
+              sessionStorage.removeItem("aifa_enroll_coupon");
+              setStep(3);
+            } else {
+              alert("Payment verification failed. Contact support with your payment ID: " + response.razorpay_payment_id);
+            }
+          } catch { alert("Verification error. Save your payment ID: " + response.razorpay_payment_id); }
+          setPaying(false);
+        },
+        modal: { ondismiss: () => setPaying(false) },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch { alert("Something went wrong. Please try again."); setPaying(false); }
+  };
+
+  const handleApplyCoupon = async () => {
+    setCouponMsg("");
+    if (!coupon.trim()) return;
+    try {
+      const res  = await fetch("/api/coupons/validate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ code: coupon.trim().toUpperCase() }) });
+      const data = await res.json();
+      if (data.valid) {
+        setCouponApplied(true); setCouponData(data);
+        sessionStorage.setItem("aifa_enroll_coupon", JSON.stringify({ code: coupon.trim().toUpperCase(), applied: true, data }));
+      } else { setCouponMsg(data.message || "Invalid coupon code"); }
+    } catch { setCouponMsg("Could not validate coupon. Try again."); }
+  };
+
+  const validateStep1 = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = "Name is required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Valid email required";
+    if (!/^\d{10}$/.test(form.phone.replace(/[\s+\-()]/g, ""))) e.phone = "Valid 10-digit mobile required";
+    setErrors(e);
+    return !Object.keys(e).length;
+  };
+
+  const handleCreateAccount = async () => {
+    const token = authToken || localStorage.getItem("aifa_token");
+    try {
+      if (token && tempPw && password) {
+        await fetch("/api/users/me/password", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ currentPassword: tempPw, newPassword: password }),
+        });
+      } else if (!token) {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password }),
+        });
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem("aifa_token", data.token);
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: data._id, name: data.name, role: data.role || "student" }));
+        }
+      }
+    } catch { /* ignore */ }
+    if (backPage) sessionStorage.setItem("aifa_dashTab", backPage);
+    navigate(backTo, { state: backPage ? { page: backPage } : undefined });
+  };
+  /* ── Show loading until enrollment check completes — prevents Step 1 flash ── */
+  if (checking) return (
+    <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  /* ── STEP 1 ── */
+  if (step === 1) return (
+    <div className="min-h-screen bg-[#0B0F10] py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <button onClick={()=>{ sessionStorage.setItem("aifa_dashTab", backPage||"bootcamp"); navigate(backTo,{state:{page:backPage||"bootcamp"}}); }} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
+        <div className="grid md:grid-cols-[320px_1fr] gap-6">
+          <LeftCard step={1} couponApplied={false} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
+
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-1">Reserve Your Seat</h2>
+            <p className="text-gray-400 text-sm mb-6">You are one step away from joining the AI Filmmaking Bootcamp.</p>
+
+            <div className="space-y-4">
+              {[
+                ["name",  "Full Name",      "text",  "John Doe"],
+                ["email", "Email Address",  "email", "john@example.com"],
+                ["phone", "Mobile Number",  "tel",   "+91 98566 55558"],
+              ].map(([key, label, type, placeholder]) => (
+                <div key={key}>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-1.5">{label}</label>
+                  <input
+                    type={type}
+                    value={form[key]}
+                    onChange={e => setForm({ ...form, [key]: e.target.value })}
+                    placeholder={placeholder}
+                    className={"w-full bg-[#1A1D1E] border rounded-xl px-4 py-3 text-white text-sm outline-none transition-colors " + (errors[key] ? "border-red-500" : "border-white/20 focus:border-[#C7E36B]")}
+                  />
+                  {errors[key] && <p className="text-red-400 text-xs mt-1">{errors[key]}</p>}
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => { if (validateStep1()) setStep(2); }}
+              className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl mt-6 hover:bg-lime-300 transition-all"
+            >
+              CONTINUE TO PAYMENT →
+            </button>
+
+            <div className="flex items-center justify-center gap-4 text-gray-500 text-[11px] mt-4">
+              <span>🔒 Secure Payment</span>
+              <span>🛡 Razorpay Secure</span>
+              <span>🔒 SSL Protected</span>
+            </div>
+            <p className="text-center text-gray-500 text-[11px] mt-2">Instant Access After Enrollment</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── STEP 2 ── */
+  if (step === 2) return (
+    <div className="min-h-screen bg-[#0B0F10] py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <button onClick={()=>{ sessionStorage.setItem("aifa_dashTab", backPage||"bootcamp"); navigate(backTo,{state:{page:backPage||"bootcamp"}}); }} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
+        <div className="grid md:grid-cols-[320px_1fr] gap-6">
+          <LeftCard step={2} couponApplied={couponApplied} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
+
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 space-y-5">
+            <h2 className="text-xl font-bold text-white">Complete Your Enrollment</h2>
+            <p className="text-gray-400 text-sm">Apply a coupon if you have one, then proceed to pay securely via Razorpay.</p>
+
+            {/* Coupon */}
+            <div>
+              <p className="text-xs text-gray-400 mb-2 font-medium">Have a coupon?</p>
+              {!couponApplied ? (
+                <div className="flex gap-2">
+                  <input
+                    value={coupon}
+                    onChange={e => setCoupon(e.target.value)}
+                    placeholder="Enter coupon code"
+                    className="flex-1 bg-[#1A1D1E] border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B] placeholder-gray-600"
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    className="text-[#C7E36B] font-bold text-sm px-4 py-2.5 border border-[#C7E36B]/30 rounded-xl hover:bg-[#C7E36B]/5 transition-all"
+                  >
+                    Apply
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 space-y-1.5">
+                  <p className="text-green-400 text-sm font-bold">✓ You will save ₹{DISCOUNT.toLocaleString()} on this order</p>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between text-gray-400"><span>Original Price</span><span>₹{ORIGINAL.toLocaleString()}</span></div>
+                    <div className="flex justify-between text-green-400"><span>Coupon Discount</span><span>-₹{DISCOUNT.toLocaleString()}</span></div>
+                    <div className="flex justify-between text-white font-bold pt-1 border-t border-white/10"><span>Final Amount</span><span>₹{SUBTOTAL.toLocaleString()}</span></div>
+                  </div>
+                </div>
+              )}
+              {couponMsg && <p className="text-red-400 text-xs mt-2">{couponMsg}</p>}
+            </div>
+
+            {/* Order Summary */}
+            {showSummary && (
+              <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-white font-bold">Order Summary</p>
+                  <span className="text-[10px] bg-white/10 text-gray-400 font-mono px-2 py-0.5 rounded">{ORDER}</span>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-gray-400">Original Price (1 item)</span><span className="text-white">₹{ORIGINAL.toLocaleString()}</span></div>
+                  {couponApplied && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Coupon Code <span className="text-[#C7E36B]">[{couponData ? couponData.code : ""}]</span> ✓</span>
+                      <span className="text-red-400">-₹{DISCOUNT.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-white/10 pt-2 flex justify-between"><span className="text-gray-400">Subtotal</span><span className="text-white">₹{SUBTOTAL.toLocaleString()}</span></div>
+                  {couponApplied && <div className="flex justify-between"><span className="text-gray-400">Tax (GST)</span><span className="text-white">₹{GST}</span></div>}
+                  <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-base">
+                    <span className="text-white">Total Payable</span>
+                    <span className="text-[#C7E36B]">₹{TOTAL.toLocaleString()}</span>
+                  </div>
+                </div>
+                <button onClick={handleRazorpay} disabled={paying} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl mt-4 hover:bg-lime-300 transition-all disabled:opacity-60">
+                  {paying ? "Processing..." : "Proceed to pay"}
+                </button>
+              </div>
+            )}
+
+            {!showSummary && (
+              <button onClick={() => setShowSummary(true)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all">
+                Pay ₹{(couponApplied ? SUBTOTAL : ORIGINAL).toLocaleString()} SECURELY
+              </button>
+            )}
+
+            <div className="flex items-center justify-center gap-4 text-gray-500 text-[11px]">
+              <span>🔒 Secure by Razorpay</span>
+              <span>🛡 256-bit SSL Encryption</span>
+              <span>⚡ Instant Enrollment</span>
+            </div>
+            <p className="text-center text-gray-400 text-[10px]">By Proceeding, you agree to Aifa Terms &amp; Conditions and Refund Policy.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── STEP 3 ── */
+  if (step === 3) return (
+    <div className="min-h-screen bg-[#0B0F10] py-16 px-4 flex items-center justify-center">
+      <div className="max-w-lg w-full">
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 rounded-full bg-[#C7E36B]/10 border-4 border-[#C7E36B] flex items-center justify-center mx-auto mb-5">
+            <svg className="w-10 h-10 text-[#C7E36B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="9 12 11 14 15 9" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Seat Successfully Reserved</h2>
+          <p className="text-gray-400 text-sm">Welcome to the AI Filmmaking Bootcamp.</p>
+        </div>
+
+        <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-white font-bold">Order Summary</p>
+            <span className="text-[10px] bg-white/10 text-gray-400 font-mono px-2 py-0.5 rounded">{ORDER}</span>
+          </div>
+          <div className="space-y-3 text-sm divide-y divide-white/5">
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-300">AI Filmmaking Bootcamp</span>
+              <span className="text-white font-bold">₹{ORIGINAL.toLocaleString("en-IN")}</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-300">Coupon code Applied {couponApplied && couponData ? "[" + couponData.code + "]" : ""}</span>
+              <span className="text-red-400">-₹{DISCOUNT}</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-300">Membership Included</span>
+              <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Paid</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-300">Certificate Included</span>
+              <span className="text-[#C7E36B] font-bold">✓</span>
+            </div>
+          </div>
+        </div>
+
+        {authToken ? (
+          <>
+            <button onClick={() => navigate("/dashboard", { state: { page: "bootcamp" } })} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
+              GO TO MY BOOTCAMP →
+            </button>
+            <p className="text-center text-gray-500 text-xs">You're already logged in. Your enrollment is confirmed.</p>
+          </>
+        ) : (
+          <>
+            <button onClick={() => setStep(4)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all mb-3">
+              CREATE MY AIFA ACCOUNT
+            </button>
+            <p className="text-center text-gray-500 text-xs">We will use your enrollment email to set up your account.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  /* ── STEP 4 ── */
+  return (
+    <div className="min-h-screen bg-[#0B0F10] py-12 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white">Complete Your AIFA Account</h2>
+            <p className="text-gray-400 text-sm">Your seat has already been reserved.</p>
+
+            <button onClick={() => alert("Google sign-in is currently unavailable. Please create a password below.")} className="w-full border border-white/20 text-white font-semibold py-3 rounded-xl hover:bg-white/5 flex items-center justify-center gap-3 transition-all text-sm">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-gray-500 text-[11px] font-medium tracking-wider">OR CREATE PASSWORD</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {[["Password", password, setPassword, showPw, setShowPw], ["Confirm Password", confirmPw, setConfirmPw, showCPw, setShowCPw]].map(([label, val, setVal, show, setShow]) => (
+              <div key={label}>
+                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-1.5">{label}</label>
+                <div className="relative">
+                  <input
+                    type={show ? "text" : "password"}
+                    value={val}
+                    onChange={e => setVal(e.target.value)}
+                    className="w-full bg-[#1A1D1E] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B] pr-14"
+                  />
+                  <button onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white transition-all">
+                    {show ? "Hide" : "Show"}
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            <button onClick={handleCreateAccount} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all">
+              ACCESS MY BOOTCAMP
+            </button>
+          </div>
+
+          <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl p-6">
+            <h3 className="text-white font-bold mb-5">Your AIFA Account Includes:</h3>
+            <div className="space-y-4">
+              {["Bootcamp Access", "Lifetime Membership", "Community Access", "Resources", "Video Courses"].map(item => (
+                <div key={item} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#C7E36B]/10 border border-[#C7E36B]/30 flex items-center justify-center shrink-0">
+                    <span className="text-[#C7E36B] text-xs font-bold">✓</span>
+                  </div>
+                  <span className="text-gray-300 text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Backend (separate repo)
+backend/
+
+# QA / test artefacts
+qa_*.mjs
+qa_*.json
+qa_screenshots/
+qa_screenshots2/
+qa_ss3/
+qa_verify_ss/
+qa_r2_ss/
+frontend/
+
+# Figma exports
+figma images/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
