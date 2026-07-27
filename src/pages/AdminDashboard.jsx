@@ -1637,14 +1637,18 @@ function WorkshopsAdmin({ token }) {
 
   const startEdit = (w) => {
     setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:"", time:"", published:!!w.isPublished });
-    setIsEditing(true); setView("create");
+    setIsEditing(true); setSuccessMsg(""); setView("create");
   };
 
   const doCreate = async () => {
     if(!cf.title.trim()) { alert("Workshop title is required."); return; }
     setSaving(true);
     try {
-      const scheduledAt = cf.date ? new Date(`${cf.date}${cf.time ? "T"+cf.time : "T00:00"}`).toISOString() : null;
+      let scheduledAt = null;
+      if (cf.date) {
+        const d = new Date(`${cf.date}${cf.time ? "T"+cf.time : "T00:00"}`);
+        if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
+      }
       const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
@@ -1704,7 +1708,13 @@ function WorkshopsAdmin({ token }) {
             <div className="grid grid-cols-4 gap-3">
               <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} />
               <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} />
-              <Fld label="MODE" value={cf.mode} onChange={v=>setCf({...cf,mode:v})} />
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">MODE</p>
+                <select value={cf.mode} onChange={e=>setCf({...cf,mode:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                  <option value="ONLINE">ONLINE</option>
+                  <option value="OFFLINE">OFFLINE</option>
+                </select>
+              </div>
               <Fld label="SEAT LIMIT" value={cf.seats} onChange={v=>setCf({...cf,seats:v.replace(/\D/g,"")})} placeholder="50" />
             </div>
           </Sect>
@@ -1717,9 +1727,9 @@ function WorkshopsAdmin({ token }) {
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
-              <Fld label="Date" value={cf.date} onChange={v=>setCf({...cf,date:v})} placeholder="mm/dd/yyyy" />
-              <Fld label="Time" value={cf.time} onChange={v=>setCf({...cf,time:v})} placeholder="--:-- --" />
-              <Fld label="Timezone" value="UTC (GMT+0)" onChange={()=>{}} />
+              <Fld label="Date" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} />
+              <Fld label="Time" type="time" value={cf.time} onChange={v=>setCf({...cf,time:v})} />
+              <Fld label="Timezone" value="IST (GMT+5:30)" onChange={()=>{}} />
             </div>
           </Sect>
           <div className="flex items-center justify-between">
@@ -1756,7 +1766,7 @@ function WorkshopsAdmin({ token }) {
 
   if(view==="manage"&&sel) return (
     <div className="p-6">
-      <button onClick={()=>setView("list")} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 mb-3"><I name="back" size={14}/>Back to Workshops</button>
+      <button onClick={()=>{ setSuccessMsg(""); setView("list"); }} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 mb-3"><I name="back" size={14}/>Back to Workshops</button>
       {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
       <div className="flex gap-6">
         <div className="flex-1">
@@ -1862,7 +1872,7 @@ function WorkshopsAdmin({ token }) {
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <span className="text-base font-bold text-white">₹{w.price}</span>
                 <div className="flex gap-2">
-                  <button onClick={()=>{setSel(w);setView("manage");}} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
+                  <button onClick={()=>{ setSel(w); setSuccessMsg(""); setView("manage"); }} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
                     {w.isPublished?"Manage Workshop":"Continue Editing"}
                   </button>
                   <button onClick={()=>doDelete(w._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={12}/></button>
