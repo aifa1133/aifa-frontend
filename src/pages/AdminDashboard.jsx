@@ -1619,9 +1619,20 @@ function WorkshopsAdmin({ token }) {
   const [view, setView] = useState("list");
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [tabFilter, setTabFilter] = useState("All Sessions");
   const [sel, setSel] = useState(null);
+  const [selDetail, setSelDetail] = useState(null); // populated version with registrations
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTab, setDetailTab] = useState("overview");
+  const [studentDrawer, setStudentDrawer] = useState(null);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const fmtDur = (mins) => { const m=parseInt(mins)||120; if(m<60) return `${m} Min`; const h=Math.floor(m/60),r=m%60; return r?`${h} Hr ${r} Min`:`${h} ${h===1?"Hour":"Hours"}`; };
+  const CF_DEFAULT = { title:"", shortDesc:"", duration:"120", currency:"INR", price:"999", mode:"ONLINE", seats:"50", date:"", time:"", endTime:"", published:true, image:"", ctaText:"Reserve Spot", ctaType:"INTERNAL", ctaUrl:"", sessionCode:"", trainer:"", zoomLink:"" };
+  const [cf, setCf] = useState(CF_DEFAULT);
+  const [imgUploading, setImgUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const loadWorkshops = () => {
     setLoading(true);
@@ -1629,13 +1640,14 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(() => { loadWorkshops(); }, [token]);
-  const fmtDur = (mins) => { const m=parseInt(mins)||120; if(m<60) return `${m} Min`; const h=Math.floor(m/60),r=m%60; return r?`${h} Hr ${r} Min`:`${h} ${h===1?"Hour":"Hours"}`; };
-  const CF_DEFAULT = { title:"", shortDesc:"", duration:"120", currency:"INR", price:"999", mode:"ONLINE", seats:"50", date:"", time:"", published:true, image:"", ctaText:"Reserve Spot", ctaType:"INTERNAL", ctaUrl:"" };
-  const [cf, setCf] = useState(CF_DEFAULT);
-  const [imgUploading, setImgUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+
+  const loadDetail = (w) => {
+    setSel(w); setSelDetail(null); setDetailTab("overview"); setSuccessMsg(""); setView("detail");
+    setDetailLoading(true);
+    fetch(`/api/workshops/${w._id}`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.json()).then(d=>{ setSelDetail(d); setDetailLoading(false); })
+      .catch(()=>{ setSelDetail(w); setDetailLoading(false); });
+  };
 
   const parseDurToMins = (dur) => {
     if(!dur) return "120";
@@ -1643,152 +1655,192 @@ function WorkshopsAdmin({ token }) {
     const num = parseInt(dur);
     if(isNaN(num)) return "120";
     if(lower.includes("hour")||lower.includes("hr")) return String(num*60);
-    return String(num); // already minutes
-  };
-  const startEdit = (w) => {
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:parseDurToMins(w.duration)||"120", currency:w.currency||"INR", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:"", time:"", published:!!w.isPublished, image:w.image||"", ctaText:w.ctaText||"Reserve Spot", ctaType:w.ctaType||"INTERNAL", ctaUrl:w.ctaUrl||"" });
-    setIsEditing(true); setSuccessMsg(""); setView("create");
+    return String(num);
   };
 
-  const doCreate = async () => {
+  const getStatus = (w) => {
+    if(w.isCancelled) return "Cancelled";
+    if(!w.isPublished) return "Draft";
+    if(!w.scheduledAt) return "Upcoming";
+    const now = Date.now();
+    const start = new Date(w.scheduledAt).getTime();
+    const durMins = parseInt(parseDurToMins(w.duration)) || 120;
+    const end = start + durMins * 60000;
+    if(now < start) return "Upcoming";
+    if(now >= start && now <= end) return "Live";
+    return "Completed";
+  };
+
+  const STATUS_STYLES = {
+    Live:      "bg-green-500/20 text-green-400 border border-green-500/30",
+    Upcoming:  "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+    Completed: "bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/30",
+    Draft:     "bg-white/10 text-gray-400 border border-white/20",
+    Cancelled: "bg-red-500/20 text-red-400 border border-red-500/30",
+  };
+
+  const fmtRevenue = (w) => {
+    const sym = w.currency==="USD"?"$":"₹";
+    return `${sym}${((w.registrations?.length||0)*(w.price||0)).toLocaleString("en-IN")}`;
+  };
+
+  const startEdit = (w) => {
+    const scheduled = w.scheduledAt ? new Date(w.scheduledAt) : null;
+    const dateStr = scheduled ? scheduled.toISOString().slice(0,10) : "";
+    const timeStr = scheduled ? scheduled.toTimeString().slice(0,5) : "";
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:parseDurToMins(w.duration)||"120", currency:w.currency||"INR", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:dateStr, time:timeStr, endTime:w.endTime||"", published:!!w.isPublished, image:w.image||"", ctaText:w.ctaText||"Reserve Spot", ctaType:w.ctaType||"INTERNAL", ctaUrl:w.ctaUrl||"", sessionCode:w.sessionCode||"", trainer:w.trainer||"", zoomLink:w.zoomLink||"" });
+    setIsEditing(true); setSuccessMsg(""); setSel(w); setView("create");
+  };
+
+  const doSave = async () => {
     if(!cf.title.trim()) { alert("Workshop title is required."); return; }
     setSaving(true);
     try {
       let scheduledAt = null;
-      if (cf.date) {
-        const d = new Date(`${cf.date}${cf.time ? "T"+cf.time : "T00:00"}`);
-        if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
+      if(cf.date) {
+        const d = new Date(`${cf.date}${cf.time?"T"+cf.time:"T00:00"}`);
+        if(!isNaN(d.getTime())) scheduledAt = d.toISOString();
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:fmtDur(cf.duration), currency:cf.currency, price:parseFloat(String(cf.price).replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, image:cf.image||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:cf.ctaType||"INTERNAL", ctaUrl:cf.ctaUrl||"", ...(scheduledAt && { scheduledAt }) };
-      const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
-      const meth = isEditing && sel?._id ? "PUT" : "POST";
+      const body = { title:cf.title, description:cf.shortDesc, duration:fmtDur(cf.duration), currency:cf.currency, price:parseFloat(String(cf.price).replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, image:cf.image||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:cf.ctaType||"INTERNAL", ctaUrl:cf.ctaUrl||"", sessionCode:cf.sessionCode||"", trainer:cf.trainer||"", zoomLink:cf.zoomLink||"", endTime:cf.endTime||"", ...(scheduledAt&&{scheduledAt}) };
+      const url  = isEditing&&sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
+      const meth = isEditing&&sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
       const data = await res.json();
       if(res.ok){
-        setSel(data); setSuccessMsg(isEditing?"Workshop Updated Successfully!":"Workshop Created Successfully!");
+        setSuccessMsg(isEditing?"Workshop Updated!":"Workshop Created!");
         if(isEditing) setWorkshops(ws=>ws.map(w=>w._id===data._id?data:w));
         else setWorkshops(ws=>[data,...ws]);
-        setCf(CF_DEFAULT); setIsEditing(false); setView("manage");
-      } else { alert(data.message||"Failed to save workshop."); }
-    } catch(e){ alert("Network error. Please try again."); }
+        setCf(CF_DEFAULT); setIsEditing(false);
+        if(isEditing&&sel) { setSel(data); loadDetail(data); } else { setView("list"); }
+      } else { alert(data.message||"Failed to save."); }
+    } catch { alert("Network error."); }
     setSaving(false);
   };
 
-  const doPublish = async (w) => {
-    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
-    const data = await res.json();
-    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop is now live!"); }
-  };
-
-  const doUnpublish = async (w) => {
-    if(!window.confirm("Unpublish this workshop? It will be hidden from students.")) return;
-    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:false }) });
-    const data = await res.json();
-    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop moved to draft."); }
-  };
-
   const doDelete = async (id) => {
-    if(!window.confirm("Delete?")) return;
+    if(!window.confirm("Delete this workshop? This cannot be undone.")) return;
     await fetch(`/api/workshops/${id}`,{ method:"DELETE", headers:{Authorization:`Bearer ${token}`} });
     setWorkshops(ws=>ws.filter(w=>w._id!==id));
+    setView("list");
   };
 
+  const doMarkCompleted = async (w) => {
+    const wk = w||sel; if(!wk) return;
+    const res = await fetch(`/api/workshops/${wk._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
+    const data = await res.json();
+    if(res.ok){ setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Marked as completed!"); }
+  };
+
+  const doCancel = async (w) => {
+    const wk = w||sel; if(!wk) return;
+    if(!window.confirm("Cancel this session? This cannot be undone.")) return;
+    const res = await fetch(`/api/workshops/${wk._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isCancelled:true, isPublished:false }) });
+    const data = await res.json();
+    if(res.ok){ setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Session cancelled."); if(sel?._id===wk._id) setSel(data); }
+  };
+
+  const doPublish = async (w) => {
+    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true, isCancelled:false }) });
+    const data = await res.json();
+    if(res.ok){ setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSel(data); setSuccessMsg("Workshop published!"); }
+  };
+
+  const initials = (name="") => name.split(" ").map(n=>n[0]||"").join("").toUpperCase().slice(0,2)||"??";
+  const INITIALS_COLORS = ["bg-[#C7E36B] text-black","bg-blue-500 text-white","bg-purple-500 text-white","bg-orange-500 text-white","bg-pink-500 text-white","bg-teal-500 text-white"];
+  const avatarColor = (name="") => INITIALS_COLORS[name.charCodeAt(0)%INITIALS_COLORS.length];
+
+  /* ── CREATE / EDIT FORM ── */
   if(view==="create") return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">{isEditing?"Edit Workshop":"Create Workshop"}</h1>
-          <p className="text-xs text-gray-400">{isEditing?"Update workshop details":"Add workshop details for website display"}</p>
+          <h1 className="text-xl font-bold text-white">{isEditing?"Edit Session":"Create New Session"}</h1>
+          <p className="text-xs text-gray-400">{isEditing?"Update session details":"Schedule a new live workshop."}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
-          <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doCreate} disabled={saving}>{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
+          <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing&&sel?"detail":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+          <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doSave} disabled={saving}>{saving?"Saving...":(isEditing?"Save Changes":"Create Session")}</button>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-6">
         <div className="col-span-3 space-y-4">
           <Sect icon="resources" title="Basic Information">
-            <Fld label="Workshop Title" value={cf.title} onChange={v=>setCf({...cf,title:v})} placeholder="AI Cinematography Masterclass" />
+            <Fld label="Workshop Title *" value={cf.title} onChange={v=>setCf({...cf,title:v})} placeholder="AI Cinematography Masterclass" />
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="Session Code" value={cf.sessionCode} onChange={v=>setCf({...cf,sessionCode:v})} placeholder="A01 (auto-generated)" />
+              <Fld label="Trainer" value={cf.trainer} onChange={v=>setCf({...cf,trainer:v})} placeholder="Alex Rivera" />
+            </div>
             <Fld label="Short Description" value={cf.shortDesc} onChange={v=>setCf({...cf,shortDesc:v})} textarea placeholder="Master the art of visual storytelling..." />
-            {/* IMAGE UPLOAD */}
             <div>
               <p className="text-[10px] text-gray-400 font-semibold mb-1">THUMBNAIL IMAGE</p>
               <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer transition-all ${cf.image?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/20 hover:border-[#C7E36B]/50 hover:bg-white/5"} ${imgUploading?"opacity-60 pointer-events-none":""}`}
-                style={{ minHeight: cf.image ? 0 : "90px" }}>
+                style={{ minHeight: cf.image?0:"90px" }}>
                 <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async e => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
+                  const file = e.target.files?.[0]; if(!file) return;
                   setImgUploading(true);
                   try {
-                    const fd = new FormData();
-                    fd.append("image", file);
-                    const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd });
+                    const fd = new FormData(); fd.append("image",file);
+                    const res = await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
                     const data = await res.json();
-                    if (res.ok) setCf(c=>({...c, image: data.url}));
-                    else alert(data.message || "Upload failed");
-                  } catch { alert("Upload failed. Please try again."); }
-                  setImgUploading(false);
-                  e.target.value = "";
+                    if(res.ok) setCf(c=>({...c,image:data.url})); else alert(data.message||"Upload failed");
+                  } catch { alert("Upload failed."); }
+                  setImgUploading(false); e.target.value="";
                 }} />
                 {cf.image ? (
                   <div className="relative w-full">
-                    <img src={cf.image} alt="thumbnail" className="w-full h-[140px] object-cover rounded-[10px]" />
-                    <button type="button" onClick={e=>{ e.preventDefault(); setCf(c=>({...c,image:""})); }}
-                      className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500/80">✕</button>
+                    <img src={cf.image} alt="thumbnail" className="w-full h-[140px] object-cover rounded-[10px]"/>
+                    <button type="button" onClick={e=>{e.preventDefault();setCf(c=>({...c,image:""}));}} className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500/80">✕</button>
                     <div className="absolute bottom-2 left-2 bg-black/60 text-[#C7E36B] text-[10px] font-bold px-2 py-0.5 rounded">Click to change</div>
                   </div>
                 ) : imgUploading ? (
-                  <div className="py-5 flex flex-col items-center gap-2">
-                    <div className="w-5 h-5 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/>
-                    <p className="text-[11px] text-gray-400">Uploading...</p>
-                  </div>
+                  <div className="py-5 flex flex-col items-center gap-2"><div className="w-5 h-5 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/><p className="text-[11px] text-gray-400">Uploading...</p></div>
                 ) : (
-                  <div className="py-5 flex flex-col items-center gap-1">
-                    <I name="upload" size={20} className="text-gray-500"/>
-                    <p className="text-[11px] text-gray-400">Click to upload or drag and drop</p>
-                    <p className="text-[10px] text-gray-500">PNG, JPG or WEBP · Max 5MB</p>
-                  </div>
+                  <div className="py-5 flex flex-col items-center gap-1"><I name="upload" size={20} className="text-gray-500"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP · Max 5MB</p></div>
                 )}
               </label>
             </div>
           </Sect>
+          <Sect icon="workshop" title="Schedule">
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="Date *" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} min={new Date().toISOString().slice(0,10)} />
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">TIMEZONE</p>
+                <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 select-none">IST (GMT+5:30)</div>
+              </div>
+              <Fld label="Start Time *" type="time" value={cf.time} onChange={v=>setCf({...cf,time:v})} />
+              <Fld label="End Time" type="time" value={cf.endTime} onChange={v=>setCf({...cf,endTime:v})} />
+            </div>
+          </Sect>
           <Sect icon="service" title="Key Details">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {/* DURATION — minutes dropdown */}
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">DURATION</p>
                 <select value={cf.duration} onChange={e=>setCf({...cf,duration:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]">
-                  {[30,45,60,90,120,150,180,210,240,300,360].map(m=>(
-                    <option key={m} value={String(m)}>{fmtDur(m)}</option>
-                  ))}
+                  {[30,45,60,90,120,150,180,210,240,300,360].map(m=>(<option key={m} value={String(m)}>{fmtDur(m)}</option>))}
                 </select>
               </div>
-              {/* PRICING — currency + amount */}
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">PRICING</p>
                 <div className="flex rounded-lg overflow-hidden border border-white/10 focus-within:border-[#C7E36B]/50">
                   <select value={cf.currency} onChange={e=>setCf({...cf,currency:e.target.value})} className="bg-[#252829] text-white text-xs px-2 py-2 outline-none border-r border-white/10 shrink-0 [color-scheme:dark]">
-                    <option value="INR">₹ INR</option>
-                    <option value="USD">$ USD</option>
+                    <option value="INR">₹ INR</option><option value="USD">$ USD</option>
                   </select>
-                  <input type="number" value={cf.price} onChange={e=>setCf({...cf,price:e.target.value})} placeholder="999" min="0" className="flex-1 bg-[#1A1D1E] text-white text-sm px-3 py-2 outline-none min-w-0" />
+                  <input type="number" value={cf.price} onChange={e=>setCf({...cf,price:e.target.value})} placeholder="999" min="0" className="flex-1 bg-[#1A1D1E] text-white text-sm px-3 py-2 outline-none min-w-0"/>
                 </div>
               </div>
-              {/* MODE */}
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">MODE</p>
-                <select value={cf.mode} onChange={e=>setCf({...cf,mode:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                  <option value="ONLINE">ONLINE</option>
-                  <option value="OFFLINE">OFFLINE</option>
+                <select value={cf.mode} onChange={e=>setCf({...cf,mode:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]">
+                  <option value="ONLINE">Online (Zoom)</option><option value="OFFLINE">Offline</option>
                 </select>
               </div>
-              {/* SEAT LIMIT */}
-              <Fld label="SEAT LIMIT" value={cf.seats} onChange={v=>setCf({...cf,seats:v.replace(/\D/g,"")})} placeholder="50" />
+              <Fld label="SEAT LIMIT" value={cf.seats} onChange={v=>setCf({...cf,seats:v.replace(/\D/g,"")})} placeholder="50"/>
             </div>
+            <Fld label="Zoom Meeting Link" value={cf.zoomLink} onChange={v=>setCf({...cf,zoomLink:v})} placeholder="https://zoom.us/j/xxxxxxxxxx"/>
           </Sect>
           <Sect icon="link" title="CTA Section">
             <div className="grid grid-cols-2 gap-3">
-              <Fld label="Button Text" value={cf.ctaText} onChange={v=>setCf({...cf,ctaText:v})} placeholder="Reserve Spot" />
+              <Fld label="Button Text" value={cf.ctaText} onChange={v=>setCf({...cf,ctaText:v})} placeholder="Reserve Spot"/>
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">Action Type</p>
                 <div className="flex gap-2">
@@ -1797,32 +1849,20 @@ function WorkshopsAdmin({ token }) {
                 </div>
               </div>
             </div>
-            {cf.ctaType==="EXTERNAL" && (
-              <Fld label="Redirect URL" value={cf.ctaUrl} onChange={v=>setCf({...cf,ctaUrl:v})} placeholder="https://checkout.aifa.com/workshop-id" />
-            )}
-          </Sect>
-          <Sect icon="workshop" title="Schedule">
-            <div className="grid grid-cols-3 gap-3">
-              <Fld label="Date" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} min={new Date().toISOString().slice(0,10)} />
-              <Fld label="Time" type="time" value={cf.time} onChange={v=>setCf({...cf,time:v})} />
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">TIMEZONE</p>
-                <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 select-none">IST (GMT+5:30)</div>
-              </div>
-            </div>
+            {cf.ctaType==="EXTERNAL" && <Fld label="Redirect URL" value={cf.ctaUrl} onChange={v=>setCf({...cf,ctaUrl:v})} placeholder="https://checkout.aifa.com/workshop-id"/>}
           </Sect>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})} /><span className="text-sm text-white">Published</span></div>
+            <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})}/><span className="text-sm text-white">Published</span></div>
             <div className="flex gap-2">
-              <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-              <button onClick={doCreate} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
+              <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing&&sel?"detail":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+              <button onClick={doSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?"Saving...":(isEditing?"Save Changes":"Create Session")}</button>
             </div>
           </div>
         </div>
         <div>
           <p className="text-[10px] text-green-400 font-semibold mb-2">● LIVE PREVIEW</p>
           <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-            {cf.image && <img src={cf.image} alt="" className="w-full h-[100px] object-cover rounded-lg mb-2"/>}
+            {cf.image&&<img src={cf.image} alt="" className="w-full h-[100px] object-cover rounded-lg mb-2"/>}
             <span className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-0.5 rounded">WORKSHOP</span>
             <p className="text-sm font-bold text-white mt-2">{cf.title||"Workshop Title"}</p>
             <p className="text-[11px] text-gray-400 mt-1">{cf.shortDesc||"Short description..."}</p>
@@ -1833,136 +1873,325 @@ function WorkshopsAdmin({ token }) {
             </div>
             <button className="w-full bg-[#C7E36B] text-black text-[11px] font-bold py-1.5 rounded-lg mt-2">RESERVE SPOT</button>
           </div>
-          <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/20 rounded-xl p-3 mt-3">
-            <p className="text-[10px] text-[#C7E36B] font-semibold mb-2">Admin Tips</p>
-            {["Use high-quality 16:9 images for better card display.","Titles under 50 characters work best for mobile layouts.","Ensure the CTA redirect URL is a secure HTTPS link."].map((t,i)=>(
-              <p key={i} className="text-[10px] text-gray-400 flex items-start gap-1 mb-1"><span>•</span>{t}</p>
-            ))}
-          </div>
         </div>
       </div>
     </div>
   );
 
-  if(view==="manage"&&sel) return (
-    <div className="p-6">
-      <button onClick={()=>{ setSuccessMsg(""); setView("list"); }} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 mb-3"><I name="back" size={14}/>Back to Workshops</button>
-      {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
-      <div className="flex gap-6">
-        <div className="flex-1">
-          <div className="flex gap-2 mb-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span><span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span></div>
-          <h2 className="text-2xl font-black text-white">{sel.title}</h2>
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            {[["PRICE",`${sel.currency==="USD"?"$":"₹"}${sel.price||1499}`],["DURATION",sel.duration||"—"],["SEAT LIMIT",`${sel.seats||50} Seats`]].map(([k,v])=>(
-              <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-3"><p className="text-[10px] text-gray-400 font-semibold">{k}</p><p className="text-base font-bold text-white">{v}</p></div>
-            ))}
+  /* ── SESSION DETAIL VIEW ── */
+  if(view==="detail"&&sel) {
+    const status = getStatus(sel);
+    const detail = selDetail||sel;
+    const regList = Array.isArray(detail.registrations) ? detail.registrations : [];
+    const revenue = (regList.length)*(sel.price||0);
+    const sym = sel.currency==="USD"?"$":"₹";
+    const fmtDate = sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric",weekday:"long"}) : "Not scheduled";
+    const fmtTime = sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "";
+    const timeRange = fmtTime + (sel.endTime?` - ${sel.endTime}`:"");
+    return (
+      <div className="p-6">
+        {/* BREADCRUMB */}
+        <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+          <button onClick={()=>setView("list")} className="hover:text-white flex items-center gap-1"><I name="back" size={12}/>Back</button>
+          <span>/</span><span className="hover:text-white cursor-pointer" onClick={()=>setView("list")}>Workshops</span>
+          <span>/</span><span className="text-gray-300">Session Details</span>
+        </div>
+        {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
+
+        {/* HEADER */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-white">{sel.title}</h1>
+              {sel.sessionCode && <span className="text-[11px] bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/30 font-bold px-2 py-0.5 rounded-full">{sel.sessionCode}</span>}
+            </div>
+            <div className="flex items-center gap-3 mt-1 text-sm text-gray-400 flex-wrap">
+              {sel.scheduledAt&&<span>📅 {new Date(sel.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
+              {fmtTime&&<span>⏰ {timeRange}</span>}
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[status]||STATUS_STYLES.Draft}`}>{status}</span>
+            </div>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 mt-4 flex flex-col items-center justify-center min-h-[180px]">
-            <I name="users" size={32} className="text-gray-600 mb-2"/>
-            <p className="text-sm text-gray-400 font-semibold">{sel.registrations?.length ? `${sel.registrations.length} / ${sel.seats||50} registered` : `0 / ${sel.seats||50} registered`}</p>
-            <div className="w-full max-w-[180px] mt-2 bg-white/10 rounded-full h-1.5"><div className="bg-[#C7E36B] h-1.5 rounded-full transition-all" style={{width:`${Math.min(100,((sel.registrations?.length||0)/(sel.seats||50))*100)}%`}}/></div>
-            <p className="text-xs text-gray-500 mt-2 text-center">{(sel.seats||50)-(sel.registrations?.length||0)} seats remaining</p>
-            {!sel.isPublished && (
-              <button onClick={()=>doPublish(sel)} className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300">📣 Publish Workshop to Live</button>
-            )}
-            {sel.isPublished && (
-              <div className="mt-4 flex flex-col items-center gap-2">
-                <span className="text-xs text-green-400 font-semibold">✓ Published and Live</span>
-                <button onClick={()=>doUnpublish(sel)} className="text-xs border border-red-500/40 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-all">Unpublish (move to draft)</button>
+          <div className="flex gap-2 shrink-0">
+            {sel.zoomLink&&<a href={sel.zoomLink} target="_blank" rel="noreferrer" className="text-xs border border-white/20 text-gray-300 px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="videocam" size={12}/>Join Zoom</a>}
+            <button onClick={()=>startEdit(sel)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1"><I name="edit" size={12}/>Edit Session</button>
+          </div>
+        </div>
+
+        {/* TABS */}
+        <div className="flex gap-6 border-b border-white/10 mb-5">
+          {["overview","students"].map(t=>(
+            <button key={t} onClick={()=>setDetailTab(t)} className={`text-sm font-semibold pb-3 transition-all capitalize ${detailTab===t?"text-white border-b-2 border-[#C7E36B]":"text-gray-500 hover:text-gray-300"}`}>{t==="students"?`Students (${regList.length})`:t.charAt(0).toUpperCase()+t.slice(1)}</button>
+          ))}
+        </div>
+
+        {detailLoading&&<AdminLoader label="Loading session details"/>}
+
+        {!detailLoading&&detailTab==="overview"&&(
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* SESSION INFORMATION */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+              <h3 className="text-base font-bold text-white mb-4">Session Information</h3>
+              {[
+                ["Workshop", sel.title],
+                sel.sessionCode&&["Session Code", sel.sessionCode],
+                sel.trainer&&["Trainer", sel.trainer],
+                ["Date", fmtDate],
+                fmtTime&&["Time", timeRange],
+                sel.zoomLink&&["Zoom Meeting Link", sel.zoomLink],
+                ["Price per seat", `${sym}${sel.price||0}`],
+                ["Mode", sel.mode||"ONLINE"],
+                ["Seat Limit", `${sel.seats||50} seats`],
+              ].filter(Boolean).map(([k,v])=>(
+                <div key={k} className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
+                  <span className="text-[11px] text-gray-500 font-semibold w-[120px] shrink-0">{k}</span>
+                  {k==="Zoom Meeting Link"?(
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <a href={v} target="_blank" rel="noreferrer" className="text-[#C7E36B] text-sm truncate hover:underline">{v}</a>
+                      <button onClick={()=>navigator.clipboard.writeText(v)} className="text-gray-500 hover:text-white shrink-0"><I name="copy" size={12}/></button>
+                    </div>
+                  ):<span className="text-sm text-white">{v}</span>}
+                </div>
+              ))}
+            </div>
+
+            {/* PERFORMANCE */}
+            <div className="space-y-4">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h3 className="text-base font-bold text-white mb-4">Performance</h3>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <p className="text-[10px] text-gray-400 font-semibold mb-1">Registered Students</p>
+                    <p className="text-3xl font-black text-white">{regList.length}</p>
+                    <p className="text-[11px] text-[#C7E36B] mt-1 cursor-pointer hover:underline" onClick={()=>setDetailTab("students")}>View all students →</p>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <p className="text-[10px] text-gray-400 font-semibold mb-1">Revenue</p>
+                    <p className="text-2xl font-black text-white">{sym}{revenue.toLocaleString("en-IN")}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">All Completed Sessions</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {label:"Join Zoom",icon:"videocam",fn:()=>sel.zoomLink&&window.open(sel.zoomLink,"_blank"),disabled:!sel.zoomLink},
+                    {label:"Send Reminder",icon:"bell",fn:()=>alert("Reminder feature coming soon!"),disabled:false},
+                    {label:"Mark as Completed",icon:"checkCircle",fn:()=>doMarkCompleted(sel),disabled:status==="Completed"},
+                    {label:"Cancel Session",icon:"warning",fn:()=>doCancel(sel),disabled:status==="Cancelled",danger:true},
+                  ].map(({label,icon,fn,disabled,danger})=>(
+                    <button key={label} onClick={fn} disabled={disabled} className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all text-left ${disabled?"opacity-40 cursor-default":danger?"border-red-500/20 hover:bg-red-500/10":"border-white/10 hover:bg-white/5"}`}>
+                      <I name={icon} size={18} className={danger?"text-red-400":disabled?"text-gray-600":"text-[#C7E36B]"}/>
+                      <span className={`text-xs font-semibold ${danger?"text-red-400":"text-white"}`}>{label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                <p className="text-xs font-semibold text-white mb-3">Quick Actions</p>
+                {[
+                  ["Edit Session","edit",()=>startEdit(sel)],
+                  ["Preview on Website","eye",()=>window.open("/workshops","_blank")],
+                  ["Copy Registration Link","copy",()=>{ navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`); alert("Link copied!"); }],
+                  ...(!sel.isPublished?[["Publish Workshop","checkCircle",()=>doPublish(sel)]]:[[`Unpublish (Draft)`,"warning",()=>doCancel(sel)]]),
+                  ["Delete Workshop","trash",()=>doDelete(sel._id)],
+                ].map(([l,ic,fn])=>(
+                  <button key={l} onClick={fn} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")||l.includes("Unpublish")?"text-red-400":"text-gray-300"} hover:text-white`}>
+                    <I name={ic} size={12}/>{l}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="w-[200px] shrink-0 space-y-3">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs font-semibold text-white mb-3">Management Actions</p>
-            {[
-              ["Edit Details","edit",()=>startEdit(sel)],
-              ["Preview Website Card","eye",()=>window.open("/workshops","_blank")],
-              ["Copy Registration Link","copy",()=>{ navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`); alert("Link copied!"); }],
-              ["Delete Workshop","trash",()=>{ doDelete(sel._id); setView("list"); }],
-            ].map(([l,ic,fn])=>(
-              <button key={l} onClick={fn} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")?"text-red-400":"text-gray-300"} hover:text-white`}>
-                <I name={ic} size={12}/>{l}
-              </button>
-            ))}
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs font-semibold text-white mb-3">Schedule Summary</p>
-            {[
-              ["DATE", sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleDateString("en-IN") : "Not scheduled"],
-              ["DURATION", sel.duration || "—"],
-              ["MODE", sel.mode || "ONLINE"],
-            ].map(([k,v])=>(
-              <div key={k} className="mb-2"><p className="text-[9px] text-gray-500 font-semibold">{k}</p><p className="text-xs text-white">{v}</p></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        )}
 
-  const published = workshops.filter(w=>w.isPublished);
+        {!detailLoading&&detailTab==="students"&&(
+          <div>
+            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-white/10">
+                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">#</th>
+                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Student</th>
+                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Phone</th>
+                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Email</th>
+                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Joined</th>
+                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3"></th>
+                  </tr></thead>
+                  <tbody>
+                    {regList.length===0&&<tr><td colSpan={6} className="text-center text-gray-500 py-10">No registrations yet</td></tr>}
+                    {regList.map((u,i)=>{
+                      const nm = typeof u==="object"?(u.name||"Student"):"Student";
+                      const em = typeof u==="object"?(u.email||"—"):"—";
+                      const ph = typeof u==="object"?(u.phone||"—"):"—";
+                      const ic = initials(nm);
+                      const cl = avatarColor(nm);
+                      return (
+                        <tr key={typeof u==="object"?u._id:u} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                          <td className="px-4 py-3 text-gray-500 text-xs">{i+1}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${cl}`}>{ic}</div>
+                              <span className="text-white font-semibold text-sm">{nm}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-400 text-xs">{ph}</td>
+                          <td className="px-4 py-3 text-gray-400 text-xs">{em}</td>
+                          <td className="px-4 py-3 text-gray-400 text-xs">
+                            {typeof u==="object"&&u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN") : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <button onClick={()=>setStudentDrawer({name:nm,email:em,phone:ph,joined:typeof u==="object"&&u.createdAt?new Date(u.createdAt).toLocaleString("en-IN"):"—"})} className="text-xs border border-white/20 text-gray-300 px-3 py-1 rounded-lg hover:bg-white/5">View Details</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-3 text-xs text-gray-500 border-t border-white/5">Showing {regList.length} of {regList.length} students</div>
+            </div>
+          </div>
+        )}
+
+        {/* STUDENT DETAILS DRAWER */}
+        {studentDrawer&&(
+          <div className="fixed inset-0 z-50 flex" onClick={()=>setStudentDrawer(null)}>
+            <div className="flex-1 bg-black/50"/>
+            <div className="w-[320px] bg-[#0F1112] border-l border-white/10 p-6 overflow-y-auto" onClick={e=>e.stopPropagation()}>
+              <button onClick={()=>setStudentDrawer(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white text-sm">✕</button>
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold mx-auto mt-4 mb-3 ${avatarColor(studentDrawer.name)}`}>{initials(studentDrawer.name)}</div>
+              <p className="text-white font-bold text-lg text-center">{studentDrawer.name}</p>
+              <span className="block mx-auto w-fit text-[11px] bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/30 font-semibold px-3 py-0.5 rounded-full mt-1 mb-5">Paid</span>
+              {[
+                ["Phone Number",studentDrawer.phone],
+                ["Email",studentDrawer.email],
+                ["Joined",studentDrawer.joined],
+              ].map(([k,v])=>(
+                <div key={k} className="border-b border-white/10 py-3">
+                  <p className="text-[10px] text-gray-500 font-semibold mb-1">{k}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-white flex-1">{v}</p>
+                    {(k==="Phone Number"||k==="Email")&&<button onClick={()=>navigator.clipboard.writeText(v)} className="text-gray-500 hover:text-white"><I name="copy" size={12}/></button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── LIST VIEW ── */
+  const STATUS_TABS = ["All Sessions","Upcoming","Live","Completed","Cancelled","Draft"];
   const filtered = workshops.filter(w => {
-    const matchSearch = w.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter==="All" || (statusFilter==="Published"&&w.isPublished) || (statusFilter==="Draft"&&!w.isPublished);
-    return matchSearch && matchStatus;
+    const s = getStatus(w);
+    if(tabFilter==="All Sessions") return true;
+    if(tabFilter==="Cancelled") return w.isCancelled;
+    return s===tabFilter;
   });
+
+  const totalReg = workshops.reduce((s,w)=>s+(w.registrations?.length||0),0);
+  const totalRev = workshops.reduce((s,w)=>s+(w.registrations?.length||0)*(w.price||0),0);
 
   return (
     <div className="p-6">
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full">{published.length} PUBLISHED WORKSHOPS</span>
-          <h1 className="text-xl font-bold text-white mt-1">Workshop Repository</h1>
-          <p className="text-xs text-gray-400">Manage all your published and draft workshops in one place.</p>
+          <h1 className="text-xl font-bold text-white">Workshops</h1>
+          <p className="text-xs text-gray-400">Manage all your workshop templates and sessions in one place.</p>
         </div>
-        <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setSuccessMsg(""); setView("create"); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">
-          Create New Workshop
+        <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setSuccessMsg(""); setView("create"); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1">
+          <I name="plus" size={14}/>+ Create New Session
         </button>
       </div>
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-xs">
-          <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search workshops by title..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
-          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
-        </div>
-        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-          <option>All</option><option>Published</option><option>Draft</option>
-        </select>
+
+      {/* STATS */}
+      <div className="grid grid-cols-3 gap-4 mb-5">
+        {[
+          {label:"Total Sessions",icon:"workshop",val:workshops.length,sub:"All Upcoming & Past"},
+          {label:"Total Registrations",icon:"users",val:totalReg.toLocaleString("en-IN"),sub:"Across all sessions"},
+          {label:"Total Revenue",icon:"payments",val:`₹${totalRev.toLocaleString("en-IN")}`,sub:"All Completed Sessions"},
+        ].map(({label,icon,val,sub})=>(
+          <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2"><I name={icon} size={14} className="text-[#C7E36B]"/><p className="text-[11px] text-gray-400 font-semibold">{label}</p></div>
+            <p className="text-3xl font-black text-white">{val}</p>
+            <p className="text-[10px] text-gray-500 mt-1">{sub}</p>
+          </div>
+        ))}
       </div>
-      {loading ? <AdminLoader label="Loading Workshops" /> : (
-        <div className="space-y-3">
-          {filtered.length===0 && <p className="text-gray-500 text-sm py-8 text-center">No workshops found</p>}
-          {filtered.map(w=>(
-            <div key={w._id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4 hover:border-white/20 transition-all">
-              <div className="w-[110px] h-[72px] bg-white/10 rounded-lg overflow-hidden shrink-0">
-                <img src={w.image||"/courses/v1.png"} alt="" className="w-full h-full object-cover"/>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${w.isPublished?"bg-green-500/20 text-green-400":"bg-yellow-500/20 text-yellow-400"}`}>{w.isPublished?"PUBLISHED":"DRAFT"}</span>
-                  {w.scheduledAt && <span className="text-[10px] text-gray-500">📅 {new Date(w.scheduledAt).toLocaleDateString()}</span>}
-                </div>
-                <h3 className="text-sm font-bold text-white">{w.title}</h3>
-                <div className="flex items-center gap-4 mt-1 text-[10px] text-gray-400">
-                  <span>👥 {w.registrations?.length||0}/{w.seats||50} registered</span>
-                  <span>⌨ {w.mode||"ONLINE"}</span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className="text-base font-bold text-white">{w.currency==="USD"?"$":"₹"}{w.price}</span>
-                <div className="flex gap-2">
-                  <button onClick={()=>{ setSel(w); setSuccessMsg(""); setView("manage"); }} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
-                    {w.isPublished?"Manage Workshop":"Continue Editing"}
-                  </button>
-                  <button onClick={()=>doDelete(w._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={12}/></button>
-                </div>
-              </div>
-            </div>
-          ))}
+
+      {/* FILTER TABS */}
+      <div className="flex gap-1 mb-4 overflow-x-auto">
+        {STATUS_TABS.map(t=>{
+          const isLive = t==="Live";
+          const cnt = t==="All Sessions"?workshops.length:workshops.filter(w=>{ const s=getStatus(w); if(t==="Cancelled") return w.isCancelled; return s===t; }).length;
+          return (
+            <button key={t} onClick={()=>setTabFilter(t)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1 transition-all ${tabFilter===t?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10"}`}>
+              {isLive&&<span className={`w-2 h-2 rounded-full ${tabFilter===t?"bg-black":"bg-green-400"} animate-pulse`}/>}{t}{cnt>0&&<span className={`text-[10px] ${tabFilter===t?"text-black/70":"text-gray-500"}`}>{cnt}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* TABLE */}
+      {loading ? <AdminLoader label="Loading Workshops"/> : (
+        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="border-b border-white/10">
+                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">WORKSHOP</th>
+                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">DATE & TIME</th>
+                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">REGISTERED</th>
+                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">REVENUE</th>
+                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">STATUS</th>
+                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">ACTIONS</th>
+              </tr></thead>
+              <tbody>
+                {filtered.length===0&&<tr><td colSpan={6} className="text-center text-gray-500 py-10">No workshops found</td></tr>}
+                {filtered.map(w=>{
+                  const status = getStatus(w);
+                  const dt = w.scheduledAt ? new Date(w.scheduledAt) : null;
+                  return (
+                    <tr key={w._id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-[60px] h-[40px] bg-white/10 rounded-lg overflow-hidden shrink-0">
+                            <img src={w.image||"/courses/v1.png"} alt="" className="w-full h-full object-cover"/>
+                          </div>
+                          <div>
+                            {w.sessionCode&&<span className="text-[9px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-1.5 py-0.5 rounded mr-1">{w.sessionCode}</span>}
+                            <p className="text-white font-semibold text-sm leading-tight">{w.title}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {dt ? (
+                          <div className="text-xs">
+                            <p className="text-gray-300">📅 {dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</p>
+                            <p className="text-gray-500">⏰ {dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}{w.endTime?` - ${w.endTime}`:""}</p>
+                          </div>
+                        ) : <span className="text-gray-500 text-xs">Not scheduled</span>}
+                      </td>
+                      <td className="px-4 py-3 text-white font-semibold">{w.registrations?.length||0}</td>
+                      <td className="px-4 py-3 text-white font-semibold">{fmtRevenue(w)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[status]||STATUS_STYLES.Draft}`}>{status}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button onClick={()=>loadDetail(w)} title="View" className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all"><I name="eye" size={14}/></button>
+                          <button onClick={()=>startEdit(w)} title="Edit" className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all"><I name="edit" size={14}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-3 text-xs text-gray-500 border-t border-white/5">Showing {filtered.length} of {workshops.length} sessions</div>
         </div>
       )}
-      <p className="text-xs text-gray-500 mt-3">Showing {filtered.length} of {workshops.length} workshops</p>
     </div>
   );
 }
