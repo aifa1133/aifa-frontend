@@ -1629,20 +1629,20 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", published:true });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", seats:"50", date:"", time:"", published:true });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
   const startEdit = (w) => {
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:"", time:"", published:!!w.isPublished });
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:"", time:"", published:!!w.isPublished });
     setIsEditing(true); setView("create");
   };
 
   const doCreate = async () => {
     setSaving(true);
     try {
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published };
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1691,10 +1691,11 @@ function WorkshopsAdmin({ token }) {
             </div>
           </Sect>
           <Sect icon="service" title="Key Details">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} />
               <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} />
               <Fld label="MODE" value={cf.mode} onChange={v=>setCf({...cf,mode:v})} />
+              <Fld label="SEAT LIMIT" value={cf.seats} onChange={v=>setCf({...cf,seats:v.replace(/\D/g,"")})} placeholder="50" />
             </div>
           </Sect>
           <Sect icon="link" title="CTA Section">
@@ -1752,14 +1753,15 @@ function WorkshopsAdmin({ token }) {
           <div className="flex gap-2 mb-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span><span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span></div>
           <h2 className="text-2xl font-black text-white">{sel.title}</h2>
           <div className="grid grid-cols-3 gap-3 mt-4">
-            {[["PRICE",sel.price||"₹1,499"],["DURATION",sel.duration||"4 Hours"],["SEAT LIMIT","50 Seats"]].map(([k,v])=>(
+            {[["PRICE",sel.price||"₹1,499"],["DURATION",sel.duration||"4 Hours"],["SEAT LIMIT",`${sel.seats||50} Seats`]].map(([k,v])=>(
               <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-3"><p className="text-[10px] text-gray-400 font-semibold">{k}</p><p className="text-base font-bold text-white">{v}</p></div>
             ))}
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-6 mt-4 flex flex-col items-center justify-center min-h-[180px]">
             <I name="users" size={32} className="text-gray-600 mb-2"/>
-            <p className="text-sm text-gray-400 font-semibold">{sel.registrations?.length ? `${sel.registrations.length} registrations` : "No registrations yet"}</p>
-            <p className="text-xs text-gray-500 mt-1 text-center">Once published, learner registrations will appear here in real-time.</p>
+            <p className="text-sm text-gray-400 font-semibold">{sel.registrations?.length ? `${sel.registrations.length} / ${sel.seats||50} registered` : `0 / ${sel.seats||50} registered`}</p>
+            <div className="w-full max-w-[180px] mt-2 bg-white/10 rounded-full h-1.5"><div className="bg-[#C7E36B] h-1.5 rounded-full transition-all" style={{width:`${Math.min(100,((sel.registrations?.length||0)/(sel.seats||50))*100)}%`}}/></div>
+            <p className="text-xs text-gray-500 mt-2 text-center">{(sel.seats||50)-(sel.registrations?.length||0)} seats remaining</p>
             {!sel.isPublished && (
               <button onClick={()=>doPublish(sel)} className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300">📣 Publish Workshop to Live</button>
             )}

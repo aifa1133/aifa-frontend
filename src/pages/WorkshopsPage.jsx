@@ -83,34 +83,61 @@ export default function WorkshopsPage() {
                     </div>
 
                     {/* INFO BOXES */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px]">
-                      <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⏱ Duration</p>
-                        <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold uppercase">{item.duration}</p>
-                      </div>
-                      <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⊞ Pricing</p>
-                        <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">
-                          ₹{item.price || item.price}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
-                        <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⌨ Mode</p>
-                        <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold uppercase">{item.mode}</p>
-                      </div>
-                    </div>
+                    {(() => {
+                      const registered = item.registrations?.length || 0;
+                      const seats = item.seats || 50;
+                      const remaining = seats - registered;
+                      const isFull = remaining <= 0;
+                      const isMock = item._id?.startsWith("mw");
+                      return (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-[8px]">
+                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
+                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⏱ Duration</p>
+                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold uppercase">{item.duration}</p>
+                            </div>
+                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
+                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⊞ Pricing</p>
+                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">₹{item.price}</p>
+                            </div>
+                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
+                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">⌨ Mode</p>
+                              <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold uppercase">{item.mode}</p>
+                            </div>
+                            <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[20px] rounded-[8px] bg-[#DCDCDC]">
+                              <p className="text-[#6E7072] font-[Montserrat] text-[10px] leading-[14px] font-semibold uppercase">🪑 Seats</p>
+                              {isMock ? (
+                                <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">Limited</p>
+                              ) : isFull ? (
+                                <p className="text-red-600 font-[Montserrat] text-[16px] leading-[22px] font-bold">FULL</p>
+                              ) : (
+                                <>
+                                  <p className="text-[#2B2D30] font-[Montserrat] text-[16px] leading-[22px] font-bold">{remaining} left</p>
+                                  <div className="w-full bg-gray-300 rounded-full h-1 mt-1"><div className="bg-[#2B2D30] h-1 rounded-full" style={{width:`${Math.min(100,(registered/seats)*100)}%`}}/></div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
                 {/* BUTTON */}
-                <button
-                  onClick={() => handleReserve(item)}
-                  disabled={enrolling === item._id}
-                  className="flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[25px] bg-[#D0E46A] text-[#0F1112] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase hover:opacity-90 transition disabled:opacity-60"
-                >
-                  {enrolling === item._id ? "Reserving..." : "RESERVE SPOT"}
-                  <span className="text-[22px]">→</span>
-                </button>
+                {(() => {
+                  const isFull = !item._id?.startsWith("mw") && (item.registrations?.length||0) >= (item.seats||50);
+                  return (
+                    <button
+                      onClick={() => handleReserve(item)}
+                      disabled={enrolling === item._id || isFull}
+                      className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[25px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition disabled:opacity-60 ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
+                    >
+                      {enrolling === item._id ? "Reserving..." : isFull ? "SOLD OUT" : "RESERVE SPOT"}
+                      {!isFull && <span className="text-[22px]">→</span>}
+                    </button>
+                  );
+                })()}
               </div>
             ))}
           </div>
