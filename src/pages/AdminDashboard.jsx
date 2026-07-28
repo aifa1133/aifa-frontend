@@ -3754,7 +3754,7 @@ function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min,
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
           ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 ${prefix?"pl-7":""}`}/>
-          : <input type={type||"text"} value={value} onChange={e=>!readOnly&&onChange(e.target.value)} onKeyDown={readOnly?e=>e.preventDefault():undefined} placeholder={placeholder} min={min} readOnly={readOnly} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""} ${readOnly?"cursor-pointer select-none":""}`}/>
+          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} onKeyDown={readOnly?e=>e.preventDefault():undefined} onPaste={readOnly?e=>e.preventDefault():undefined} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""} ${readOnly?"cursor-pointer":""}`}/>
         }
       </div>
     </div>
