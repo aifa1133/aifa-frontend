@@ -1045,16 +1045,28 @@ function WorkshopsSection({ token }) {
   const [reserved, setReserved]   = useState(new Set());
 
   useEffect(() => {
-    fetch("/api/workshops")
+    const userId = JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch("/api/workshops", { headers })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (Array.isArray(d) && d.length > 0) setWorkshops(d); setLoading(false); })
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          setWorkshops(d);
+          if (userId) {
+            const myIds = new Set(
+              d.filter(w =>
+                w.registrations?.some(r => {
+                  const rid = r?.user?._id || r?.user || r;
+                  return String(rid) === String(userId);
+                })
+              ).map(w => String(w._id))
+            );
+            setReserved(myIds);
+          }
+        }
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
-    if (token) {
-      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(u => { if (u?.enrolledWorkshops?.length > 0) setReserved(new Set(u.enrolledWorkshops.map(id => String(id)))); })
-        .catch(() => {});
-    }
   }, [token]);
 
   const handleReserve = async (w, e) => {

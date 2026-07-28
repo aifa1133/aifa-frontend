@@ -37,25 +37,25 @@ export default function WorkshopDetail() {
   const token = localStorage.getItem("aifa_token");
 
   useEffect(() => {
-    fetch("/api/workshops")
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const userId = JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
+    fetch("/api/workshops", { headers })
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
           const w = data.find(x => x._id === id);
           setWorkshop(w || null);
+          if (w && userId) {
+            const enrolled = w.registrations?.some(r => {
+              const rid = r?.user?._id || r?.user || r;
+              return String(rid) === String(userId);
+            });
+            if (enrolled) setIsEnrolled(true);
+          }
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-
-    if (token) {
-      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(u => {
-          if (u?.enrolledWorkshops?.some(wid => String(wid) === id)) setIsEnrolled(true);
-        })
-        .catch(() => {});
-    }
   }, [id, token]);
 
   const handleReserve = async () => {

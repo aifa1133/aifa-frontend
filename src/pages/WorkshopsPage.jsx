@@ -60,11 +60,26 @@ export default function WorkshopsPage() {
   const isLoggedIn = !!token;
 
   useEffect(() => {
+    const userId = JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
     fetch("/api/workshops")
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setWorkshops(data);
-        else setWorkshops(MOCK_WORKSHOPS);
+        if (Array.isArray(data) && data.length > 0) {
+          setWorkshops(data);
+          if (userId) {
+            const myIds = new Set(
+              data.filter(w =>
+                w.registrations?.some(r => {
+                  const rid = r?.user?._id || r?.user || r;
+                  return String(rid) === String(userId);
+                })
+              ).map(w => String(w._id))
+            );
+            setReserved(myIds);
+          }
+        } else {
+          setWorkshops(MOCK_WORKSHOPS);
+        }
       })
       .catch(() => { setWorkshops(MOCK_WORKSHOPS); })
       .finally(() => {
@@ -78,16 +93,6 @@ export default function WorkshopsPage() {
           }, 300);
         }
       });
-
-    if (token) {
-      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(u => {
-          if (u?.enrolledWorkshops?.length > 0)
-            setReserved(new Set(u.enrolledWorkshops.map(String)));
-        })
-        .catch(() => {});
-    }
   }, []);
 
   const handleReserve = async (workshop) => {
