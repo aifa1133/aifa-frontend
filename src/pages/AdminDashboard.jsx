@@ -2112,7 +2112,7 @@ function WorkshopsAdmin({ token }) {
           <p className="text-xs text-gray-400">Manage all your workshop templates and sessions in one place.</p>
         </div>
         <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setSuccessMsg(""); setView("create"); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1">
-          <I name="plus" size={14}/>+ Create New Session
+          Create New Session
         </button>
       </div>
 
