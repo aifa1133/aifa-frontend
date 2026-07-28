@@ -45,6 +45,7 @@ export default function WorkshopDetail() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling]   = useState(false);
   const [txId, setTxId] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
   const heroRef = useRef(null);
   const token = localStorage.getItem("aifa_token");
   const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
@@ -63,7 +64,11 @@ export default function WorkshopDetail() {
               const rid = r?.user?._id || r?._id || r?.user || r;
               return String(rid) === String(userId);
             });
-            if (enrolled) setIsEnrolled(true);
+            if (enrolled) {
+              setIsEnrolled(true);
+              const stored = JSON.parse(localStorage.getItem(`ws_purchase_${id}`) || "null");
+              if (stored) { setTxId(stored.txId || ""); setPurchaseDate(stored.date || ""); }
+            }
           }
         }
         setLoading(false);
@@ -108,7 +113,10 @@ export default function WorkshopDetail() {
             });
             const verifyData = await verifyRes.json();
             if (verifyRes.ok && verifyData.success) {
+              const nowDate = new Date().toISOString();
               setTxId(orderData.txId || "");
+              setPurchaseDate(nowDate);
+              localStorage.setItem(`ws_purchase_${id}`, JSON.stringify({ txId: orderData.txId || "", date: nowDate }));
               setIsEnrolled(true);
             } else {
               alert("Payment verification failed. Contact support with payment ID: " + response.razorpay_payment_id);
@@ -156,6 +164,7 @@ export default function WorkshopDetail() {
   const fmtDateLong  = dt ? dt.toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" }) : null;
   const fmtTimeRange = fmtTime ? (workshop.endTime ? `${fmtTime} – ${workshop.endTime}` : fmtTime) : null;
   const orderId      = txId ? `#AIWA${txId.slice(-6).toUpperCase()}` : "#—";
+  const purchasedOn  = purchaseDate ? new Date(purchaseDate).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : null;
 
   const calLink = () => {
     if (!dt) return null;
@@ -169,9 +178,33 @@ export default function WorkshopDetail() {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(workshop.title)}&dates=${fmt(dt)}/${fmt(end)}&details=${encodeURIComponent(workshop.description||"")}&location=${encodeURIComponent(workshop.zoomLink||"Online")}`;
   };
 
-  /* ── AFTER PURCHASE ── */
+  /* ── ENROLLED BUT NO ZOOM LINK — full-page empty state ── */
+  if (isEnrolled && !workshop.zoomLink) {
+    return (
+      <div className="min-h-screen bg-[#0B0F10] text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-xs text-gray-500 flex gap-2 flex-wrap">
+          <Link to="/" className="hover:text-white transition-colors">Home</Link>
+          <span>›</span>
+          <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+          <span>›</span>
+          <span className="text-[#C7E36B]">{workshop.title}</span>
+        </div>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl flex flex-col items-center justify-center py-28 px-8 text-center min-h-[520px]">
+            <div className="w-28 h-28 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8">
+              <img src="/logoimage.png" alt="AIFA" className="w-18 h-18 w-[72px] h-[72px] object-contain opacity-70"
+                onError={e => { e.target.style.display="none"; }}/>
+            </div>
+            <p className="text-white font-black text-2xl mb-3">Nothing to join yet</p>
+            <p className="text-gray-500 text-sm max-w-[360px] leading-relaxed">Your live workshop link will appear here when the session is available.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── AFTER PURCHASE (with zoom link) ── */
   if (isEnrolled) {
-    const hasZoom = !!workshop.zoomLink;
     return (
       <div className="min-h-screen bg-[#0B0F10] text-white">
         {/* BREADCRUMB */}
@@ -211,27 +244,16 @@ export default function WorkshopDetail() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-gray-400 text-xs">Order ID: <span className="text-white font-bold">{orderId}</span></p>
-                  {dt && <p className="text-gray-500 text-[11px] mt-0.5">Purchased on {fmtDateLong}</p>}
+                  <p className="text-gray-400 text-xs">Order ID: <span className="text-[#C7E36B] font-bold">{orderId}</span></p>
+                  {purchasedOn && <p className="text-gray-500 text-[11px] mt-0.5">Purchased on {purchasedOn}</p>}
                 </div>
               </div>
 
               {/* JOIN BUTTON */}
-              {hasZoom ? (
-                <a href={workshop.zoomLink} target="_blank" rel="noreferrer"
-                  className="w-full flex justify-center items-center gap-2 bg-[#C7E36B] text-black font-black text-sm uppercase py-3 rounded-xl hover:opacity-90 transition">
-                  Join Online Workshop →
-                </a>
-              ) : (
-                <div className="w-full bg-[#0F1112] border border-white/10 rounded-xl py-10 text-center flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                    <img src="/logoimage.png" alt="AIFA" className="w-10 h-10 object-contain rounded-full opacity-60"
-                      onError={e => { e.target.style.display="none"; }}/>
-                  </div>
-                  <p className="text-white font-bold text-sm">Nothing to join yet</p>
-                  <p className="text-gray-500 text-xs max-w-[260px]">Your live workshop link will appear here when the session is available.</p>
-                </div>
-              )}
+              <a href={workshop.zoomLink} target="_blank" rel="noreferrer"
+                className="w-full flex justify-center items-center gap-2 bg-[#C7E36B] text-black font-black text-sm py-3 rounded-xl hover:opacity-90 transition">
+                Join Online Workshop →
+              </a>
 
               {/* ADD TO CALENDAR */}
               {calLink() && (
@@ -333,7 +355,7 @@ export default function WorkshopDetail() {
           </div>
 
           {/* RIGHT — PRICE CARD */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4 sticky top-24">
+          <div className="flex flex-col gap-4 sticky top-24 py-2">
             {/* Price */}
             <div className="flex items-baseline gap-3">
               <span className="text-4xl font-black text-white">{sym}{workshop.price}</span>
@@ -351,7 +373,7 @@ export default function WorkshopDetail() {
             </button>
             <p className="text-[10px] text-gray-500 text-center font-semibold tracking-wide">SECURE PAYMENT & INSTANT ACCESS</p>
 
-            <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-gray-400">
+            <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-gray-400 bg-white/5 rounded-xl px-4 pb-3 mt-1">
               {workshop.trainer    && <p>👤 Trainer: <span className="text-white font-semibold">{workshop.trainer}</span></p>}
               {workshop.sessionCode && <p>🔖 Session: <span className="text-white font-semibold">{workshop.sessionCode}</span></p>}
               {workshop.duration   && <p>⏱ Duration: <span className="text-white font-semibold">{workshop.duration}</span></p>}
@@ -389,7 +411,7 @@ export default function WorkshopDetail() {
           <p className="text-gray-500 text-xs mt-0.5">{isFull ? "SOLD OUT" : "LIMITED SEATS AVAILABLE"}</p>
         </div>
         <button onClick={handlePay} disabled={enrolling || isFull}
-          className="bg-[#C7E36B] text-black font-black text-sm uppercase px-6 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-60 whitespace-nowrap flex items-center gap-1 shrink-0">
+          className="bg-[#C7E36B] text-black font-black text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-60 whitespace-nowrap flex items-center gap-1 shrink-0">
           {enrolling ? "Processing..." : "Book your seat →"}
         </button>
       </div>
