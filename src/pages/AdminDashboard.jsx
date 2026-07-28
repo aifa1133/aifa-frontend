@@ -166,7 +166,7 @@ export default function AdminDashboard() {
             <p className="text-[10px] text-white font-semibold truncate">{name}</p>
             <p className="text-[9px] text-gray-500">Super Admin</p>
           </div>
-          <button onClick={e => { e.stopPropagation(); handleLogout(); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
+          <button onClick={e => { e.stopPropagation(); confirmLogout(); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
         </div>
       </aside>
 

@@ -394,7 +394,7 @@ function DashboardHome({ profile, token, onNavigate }) {
     const h = { Authorization: `Bearer ${token}` };
     fetch("/api/users/me/stats", { headers: h }).then(r => r.json()).then(setStats).catch(() => {});
     fetch("/api/courses/enrolled", { headers: h }).then(r => r.json()).then(d => { if (Array.isArray(d)) setEnrolledCourses(d); }).catch(() => {});
-    fetch("/api/certificates", { headers: h }).then(r => r.json()).then(d => { if (Array.isArray(d)) setCertCount(d.length); }).catch(() => {});
+    fetch("/api/certificates/me", { headers: h }).then(r => r.json()).then(d => { if (Array.isArray(d)) setCertCount(d.length); }).catch(() => {});
     fetch("/api/workshops", { headers: h }).then(r => r.json()).then(ws => {
       if (!Array.isArray(ws)) return;
       const userId = JSON.parse(localStorage.getItem("aifa_user")||"{}")._id;
