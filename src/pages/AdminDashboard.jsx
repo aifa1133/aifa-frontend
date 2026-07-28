@@ -2768,7 +2768,7 @@ function VideoCoursesAdmin({ token }) {
                   <span className="text-[10px] text-gray-400">{c.level||"Beginner"}</span>
                 </div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] text-gray-500">👥 {c.enrolledCourses?.length ?? c.enrollmentCount ?? 0} enrolled</span>
+                  <span className="text-[10px] text-gray-500">👥 {c.enrollmentCount ?? 0} enrolled</span>
                   <button onClick={async()=>{
                     const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
                     if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
@@ -2779,7 +2779,7 @@ function VideoCoursesAdmin({ token }) {
                 <div className="flex gap-2">
                   <button onClick={()=>window.open(`/courses/${c._id}/watch`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
                   <button onClick={()=>{ setEditCourse(c); setEditInfo({}); setEditLessons(c.lessons&&c.lessons.length>0?c.lessons.map(l=>({...l})):[{title:"",videoUrl:"",duration:"",isFree:false}]); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
-                  <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={11}/></button>
+                  <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10 flex items-center gap-1"><I name="trash" size={11}/>Delete</button>
                 </div>
               </div>
             </div>

@@ -329,7 +329,8 @@ export default function CourseEnroll() {
             {[
               "Full course access — watch at your own pace",
               "Lifetime access — revisit anytime",
-              course.lessons?.length > 0 ? `${course.lessons.length} video lessons` : "Video lessons",
+              course.lessons?.length > 0 ? `${course.lessons.length} video lesson${course.lessons.length !== 1 ? "s" : ""}` : "Video lessons",
+              course.duration ? `${course.duration} of video content` : "Hours of video content",
               "Certificate of completion",
               "AIFA community access",
             ].map((item, i) => (
