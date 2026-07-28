@@ -1694,7 +1694,15 @@ function WorkshopsAdmin({ token }) {
         const d = new Date(`${cf.date}${cf.time?"T"+cf.time:"T00:00"}`);
         if(!isNaN(d.getTime())) scheduledAt = d.toISOString();
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:fmtDur(cf.duration), currency:cf.currency, price:parseFloat(String(cf.price).replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, image:cf.image||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:cf.ctaType||"INTERNAL", ctaUrl:cf.ctaUrl||"", sessionCode:cf.sessionCode||"", trainer:cf.trainer||"", zoomLink:cf.zoomLink||"", endTime:cf.endTime||"", ...(scheduledAt&&{scheduledAt}) };
+      let computedDur = fmtDur(cf.duration);
+      if(cf.time && cf.endTime) {
+        const [sh,sm]=cf.time.split(":").map(Number);
+        const [eh,em]=cf.endTime.split(":").map(Number);
+        let mins=(eh*60+em)-(sh*60+sm);
+        if(mins<0) mins+=1440;
+        if(mins>0) computedDur=fmtDur(mins);
+      }
+      const body = { title:cf.title, description:cf.shortDesc, duration:computedDur, currency:cf.currency, price:parseFloat(String(cf.price).replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, image:cf.image||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:cf.ctaType||"INTERNAL", ctaUrl:cf.ctaUrl||"", sessionCode:cf.sessionCode||"", trainer:cf.trainer||"", zoomLink:cf.zoomLink||"", endTime:cf.endTime||"", ...(scheduledAt&&{scheduledAt}) };
       const url  = isEditing&&sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing&&sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1795,7 +1803,7 @@ function WorkshopsAdmin({ token }) {
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-2 gap-3">
-              <Fld label="Date *" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} min={new Date().toISOString().slice(0,10)} />
+              <Fld label="Date *" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} min={new Date().toISOString().slice(0,10)} readOnly />
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">TIMEZONE</p>
                 <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 select-none">IST (GMT+5:30)</div>
@@ -1808,9 +1816,17 @@ function WorkshopsAdmin({ token }) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">DURATION</p>
-                <select value={cf.duration} onChange={e=>setCf({...cf,duration:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]">
-                  {[30,45,60,90,120,150,180,210,240,300,360].map(m=>(<option key={m} value={String(m)}>{fmtDur(m)}</option>))}
-                </select>
+                {(()=>{
+                  let label = "—";
+                  if(cf.time && cf.endTime) {
+                    const [sh,sm]=cf.time.split(":").map(Number);
+                    const [eh,em]=cf.endTime.split(":").map(Number);
+                    let mins=(eh*60+em)-(sh*60+sm);
+                    if(mins<0) mins+=1440;
+                    if(mins>0) label=fmtDur(mins);
+                  }
+                  return <div className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white select-none">{label}</div>;
+                })()}
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">PRICING</p>
@@ -3729,7 +3745,7 @@ function AdminLoader({ label = "Loading" }) {
   );
 }
 
-function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min }) {
+function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min, readOnly }) {
   const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600";
   return (
     <div>
@@ -3738,7 +3754,7 @@ function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min 
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
           ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 ${prefix?"pl-7":""}`}/>
-          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
+          : <input type={type||"text"} value={value} onChange={e=>!readOnly&&onChange(e.target.value)} onKeyDown={readOnly?e=>e.preventDefault():undefined} placeholder={placeholder} min={min} readOnly={readOnly} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""} ${readOnly?"cursor-pointer select-none":""}`}/>
         }
       </div>
     </div>
