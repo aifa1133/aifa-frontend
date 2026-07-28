@@ -1612,7 +1612,9 @@ function WorkshopsAdmin({ token }) {
   const [view, setView] = useState("list");
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tabFilter, setTabFilter] = useState("All Sessions");
+  const [tabFilter, setTabFilter] = useState("Upcoming");
+  const [wsPage, setWsPage] = useState(1);
+  const WS_PAGE_SIZE = 6;
   const [sel, setSel] = useState(null);
   const [selDetail, setSelDetail] = useState(null); // populated version with registrations
   const [detailLoading, setDetailLoading] = useState(false);
@@ -2138,7 +2140,7 @@ function WorkshopsAdmin({ token }) {
           const isLive = t==="Live";
           const cnt = t==="All Sessions"?workshops.length:workshops.filter(w=>{ const s=getStatus(w); if(t==="Cancelled") return w.isCancelled; return s===t; }).length;
           return (
-            <button key={t} onClick={()=>setTabFilter(t)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1 transition-all ${tabFilter===t?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10"}`}>
+            <button key={t} onClick={()=>{setTabFilter(t);setWsPage(1);}} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1 transition-all ${tabFilter===t?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10"}`}>
               {t}{isLive&&<span className={`w-2 h-2 rounded-full ${tabFilter===t?"bg-black":"bg-green-400"} animate-pulse`}/>}{cnt>0&&<span className={`text-[10px] ${tabFilter===t?"text-black/70":"text-gray-500"}`}>{cnt}</span>}
             </button>
           );
@@ -2160,7 +2162,7 @@ function WorkshopsAdmin({ token }) {
               </tr></thead>
               <tbody>
                 {filtered.length===0&&<tr><td colSpan={6} className="text-center text-gray-500 py-10">No workshops found</td></tr>}
-                {filtered.map(w=>{
+                {filtered.slice((wsPage-1)*WS_PAGE_SIZE, wsPage*WS_PAGE_SIZE).map(w=>{
                   const status = getStatus(w);
                   const dt = w.scheduledAt ? new Date(w.scheduledAt) : null;
                   return (
@@ -2201,7 +2203,18 @@ function WorkshopsAdmin({ token }) {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-3 text-xs text-gray-500 border-t border-white/5">Showing {filtered.length} of {workshops.length} sessions</div>
+          <div className="px-4 py-3 flex items-center justify-between border-t border-white/5">
+            <span className="text-xs text-gray-500">Showing {Math.min((wsPage-1)*WS_PAGE_SIZE+1,filtered.length)||0}–{Math.min(wsPage*WS_PAGE_SIZE,filtered.length)} of {filtered.length} sessions</span>
+            {filtered.length > WS_PAGE_SIZE && (
+              <div className="flex items-center gap-1">
+                <button onClick={()=>setWsPage(p=>Math.max(1,p-1))} disabled={wsPage===1} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/10 disabled:opacity-30 transition-all">← Prev</button>
+                {Array.from({length:Math.ceil(filtered.length/WS_PAGE_SIZE)},(_,i)=>i+1).map(n=>(
+                  <button key={n} onClick={()=>setWsPage(n)} className={`w-6 h-6 text-xs rounded-lg transition-all ${wsPage===n?"bg-[#C7E36B] text-black font-bold":"border border-white/10 text-gray-400 hover:bg-white/10"}`}>{n}</button>
+                ))}
+                <button onClick={()=>setWsPage(p=>Math.min(Math.ceil(filtered.length/WS_PAGE_SIZE),p+1))} disabled={wsPage===Math.ceil(filtered.length/WS_PAGE_SIZE)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/10 disabled:opacity-30 transition-all">Next →</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
