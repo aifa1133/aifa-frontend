@@ -2105,10 +2105,13 @@ function WorkshopsAdmin({ token }) {
           {label:"Total Registrations",icon:"users",val:totalReg.toLocaleString("en-IN"),sub:"Across all sessions"},
           {label:"Total Revenue",icon:"payments",val:`₹${totalRev.toLocaleString("en-IN")}`,sub:"All Completed Sessions"},
         ].map(({label,icon,val,sub})=>(
-          <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2"><I name={icon} size={14} className="text-[#C7E36B]"/><p className="text-[11px] text-gray-400 font-semibold">{label}</p></div>
-            <p className="text-3xl font-black text-white">{val}</p>
-            <p className="text-[10px] text-gray-500 mt-1">{sub}</p>
+          <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0"><I name={icon} size={18} className="text-[#C7E36B]"/></div>
+            <div>
+              <p className="text-[11px] text-gray-400 font-semibold mb-0.5">{label}</p>
+              <p className="text-2xl font-black text-white leading-none">{val}</p>
+              <p className="text-[10px] text-gray-500 mt-1">{sub}</p>
+            </div>
           </div>
         ))}
       </div>
