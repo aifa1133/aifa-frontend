@@ -2074,7 +2074,7 @@ function WorkshopsAdmin({ token }) {
   }
 
   /* ── LIST VIEW ── */
-  const STATUS_TABS = ["All Sessions","Upcoming","Live","Completed","Cancelled","Draft"];
+  const STATUS_TABS = ["Upcoming","Live","Completed","Cancelled","Draft","All Sessions"];
   const filtered = workshops.filter(w => {
     const s = getStatus(w);
     if(tabFilter==="All Sessions") return true;
@@ -2123,7 +2123,7 @@ function WorkshopsAdmin({ token }) {
           const cnt = t==="All Sessions"?workshops.length:workshops.filter(w=>{ const s=getStatus(w); if(t==="Cancelled") return w.isCancelled; return s===t; }).length;
           return (
             <button key={t} onClick={()=>setTabFilter(t)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1 transition-all ${tabFilter===t?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10"}`}>
-              {isLive&&<span className={`w-2 h-2 rounded-full ${tabFilter===t?"bg-black":"bg-green-400"} animate-pulse`}/>}{t}{cnt>0&&<span className={`text-[10px] ${tabFilter===t?"text-black/70":"text-gray-500"}`}>{cnt}</span>}
+              {t}{isLive&&<span className={`w-2 h-2 rounded-full ${tabFilter===t?"bg-black":"bg-green-400"} animate-pulse`}/>}{cnt>0&&<span className={`text-[10px] ${tabFilter===t?"text-black/70":"text-gray-500"}`}>{cnt}</span>}
             </button>
           );
         })}
