@@ -175,7 +175,7 @@ export default function WorkshopsPage() {
                           )}
                         </div>
                         {isReserved && (
-                          <span className="absolute top-3 right-3 text-[10px] bg-[#0B5F2A] text-[#C7E36B] font-black px-2.5 py-1 rounded-full border border-[#C7E36B]/40 tracking-wide">CONFIRMED</span>
+                          <span className="absolute top-3 right-3 text-[10px] bg-[#0B5F2A] text-[#C7E36B] font-black px-2.5 py-1 rounded-full border border-[#C7E36B]/40 tracking-wide flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>CONFIRMED</span>
                         )}
                         <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[24px] leading-[30px] md:text-[40px] md:leading-[46px] font-black pr-20">
                           {item.title}
@@ -193,9 +193,9 @@ export default function WorkshopsPage() {
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
                           </div>
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#0B5F2A]">
-                            <p className="text-[#C7E36B]/70 font-[Montserrat] text-[10px] font-semibold uppercase">✓ Seat</p>
-                            <p className="text-[#C7E36B] font-[Montserrat] text-[14px] font-bold uppercase">CONFIRMED</p>
+                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                            <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">SEAT CONFIRMED</p>
                           </div>
                           <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⌨ Mode</p>
@@ -223,29 +223,35 @@ export default function WorkshopsPage() {
 
                   {/* BOTTOM */}
                   {isReserved ? (
-                    <div className="flex flex-col gap-3 px-4 py-4 bg-[#0B0F10] border-t border-[#C7E36B]/20">
-                      {(fmtDateLong || fmtTimeRange) && (
-                        <div className="flex items-center gap-2 text-xs text-gray-400 font-semibold">
-                          <span className="text-base">📅</span>
-                          <span>DATE: {fmtDateLong}{fmtTimeRange ? ` | at ${fmtTimeRange}` : ""}</span>
+                    <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/10 border-t border-[#C7E36B]/30 flex-wrap">
+                      {/* Left: date info */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#C7E36B]/20 flex items-center justify-center shrink-0">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
-                      )}
-                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div>
+                          {fmtDateLong && <p className="text-[#2B2D30] text-xs font-black font-[Montserrat]">DATE: {fmtDateLong}</p>}
+                          {fmtTimeRange && <p className="text-[#6E7072] text-[11px] font-semibold font-[Montserrat]">at {fmtTimeRange}</p>}
+                        </div>
+                      </div>
+                      {/* Right: buttons */}
+                      <div className="flex items-center gap-2">
                         {item.zoomLink ? (
                           <a href={item.zoomLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                            className="flex-1 flex justify-center items-center gap-1 bg-[#C7E36B] text-black font-black text-sm uppercase py-3 rounded-xl hover:opacity-90 transition font-[Montserrat]">
+                            className="flex items-center gap-1 bg-[#C7E36B] text-black font-black text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition font-[Montserrat] whitespace-nowrap">
                             Join Workshop →
                           </a>
                         ) : (
                           <button disabled
-                            className="flex-1 flex justify-center items-center gap-1 bg-white/10 text-gray-500 font-black text-sm uppercase py-3 rounded-xl cursor-not-allowed font-[Montserrat]">
+                            className="flex items-center gap-1 bg-[#C7E36B]/40 text-black/40 font-black text-sm px-5 py-2.5 rounded-xl cursor-not-allowed font-[Montserrat] whitespace-nowrap">
                             Join Workshop →
                           </button>
                         )}
                         {calLink && (
                           <a href={calLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                            className="flex-1 sm:flex-none flex justify-center items-center gap-1 bg-white/10 text-gray-200 font-bold text-sm px-4 py-3 rounded-xl hover:bg-white/20 transition border border-white/10 font-[Montserrat]">
-                            📅 Add to calendar
+                            className="flex items-center gap-1.5 bg-white text-[#0F1112] font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-100 transition border border-gray-200 font-[Montserrat] whitespace-nowrap">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Add to calendar
                           </a>
                         )}
                       </div>
