@@ -52,7 +52,6 @@ const STATUS_STYLE = {
 export default function WorkshopsPage() {
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState(null);
   const [reserved, setReserved] = useState(new Set());
   const [highlighted, setHighlighted] = useState(null);
   const navigate = useNavigate();
@@ -95,40 +94,12 @@ export default function WorkshopsPage() {
       });
   }, []);
 
-  const handleReserve = async (workshop) => {
-    if (!isLoggedIn) {
-      alert("Please login or sign up to reserve a spot.");
-      return;
-    }
+  const handleReserve = (workshop) => {
     if (!workshop._id || workshop._id.startsWith("mw")) {
       alert("Booking coming soon!");
       return;
     }
-    if (reserved.has(workshop._id)) return;
-    setEnrolling(workshop._id);
-    try {
-      const res = await fetch(`/api/workshops/${workshop._id}/register`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setReserved(prev => new Set([...prev, workshop._id]));
-        setWorkshops(prev => prev.map(w =>
-          w._id === workshop._id
-            ? { ...w, registrations: [...(w.registrations || []), "me"] }
-            : w
-        ));
-        alert("Spot reserved! Check your dashboard.");
-        navigate("/dashboard");
-      } else {
-        alert(data.message || "Registration failed.");
-      }
-    } catch {
-      alert("Network error. Please try again.");
-    } finally {
-      setEnrolling(null);
-    }
+    navigate(`/workshops/${workshop._id}`);
   };
 
   return (
@@ -282,11 +253,11 @@ export default function WorkshopsPage() {
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleReserve(item); }}
-                      disabled={enrolling === item._id || isFull}
+                      disabled={isFull}
                       className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
                         ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
                     >
-                      {enrolling === item._id ? "Reserving..." : isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-[22px]">→</span></>}
+                      {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-[22px]">→</span></>}
                     </button>
                   )}
                 </div>
