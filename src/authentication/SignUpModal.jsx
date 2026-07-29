@@ -137,7 +137,8 @@ export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral 
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
             <div className="flex gap-3 mb-4">
               <div className="flex items-center border border-white/20 rounded-xl px-4 py-3 text-white shrink-0">+91</div>
-              <input type="text" placeholder="Enter Phone" value={phone} onChange={e => setPhone(e.target.value)}
+              <input type="text" placeholder="Enter Phone" value={phone} maxLength={10}
+                onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                 className="flex-1 bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
             </div>
             <input type="text" placeholder="Referral Code (optional)" value={referralCode} onChange={e => setReferralCode(e.target.value)}

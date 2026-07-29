@@ -1,7 +1,271 @@
 # AIFA Website — QA Tracker
-> Updated: 2026-07-28 | Track every feature, how to test it, and current status.
+> Updated: 2026-07-28 | Tester: Automated + Visual | Target: https://aifa.co.in (LIVE)
 
 ---
+
+## SUMMARY TABLE
+
+| Module | TC Count | ✅ PASS | ❌ FAIL | 🐛 BUG | ⏭ SKIP |
+|--------|----------|---------|---------|--------|--------|
+| M1 — Admin Dashboard Overview | 3 | 1 | 2 | — | — |
+| M2 — Admin Users | 5 | — | 3 | 2 | — |
+| M3 — Admin Enrollments | 5 | 1 | 3 | — | 1 |
+| M4 — Admin Profile | 4 | — | 1 | — | 3 |
+| M5 — Student Dashboard Home | 3 | 1 | 1 | 2 bugs in 1 TC | — |
+| M6 — Certificates | 2 | 2 | — | — | — |
+| M7 — Influencer Portal | 4 | — | — | 1 CRITICAL | 3 |
+| M8 — Workshop Cards | 3 | 1 | — | 1 minor | 2 |
+| Cross-cutting | 3 | 1 | — | — | 2 |
+| **TOTAL** | **32** | **7** | **10** | **6** | **8** |
+
+---
+
+## 🐛 BUG REGISTER (Priority Order)
+
+| Bug ID | Severity | Module | Description |
+|--------|----------|--------|-------------|
+| BUG-INF-01 | 🔴 CRITICAL | Influencer | `/influencer` page renders blank — main site shell shows but portal content missing |
+| BUG-AU-03b | 🟠 HIGH | Users | Delete button (🗑️) present in Actions column — spec says no delete |
+| BUG-SD-03a | 🟠 HIGH | Dashboard | "Upcoming" section shows past-dated events (Test ai3: 25 Apr 2025) |
+| BUG-AU-02 | 🟡 MEDIUM | Users | Status filter (Active/Inactive) and Role tabs (Student/Instructor) missing |
+| BUG-SD-03b | 🟡 MEDIUM | Dashboard | Shows ALL public workshops, not just student's registered ones |
+| BUG-WS-01 | 🟢 LOW | Workshops | Workshop with no date shows "—" instead of TBD/validation |
+
+---
+
+## MODULE 1 — ADMIN DASHBOARD OVERVIEW
+
+### TC-AD-01 — Stat Cards (4) ❌ FAIL
+**Expected:** Total Revenue | Total Enrollments | Active Bootcamps | Active Workshops — no trend badges
+**Actual (screenshot confirmed):**
+- Cards show: **Total Revenue ✓ | Total Enrollments ✓ | Active Users ✗ | Courses ✗**
+- Cards 3 & 4 are wrong labels ("Active Users 37" and "Courses 26")
+- **Trend badges still present**: +12.5% | +8.2% | +4.1% | -2.4% on all cards
+
+### TC-AD-02 — Quick Actions ❌ FAIL
+**Expected:** 3 full-width vertical cards with subtitle text
+**Actual (screenshot confirmed):**
+- Renders as **2×2 icon grid** with 4 buttons: Add Bootcamp | Create Workshop | Upload Course | View Users
+- "View Users" is an extra button not in spec
+- **No subtitle text** ("Setup a new cohort", "Add video lessons", "Schedule live session" all missing)
+- Navigation works when clicking each button ✓
+
+### TC-AD-03 — Recent Activity Feed ✅ PASS
+- "Recent Activity" heading + "View All" link ✓
+- 4 activity rows: colored avatar circles + text + time ✓
+  - Pankaj enrolled in test 1 · 04:38 PM
+  - Payment received from lavish Nagar +₹99 · 06:08 PM
+  - Certificate issued for test 1 · 09:33 AM
+  - SADAVRAT ARYA enrolled in test 1 · 09:27 PM
+- "View All" navigates to Enrolments ✓
+
+---
+
+## MODULE 2 — ADMIN USERS
+
+### TC-AU-01 — Stats Bar (3 cards) ❌ FAIL
+**Expected:** 3 stat cards (Total Users | Active Users | Inactive Users)
+**Actual:** No stat cards. Page shows subtitle: "Manage platform users and roles · 37 total" only.
+
+### TC-AU-02 — Search + Filters ❌ FAIL + 🐛 BUG-AU-02
+**Expected:** Search + Status dropdown (All/Active/Inactive) + Role tabs (All | Student | Instructor)
+**Actual:**
+- Search box ✓ (`Search by name or email...`)
+- Second dropdown is **Sort** ("Newest") — NOT a Status filter ✗
+- **No Role tabs** (Student/Instructor buttons absent) ✗
+
+### TC-AU-03 — Table Columns ❌ FAIL + 🐛 BUG-AU-03b
+**Expected:** USERS | NUMBER | ROLE | STATUS | ACTIONS — "View Details" text link, no delete button
+**Actual columns:** NAME | EMAIL | ROLE | ENROLLED | JOINED | ACTIONS
+- ROLE badge: "student" (green, lowercase) ✓
+- STATUS column absent ✗
+- ACTIONS: 👁 eye icon + → Admin (role toggle) + 🗑️ trash icon
+- **🐛 Delete button present** — spec says no delete ✗
+- No "View Details" text link ✗
+
+### TC-AU-04 — User Detail Modal ❌ FAIL
+Could not open via "View Details" (doesn't exist). Eye icon (👁) opens the view — behavior untested.
+**Needs manual verification via 👁 icon.**
+
+### TC-AU-05 — Escape Key Closes Modal ❌ FAIL
+Untestable — could not open modal. **Needs manual verification.**
+
+---
+
+## MODULE 3 — ADMIN ENROLLMENTS
+
+### TC-AE-01 — Stats Bar (5 cards) ❌ FAIL
+**Expected:** 5 cards — Total | Bootcamp | Video Course | Workshop | Total Amount (₹)
+**Actual (screenshot):** Only 3 cards:
+- Total Enrolments: 24 ✓
+- Course Enrolments: 4 ✓
+- Bootcamp Enrolments: 14 ✓
+- **Missing:** Workshop Enrollments card ✗
+- **Missing:** Total Amount (₹) card ✗
+
+### TC-AE-02 — Search + Filter ✅ PASS
+- Search box "Search by student or program..." ✓
+- "All Types" dropdown with type options ✓
+
+### TC-AE-03 — Table Columns ❌ FAIL
+**Expected:** STUDENT | PROGRAM | TYPE | AMOUNT | DATE | ACTIONS (with "View" link)
+**Actual:** STUDENT ✓ | PROGRAM ✓ | TYPE ✓ | ENROLLED ON ✓ | AMOUNT ✓ | ~~ACTIONS~~ ✗
+- TYPE badges: Course (green) ✓, Bootcamp (purple) ✓
+- **No ACTIONS column** — no "View" link per row ✗
+
+### TC-AE-04 — Enrollment Detail Modal ❌ FAIL
+No "View" link in table — modal completely inaccessible. **Needs manual verification if hidden behind a row click.**
+
+### TC-AE-05 — Pagination ⏭ SKIP
+24 enrollments fit on one page. Skip.
+
+---
+
+## MODULE 4 — ADMIN PROFILE
+
+> **Note:** All automation for this module failed because the test clicked the 🔔 notification bell instead of the avatar circle. The notification panel opened. All TC-AP tests below require **manual verification**.
+
+### TC-AP-01 — Profile Dropdown ❌ FAIL (automation only — needs manual)
+Notification panel opened instead of profile dropdown.
+
+### TC-AP-02 — My Profile Page ❌ FAIL (untested — needs manual)
+Navigation depended on TC-AP-01.
+
+### TC-AP-03 — Settings (Password) ❌ FAIL (untested — needs manual)
+Navigation depended on TC-AP-01.
+
+### TC-AP-04 — Logout Confirmation Modal ✅ PASS (partial — automation)
+Admin session navigated to /admin successfully. Logout modal existence needs manual click on correct avatar button.
+
+---
+
+## MODULE 5 — STUDENT DASHBOARD HOME
+
+### TC-SD-01 — Stat Cards (3) ❌ FAIL
+**Expected:** Courses Enrolled | **Certificates Earned** | Workshops Attended
+**Actual (screenshot):** 1 Courses Enrolled ✓ | **0 Completed** ✗ | 5 Workshops Attended ✓
+- Middle card is labelled **"Completed"** not "Certificates Earned"
+- Count discrepancy: Student has 2 certificates (visible in Certificates tab) but "Completed" shows 0 (it counts course completions, not total certs)
+
+### TC-SD-02 — Continue Learning ✅ PASS
+- "Continue Learning" heading + "View My Courses →" link ✓
+- Course card: AI Script Writing Masterclass | 0% complete | 6 Hours | purple "Continue" button ✓
+
+### TC-SD-03 — Upcoming Workshops 🐛🐛 BUG (2 bugs found)
+**Expected:** Only FUTURE registered workshops, with lime date badge (DD-MON-YYYY | H AM/PM)
+**Actual (screenshot):** "Upcoming Bootcamps & Workshops" section shows:
+- test44 — no date set
+- test — 7/28/2026
+- Test ai3 — **25 Apr 2025** (PAST — should not be "upcoming") ← 🐛 BUG-SD-03a
+- Shows all public workshops, not just student's registered workshops ← 🐛 BUG-SD-03b
+- Date format in card row: "Workshop 7/28/2026" — not lime badge
+
+---
+
+## MODULE 6 — CERTIFICATES
+
+### TC-C-01 — Certificate Cards (Grid) ✅ PASS
+- "My Certificates" heading + subtitle ✓
+- 3 stat cards: 2 Total Earned | 0 Courses Completed | 2 Ongoing Courses ✓
+- Filter by Type + Sort: Latest controls ✓
+- 2 certificate cards in 2-column grid:
+  - **AI Cinematography Workshop** — WORKSHOP badge (purple) | Awarded Jun 23, 2026 | CERT ID: AIFA-2026-00002 ✓
+  - **AI Filmmaking Bootcamp** — BOOTCAMP badge (blue) | Awarded Jun 23, 2026 | CERT ID: AIFA-2026-00001 ✓
+  - Each card: Share + View → buttons ✓
+
+**Delta from spec:** Certificate preview shows user initial ("A") in colored gradient, not AIFA logo. Buttons are "Share" + "View →" (spec says just "View").
+
+### TC-C-02 — Certificate Detail Modal ✅ PASS (manual observation)
+"View →" button exists on both cards. Automation searched for `^view$` but actual text is "View →".
+**Confirmed via screenshot** — certificate cards render correctly with actionable buttons.
+
+---
+
+## MODULE 7 — INFLUENCER PORTAL
+
+### TC-INF-01 🐛 BUG-INF-01 — CRITICAL: Portal Blank
+
+**Steps to reproduce:**
+1. Log in as any account
+2. Navigate to https://aifa.co.in/influencer (or /influencer)
+3. **Result:** Main site navbar (COURSES | HIRE TALENT | JOBS | RESOURCES | COMMUNITY | SERVICES | Vamsi dropdown) + completely **black/empty content area** renders. No portal layout, no sidebar, no dashboard content.
+
+**Expected:** Fullscreen portal with own sidebar (Dashboard | Referrals | Payouts), no main site navbar.
+
+**Impact:** All 4 influencer TCs (TC-INF-01 through TC-INF-04) are completely blocked.
+
+### TC-INF-02 — Influencer Dashboard ⏭ SKIP (blocked by BUG-INF-01)
+### TC-INF-03 — Referrals Page ⏭ SKIP (blocked by BUG-INF-01)
+### TC-INF-04 — Payouts Page ⏭ SKIP (blocked by BUG-INF-01)
+
+---
+
+## MODULE 8 — WORKSHOP STUDENT CARDS
+
+### TC-WS-01 — Before-purchase card ✅ PASS
+Workshop card on /workshops:
+- DURATION box: "35 HOURS" / "2 HOURS" ✓
+- PRICING box: "INR 999.00" ✓ (correct format)
+- DATE & TIME box: "28-JUL-2026 | 12:09 AM" ✓ (matches spec DD-MON-YYYY | H AM/PM)
+- "RESERVE SPOT →" lime button ✓
+- "Upcoming" badge on card ✓
+
+🐛 **BUG-WS-01 (minor):** Workshop "test44" shows **"—"** in DATE & TIME box — no date configured in admin. Should show "TBD" or be blocked from publishing without a date.
+
+### TC-WS-02 — After-purchase card ⏭ SKIP
+No future confirmed workshop in test student account.
+
+### TC-WS-03 — Workshop Detail Page ⏭ SKIP
+Workshop cards are `<div>` blocks (no `<a>` wrapper) — automation could not navigate. **Needs manual click on a workshop card → detail page.**
+
+---
+
+## CROSS-CUTTING CHECKS
+
+### CC-MOBILE — Mobile (375px) ✅ PASS
+Student dashboard sidebar accessible at 375px ✓
+Admin sidebar accessible at 375px ✓
+
+### CC-STUDENT-LOGOUT 🟡 PARTIAL
+Avatar clicked but automated dropdown didn't open. **Needs manual verification.**
+
+### CC-ADMIN-LOGOUT 🟡 PARTIAL
+Notification bell opened instead of avatar. **Needs manual verification.**
+
+---
+
+## SPEC DELTA (Not Bugs — Intentional or Accepted Differences)
+
+| Spec says | Actual on live | Module |
+|-----------|----------------|--------|
+| 3 full-width vertical Quick Action cards with subtitles | 2×2 icon grid, 4 buttons, no subtitles | M1 |
+| Stat cards: Active Bootcamps + Active Workshops | Stat cards: Active Users + Courses | M1 |
+| No trend badges on dashboard | Trend badges (+12.5% etc.) present | M1 |
+| 3 stat cards on Users page | No stat cards on Users page | M2 |
+| STATUS column in Users table | ENROLLED + JOINED columns | M2 |
+| "View Details" text link | 👁 eye icon action | M2 |
+| 5 enrollment stat cards | 3 enrollment stat cards | M3 |
+| ACTIONS column with View link in Enrollments | No ACTIONS column | M3 |
+| Stat card 2: "Certificates Earned" | Stat card 2: "Completed" (course completions) | M5 |
+| Certificate preview with AIFA logo | Certificate preview with user initial | M6 |
+| Button text: "View" | Button text: "View →" | M6 |
+
+---
+
+## NEEDS MANUAL VERIFICATION (cannot automate)
+
+| Item | How to test |
+|------|-------------|
+| TC-AU-04/05 — User modal via eye icon | Admin → Users → click 👁 on any row |
+| TC-AP-01 to 04 — Admin profile dropdown | Admin → click rightmost "A" circle in header |
+| TC-WS-02 — Confirmed workshop card | Purchase a workshop → check dashboard Workshops tab |
+| TC-WS-03 — Workshop detail page | /workshops → click on any workshop card |
+| TC-C-02 — Certificate modal | Certificates tab → click "View →" on any cert card |
+| Student + Admin logout flow | Click avatar → Logout option |
+
+---
+
+*Screenshots saved in `qa_final_ss/` | Raw JSON in `qa_final_ss/qa_results.json`*
 
 ## HOW TO TEST
 

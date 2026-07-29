@@ -503,45 +503,38 @@
 //   );
 // }
 
-"use client";
-
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
-const bootcamps = [
-  {
-    title: "AI Lego Animation Workshop",
-    image: "/bootcamp/bootcamp1.png",
-    duration: "3 HOURS",
-    price: " 199.00",
-    mode: "ONLINE",
-  },
-  {
-    title: "AI Superhero Cinematic Workshop",
-    image: "/bootcamp/bootcamp2.jpg",
-    duration: "3 HOURS",
-    price: "USD 199.00",
-    mode: "ONLINE",
-  },
-  {
-    title: "AI Sci-Fi Movie Creator",
-    image: "/bootcamp/bootcamp3.jpg",
-    duration: "3 HOURS",
-    price: "USD 199.00",
-    mode: "ONLINE",
-  },
+const FALLBACK = [
+  { _id: null, title: "AI Lego Animation Workshop",       image: "/bootcamp/bootcamp1.png", duration: "3 Hours", price: 199, currency: "INR", mode: "ONLINE" },
+  { _id: null, title: "AI Superhero Cinematic Workshop",  image: "/bootcamp/bootcamp2.jpg", duration: "3 Hours", price: 199, currency: "INR", mode: "ONLINE" },
+  { _id: null, title: "AI Sci-Fi Movie Creator",          image: "/bootcamp/bootcamp3.jpg", duration: "3 Hours", price: 199, currency: "INR", mode: "ONLINE" },
 ];
 
 export default function Bootcamps() {
+  const [workshops, setWorkshops] = useState(FALLBACK);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("/api/workshops")
+      .then(async (r) => {
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) return null;
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setWorkshops(data.slice(0, 3));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
-      {/* CONTAINER (FIGMA WIDTH + PADDING) */}
-      <div
-        className="w-full max-w-[1440px]
-mx-auto px-[16px]
-sm:px-[24px]
-md:px-[40px]
-lg:px-[60px] flex flex-col gap-[32px] sm:gap-[48px]"
-      >
+      <div className="w-full max-w-[1440px] mx-auto px-[16px] sm:px-[24px] md:px-[40px] lg:px-[60px] flex flex-col gap-[32px] sm:gap-[48px]">
         {/* HEADING */}
         <h2 className="text-[#F0F0F0] font-montserrat font-black text-[22px] sm:text-[32px] md:text-[40px] text-center sm:text-left">
           AI FILMMAKING WORKSHOPS
@@ -549,149 +542,88 @@ lg:px-[60px] flex flex-col gap-[32px] sm:gap-[48px]"
 
         {/* LIST */}
         <div className="flex flex-col gap-[12px] sm:gap-[10px]">
-          {bootcamps.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="bg-[#0F1415] rounded-[20px] overflow-hidden"
-            >
-              {/* GRID STRUCTURE */}
-              <div className="grid grid-cols-1 lg:grid-cols-[266px_1fr] grid-rows-[auto_auto] gap-[8px] p-[12px] sm:p-[16px]">
-                {/* IMAGE */}
-                <div
-                  className="w-full h-[180px] sm:h-[200px] lg:w-[266px] lg:h-[200px] overflow-hidden rounded-[20px]
-"
-                >
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* RIGHT CONTENT */}
-                <div className="flex flex-col gap-[8px]">
-                  {/* TITLE */}
-                  <div className="flex flex-col justify-center items-start h-[80px] sm:h-[105px] px-[12px] py-[10px] bg-[#DCDCDC] rounded-tr-[20px]">
-                    <h3 className="text-[#282A2C] font-montserrat font-bold text-[16px] sm:text-[24px] md:text-[36px] leading-tight">
-                      {item.title}
-                    </h3>
+          {workshops.map((item, i) => {
+            const priceStr = item.price ? `${item.currency === "INR" ? "₹" : "USD "}${Number(item.price).toFixed(2)}` : "—";
+            return (
+              <motion.div
+                key={item._id || i}
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="bg-[#0F1415] rounded-[20px] overflow-hidden cursor-pointer"
+                onClick={() => item._id && navigate(`/workshops/${item._id}`)}
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-[266px_1fr] grid-rows-[auto_auto] gap-[8px] p-[12px] sm:p-[16px]">
+                  {/* IMAGE */}
+                  <div className="w-full h-[180px] sm:h-[200px] lg:w-[266px] lg:h-[200px] overflow-hidden rounded-[20px]">
+                    <img
+                      src={item.image || "/bootcamp/bootcamp1.png"}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      onError={e => { e.target.src = "/bootcamp/bootcamp1.png"; }}
+                    />
                   </div>
 
-                  {/* INFO BOXES */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px]">
-                    {/* Duration */}
-                    <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
-                      <p
-                        className="
-    flex
-    items-center
-    gap-[4px]
-
-    text-[10px]
-    sm:text-[12px]
-
-    font-semibold
-    text-[#414243]
-  "
-                      >
-                        <img
-                          src="/Clockicon.svg"
-                          alt="clock"
-                          className="w-[12px] h-[12px] object-contain"
-                        />
-                        DURATION
-                      </p>
-                      <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">
-                        {item.duration}
-                      </p>
+                  {/* RIGHT CONTENT */}
+                  <div className="flex flex-col gap-[8px]">
+                    {/* TITLE */}
+                    <div className="flex flex-col justify-center items-start h-[80px] sm:h-[105px] px-[12px] py-[10px] bg-[#DCDCDC] rounded-tr-[20px]">
+                      <h3 className="text-[#282A2C] font-montserrat font-bold text-[16px] sm:text-[24px] md:text-[36px] leading-tight">
+                        {item.title}
+                      </h3>
                     </div>
 
-                    {/* Pricing */}
-                    <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
-                      <p
-                        className="
-    flex
-    items-center
-    gap-[4px]
-
-    text-[10px]
-    sm:text-[12px]
-
-    font-semibold
-    text-[#414243]
-  "
-                      >
-                        <img
-                          src="/moneyicon.svg"
-                          alt="money"
-                          className="w-[12px] h-[12px] object-contain"
-                        />
-                        PRICING
-                      </p>
-                      <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">
-                        {item.price}
-                      </p>
-                    </div>
-
-                    {/* Mode */}
-                    <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
-                      <p
-                        className="
-    flex
-    items-center
-    gap-[4px]
-
-    text-[10px]
-    sm:text-[12px]
-
-    font-semibold
-    text-[#414243]
-  "
-                      >
-                        <img
-                          src="/laptopicon.svg"
-                          alt="laptop"
-                          className="w-[12px] h-[12px] object-contain"
-                        />
-                        MODE
-                      </p>
-                      <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">
-                        {item.mode}
-                      </p>
+                    {/* INFO BOXES */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px]">
+                      <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
+                        <p className="flex items-center gap-[4px] text-[10px] sm:text-[12px] font-semibold text-[#414243]">
+                          <img src="/Clockicon.svg" alt="clock" className="w-[12px] h-[12px] object-contain" />
+                          DURATION
+                        </p>
+                        <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">{item.duration || "—"}</p>
+                      </div>
+                      <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
+                        <p className="flex items-center gap-[4px] text-[10px] sm:text-[12px] font-semibold text-[#414243]">
+                          <img src="/moneyicon.svg" alt="money" className="w-[12px] h-[12px] object-contain" />
+                          PRICING
+                        </p>
+                        <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">{priceStr}</p>
+                      </div>
+                      <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
+                        <p className="flex items-center gap-[4px] text-[10px] sm:text-[12px] font-semibold text-[#414243]">
+                          <img src="/laptopicon.svg" alt="laptop" className="w-[12px] h-[12px] object-contain" />
+                          MODE
+                        </p>
+                        <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">{item.mode || "ONLINE"}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* BUTTON */}
-                <button
-                  className="
-                    col-span-1 lg:col-span-2
-                    flex justify-center items-start
-                    px-[20px] sm:px-[30px]
-                    py-[12px]
-                    gap-[4px]
-                    bg-[#D0E46A]
-                    text-[#1A1A1A]
-                    font-bold font-montserrat
-                    text-[12px] sm:text-[14px]
-                    rounded-b-[25px]
-                    hover:opacity-90 active:scale-[0.98]
-                    transition
-                  "
-                >
-                  RESERVE SPOT
-                  <img
-                    src="/Arrowleft2.svg"
-                    className="w-[14px] h-[14px] sm:w-[16px] sm:h-[16px]"
-                  />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+                  {/* BUTTON */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); item._id ? navigate(`/workshops/${item._id}`) : navigate("/workshops"); }}
+                    className="col-span-1 lg:col-span-2 flex justify-center items-center px-[30px] py-[12px] gap-[4px] bg-[#D0E46A] text-[#1A1A1A] font-bold font-montserrat text-[12px] sm:text-[14px] rounded-b-[25px] hover:opacity-90 active:scale-[0.98] transition"
+                  >
+                    RESERVE SPOT
+                    <img src="/Arrowleft2.svg" className="w-[14px] h-[14px] sm:w-[16px] sm:h-[16px]" />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
+
+        {/* VIEW ALL BUTTON */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => navigate("/workshops")}
+            className="flex items-center gap-2 border-2 border-[#C7E36B] text-[#C7E36B] font-bold font-montserrat text-[14px] sm:text-[16px] px-8 py-3 rounded-full hover:bg-[#C7E36B] hover:text-[#0F1112] transition-all duration-200"
+          >
+            VIEW ALL WORKSHOPS
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
       </div>
     </section>
   );
