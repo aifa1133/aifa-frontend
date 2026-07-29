@@ -145,15 +145,15 @@ export default function WorkshopsPage() {
 
               return (
                 <div key={item._id || i} id={item._id}
-                  className={`w-full rounded-[24px] overflow-hidden border-[6px] transition-all duration-500 ${
-                    isReserved ? "bg-[#DCDCDC] border-[#C7E36B]" :
-                    highlighted===item._id ? "bg-[#0F1112] border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]" :
-                    "bg-[#0F1112] border-[#0F1112]"}`}>
+                  className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${
+                    isReserved ? "border-[#C7E36B]" :
+                    highlighted===item._id ? "border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]" :
+                    "border-[#0F1112]"}`}>
                   {/* TOP SECTION */}
                   <div className="flex flex-col md:flex-row gap-[6px] w-full cursor-pointer"
                     onClick={() => { if (!isMock && item._id) navigate(`/workshops/${item._id}`); }}>
                     {/* IMAGE */}
-                    <div className={`inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 ${isReserved ? "bg-[#c8c8c8]" : "bg-[#1a1e1f]"}`}>
+                    <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[#1a1e1f]">
                       <img
                         src={item.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
                         alt={item.title}
