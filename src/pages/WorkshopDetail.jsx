@@ -265,34 +265,40 @@ export default function WorkshopDetail() {
             </div>
           </div>
 
-          {/* COUNTDOWN + BENEFITS */}
+          {/* COUNTDOWN + BENEFITS — unified card */}
           {dt && (
-            <div className="grid md:grid-cols-2 gap-4 mb-8">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center shrink-0 text-xl">📅</div>
+            <div className="bg-white/5 border border-white/10 rounded-2xl mb-8 overflow-hidden">
+              <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
+                {/* Left: countdown */}
+                <div className="p-6 flex items-start gap-4">
+                  <div className="w-14 h-14 bg-[#1a1f20] rounded-full flex items-center justify-center shrink-0">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-400 mb-0.5 font-semibold uppercase tracking-wide">Next Live Session</p>
-                    <p className="text-base font-bold text-white mb-0.5">{fmtDateLong}, {fmtTime} (IST)</p>
+                    <p className="text-xs text-gray-400 mb-1 font-semibold tracking-wide">Next Live Session</p>
+                    <p className="text-base font-bold text-white mb-1">{fmtDateLong}, {fmtTime} (IST)</p>
                     <p className="text-xs text-gray-500 mb-4">Live session will start in</p>
                     <CountdownTimer scheduledAt={workshop.scheduledAt} />
                   </div>
                 </div>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <p className="text-sm font-bold text-white mb-4">Get ready for an interactive learning experience.</p>
-                {[
-                  "Join a live hands-on session with the instructor",
-                  "Ask questions and get real-time feedback",
-                  "Work on practical exercises",
-                ].map((b, i) => (
-                  <div key={i} className="flex items-start gap-2 mb-3">
-                    <div className="w-5 h-5 rounded-full border border-green-500/50 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                {/* Right: benefits */}
+                <div className="p-6">
+                  <p className="text-sm font-bold text-white mb-4">Get ready for an interactive learning experience.</p>
+                  {[
+                    "Join a live hands-on session with the instructor",
+                    "Ask questions and get real-time feedback",
+                    "Work on practical exercises",
+                  ].map((b, i) => (
+                    <div key={i} className="flex items-start gap-2 mb-3">
+                      <div className="w-5 h-5 rounded-full border border-green-500/50 flex items-center justify-center shrink-0 mt-0.5">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                      <p className="text-sm text-gray-400">{b}</p>
                     </div>
-                    <p className="text-sm text-gray-400">{b}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
