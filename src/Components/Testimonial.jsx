@@ -86,9 +86,9 @@ export default function Testimonial() {
               transition={{ duration: 0.5 }}
               className="
                 text-[#F0F0F0] font-montserrat font-black 
-                text-[22px] leading-[30px]
+                text-[26px] leading-[30px]
                 sm:text-[34px] sm:leading-[42px]
-                md:text-[44px] md:leading-[52px]
+                md:text-[48px] md:leading-[52px]
                 tracking-[-0.5px] 
                 mb-4 sm:mb-6
               "

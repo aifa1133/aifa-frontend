@@ -335,13 +335,13 @@ const features = [
     image: "/video/video3.jpg",
     title: "Access Powerful AI Resources",
     desc: "Learn faster with curated tools, prompts, and workflows.",
-    path: "/resources",
+    path: "/workflow",
   },
   {
     image: "/video/video4.jpg",
     title: "Join the Creator Community",
     desc: "Connect, collaborate, and grow with fellow creators. Be part of discussions, challenges, and live events.",
-    path: "/community",
+    path: "/forums",
   },
   {
     image: "/video/video5.jpg",
@@ -353,7 +353,7 @@ const features = [
     image: "/video/video6.jpg",
     title: "Upgrade to Pro Membership",
     desc: "Unlock premium tools, content, and exclusive access. Get priority features and insider opportunities.",
-    path: "/membership",
+    path: "/events",
   },
 ];
 
