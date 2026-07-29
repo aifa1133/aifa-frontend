@@ -81,6 +81,26 @@ export default function StudentDashboard() {
   const [notifs, setNotifs] = useState([]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [invoiceItem, setInvoiceItem] = useState(null);
+  const [liveClass, setLiveClass] = useState(null);
+  const [navHistory, setNavHistory] = useState([]);
+  const [emailVerified, setEmailVerified] = useState(() => {
+    const u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+    return u.emailVerified !== false; // default true unless explicitly false
+  });
+
+  const navigateTo = (page) => {
+    setNavHistory(prev => [...prev, activePage]);
+    setActivePage(page);
+  };
+
+  const goBack = () => {
+    setNavHistory(prev => {
+      const history = [...prev];
+      const last = history.pop();
+      if (last) setActivePage(last);
+      return history;
+    });
+  };
   const navigate = useNavigate();
   const token = localStorage.getItem("aifa_token");
   const notifRef = useRef(null);
@@ -96,10 +116,35 @@ export default function StudentDashboard() {
       .then(r => r.json())
       .then(d => {
         if (d.role === "admin") { navigate("/admin"); return; }
-        setProfile(d); setLoading(false);
+        setProfile(d);
+        setEmailVerified(!!d.emailVerified);
+        setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [navigate, token]);
+
+  /* Fetch upcoming reserved workshop within 24 hours for live banner */
+  useEffect(() => {
+    if (!token || !profile?._id) return;
+    fetch("/api/workshops", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        const now = Date.now();
+        const in24h = now + 24 * 60 * 60 * 1000;
+        const upcoming = data
+          .filter(w => {
+            if (!w.scheduledAt) return false;
+            const t = new Date(w.scheduledAt).getTime();
+            const registered = Array.isArray(w.registrations) &&
+              w.registrations.some(r => (r._id || r) === profile._id);
+            return registered && t >= now && t <= in24h;
+          })
+          .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+        setLiveClass(upcoming[0] || null);
+      })
+      .catch(() => {});
+  }, [token, profile]);
 
   /* Fetch real notifications */
   useEffect(() => {
@@ -154,7 +199,7 @@ export default function StudentDashboard() {
           {NAV.map(item => (
             <button
               key={item.id}
-              onClick={() => !item.soon && setActivePage(item.id)}
+              onClick={() => !item.soon && navigateTo(item.id)}
               disabled={item.soon}
               title={item.soon ? "Coming soon" : undefined}
               className={`w-full flex items-center justify-between gap-2.5 px-4 py-2.5 text-left transition-all text-[13px] font-medium ${
@@ -177,26 +222,52 @@ export default function StudentDashboard() {
 
       {/* ── MAIN ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Live Class Banner */}
-        <div className="bg-[#6B21E8] text-white text-xs flex items-center justify-between px-6 py-2 shrink-0">
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            <strong>NEXT LIVE CLASS</strong>
-            <span className="text-white/80 ml-2">AI Filmmaking Bootcamp</span>
-          </span>
-          <span className="flex items-center gap-4">
-            <span className="text-white/80">⏰ Starts at 4:30 PM IST</span>
-            <button className="bg-white text-[#6B21E8] font-bold text-xs px-3 py-1 rounded-full hover:bg-gray-100 transition-all">
-              Join Session
-            </button>
-          </span>
-        </div>
+        {/* Live Class Banner — only shown when student has a reserved workshop starting within 24h */}
+        {liveClass && (
+          <div className="bg-[#6B21E8] text-white text-xs flex items-center justify-between px-6 py-2 shrink-0">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <strong>NEXT LIVE CLASS</strong>
+              <span className="text-white/80 ml-2">{liveClass.title}</span>
+            </span>
+            <span className="flex items-center gap-4">
+              <span className="text-white/80">
+                ⏰ Starts at {new Date(liveClass.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })} IST
+              </span>
+              {liveClass.zoomLink ? (
+                <a
+                  href={liveClass.zoomLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white text-[#6B21E8] font-bold text-xs px-3 py-1 rounded-full hover:bg-gray-100 transition-all"
+                >
+                  Join Session
+                </a>
+              ) : (
+                <button className="bg-white/30 text-white font-bold text-xs px-3 py-1 rounded-full cursor-default">
+                  Link Pending
+                </button>
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Top Bar */}
         <header className="bg-[#0F1112] border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0">
-          <p className="text-sm text-gray-400">
-            Welcome back, <span className="text-white font-semibold">{userName}</span>
-          </p>
+          <div className="flex items-center gap-3">
+            {navHistory.length > 0 && (
+              <button
+                onClick={goBack}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-all bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+              >
+                <Ic name="back" size={14} />
+                Back
+              </button>
+            )}
+            <p className="text-sm text-gray-400">
+              Welcome back, <span className="text-white font-semibold">{userName}</span>
+            </p>
+          </div>
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative hidden md:block">
@@ -239,17 +310,24 @@ export default function StudentDashboard() {
               <button
                 onClick={() => { setShowUserMenu(!showUserMenu); setShowNotif(false); }}
                 aria-label="Open user menu"
-                className="w-8 h-8 rounded-full overflow-hidden hover:opacity-90 transition-all shrink-0"
+                className="relative w-8 h-8 rounded-full overflow-visible hover:opacity-90 transition-all shrink-0"
               >
-                {profile?.profilePicture
-                  ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-                  : <span className="w-full h-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center">{userInitial}</span>
-                }
+                <span className="w-8 h-8 rounded-full overflow-hidden block">
+                  {profile?.profilePicture
+                    ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                    : <span className="w-full h-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center">{userInitial}</span>
+                  }
+                </span>
+                {!emailVerified && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-[#0F1112] z-10" />
+                )}
               </button>
               {showUserMenu && (
                 <UserMenuDropdown
                   name={userName}
                   email={profile?.email}
+                  avatar={profile?.profilePicture}
+                  isGuest={!emailVerified}
                   onProfile={() => { setActivePage("profile"); setShowUserMenu(false); }}
                   onSettings={() => { setActivePage("settings"); setShowUserMenu(false); }}
                   onBilling={() => { setActivePage("billing"); setShowUserMenu(false); }}
@@ -262,14 +340,24 @@ export default function StudentDashboard() {
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
+          {/* Email verification banner — shown on all pages until verified */}
+          {!emailVerified && !invoiceItem && <EmailVerifyBanner email={profile?.email} token={token} onVerified={() => {
+            setEmailVerified(true);
+            const u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+            u.emailVerified = true; delete u.isGuest;
+            localStorage.setItem("aifa_user", JSON.stringify(u));
+            window.dispatchEvent(new Event("storage"));
+            if (profile) setProfile({ ...profile, emailVerified: true });
+          }} />}
+
           {invoiceItem ? (
             <InvoiceView item={invoiceItem} onBack={() => setInvoiceItem(null)} profile={profile} />
           ) : (
             <>
-              {activePage === "dashboard" && <DashboardHome profile={profile} token={token} onNavigate={setActivePage} />}
+              {activePage === "dashboard" && <DashboardHome profile={profile} token={token} onNavigate={navigateTo} />}
               {activePage === "bootcamp" && <BootcampSection token={token} profile={profile} />}
               {activePage === "workshops" && <WorkshopsSection token={token} />}
-              {activePage === "video-courses" && <VideoCoursesSection profile={profile} onNavigate={setActivePage} />}
+              {activePage === "video-courses" && <VideoCoursesSection profile={profile} onNavigate={navigateTo} />}
               {activePage === "certificates" && <CertificatesSection token={token} profile={profile} />}
               {activePage === "jobs" && <JobsSection token={token} />}
               {activePage === "resources" && <ResourcesSection token={token} />}
@@ -344,15 +432,118 @@ function NotificationDropdown({ notifs, onClose, onMarkRead }) {
   );
 }
 
-/* ────── USER MENU DROPDOWN ────── */
-function UserMenuDropdown({ name, email, onProfile, onSettings, onBilling, onLogout }) {
+/* ────── EMAIL VERIFY BANNER ────── */
+function EmailVerifyBanner({ email, token, onVerified }) {
+  const [otpSent, setOtpSent]       = useState(false);
+  const [otpCode, setOtpCode]       = useState("");
+  const [sending, setSending]       = useState(false);
+  const [verifying, setVerifying]   = useState(false);
+  const [error, setError]           = useState("");
+  const [timer, setTimer]           = useState(0);
+
+  useEffect(() => {
+    if (timer <= 0) return;
+    const id = setTimeout(() => setTimer(t => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timer]);
+
+  const sendOtp = async () => {
+    setSending(true); setError("");
+    try {
+      const res = await fetch("/api/users/send-verify-email-otp", {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.message);
+      else { setOtpSent(true); setTimer(30); }
+    } catch { setError("Network error. Try again."); }
+    setSending(false);
+  };
+
+  const verifyOtp = async () => {
+    if (otpCode.length !== 6) { setError("Enter the 6-digit code"); return; }
+    setVerifying(true); setError("");
+    try {
+      const res = await fetch("/api/users/verify-email-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ otp: otpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.message);
+      else onVerified();
+    } catch { setError("Network error. Try again."); }
+    setVerifying(false);
+  };
+
   return (
-    <div className="absolute right-0 top-full mt-2 w-[220px] bg-white rounded-xl shadow-2xl z-50 overflow-hidden">
+    <div className="mx-4 mt-4 mb-0 bg-red-950/40 border border-red-500/30 rounded-xl px-5 py-3.5 flex flex-col gap-2.5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
+          <div>
+            <span className="text-red-400 font-bold text-sm">Email not verified — </span>
+            <span className="text-gray-400 text-sm">Verify <strong className="text-white">{email}</strong> to secure your account</span>
+          </div>
+        </div>
+        {!otpSent && (
+          <button onClick={sendOtp} disabled={sending}
+            className="shrink-0 bg-red-500 hover:bg-red-400 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-60">
+            {sending ? "Sending..." : "Verify Now"}
+          </button>
+        )}
+      </div>
+
+      {otpSent && (
+        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-red-500/20">
+          <span className="text-xs text-gray-400">Enter the 6-digit code sent to your email:</span>
+          <input
+            type="text" inputMode="numeric" maxLength={6}
+            value={otpCode}
+            onChange={e => { setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6)); setError(""); }}
+            placeholder="000000"
+            className="w-32 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm font-mono outline-none focus:border-[#C7E36B]/50 tracking-widest"
+          />
+          <button onClick={verifyOtp} disabled={verifying || otpCode.length !== 6}
+            className="bg-[#C7E36B] text-black font-black text-xs px-4 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all">
+            {verifying ? "Verifying..." : "Confirm"}
+          </button>
+          <button onClick={sendOtp} disabled={timer > 0 || sending}
+            className="text-xs text-gray-400 hover:text-white disabled:opacity-40 transition-all">
+            {timer > 0 ? `Resend in ${timer}s` : "Resend"}
+          </button>
+          {error && <span className="text-red-400 text-xs w-full">{error}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────── USER MENU DROPDOWN ────── */
+function UserMenuDropdown({ name, email, avatar, isGuest, onProfile, onSettings, onBilling, onLogout }) {
+  return (
+    <div className="absolute right-0 top-full mt-2 w-[232px] bg-white rounded-xl shadow-2xl z-50 overflow-hidden">
+      {/* Incomplete profile banner for guests */}
+      {isGuest && (
+        <div className="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 animate-pulse" />
+          <p className="text-[11px] text-red-600 font-semibold">Incomplete profile — set a password</p>
+        </div>
+      )}
       <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#C7E36B] text-black font-bold flex items-center justify-center text-sm">{name[0]}</div>
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{name}</p>
+        <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0">
+          {avatar
+            ? <img src={avatar} alt={name} className="w-full h-full object-cover" />
+            : <div className="w-full h-full bg-[#C7E36B] text-black font-bold flex items-center justify-center text-sm">{name[0]}</div>
+          }
+          {isGuest && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-white" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
           <p className="text-xs text-gray-500 truncate">{email}</p>
+          {isGuest && <p className="text-[10px] text-red-500 font-semibold mt-0.5">Email not verified</p>}
         </div>
       </div>
       {[
@@ -1054,7 +1245,7 @@ function WorkshopsSection({ token }) {
       .then(d => {
         if (Array.isArray(d) && d.length > 0) {
           setWorkshops(d);
-          if (userId) {
+          if (userId && emailVerified) {
             const myIds = new Set(
               d.filter(w =>
                 w.registrations?.some(r => {
@@ -1793,6 +1984,7 @@ function JobsSection({ token }) {
 ════════════════════════════════════════════ */
 function BillingSection({ onViewInvoice, profile }) {
   const [openMenu, setOpenMenu] = useState(null);
+  const [menuPos, setMenuPos]   = useState({ top: 0, left: 0 });
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("aifa_token");
@@ -1804,6 +1996,18 @@ function BillingSection({ onViewInvoice, profile }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const handleMenuToggle = (e, i) => {
+    if (openMenu === i) { setOpenMenu(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dropdownH = 96; // approx height of 2 items
+    const dropdownW = 160;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow < dropdownH + 8 ? rect.top - dropdownH - 4 : rect.bottom + 4;
+    const left = Math.min(rect.right - dropdownW, window.innerWidth - dropdownW - 8);
+    setMenuPos({ top, left });
+    setOpenMenu(i);
+  };
 
   useEffect(() => {
     fetch("/api/payments/history", { headers:{ Authorization:`Bearer ${token}` } })
@@ -1871,20 +2075,10 @@ function BillingSection({ onViewInvoice, profile }) {
                       {p.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 relative">
-                    <button onClick={() => setOpenMenu(openMenu === i ? null : i)} className="text-gray-400 hover:text-white">
+                  <td className="px-6 py-4">
+                    <button onClick={(e) => handleMenuToggle(e, i)} className="text-gray-400 hover:text-white">
                       <Ic name="more" size={18} />
                     </button>
-                    {openMenu === i && (
-                      <div ref={menuRef} className="absolute right-6 top-8 bg-[#0F1112] border border-white/10 rounded-xl shadow-2xl z-10 overflow-hidden w-[160px]">
-                        <button onClick={() => { onViewInvoice(p); setOpenMenu(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left">
-                          <Ic name="eye" size={14} className="text-gray-400" />View Invoice
-                        </button>
-                        <button onClick={() => { alert("Invoice PDF download coming soon!"); setOpenMenu(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left">
-                          <Ic name="download" size={14} className="text-gray-400" />Download Invoice
-                        </button>
-                      </div>
-                    )}
                   </td>
                 </tr>
               ))}
@@ -1892,17 +2086,137 @@ function BillingSection({ onViewInvoice, profile }) {
           </table>
         </div>
       </div>
+
+      {/* Fixed dropdown — outside overflow containers so it's never clipped */}
+      {openMenu !== null && (
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+          className="bg-[#0F1112] border border-white/10 rounded-xl shadow-2xl w-[160px] overflow-hidden"
+        >
+          <button onClick={() => { onViewInvoice(purchases[openMenu]); setOpenMenu(null); }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left">
+            <Ic name="eye" size={14} className="text-gray-400" />View Invoice
+          </button>
+          <button onClick={() => { onViewInvoice({ ...purchases[openMenu], _triggerDownload: true }); setOpenMenu(null); }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white text-left">
+            <Ic name="download" size={14} className="text-gray-400" />Download Invoice
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ─── INVOICE VIEW ─── */
 function InvoiceView({ item, onBack, profile }) {
+  const invoiceRef = useRef(null);
+
   useEffect(() => {
     const handleEsc = (e) => { if (e.key === "Escape") onBack(); };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onBack]);
+
+  const handleDownload = () => {
+    const invoiceHtml = invoiceRef.current?.innerHTML || "";
+    const win = window.open("", "_blank");
+    win.document.write(`<!DOCTYPE html><html><head>
+      <title>Invoice ${item.id}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #111; padding: 40px; }
+        .inv-wrap { max-width: 680px; margin: 0 auto; }
+        .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; }
+        .inv-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .inv-logo-box { width: 36px; height: 36px; background: #0B0F10; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #C7E36B; font-weight: 900; font-size: 14px; }
+        .inv-logo span { font-size: 22px; font-weight: 900; color: #0B0F10; }
+        .inv-addr { font-size: 11px; color: #555; line-height: 1.7; }
+        .inv-addr a { color: #5a7a00; }
+        .inv-title { font-size: 40px; font-weight: 900; color: #eee; letter-spacing: 6px; text-align: right; }
+        .inv-meta { text-align: right; font-size: 11px; margin-top: 6px; }
+        .inv-meta tr td:first-child { color: #888; padding-right: 24px; }
+        .inv-meta tr td:last-child { font-weight: 700; }
+        .inv-billed { margin-bottom: 28px; }
+        .inv-billed .label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .inv-billed .name { font-size: 14px; font-weight: 700; }
+        .inv-billed .email { font-size: 12px; color: #5a7a00; }
+        .inv-billed .sid { font-size: 11px; color: #888; }
+        table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        table.items th { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #888; border-bottom: 1.5px solid #eee; padding: 8px 0; font-weight: 600; }
+        table.items th:not(:first-child), table.items td:not(:first-child) { text-align: right; }
+        table.items td { font-size: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        table.items td.desc-sub { font-size: 10px; color: #999; }
+        .totals { margin-left: auto; width: 200px; font-size: 12px; }
+        .totals tr td { padding: 3px 0; color: #555; }
+        .totals tr td:last-child { text-align: right; }
+        .totals .total-row td { font-size: 14px; font-weight: 900; color: #111; border-top: 1.5px solid #ddd; padding-top: 8px; }
+        .totals .paid-row td { color: #16a34a; }
+        .totals .balance-row td { font-weight: 700; color: #111; }
+        .badge { display: inline-block; background: #dcfce7; color: #16a34a; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+        .footer { margin-top: 48px; text-align: center; font-size: 10px; color: #bbb; }
+      </style>
+    </head><body>
+    <div class="inv-wrap">
+      <div class="inv-header">
+        <div>
+          <div class="inv-logo">
+            <div class="inv-logo-box">A</div>
+            <span>AIFA</span>
+          </div>
+          <div class="inv-addr">
+            AIFA Film Academy<br/>
+            Hyderabad, Telangana, India<br/>
+            <a>info@aifa.co.in</a>
+          </div>
+        </div>
+        <div>
+          <div class="inv-title">INVOICE</div>
+          <table class="inv-meta"><tbody>
+            <tr><td>Invoice Number:</td><td>${item.id}</td></tr>
+            <tr><td>Date of Issue:</td><td>${item.date}</td></tr>
+            <tr><td>Status:</td><td><span class="badge">${item.status}</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <div class="inv-billed">
+        <div class="label">Billed To</div>
+        <div class="name">${profile?.name || "Student"}</div>
+        <div class="email">${profile?.email || ""}</div>
+        <div class="sid">Student ID: STU-${String(profile?._id || "000000").slice(-6).toUpperCase()}</div>
+      </div>
+
+      <table class="items">
+        <thead><tr>
+          <th style="text-align:left">Description</th>
+          <th>Type</th><th>Qty</th><th>Unit Price</th><th>Amount</th>
+        </tr></thead>
+        <tbody><tr>
+          <td>${item.name}<br/><span class="desc-sub">${item.type} program</span></td>
+          <td>${item.type}</td><td>1</td><td>${item.amount}</td><td>${item.amount}</td>
+        </tr></tbody>
+      </table>
+
+      <table class="totals"><tbody>
+        <tr><td>Subtotal</td><td>${item.amount}</td></tr>
+        <tr><td>Tax (GST 18%)</td><td>₹0</td></tr>
+        <tr class="total-row"><td>Total</td><td>${item.amount}</td></tr>
+        <tr class="paid-row"><td>Amount Paid</td><td>-${item.amount}</td></tr>
+        <tr class="balance-row"><td>Balance Due</td><td>₹0</td></tr>
+      </tbody></table>
+
+      <div class="footer">Thank you for choosing AIFA Film Academy · info@aifa.co.in</div>
+    </div>
+    <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }</script>
+    </body></html>`);
+    win.document.close();
+  };
+
+  // Auto-trigger download when opened via "Download Invoice" from dropdown
+  useEffect(() => {
+    if (item?._triggerDownload) setTimeout(handleDownload, 100);
+  }, []);
 
   return (
     <div className="p-6 bg-[#0B0F10] min-h-full">
@@ -1915,10 +2229,10 @@ function InvoiceView({ item, onBack, profile }) {
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${item.status === "Paid" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>{item.status}</span>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => window.print()} className="flex items-center gap-2 text-xs border border-white/10 text-gray-300 px-4 py-2 rounded-xl hover:bg-white/5">
+          <button onClick={handleDownload} className="flex items-center gap-2 text-xs border border-white/10 text-gray-300 px-4 py-2 rounded-xl hover:bg-white/5">
             <Ic name="print" size={14} />Print
           </button>
-          <button onClick={() => alert("PDF download coming soon!")} className="flex items-center gap-2 text-xs bg-white/10 text-white px-4 py-2 rounded-xl hover:bg-white/20">
+          <button onClick={handleDownload} className="flex items-center gap-2 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-xl hover:opacity-90">
             <Ic name="download" size={14} />Download PDF
           </button>
         </div>
@@ -1995,6 +2309,7 @@ function ProfileSection({ profile, token, onUpdated }) {
   const [uploading, setUploading]   = useState(false);
   const fileRef = useRef(null);
 
+
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -2019,7 +2334,7 @@ function ProfileSection({ profile, token, onUpdated }) {
     const data = await res.json();
     if (res.ok) {
       onUpdated(data);
-      localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role }));
+      localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role, profilePicture: data.profilePicture || "", emailVerified: !!data.emailVerified }));
       setMsg("Saved!"); setEditing(false);
     } else setMsg(data.message || "Failed.");
     setSaving(false);
@@ -2031,6 +2346,7 @@ function ProfileSection({ profile, token, onUpdated }) {
 
   return (
     <div className="p-6 bg-[#0B0F10] min-h-full text-white">
+
       {/* Personal Info Card */}
       <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -2073,7 +2389,12 @@ function ProfileSection({ profile, token, onUpdated }) {
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Mobile Number</label>
-                <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91..."
+                <input
+                  value={phone}
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  inputMode="numeric"
                   className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]" />
               </div>
             </div>

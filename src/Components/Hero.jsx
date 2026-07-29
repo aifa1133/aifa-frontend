@@ -415,24 +415,23 @@ export default function Hero() {
     const vid = videoRef.current;
     if (!vid) return;
     vid.pause();
+    // Update source and reload without unmounting the element
+    const source = vid.querySelector("source");
+    if (source) source.src = slides[active].video;
     vid.load();
-    const playPromise = vid.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {});
-    }
-    return () => { vid.pause(); };
+    vid.play().catch(() => {});
   }, [active]);
 
   return (
-    <section className="relative w-full h-screen overflow-hidden bg-black">
+    <section className="relative w-full h-[100dvh] min-h-[500px] overflow-hidden bg-black">
       {/* MAIN VIDEO */}
       <video
-        key={slides[active].video}
         ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
+        poster={slides[active].thumb}
         className="
           absolute
           inset-0
@@ -521,17 +520,17 @@ export default function Hero() {
 
               tracking-[-0.05em]
 
-              text-[42px]
-              leading-[42px]
+              text-[28px]
+              leading-[32px]
 
-              sm:text-[64px]
-              sm:leading-[64px]
+              sm:text-[42px]
+              sm:leading-[46px]
 
-              md:text-[90px]
-              md:leading-[86px]
+              md:text-[58px]
+              md:leading-[60px]
 
-              lg:text-[120px]
-              lg:leading-[110px]
+              lg:text-[72px]
+              lg:leading-[76px]
 
               max-w-[1000px]
             "

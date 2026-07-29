@@ -147,8 +147,13 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = localStorage.getItem("aifa_user");
-    if (stored) setUser(JSON.parse(stored));
+    const readUser = () => {
+      const stored = localStorage.getItem("aifa_user");
+      setUser(stored ? JSON.parse(stored) : null);
+    };
+    readUser();
+    window.addEventListener("storage", readUser);
+    return () => window.removeEventListener("storage", readUser);
   }, []);
 
   useEffect(() => {
@@ -268,8 +273,11 @@ lg:py-[20px]
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 px-[16px] py-[8px] rounded-[6px] border border-white/20 text-[#F0F0F0] text-[14px] font-bold font-montserrat hover:bg-white/10 transition-all"
               >
-                <span className="w-7 h-7 rounded-full bg-[#C7E36B] text-black flex items-center justify-center font-bold text-sm">
-                  {user.name?.[0]?.toUpperCase()}
+                <span className="w-7 h-7 rounded-full overflow-hidden shrink-0 flex items-center justify-center">
+                  {user.profilePicture
+                    ? <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+                    : <span className="w-full h-full bg-[#C7E36B] text-black flex items-center justify-center font-bold text-sm">{user.name?.[0]?.toUpperCase()}</span>
+                  }
                 </span>
                 {user.name?.split(" ")[0]}
                 <ChevronDown size={14} className={`transition-all ${showUserMenu ? "rotate-180" : ""}`} />

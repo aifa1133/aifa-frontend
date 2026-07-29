@@ -81,7 +81,8 @@ export default function WorkshopsPage() {
           if (!data) return;
           if (Array.isArray(data) && data.length > 0) {
             setWorkshops(data);
-            if (userId) {
+            const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+            if (userId && storedUser.emailVerified !== false) {
               const myIds = new Set(
                 data.filter(w =>
                   w.registrations?.some(r => {

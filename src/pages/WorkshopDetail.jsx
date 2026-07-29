@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import BuyModal from "../Components/BuyModal";
+import PaymentModal from "../Components/PaymentModal";
+import SuccessModal from "../Components/SuccessModal";
+import AddToCalendarModal from "../Components/AddToCalendarModal";
+import SetPasswordModal from "../Components/SetPasswordModal";
 
 const loadRazorpay = () =>
   new Promise(resolve => {
@@ -44,8 +49,18 @@ export default function WorkshopDetail() {
   const [loading, setLoading]   = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling]   = useState(false);
+  const [showBuyModal, setShowBuyModal]         = useState(false);
+  const [showPayModal, setShowPayModal]         = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showSetPassword, setShowSetPassword]   = useState(false);
+  const [buyerInfo, setBuyerInfo]               = useState(null);
+  const [paidOrderId, setPaidOrderId]           = useState(null);
+  const [totalPaid, setTotalPaid]               = useState(0);
   const [txId, setTxId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
+  const [guestIsNew, setGuestIsNew]             = useState(false);
+  const [buyEmailError, setBuyEmailError]       = useState("");
   const heroRef = useRef(null);
   const token = localStorage.getItem("aifa_token");
   const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
@@ -59,7 +74,8 @@ export default function WorkshopDetail() {
         if (Array.isArray(data)) {
           const w = data.find(x => x._id === id);
           setWorkshop(w || null);
-          if (w && userId) {
+          const currentUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+          if (w && userId && !currentUser.isGuest) {
             const enrolled = w.registrations?.some(r => {
               const rid = r?.user?._id || r?._id || r?.user || r;
               return String(rid) === String(userId);
@@ -76,20 +92,71 @@ export default function WorkshopDetail() {
       .catch(() => setLoading(false));
   }, [id, token]);
 
+  const handleBookClick = () => setShowBuyModal(true);
+
+  const handleBuyFormDone = async (buyer) => {
+    setBuyerInfo(buyer);
+    setBuyEmailError("");
+    setShowBuyModal(false);
+
+    // If not logged in, create/find user via guest-checkout to get a token
+    if (!token) {
+      try {
+        const res = await fetch("/api/auth/guest-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: buyer.name, email: buyer.email, phone: buyer.phone }),
+        });
+        const data = await res.json();
+        if (res.status === 409) {
+          // Email belongs to an existing account — reopen BuyModal with error
+          setBuyEmailError(data.message);
+          setShowBuyModal(true);
+          return;
+        }
+        if (res.ok && data.token) {
+          localStorage.setItem("aifa_token", data.token);
+          localStorage.setItem("aifa_user", JSON.stringify({
+            name: data.name, _id: data._id, role: data.role,
+            profilePicture: data.profilePicture || "",
+            isGuest: true,
+          }));
+          if (data.isNewUser) setGuestIsNew(true);
+        }
+      } catch { /* network error — proceed; payment API will catch it */ }
+    }
+
+    setShowPayModal(true);
+  };
+
   const handlePay = async () => {
-    if (!token) { navigate("/login"); return; }
+    // Read token fresh — guest-checkout may have set it after initial render
+    const activeToken = localStorage.getItem("aifa_token");
+    const activeUser  = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+
+    if (!activeToken) {
+      // Fallback: shouldn't happen if guest-checkout succeeded, but just in case
+      setShowPayModal(false);
+      setShowBuyModal(true);
+      return;
+    }
+    setShowPayModal(false);
     setEnrolling(true);
     try {
       const loaded = await loadRazorpay();
-      if (!loaded) { alert("Payment gateway failed to load. Check your connection."); setEnrolling(false); return; }
+      if (!loaded) { setEnrolling(false); setShowPayModal(true); return; }
 
-      const h = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      const h = { "Content-Type": "application/json", Authorization: `Bearer ${activeToken}` };
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST", headers: h,
         body: JSON.stringify({ itemType: "workshop", itemId: id }),
       });
       const orderData = await orderRes.json();
-      if (!orderRes.ok) { alert(orderData.message || "Could not create order. Try again."); setEnrolling(false); return; }
+      if (!orderRes.ok) {
+        setEnrolling(false);
+        setShowPayModal(true); // reopen modal with data still intact
+        return;
+      }
 
       const options = {
         key:         orderData.keyId,
@@ -98,7 +165,7 @@ export default function WorkshopDetail() {
         name:        "AIFA Film Academy",
         description: workshop.title,
         order_id:    orderData.orderId,
-        prefill:     { name: storedUser.name || "", email: storedUser.email || "" },
+        prefill:     { name: activeUser.name || buyerInfo?.name || "", email: buyerInfo?.email || activeUser.email || "" },
         theme:       { color: "#C7E36B" },
         handler: async (response) => {
           try {
@@ -117,7 +184,10 @@ export default function WorkshopDetail() {
               setTxId(orderData.txId || "");
               setPurchaseDate(nowDate);
               localStorage.setItem(`ws_purchase_${id}`, JSON.stringify({ txId: orderData.txId || "", date: nowDate }));
+              setPaidOrderId(orderData.orderId || orderData.txId || "");
+              setTotalPaid(orderData.amount ? Math.round(orderData.amount / 100) : workshop.price);
               setIsEnrolled(true);
+              setShowSuccessModal(true);
             } else {
               alert("Payment verification failed. Contact support with payment ID: " + response.razorpay_payment_id);
             }
@@ -126,14 +196,14 @@ export default function WorkshopDetail() {
           }
           setEnrolling(false);
         },
-        modal: { ondismiss: () => setEnrolling(false) },
+        modal: { ondismiss: () => { setEnrolling(false); setShowPayModal(true); } },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch {
-      alert("Something went wrong. Please try again.");
       setEnrolling(false);
+      setShowPayModal(true);
     }
   };
 
@@ -182,6 +252,32 @@ export default function WorkshopDetail() {
   if (isEnrolled && !workshop.zoomLink) {
     return (
       <div className="min-h-screen bg-[#0B0F10] text-white">
+        {/* Post-payment modals must render in every enrolled view */}
+        {showSuccessModal && (
+          <SuccessModal
+            item={{ ...workshop, type: "Workshop" }}
+            orderId={paidOrderId}
+            totalPaid={totalPaid}
+            isLoggedIn={!guestIsNew}
+            onCreateAccount={() => { setShowSuccessModal(false); setShowOTPModal(true); }}
+            onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
+          />
+        )}
+        {showCalendarModal && (
+          <AddToCalendarModal
+            item={{ ...workshop, type: "Workshop" }}
+            onSkip={() => setShowCalendarModal(false)}
+            onDone={() => setShowCalendarModal(false)}
+          />
+        )}
+        {showSetPassword && (
+          <SetPasswordModal
+            email={buyerInfo?.email}
+            token={localStorage.getItem("aifa_token")}
+            itemType="Workshop"
+            itemId={id}
+          />
+        )}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-xs text-gray-500 flex gap-2 flex-wrap">
           <Link to="/" className="hover:text-white transition-colors">Home</Link>
           <span>›</span>
@@ -207,6 +303,32 @@ export default function WorkshopDetail() {
   if (isEnrolled) {
     return (
       <div className="min-h-screen bg-[#0B0F10] text-white">
+        {/* Post-payment modals */}
+        {showSuccessModal && (
+          <SuccessModal
+            item={{ ...workshop, type: "Workshop" }}
+            orderId={paidOrderId}
+            totalPaid={totalPaid}
+            isLoggedIn={!guestIsNew}
+            onCreateAccount={() => { setShowSuccessModal(false); setShowOTPModal(true); }}
+            onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
+          />
+        )}
+        {showCalendarModal && (
+          <AddToCalendarModal
+            item={{ ...workshop, type: "Workshop" }}
+            onSkip={() => setShowCalendarModal(false)}
+            onDone={() => setShowCalendarModal(false)}
+          />
+        )}
+        {showSetPassword && (
+          <SetPasswordModal
+            email={buyerInfo?.email}
+            token={localStorage.getItem("aifa_token")}
+            itemType="Workshop"
+            itemId={id}
+          />
+        )}
         {/* BREADCRUMB */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-xs text-gray-500 flex gap-2 flex-wrap">
           <Link to="/" className="hover:text-white transition-colors">Home</Link>
@@ -322,6 +444,50 @@ export default function WorkshopDetail() {
   /* ── BEFORE PURCHASE ── */
   return (
     <div className="min-h-screen bg-[#0B0F10] text-white pb-24">
+      {showBuyModal && (
+        <BuyModal
+          item={{ ...workshop, benefits: ["Live interactive session", "Session recording access", "Downloadable resources", "Certificate of completion", "Direct trainer Q&A"] }}
+          initialData={buyerInfo}
+          emailError={buyEmailError}
+          onClose={() => { setShowBuyModal(false); setBuyEmailError(""); }}
+          onContinue={handleBuyFormDone}
+        />
+      )}
+      {showPayModal && (
+        <PaymentModal
+          item={{ ...workshop, type: "Workshop", benefits: ["Live interactive session", "Session recording access", "Downloadable resources", "Certificate of completion", "Direct trainer Q&A"] }}
+          orderId={paidOrderId}
+          onClose={() => setShowPayModal(false)}
+          onBack={() => { setShowPayModal(false); setShowBuyModal(true); }}
+          onPay={handlePay}
+          paying={enrolling}
+        />
+      )}
+      {showSuccessModal && (
+        <SuccessModal
+          item={{ ...workshop, type: "Workshop" }}
+          orderId={paidOrderId}
+          totalPaid={totalPaid}
+          isLoggedIn={!guestIsNew}
+          onCreateAccount={() => { setShowSuccessModal(false); setShowSetPassword(true); }}
+          onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
+        />
+      )}
+      {showCalendarModal && (
+        <AddToCalendarModal
+          item={{ ...workshop, type: "Workshop" }}
+          onSkip={() => setShowCalendarModal(false)}
+          onDone={() => setShowCalendarModal(false)}
+        />
+      )}
+      {showSetPassword && (
+        <SetPasswordModal
+          email={buyerInfo?.email}
+          token={localStorage.getItem("aifa_token")}
+          itemType="Workshop"
+          itemId={id}
+        />
+      )}
       {/* BREADCRUMB */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-4 text-xs text-gray-500 flex gap-2 flex-wrap">
         <Link to="/" className="hover:text-white transition-colors">Home</Link>
@@ -373,7 +539,7 @@ export default function WorkshopDetail() {
               )}
             </div>
 
-            <button onClick={handlePay} disabled={enrolling || isFull}
+            <button onClick={handleBookClick} disabled={enrolling || isFull}
               className="w-full bg-[#C7E36B] text-black font-black text-sm uppercase py-3 rounded-xl hover:opacity-90 transition disabled:opacity-60">
               {enrolling ? "Processing..." : isFull ? "SOLD OUT" : "RESERVE MY SEAT"}
             </button>
@@ -404,23 +570,63 @@ export default function WorkshopDetail() {
         </div>
       </div>
 
-      {/* STICKY BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0F1112] border-t border-white/10 px-6 py-4 flex items-center justify-between z-50 gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-white font-bold text-sm truncate">{workshop.title}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[#C7E36B] font-black text-sm whitespace-nowrap">{sym}{workshop.price}</span>
-              {hasDiscount && <span className="text-gray-500 line-through text-xs">{sym}{workshop.originalPrice}</span>}
+      {/* STICKY BAR — hidden when any modal is open */}
+      {!showBuyModal && !showPayModal && !showSuccessModal && !showCalendarModal && !showSetPassword && (
+        buyerInfo && !isEnrolled ? (
+          /* CONTINUE BOOKING WIDGET — appears when user has started but paused the flow */
+          <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3">
+            <div className="max-w-2xl mx-auto bg-[#1A1D1E] border border-[#C7E36B]/30 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 shadow-2xl shadow-black/60">
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Progress dots */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-[#C7E36B]" title="Details filled" />
+                  <div className="w-6 h-px bg-[#C7E36B]/40" />
+                  <div className="w-2 h-2 rounded-full bg-[#C7E36B]/30 border border-[#C7E36B]/60" title="Payment pending" />
+                  <div className="w-6 h-px bg-white/10" />
+                  <div className="w-2 h-2 rounded-full bg-white/10" title="Done" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-sm truncate">{workshop.title}</p>
+                  <p className="text-[#C7E36B] text-xs font-semibold">Your seat is being held — complete payment</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => { setBuyerInfo(null); }}
+                  className="text-gray-500 hover:text-gray-300 text-xs px-2 py-1 rounded-lg hover:bg-white/5 transition-all"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowPayModal(true)}
+                  disabled={enrolling}
+                  className="bg-[#C7E36B] text-black font-black text-sm px-5 py-2.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center gap-1.5"
+                >
+                  {enrolling ? "Processing..." : "Continue Booking →"}
+                </button>
+              </div>
             </div>
           </div>
-          <p className="text-gray-500 text-xs mt-0.5">{isFull ? "SOLD OUT" : "LIMITED SEATS AVAILABLE"}</p>
-        </div>
-        <button onClick={handlePay} disabled={enrolling || isFull}
-          className="bg-[#C7E36B] text-black font-black text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-60 whitespace-nowrap flex items-center gap-1 shrink-0">
-          {enrolling ? "Processing..." : "Book your seat →"}
-        </button>
-      </div>
+        ) : (
+          /* NORMAL STICKY BAR */
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0F1112] border-t border-white/10 px-6 py-4 flex items-center justify-between z-40 gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-white font-bold text-sm truncate">{workshop.title}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[#C7E36B] font-black text-sm whitespace-nowrap">{sym}{workshop.price}</span>
+                  {hasDiscount && <span className="text-gray-500 line-through text-xs">{sym}{workshop.originalPrice}</span>}
+                </div>
+              </div>
+              <p className="text-gray-500 text-xs mt-0.5">{isFull ? "SOLD OUT" : "LIMITED SEATS AVAILABLE"}</p>
+            </div>
+            <button onClick={handleBookClick} disabled={enrolling || isFull}
+              className="bg-[#C7E36B] text-black font-black text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-60 whitespace-nowrap flex items-center gap-1 shrink-0">
+              {enrolling ? "Processing..." : "Book your seat →"}
+            </button>
+          </div>
+        )
+      )}
     </div>
   );
 }

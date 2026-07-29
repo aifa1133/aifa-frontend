@@ -5,7 +5,11 @@ import { GOOGLE_OAUTH_ENABLED } from "../main.jsx";
 
 function saveUser(data) {
   localStorage.setItem("aifa_token", data.token);
-  localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role }));
+  localStorage.setItem("aifa_user", JSON.stringify({
+    name: data.name, _id: data._id, role: data.role,
+    profilePicture: data.profilePicture || "",
+    emailVerified: !!data.emailVerified,
+  }));
 }
 
 // Defined outside the component so React never remounts children on re-render (fixes focus loss bug)
