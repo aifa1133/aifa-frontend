@@ -131,7 +131,9 @@ export default function WorkshopDetail() {
   };
 
   const handlePay = async ({ couponCode } = {}) => {
-    // Read token fresh — guest-checkout may have set it after initial render
+    if (couponCode) setAppliedCoupon(couponCode);
+    const activeCoupon = couponCode || appliedCoupon;
+
     const activeToken = localStorage.getItem("aifa_token");
     const activeUser  = JSON.parse(localStorage.getItem("aifa_user") || "{}");
 
@@ -149,12 +151,13 @@ export default function WorkshopDetail() {
       const h = { "Content-Type": "application/json", Authorization: `Bearer ${activeToken}` };
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST", headers: h,
-        body: JSON.stringify({ itemType: "workshop", itemId: id, couponCode: couponCode || undefined }),
+        body: JSON.stringify({ itemType: "workshop", itemId: id, couponCode: activeCoupon || undefined }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) {
         setEnrolling(false);
-        setShowPayModal(true); // reopen modal with data still intact
+        setShowPayModal(true);
+        alert(orderData.message || "Could not create order. Please try again.");
         return;
       }
 
@@ -463,6 +466,7 @@ export default function WorkshopDetail() {
           onBack={() => { setShowPayModal(false); setShowBuyModal(true); }}
           onPay={handlePay}
           paying={enrolling}
+          initialCoupon={appliedCoupon}
         />
       )}
       {showSuccessModal && (

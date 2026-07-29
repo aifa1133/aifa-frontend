@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const GST_RATE = 0.18;
 
-export default function PaymentModal({ item, orderId, onClose, onBack, onPay, paying }) {
+export default function PaymentModal({ item, orderId, onClose, onBack, onPay, paying, initialCoupon }) {
   const currency  = item?.currency === "USD" ? "$" : "₹";
   const title     = item?.title || "Course";
   const basePrice = Number(item?.price ?? 0);
@@ -12,8 +12,17 @@ export default function PaymentModal({ item, orderId, onClose, onBack, onPay, pa
 
   const [couponInput, setCouponInput] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
-  const [couponResult, setCouponResult] = useState(null); // { discount, couponCode, influencerId }
+  const [couponResult, setCouponResult] = useState(null);
   const [couponError, setCouponError] = useState("");
+
+  // Restore previously applied coupon if modal reopens (e.g. after payment failure)
+  useEffect(() => {
+    if (!initialCoupon) return;
+    fetch(`/api/payments/validate-coupon?code=${encodeURIComponent(initialCoupon)}`)
+      .then(r => r.json())
+      .then(d => { if (d.valid) { setCouponResult(d); setCouponInput(d.couponCode); } })
+      .catch(() => {});
+  }, [initialCoupon]);
 
   const discountAmount = couponResult ? Math.round(basePrice * couponResult.discount) / 100 : 0;
   const discountedBase = basePrice - discountAmount;
