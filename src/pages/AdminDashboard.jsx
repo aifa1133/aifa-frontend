@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminInfluencers from "./admin/AdminInfluencers";
+import AdminCommissions from "./admin/AdminCommissions";
 
 /* ─── INLINE SVG ICON ─── */
 const Ic = ({ d, size = 16, className = "" }) => (
@@ -61,10 +63,12 @@ const NAV_ITEMS = [
   { id: "platform-settings", label: "Settings",       icon: "settings"  },
 ];
 const MGMT_ITEMS = [
-  { id: "users",      label: "Users",      icon: "users"      },
-  { id: "payments",   label: "Payments",   icon: "payments"   },
-  { id: "enrolments", label: "Enrolments", icon: "enrolments" },
-  { id: "membership", label: "Membership", icon: "membership" },
+  { id: "users",        label: "Users",       icon: "users"      },
+  { id: "payments",     label: "Payments",    icon: "payments"   },
+  { id: "enrolments",   label: "Enrolments",  icon: "enrolments" },
+  { id: "membership",   label: "Membership",  icon: "membership" },
+  { id: "influencers",  label: "Influencers", icon: "hire"       },
+  { id: "commissions",  label: "Commissions", icon: "sales"      },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -267,6 +271,8 @@ export default function AdminDashboard() {
           {activePage === "sales-consultation" && <SalesConsultAdmin token={token} />}
           {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
           {activePage === "membership"         && <MembershipAdmin token={token} />}
+          {activePage === "influencers"        && <AdminInfluencers token={token} />}
+          {activePage === "commissions"        && <AdminCommissions token={token} />}
           {activePage === "platform-settings"  && <PlatformSettings token={token} />}
         </main>
       </div>

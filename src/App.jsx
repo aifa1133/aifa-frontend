@@ -115,7 +115,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
@@ -154,10 +154,27 @@ import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
 import CourseSetup from "./pages/CourseSetup";
-import InfluencerDashboard from "./pages/InfluencerDashboard";
+
+/* Admin — influencer module */
+import AdminInfluencers from "./pages/admin/AdminInfluencers";
+import AdminCommissions from "./pages/admin/AdminCommissions";
+
+/* Influencer portal */
+import InfluencerLogin from "./pages/influencer/InfluencerLogin";
+import InfluencerLayout from "./layouts/InfluencerLayout";
+import InfluencerAuthGuard from "./Components/influencer/InfluencerAuthGuard";
+import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
+import InfluencerReferrals from "./pages/influencer/InfluencerReferrals";
+import InfluencerPayouts from "./pages/influencer/InfluencerPayouts";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll", "/influencer"];
-const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
+const FULLSCREEN_PATTERNS = [
+  /^\/courses\/.+\/watch$/,
+  /^\/courses\/.+\/pay$/,
+  /^\/courses\/.+\/setup$/,
+  /^\/influencer(\/.*)?$/,
+  /^\/admin(\/.*)?$/,
+];
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -216,7 +233,21 @@ function AppShell() {
           <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
           <Route path="/courses/:id/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/influencer" element={<InfluencerDashboard />} />
+
+          {/* Admin — influencer module */}
+          <Route path="/admin/influencers" element={<AdminInfluencers />} />
+          <Route path="/admin/commissions" element={<AdminCommissions />} />
+
+          {/* Influencer portal */}
+          <Route path="/influencer/login" element={<InfluencerLogin />} />
+          <Route path="/influencer" element={<Navigate to="/influencer/login" replace />} />
+          <Route element={<InfluencerAuthGuard />}>
+            <Route element={<InfluencerLayout />}>
+              <Route path="/influencer/dashboard" element={<InfluencerDashboard />} />
+              <Route path="/influencer/referrals" element={<InfluencerReferrals />} />
+              <Route path="/influencer/payouts" element={<InfluencerPayouts />} />
+            </Route>
+          </Route>
         </Routes>
       </main>
 
