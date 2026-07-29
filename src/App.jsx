@@ -191,6 +191,20 @@ function AppShell() {
     FULLSCREEN_PATHS.includes(location.pathname) ||
     FULLSCREEN_PATTERNS.some(p => p.test(location.pathname));
 
+  // Auto-open signup when ?ref= is in the URL (influencer referral link)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      sessionStorage.setItem("aifa_referral", ref);
+      const isLoggedIn = !!localStorage.getItem("aifa_token");
+      if (!isLoggedIn && !isFullScreen) {
+        setShowLogin(false);
+        setShowSignup(true);
+      }
+    }
+  }, [location.search, isFullScreen]);
+
   return (
     <div className={`w-full min-h-screen bg-[#0B0F10] overflow-x-hidden`}>
       <ScrollToTop />
@@ -263,6 +277,7 @@ function AppShell() {
         <SignUpModal
           onClose={() => setShowSignup(false)}
           onSwitchToLogin={() => { setShowSignup(false); setShowLogin(true); }}
+          initialReferral={sessionStorage.getItem("aifa_referral") || ""}
         />
       )}
     </div>

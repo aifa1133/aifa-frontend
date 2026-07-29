@@ -32,12 +32,13 @@ function PasswordStrength({ password }) {
   );
 }
 
-export default function SignUpModal({ onClose, onSwitchToLogin }) {
+export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral = "" }) {
   const [name, setName]       = useState("");
   const [email, setEmail]     = useState("");
   const [phone, setPhone]     = useState("");
   const [otp, setOtp]         = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState(initialReferral);
   const [showPwd, setShowPwd] = useState(false);
   const [showPwdStrength, setShowPwdStrength] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
@@ -102,11 +103,12 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password }),
+        body: JSON.stringify({ name, email, phone, password, referralCode: referralCode.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.message || "Signup failed.");
       else {
+        sessionStorage.removeItem("aifa_referral");
         localStorage.setItem("aifa_token", data.token);
         localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role }));
         onClose();
@@ -133,11 +135,13 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
             <input type="email" placeholder="Enter Email" value={email} onChange={e => setEmail(e.target.value)}
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-3 mb-4">
               <div className="flex items-center border border-white/20 rounded-xl px-4 py-3 text-white shrink-0">+91</div>
               <input type="text" placeholder="Enter Phone" value={phone} onChange={e => setPhone(e.target.value)}
                 className="flex-1 bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
             </div>
+            <input type="text" placeholder="Referral Code (optional)" value={referralCode} onChange={e => setReferralCode(e.target.value)}
+              className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-6 outline-none focus:border-[#C7E36B] uppercase placeholder:normal-case" />
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleContinue} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
               {loading ? "Sending code..." : "CONTINUE"}
