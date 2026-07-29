@@ -276,6 +276,7 @@ export default function WorkshopDetail() {
             token={localStorage.getItem("aifa_token")}
             itemType="Workshop"
             itemId={id}
+            onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
           />
         )}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-xs text-gray-500 flex gap-2 flex-wrap">
@@ -327,6 +328,7 @@ export default function WorkshopDetail() {
             token={localStorage.getItem("aifa_token")}
             itemType="Workshop"
             itemId={id}
+            onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
           />
         )}
         {/* BREADCRUMB */}
@@ -486,6 +488,7 @@ export default function WorkshopDetail() {
           token={localStorage.getItem("aifa_token")}
           itemType="Workshop"
           itemId={id}
+          onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
         />
       )}
       {/* BREADCRUMB */}

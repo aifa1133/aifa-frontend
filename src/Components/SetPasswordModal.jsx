@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function SetPasswordModal({ email, token, itemType, itemId }) {
+export default function SetPasswordModal({ email, token, itemType, itemId, onSuccess }) {
   const [pw, setPw]           = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw]         = useState(false);
@@ -33,6 +33,7 @@ export default function SetPasswordModal({ email, token, itemType, itemId }) {
         window.dispatchEvent(new Event("storage"));
       } catch {}
 
+      if (onSuccess) { onSuccess(); return; }
       if (itemType === "Workshop") navigate(`/workshops/${itemId}`);
       else if (itemType === "Bootcamp") navigate("/bootcamp");
       else navigate("/dashboard");
