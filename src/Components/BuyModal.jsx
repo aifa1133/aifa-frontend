@@ -96,7 +96,7 @@ export default function BuyModal({ item, onClose, onContinue, initialData, email
 
         {/* RIGHT — form */}
         <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
-          <h2 className="text-white font-black text-2xl md:text-3xl mb-1">Buy this Course</h2>
+          <h2 className="text-white font-black text-2xl md:text-3xl mb-1">Reserve Your Seat</h2>
           <p className="text-gray-400 text-sm mb-6">Own this course forever.</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -165,7 +165,7 @@ export default function WorkshopDetail() {
         name:        "AIFA Film Academy",
         description: workshop.title,
         order_id:    orderData.orderId,
-        prefill:     { name: activeUser.name || buyerInfo?.name || "", email: buyerInfo?.email || activeUser.email || "" },
+        prefill:     { name: buyerInfo?.name || activeUser.name || "", email: buyerInfo?.email || activeUser.email || "", contact: buyerInfo?.phone || "" },
         theme:       { color: "#C7E36B" },
         handler: async (response) => {
           try {
@@ -259,15 +259,15 @@ export default function WorkshopDetail() {
             orderId={paidOrderId}
             totalPaid={totalPaid}
             isLoggedIn={!guestIsNew}
-            onCreateAccount={() => { setShowSuccessModal(false); setShowOTPModal(true); }}
+            onCreateAccount={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); else setShowSetPassword(true); }}
             onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
           />
         )}
         {showCalendarModal && (
           <AddToCalendarModal
             item={{ ...workshop, type: "Workshop" }}
-            onSkip={() => setShowCalendarModal(false)}
-            onDone={() => setShowCalendarModal(false)}
+            onSkip={() => { setShowCalendarModal(false); if (guestIsNew) setShowSetPassword(true); }}
+            onDone={() => { setShowCalendarModal(false); if (guestIsNew) setShowSetPassword(true); }}
           />
         )}
         {showSetPassword && (
@@ -310,15 +310,15 @@ export default function WorkshopDetail() {
             orderId={paidOrderId}
             totalPaid={totalPaid}
             isLoggedIn={!guestIsNew}
-            onCreateAccount={() => { setShowSuccessModal(false); setShowOTPModal(true); }}
+            onCreateAccount={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); else setShowSetPassword(true); }}
             onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
           />
         )}
         {showCalendarModal && (
           <AddToCalendarModal
             item={{ ...workshop, type: "Workshop" }}
-            onSkip={() => setShowCalendarModal(false)}
-            onDone={() => setShowCalendarModal(false)}
+            onSkip={() => { setShowCalendarModal(false); if (guestIsNew) setShowSetPassword(true); }}
+            onDone={() => { setShowCalendarModal(false); if (guestIsNew) setShowSetPassword(true); }}
           />
         )}
         {showSetPassword && (
@@ -469,15 +469,15 @@ export default function WorkshopDetail() {
           orderId={paidOrderId}
           totalPaid={totalPaid}
           isLoggedIn={!guestIsNew}
-          onCreateAccount={() => { setShowSuccessModal(false); setShowSetPassword(true); }}
+          onCreateAccount={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); else setShowSetPassword(true); }}
           onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
         />
       )}
       {showCalendarModal && (
         <AddToCalendarModal
           item={{ ...workshop, type: "Workshop" }}
-          onSkip={() => setShowCalendarModal(false)}
-          onDone={() => setShowCalendarModal(false)}
+          onSkip={() => { setShowCalendarModal(false); if (guestIsNew) setShowSetPassword(true); }}
+          onDone={() => { setShowCalendarModal(false); if (guestIsNew) setShowSetPassword(true); }}
         />
       )}
       {showSetPassword && (
