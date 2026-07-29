@@ -1278,20 +1278,12 @@ function WorkshopsSection({ token }) {
       .catch(() => setLoading(false));
   }, [token]);
 
-  const handleReserve = async (w, e) => {
+  const handleReserve = (w, e) => {
     e?.stopPropagation();
     if (!w._id || w._id?.startsWith?.("m")) { alert("Booking coming soon!"); return; }
     if (reserved.has(w._id)) return;
-    setEnrolling(w._id);
-    try {
-      const res  = await fetch(`/api/workshops/${w._id}/register`, { method:"POST", headers:{ Authorization:`Bearer ${token}` } });
-      const data = await res.json();
-      if (res.ok || data.message === "Already registered") {
-        setReserved(prev => new Set([...prev, w._id]));
-        setWorkshops(prev => prev.map(x => x._id===w._id ? {...x, registrations:[...(x.registrations||[]),"me"]} : x));
-      } else { alert(data.message || "Could not reserve. Try again."); }
-    } catch { alert("Network error. Please try again."); }
-    setEnrolling(null);
+    // Redirect to workshop detail page which has the full payment flow
+    navigate(`/workshops/${w._id}`);
   };
 
   const fmtDateBox = (scheduledAt) => {
@@ -1457,11 +1449,11 @@ function WorkshopsSection({ token }) {
                 ) : (
                   <button
                     onClick={(e) => handleReserve(w, e)}
-                    disabled={enrolling === w._id || isFull}
+                    disabled={isFull}
                     className={`flex justify-center items-center gap-1 px-6 py-3 w-full rounded-b-[20px] font-black text-base uppercase transition-all
                       ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
                   >
-                    {enrolling === w._id ? "Reserving..." : isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-xl">→</span></>}
+                    {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-xl">→</span></>}
                   </button>
                 )}
               </div>
