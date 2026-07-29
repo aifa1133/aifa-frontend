@@ -1261,7 +1261,7 @@ function WorkshopsSection({ token }) {
       .then(d => {
         if (Array.isArray(d) && d.length > 0) {
           setWorkshops(d);
-          if (userId && emailVerified) {
+          if (userId) {
             const myIds = new Set(
               d.filter(w =>
                 w.registrations?.some(r => {
