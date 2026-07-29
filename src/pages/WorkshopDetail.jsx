@@ -259,8 +259,8 @@ export default function WorkshopDetail() {
             orderId={paidOrderId}
             totalPaid={totalPaid}
             isLoggedIn={!guestIsNew}
-            onCreateAccount={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); else setShowSetPassword(true); }}
-            onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
+            onCreateAccount={() => { setShowSuccessModal(false); setShowCalendarModal(true); }}
+            onNext={() => { setShowSuccessModal(false); setShowCalendarModal(true); }}
           />
         )}
         {showCalendarModal && (
@@ -310,8 +310,8 @@ export default function WorkshopDetail() {
             orderId={paidOrderId}
             totalPaid={totalPaid}
             isLoggedIn={!guestIsNew}
-            onCreateAccount={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); else setShowSetPassword(true); }}
-            onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
+            onCreateAccount={() => { setShowSuccessModal(false); setShowCalendarModal(true); }}
+            onNext={() => { setShowSuccessModal(false); setShowCalendarModal(true); }}
           />
         )}
         {showCalendarModal && (
@@ -469,8 +469,8 @@ export default function WorkshopDetail() {
           orderId={paidOrderId}
           totalPaid={totalPaid}
           isLoggedIn={!guestIsNew}
-          onCreateAccount={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); else setShowSetPassword(true); }}
-          onNext={() => { setShowSuccessModal(false); if (workshop.scheduledAt) setShowCalendarModal(true); }}
+          onCreateAccount={() => { setShowSuccessModal(false); setShowCalendarModal(true); }}
+          onNext={() => { setShowSuccessModal(false); setShowCalendarModal(true); }}
         />
       )}
       {showCalendarModal && (
