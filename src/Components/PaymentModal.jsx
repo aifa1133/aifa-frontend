@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const GST_RATE = 0.18;
 
 export default function PaymentModal({ item, orderId, onClose, onBack, onPay, paying }) {
@@ -5,16 +7,50 @@ export default function PaymentModal({ item, orderId, onClose, onBack, onPay, pa
   const title     = item?.title || "Course";
   const basePrice = Number(item?.price ?? 0);
   const origPrice = item?.originalPrice ?? item?.origPrice ?? null;
-  const tax       = Math.round(basePrice * GST_RATE);
-  const total     = basePrice + tax;
   const benefits  = item?.benefits || ["Step-by-step lessons", "Lifetime access", "English captions", "Certificate of completion"];
   const shortId   = orderId ? `ORD-${String(orderId).slice(-5).toUpperCase()}` : "ORD-XXXXX";
+
+  const [couponInput, setCouponInput] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponResult, setCouponResult] = useState(null); // { discount, couponCode, influencerId }
+  const [couponError, setCouponError] = useState("");
+
+  const discountAmount = couponResult ? Math.round(basePrice * couponResult.discount) / 100 : 0;
+  const discountedBase = basePrice - discountAmount;
+  const tax   = Math.round(discountedBase * GST_RATE);
+  const total = discountedBase + tax;
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError("");
+    setCouponResult(null);
+    try {
+      const res = await fetch(`/api/payments/validate-coupon?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        setCouponError(data.message || "Invalid coupon code");
+      } else {
+        setCouponResult(data);
+      }
+    } catch {
+      setCouponError("Network error. Try again.");
+    }
+    setCouponLoading(false);
+  };
+
+  const removeCoupon = () => {
+    setCouponResult(null);
+    setCouponError("");
+    setCouponInput("");
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4 py-6 overflow-y-auto">
       <div className="w-full max-w-[760px] bg-[#0F1112] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-2xl border border-white/10 relative my-auto" onClick={e => e.stopPropagation()}>
 
-        {/* LEFT — course info */}
+        {/* LEFT */}
         <div className="w-full md:w-[240px] shrink-0 bg-[#1A1D1E] p-6 flex flex-col gap-4">
           <p className="text-[#C7E36B] text-[9px] font-bold tracking-widest uppercase">Own this course forever.</p>
           <div>
@@ -42,9 +78,9 @@ export default function PaymentModal({ item, orderId, onClose, onBack, onPay, pa
           </ul>
         </div>
 
-        {/* RIGHT — order summary + pay */}
+        {/* RIGHT */}
         <div className="flex-1 p-6 md:p-8 flex flex-col gap-5">
-          {/* Back + Close row */}
+          {/* Back + Close */}
           <div className="flex items-center justify-between">
             {onBack ? (
               <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all">
@@ -70,9 +106,15 @@ export default function PaymentModal({ item, orderId, onClose, onBack, onPay, pa
                 <span>Original Price (1 item)</span>
                 <span className="text-white">{currency}{basePrice.toLocaleString("en-IN")}</span>
               </div>
+              {couponResult && (
+                <div className="flex justify-between text-green-400">
+                  <span>Coupon ({couponResult.couponCode}) -{couponResult.discount}%</span>
+                  <span>-{currency}{discountAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-400">
                 <span>Subtotal</span>
-                <span className="text-white">{currency}{basePrice.toLocaleString("en-IN")}</span>
+                <span className="text-white">{currency}{discountedBase.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-gray-400">
                 <span>Tax (GST)</span>
@@ -80,7 +122,7 @@ export default function PaymentModal({ item, orderId, onClose, onBack, onPay, pa
               </div>
               <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10 mt-1">
                 <span>Total Payable</span>
-                <span className="text-[#C7E36B]">{currency}{total.toLocaleString("en-IN")}</span>
+                <span className="text-[#C7E36B]">{currency}{total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -88,20 +130,44 @@ export default function PaymentModal({ item, orderId, onClose, onBack, onPay, pa
           {/* Coupon */}
           <div>
             <p className="text-gray-400 text-xs font-semibold mb-1.5">Have a coupon?</p>
-            <input
-              type="text"
-              placeholder="Enter coupon code"
-              className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50 placeholder-gray-600"
-            />
+            {couponResult ? (
+              <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  <span className="text-green-400 text-sm font-bold">{couponResult.couponCode}</span>
+                  <span className="text-green-300 text-xs">{couponResult.discount}% off applied</span>
+                </div>
+                <button onClick={removeCoupon} className="text-gray-500 hover:text-red-400 text-xs transition-colors">Remove</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={couponInput}
+                  onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                  onKeyDown={e => e.key === "Enter" && applyCoupon()}
+                  className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50 placeholder-gray-600 uppercase"
+                />
+                <button
+                  onClick={applyCoupon}
+                  disabled={couponLoading || !couponInput.trim()}
+                  className="px-4 py-2.5 bg-[#C7E36B] text-black text-xs font-black rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                >
+                  {couponLoading ? "..." : "Apply"}
+                </button>
+              </div>
+            )}
+            {couponError && <p className="text-red-400 text-xs mt-1.5">{couponError}</p>}
           </div>
 
           {/* Pay button */}
           <button
-            onClick={() => onPay({})}
+            onClick={() => onPay({ couponCode: couponResult?.couponCode || null })}
             disabled={paying}
             className="w-full bg-[#C7E36B] text-black font-black text-sm py-4 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 tracking-wide"
           >
-            {paying ? "Processing..." : `Pay ${currency}${total.toLocaleString("en-IN")} SECURELY`}
+            {paying ? "Processing..." : `Pay ${currency}${total.toLocaleString("en-IN", { maximumFractionDigits: 2 })} SECURELY`}
           </button>
 
           {/* Trust badges */}

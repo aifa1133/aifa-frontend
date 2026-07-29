@@ -57,6 +57,7 @@ export default function WorkshopDetail() {
   const [buyerInfo, setBuyerInfo]               = useState(null);
   const [paidOrderId, setPaidOrderId]           = useState(null);
   const [totalPaid, setTotalPaid]               = useState(0);
+  const [appliedCoupon, setAppliedCoupon]       = useState(null);
   const [txId, setTxId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [guestIsNew, setGuestIsNew]             = useState(false);
@@ -129,13 +130,12 @@ export default function WorkshopDetail() {
     setShowPayModal(true);
   };
 
-  const handlePay = async () => {
+  const handlePay = async ({ couponCode } = {}) => {
     // Read token fresh — guest-checkout may have set it after initial render
     const activeToken = localStorage.getItem("aifa_token");
     const activeUser  = JSON.parse(localStorage.getItem("aifa_user") || "{}");
 
     if (!activeToken) {
-      // Fallback: shouldn't happen if guest-checkout succeeded, but just in case
       setShowPayModal(false);
       setShowBuyModal(true);
       return;
@@ -149,7 +149,7 @@ export default function WorkshopDetail() {
       const h = { "Content-Type": "application/json", Authorization: `Bearer ${activeToken}` };
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST", headers: h,
-        body: JSON.stringify({ itemType: "workshop", itemId: id }),
+        body: JSON.stringify({ itemType: "workshop", itemId: id, couponCode: couponCode || undefined }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) {
