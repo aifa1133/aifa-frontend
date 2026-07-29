@@ -163,7 +163,7 @@ export default function WorkshopsPage() {
                     </div>
 
                     {/* RIGHT SIDE */}
-                    <div className="flex-1 flex flex-col gap-[6px]">
+                    <div className="flex-1 flex flex-col gap-[2px]">
                       {/* TITLE + META */}
                       <div className="relative px-[12px] py-[10px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[20px] bg-[#DCDCDC] min-h-[105px]">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -223,7 +223,7 @@ export default function WorkshopsPage() {
 
                   {/* BOTTOM */}
                   {isReserved ? (
-                    <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/10 border-t border-[#C7E36B]/30 flex-wrap">
+                    <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/30 flex-wrap">
                       {/* Left: date info */}
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-[#2B2D30] flex items-center justify-center shrink-0">

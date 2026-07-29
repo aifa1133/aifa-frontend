@@ -1160,7 +1160,7 @@ function WorkshopsSection({ token }) {
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       onError={e=>{e.target.src=FALLBACK_WS_IMAGES[i%FALLBACK_WS_IMAGES.length];}}/>
                   </div>
-                  <div className="flex-1 flex flex-col gap-[6px]">
+                  <div className="flex-1 flex flex-col gap-[2px]">
                     {/* TITLE */}
                     <div className="relative flex flex-col justify-center px-4 py-3 min-h-[90px] bg-[#DCDCDC] rounded-tr-[20px] gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1213,7 +1213,7 @@ function WorkshopsSection({ token }) {
 
                 {/* BOTTOM */}
                 {isReserved ? (
-                  <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/10 border-t border-[#C7E36B]/30 flex-wrap">
+                  <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/30 flex-wrap">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#2B2D30] flex items-center justify-center shrink-0">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
