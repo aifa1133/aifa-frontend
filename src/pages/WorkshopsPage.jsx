@@ -60,38 +60,63 @@ export default function WorkshopsPage() {
 
   useEffect(() => {
     const userId = JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
-    fetch("/api/workshops")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setWorkshops(data);
-          if (userId) {
-            const myIds = new Set(
-              data.filter(w =>
-                w.registrations?.some(r => {
-                  const rid = r?.user?._id || r?.user || r;
-                  return String(rid) === String(userId);
-                })
-              ).map(w => String(w._id))
-            );
-            setReserved(myIds);
+
+    const loadWorkshops = (attempt = 1) => {
+      fetch("/api/workshops")
+        .then(async (r) => {
+          const ct = r.headers.get("content-type") || "";
+          if (!ct.includes("application/json")) {
+            // Render cold-start returns HTML "Redirecting..." — retry once after 3s
+            if (attempt < 3) {
+              setTimeout(() => loadWorkshops(attempt + 1), 3000);
+            } else {
+              setWorkshops(MOCK_WORKSHOPS);
+              setLoading(false);
+            }
+            return null;
           }
-        } else {
-          setWorkshops(MOCK_WORKSHOPS);
-        }
-      })
-      .catch(() => { setWorkshops(MOCK_WORKSHOPS); })
-      .finally(() => {
-        setLoading(false);
-        const hash = window.location.hash.slice(1);
-        if (hash) {
-          setHighlighted(hash);
-          setTimeout(() => {
-            const el = document.getElementById(hash);
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 300);
-        }
-      });
+          return r.json();
+        })
+        .then((data) => {
+          if (!data) return;
+          if (Array.isArray(data) && data.length > 0) {
+            setWorkshops(data);
+            if (userId) {
+              const myIds = new Set(
+                data.filter(w =>
+                  w.registrations?.some(r => {
+                    const rid = r?.user?._id || r?.user || r;
+                    return String(rid) === String(userId);
+                  })
+                ).map(w => String(w._id))
+              );
+              setReserved(myIds);
+            }
+          } else {
+            setWorkshops(MOCK_WORKSHOPS);
+          }
+        })
+        .catch(() => {
+          if (attempt < 3) {
+            setTimeout(() => loadWorkshops(attempt + 1), 3000);
+          } else {
+            setWorkshops(MOCK_WORKSHOPS);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+          const hash = window.location.hash.slice(1);
+          if (hash) {
+            setHighlighted(hash);
+            setTimeout(() => {
+              const el = document.getElementById(hash);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 300);
+          }
+        });
+    };
+
+    loadWorkshops();
   }, []);
 
   const handleReserve = (workshop) => {
@@ -145,39 +170,41 @@ export default function WorkshopsPage() {
 
               return (
                 <div key={item._id || i} id={item._id}
-                  className={`w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] transition-all duration-500 ${
+                  className={`w-full rounded-[20px] overflow-hidden bg-[#0F1112] border-2 transition-all duration-500 ${
                     isReserved ? "border-[#C7E36B]" :
                     highlighted===item._id ? "border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]" :
-                    "border-[#0F1112]"}`}>
+                    "border-transparent"}`}>
                   {/* TOP SECTION */}
-                  <div className="flex flex-col md:flex-row gap-[6px] w-full cursor-pointer"
+                  <div className="flex flex-col md:flex-row gap-3 w-full cursor-pointer p-3"
                     onClick={() => { if (!isMock && item._id) navigate(`/workshops/${item._id}`); }}>
-                    {/* IMAGE */}
-                    <div className="inline-grid w-full md:w-[266px] h-[200px] grid-cols-1 grid-rows-1 overflow-hidden rounded-tl-[20px] shrink-0 bg-[#1a1e1f]">
+                    {/* IMAGE — fills full height, badge overlaid on top-left */}
+                    <div className="relative w-full md:w-[240px] min-h-[180px] md:self-stretch shrink-0 bg-[#1a1e1f] overflow-hidden rounded-tl-[18px]">
+                      {item.sessionCode && (
+                        <span className="absolute top-2 left-2 z-10 text-[11px] bg-[#2C3A10] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">• {item.sessionCode}</span>
+                      )}
                       <img
                         src={item.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
                         alt={item.title}
-                        className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                        className="absolute inset-0 w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                         onError={e => { e.target.src = FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]; }}
                       />
                     </div>
 
                     {/* RIGHT SIDE */}
-                    <div className="flex-1 flex flex-col gap-[2px]">
+                    <div className="flex-1 flex flex-col gap-3">
                       {/* TITLE + META */}
-                      <div className="relative px-[12px] py-[10px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[20px] bg-[#DCDCDC] min-h-[105px]">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {item.sessionCode && <span className="text-[11px] bg-[#2C3A10] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">• {item.sessionCode}</span>}
-                          {status && status !== "Draft" && status !== "Completed" && (
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${STATUS_STYLE[status] || "bg-gray-500 text-white"}`}>
+                      <div className="relative px-[16px] py-[14px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[18px] bg-[#DCDCDC] flex-1">
+                        {status && status !== "Draft" && status !== "Completed" && (
+                          <div>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit ${STATUS_STYLE[status] || "bg-gray-500 text-white"}`}>
                               {status === "Live" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>}{status}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         {isReserved && (
                           <span className="absolute top-3 right-3 text-[10px] bg-[#2C3A10] text-white font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
                         )}
-                        <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[24px] leading-[30px] md:text-[40px] md:leading-[46px] font-black pr-20">
+                        <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[22px] leading-[28px] md:text-[36px] md:leading-[42px] font-black pr-20">
                           {item.title}
                         </h3>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#6E7072] font-semibold">
@@ -188,31 +215,31 @@ export default function WorkshopsPage() {
 
                       {/* INFO BOXES */}
                       {isReserved ? (
-                        <div className="grid grid-cols-3 gap-[6px]">
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                        <div className="flex gap-3">
+                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
                           </div>
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">SEAT CONFIRMED</p>
                           </div>
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⌨ Mode</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
                           </div>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-[6px]">
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                        <div className="flex gap-3">
+                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
                           </div>
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">{priceStr}</p>
                           </div>
-                          <div className="flex flex-col items-start gap-[6px] flex-1 self-stretch p-[16px] rounded-[8px] bg-[#DCDCDC]">
+                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">📅 Date & Time</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[12px] font-bold leading-tight">{dateBoxStr}</p>
                           </div>
@@ -223,15 +250,15 @@ export default function WorkshopsPage() {
 
                   {/* BOTTOM */}
                   {isReserved ? (
-                    <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/30 flex-wrap">
+                    <div className="flex items-center justify-between gap-3 px-5 py-3.5 bg-[#E2F199] flex-wrap">
                       {/* Left: date info */}
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#2B2D30] flex items-center justify-center shrink-0">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <div className="w-9 h-9 rounded-full bg-[#C7E36B]/50 flex items-center justify-center shrink-0">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2C3A10" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
                         <div>
-                          {fmtDateLong && <p className="text-[#2B2D30] text-xs font-black font-[Montserrat]">DATE: {fmtDateLong}</p>}
-                          {fmtTimeRange && <p className="text-[#6E7072] text-[11px] font-semibold font-[Montserrat]">at {fmtTimeRange}</p>}
+                          {fmtDateLong && <p className="text-[#1a2600] text-xs font-black font-[Montserrat]">DATE: {fmtDateLong}</p>}
+                          {fmtTimeRange && <p className="text-[#3a5000] text-[11px] font-semibold font-[Montserrat]">at {fmtTimeRange}</p>}
                         </div>
                       </div>
                       {/* Right: buttons */}
@@ -249,8 +276,7 @@ export default function WorkshopsPage() {
                         )}
                         {calLink && (
                           <a href={calLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                            className="flex items-center gap-1.5 bg-white text-[#0F1112] font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-100 transition border border-gray-200 font-[Montserrat] whitespace-nowrap">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            className="flex items-center bg-white text-[#1a2600] font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 transition border border-gray-300 font-[Montserrat] whitespace-nowrap">
                             Add to calendar
                           </a>
                         )}
