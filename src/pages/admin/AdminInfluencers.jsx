@@ -308,6 +308,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
                 <th className="px-4 py-3 font-bold">Referral Link</th>
                 <th className="px-4 py-3 font-bold">Lifetime Earnings</th>
                 <th className="px-4 py-3 font-bold">Pending Commission</th>
+                <th className="px-4 py-3 font-bold">Signup Leads</th>
                 <th className="px-4 py-3 font-bold">Status</th>
                 <th className="px-4 py-3 font-bold text-right">Action</th>
               </tr>
@@ -350,6 +351,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
                     </td>
                     <td className="px-4 py-3 text-sm text-white font-bold">{money(inf.lifetimeEarnings)}</td>
                     <td className="px-4 py-3 text-sm text-yellow-400 font-bold">{money(inf.pendingCommission)}</td>
+                    <td className="px-4 py-3 text-sm text-[#C7E36B] font-bold">{inf.signupLeads ?? 0} leads</td>
                     <td className="px-4 py-3"><Badge status={inf.status} /></td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -414,9 +416,9 @@ export default function AdminInfluencers({ token: tokenProp }) {
               {!editing ? (
                 <>
                   {/* stats */}
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">Lifetime</p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Lifetime Earned</p>
                       <p className="text-base font-black text-white mt-1">{money(detail.lifetimeEarnings)}</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-xl p-3">
@@ -424,7 +426,11 @@ export default function AdminInfluencers({ token: tokenProp }) {
                       <p className="text-base font-black text-yellow-400 mt-1">{money(detail.pendingCommission)}</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">Referrals</p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Signup Leads</p>
+                      <p className="text-base font-black text-[#C7E36B] mt-1">{detail.signupLeads ?? 0}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Purchases</p>
                       <p className="text-base font-black text-white mt-1">{detail.totalReferrals ?? 0}</p>
                     </div>
                   </div>
@@ -679,7 +685,7 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
   return (
     <div className="fixed inset-0 bg-black/75 z-[9999] flex items-start justify-center p-4 overflow-y-auto">
       <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-3xl my-8">
-        <div className="sticky top-0 bg-[#0F1112] border-b border-white/10 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+        <div className="bg-[#0F1112] border-b border-white/10 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div>
             <h3 className="text-white font-bold text-base">Add Influencer</h3>
             <p className="text-[11px] text-gray-500">Create a new influencer partner account.</p>
@@ -745,7 +751,7 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
           </section>
         </div>
 
-        <div className="sticky bottom-0 bg-[#0F1112] border-t border-white/10 px-6 py-4 flex gap-3 rounded-b-2xl">
+        <div className="px-6 py-4 flex gap-3 rounded-b-2xl">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
             Cancel
