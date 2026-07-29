@@ -70,9 +70,9 @@ const NAV = [
 export default function StudentDashboard() {
   const location = useLocation();
   const [activePage, setActivePage] = useState(() => {
-    const saved = sessionStorage.getItem("aifa_dashTab");
-    if (saved) { sessionStorage.removeItem("aifa_dashTab"); return saved; }
-    return location.state?.page || "dashboard";
+    const nav = sessionStorage.getItem("aifa_dashTab");
+    if (nav) { sessionStorage.removeItem("aifa_dashTab"); return nav; }
+    return location.state?.page || sessionStorage.getItem("aifa_currentTab") || "dashboard";
   });
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +85,8 @@ export default function StudentDashboard() {
   const token = localStorage.getItem("aifa_token");
   const notifRef = useRef(null);
   const userRef = useRef(null);
+
+  useEffect(() => { sessionStorage.setItem("aifa_currentTab", activePage); }, [activePage]);
 
   useEffect(() => {
     if (!token) { navigate("/"); return; }
