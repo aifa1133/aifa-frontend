@@ -6,7 +6,7 @@ import { FaPlus, FaMinus } from "react-icons/fa";
 const faqs = [
   {
     q: "How is this microcourse different from YouTube tutorials?",
-    a: "Focused, structured, and practical. Each lesson is concise and designed to deliver clear results without unnecessary fluff. You'll follow a step-by-step system that builds real photo enhancement skills, not just random tips.",
+    a: "Focused, structured, and practical. Each lesson is concise and designed to deliver clear results without unnecessary fluff. You’ll follow a step-by-step system that builds real photo enhancement skills, not just random tips.",
   },
   {
     q: "What’s the difference between buying a single microcourse and getting All-Access?",
@@ -17,12 +17,16 @@ const faqs = [
     a: "You get lifetime access to all purchased content.",
   },
   {
-    q: "Do I need prior experience with AI tools?",
-    a: "No, the course is beginner-friendly and guides you step-by-step.",
+    q: "How is this microcourse different from YouTube tutorials?",
+    a: "Focused, structured, and practical. Each lesson is concise and designed to deliver clear results without unnecessary fluff.",
   },
   {
-    q: "What software do I need?",
-    a: "We cover industry-standard tools and AI platforms used in modern workflows.",
+    q: "What’s the difference between buying a single microcourse and getting All-Access?",
+    a: "All-access gives you access to every course including future updates.",
+  },
+  {
+    q: "How long will I have access to the course?",
+    a: "You get lifetime access to all purchased content.",
   },
 ];
 

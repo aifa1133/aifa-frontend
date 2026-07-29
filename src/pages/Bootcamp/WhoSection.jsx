@@ -122,9 +122,9 @@ export default function WhoSection() {
                 max-sm:tracking-[-1px]
               "
             >
-              RECRUITMENT
+              WHO IS THIS
               <br />
-              PROCESS
+              BOOTCAMP FOR?
             </h2>
 
             {/* DESCRIPTION */}

@@ -374,13 +374,13 @@ import { useState, useEffect, useRef } from "react";
 const slides = [
   {
     video: "/hero/web1.mp4",
-    thumb: "/hero/hero1.jpg",
+    thumb: "/hero/hero1.png",
     tag: "FILMS",
     title: "CREATE HOLLYWOOD STYLE AI FILMS",
   },
   {
     video: "/hero/web2.mp4",
-    thumb: "/hero/hero2.jpg",
+    thumb: "/hero/hero2.png",
     tag: "MENTORSHIP",
     title: "TRAIN WITH INDUSTRY EXPERTS",
   },
@@ -420,7 +420,9 @@ export default function Hero() {
     if (playPromise !== undefined) {
       playPromise.catch(() => {});
     }
-    return () => { vid.pause(); };
+    return () => {
+      vid.pause();
+    };
   }, [active]);
 
   return (
@@ -603,9 +605,9 @@ export default function Hero() {
       </div>
 
       {/* RIGHT SIDE IMAGE THUMBNAILS */}
-   {/* RIGHT SIDE IMAGE THUMBNAILS - HIDDEN ON MOBILE */}
-<div
-  className="
+      {/* RIGHT SIDE IMAGE THUMBNAILS - HIDDEN ON MOBILE */}
+      <div
+        className="
     hidden
     sm:flex
 
@@ -623,7 +625,7 @@ export default function Hero() {
 
     gap-[12px]
   "
->
+      >
         {slides.map((slide, i) => (
           <button
             key={i}

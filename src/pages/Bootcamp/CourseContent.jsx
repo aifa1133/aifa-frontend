@@ -42,7 +42,7 @@ export default function CourseContent() {
   };
 
   return (
-    <section className="w-full bg-[#070B14] flex justify-center">
+    <section className="w-full bg-[#0F1112] flex justify-center">
       {/* FIGMA EXACT CONTAINER */}
       <div
         className="
@@ -137,6 +137,19 @@ export default function CourseContent() {
             >
               COURSE CONTENT
             </h2>
+            <p
+              className="
+    text-[#767779]
+    text-[16px]
+    font-normal
+    leading-[24px]
+
+    max-sm:text-[14px]
+    max-sm:leading-[22px]
+  "
+            >
+              22 Sessions . 22 Total Hours . 20 Assignments
+            </p>
           </div>
 
           {/* ACCORDION */}
@@ -161,7 +174,7 @@ export default function CourseContent() {
                   border
                   border-[#343638]
 
-                  bg-[#282A2C]
+                  bg-[#0F1112]
 
                   transition-all
                   duration-300
@@ -280,6 +293,48 @@ export default function CourseContent() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="w-full flex justify-center pt-[16px]">
+            <a
+              href="/brochure/AIFA-Brochure.pdf"
+              download
+              className="
+      flex
+      items-center
+      justify-center
+      gap-[10px]
+
+      bg-[#D0E46A]
+      text-[#0F1112]
+
+      px-[28px]
+      py-[14px]
+
+      rounded-[10px]
+
+      font-bold
+      font-montserrat
+
+      text-[14px]
+      sm:text-[16px]
+
+      cursor-pointer
+
+      hover:bg-[#F0F0F0]
+
+      active:scale-[0.98]
+
+      transition-all
+      duration-300
+    "
+            >
+              DOWNLOAD BROCHURE
+              <img
+                src="/Arrow left brochere.svg"
+                alt="Arrow left"
+                className="w-[18px] h-[18px] object-contain"
+              />
+            </a>
           </div>
         </div>
       </div>

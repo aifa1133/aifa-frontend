@@ -1,4 +1,5 @@
 "use client";
+import { Link } from "react-router-dom";
 
 function Feature({ icon, text }) {
   return (
@@ -157,37 +158,31 @@ export default function Hero() {
               Fellowship for Creators
             </h1>
 
-            <button
+            <Link
+              to="/courses"
               className="
-                flex
-                items-center
-                justify-center
-
-                bg-[#D0E46A]
-                text-black
-
-                text-[15px]
-                font-bold
-                leading-[20px]
-
-                px-[28px]
-                py-[16px]
-
-                rounded-[14px]
-
-                transition-all
-                duration-300
-
-                hover:scale-[1.03]
-
-                max-sm:w-full
-                max-sm:text-[14px]
-                max-sm:px-[20px]
-                max-sm:py-[14px]
-              "
+    flex
+    items-center
+    justify-center
+    bg-[#D0E46A]
+    text-black
+    text-[15px]
+    font-bold
+    leading-[20px]
+    px-[28px]
+    py-[16px]
+    rounded-[14px]
+    transition-all
+    duration-300
+    hover:scale-[1.03]
+    max-sm:w-full
+    max-sm:text-[14px]
+    max-sm:px-[20px]
+    max-sm:py-[14px]
+  "
             >
               ENROLL NOW
-            </button>
+            </Link>
           </div>
 
           {/* RIGHT FEATURES */}
@@ -219,13 +214,17 @@ export default function Hero() {
             <Feature icon="/bootcampicons/icon4.svg" text="Hands-on Training" />
 
             <Feature
+              icon="/bootcampicons/icon6.svg"
+              text="Certificate of Completion"
+            />
+            {/* 
+            <Feature icon="/bootcampicons/icon6.svg" text="Certificate" /> */}
+
+            <Feature icon="/bootcampicons/icon7.svg" text="Class Recordings" />
+            <Feature
               icon="/bootcampicons/icon5.svg"
               text="Portfolio Mentorship"
             />
-
-            <Feature icon="/bootcampicons/icon6.svg" text="Certificate" />
-
-            <Feature icon="/bootcampicons/icon7.svg" text="Class Recordings" />
 
             <Feature icon="/bootcampicons/icon8.svg" text="1 Month Duration" />
           </div>

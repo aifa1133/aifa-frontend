@@ -208,12 +208,13 @@ export default function Footer() {
     {
       src: "/Group 21.svg",
       alt: "Facebook",
-      link: "https://www.facebook.com/share/1K9chpvBA8/?mibextid=wwXIfr",
+
+      link: "https://www.instagram.com/aifafilmmaking?igsh=MWN6cGF5eGZ4NThkZw==",
     },
     {
       src: "/Vector 21.svg",
       alt: "Instagram",
-      link: "https://www.instagram.com/aifafilmmaking?igsh=MWN6cGF5eGZ4NThkZw==",
+      link: "https://www.facebook.com/share/1K9chpvBA8/?mibextid=wwXIfr",
     },
   ];
 
