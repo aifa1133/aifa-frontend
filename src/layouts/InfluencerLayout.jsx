@@ -112,6 +112,20 @@ export default function InfluencerLayout() {
               {item.label}
             </NavLink>
           ))}
+
+          {localStorage.getItem("aifa_token") && (
+            <div className="mt-3 mx-3 border-t border-white/5 pt-3">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                Student Dashboard
+              </button>
+            </div>
+          )}
         </nav>
 
         <div className="border-t border-white/5 px-4 py-3 flex items-center gap-2">
