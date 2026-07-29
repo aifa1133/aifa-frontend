@@ -174,6 +174,8 @@ export default function StudentDashboard() {
   const handleLogout = () => {
     localStorage.removeItem("aifa_token");
     localStorage.removeItem("aifa_user");
+    localStorage.removeItem("influencer_token");
+    localStorage.removeItem("influencer_user");
     navigate("/");
   };
 
@@ -218,6 +220,20 @@ export default function StudentDashboard() {
             </button>
           ))}
         </nav>
+        {/* Influencer Portal shortcut — only shown when user has influencer access */}
+        {localStorage.getItem("influencer_token") && (
+          <div className="border-t border-white/5 p-3">
+            <button
+              onClick={() => navigate("/influencer/dashboard")}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C7E36B]/10 hover:bg-[#C7E36B]/20 transition-colors text-[#C7E36B] text-[11px] font-bold"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+              </svg>
+              Influencer Portal
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* ── MAIN ── */}

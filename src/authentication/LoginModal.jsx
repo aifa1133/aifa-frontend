@@ -10,6 +10,11 @@ function saveUser(data) {
     profilePicture: data.profilePicture || "",
     emailVerified: !!data.emailVerified,
   }));
+  // If this user is also an influencer, store their influencer token too
+  if (data.influencerToken) {
+    localStorage.setItem("influencer_token", data.influencerToken);
+    if (data.influencer) localStorage.setItem("influencer_user", JSON.stringify(data.influencer));
+  }
 }
 
 // Defined outside the component so React never remounts children on re-render (fixes focus loss bug)
