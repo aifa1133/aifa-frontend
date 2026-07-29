@@ -1164,12 +1164,12 @@ function WorkshopsSection({ token }) {
                     {/* TITLE */}
                     <div className="relative flex flex-col justify-center px-4 py-3 min-h-[90px] bg-[#DCDCDC] rounded-tr-[20px] gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {w.sessionCode && <span className="text-[10px] bg-[#2B2D30] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">{w.sessionCode}</span>}
+                        {w.sessionCode && <span className="text-[10px] bg-[#2C3A10] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">• {w.sessionCode}</span>}
                         {statusBadge === "Live" && <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>Live</span>}
                         {statusBadge === "Upcoming" && <span className="text-[10px] bg-blue-500/80 text-white font-bold px-2 py-0.5 rounded-full">Upcoming</span>}
                       </div>
                       {isReserved && (
-                        <span className="absolute top-3 right-3 text-[10px] bg-[#0B5F2A] text-[#C7E36B] font-black px-2.5 py-1 rounded-full border border-[#C7E36B]/40 tracking-wide flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>CONFIRMED</span>
+                        <span className="absolute top-3 right-3 text-[10px] bg-[#2C3A10] text-white font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
                       )}
                       <h3 className="text-[#2B2D30] font-black text-xl md:text-2xl leading-tight pr-24">{w.title}</h3>
                       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-[#6E7072] font-semibold">
@@ -1215,8 +1215,8 @@ function WorkshopsSection({ token }) {
                 {isReserved ? (
                   <div className="flex items-center justify-between gap-3 px-5 py-4 bg-[#C7E36B]/10 border-t border-[#C7E36B]/30 flex-wrap">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#C7E36B]/20 flex items-center justify-center shrink-0">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <div className="w-9 h-9 rounded-full bg-[#2B2D30] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                       </div>
                       <div>
                         {fmtDateLong && <p className="text-[#2B2D30] text-xs font-black">DATE: {fmtDateLong}</p>}
