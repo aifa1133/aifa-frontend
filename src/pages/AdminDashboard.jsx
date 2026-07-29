@@ -5357,7 +5357,7 @@ function CertificatesAdmin({ token }) {
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-400">{certs.length} certificates issued</p>
             <button onClick={()=>setShowForm(!showForm)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-              <I name="plus" size={14}/>{showForm?"← Back":"+ Issue Certificate"}
+              <I name="plus" size={14}/>{showForm?"← Back":"Issue Certificate"}
             </button>
           </div>
           {/* Search + Type filter */}
@@ -5512,7 +5512,7 @@ function JobsAdmin({ token }) {
       <div className="flex items-center justify-between mb-5">
         <div><h1 className="text-xl font-bold text-white">Jobs</h1><p className="text-xs text-gray-400">Manage job listings · {jobs.length} total ({jobs.filter(j=>j.isActive!==false).length} active)</p></div>
         <button onClick={()=>{ if(showForm){setShowForm(false);setEditJob(null);setForm(BLANK_FORM);}else openCreate(); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-          <I name="plus" size={14}/>{showForm?"← Back":"+ Post New Job"}
+          <I name="plus" size={14}/>{showForm?"← Back":"Post New Job"}
         </button>
       </div>
 

@@ -140,7 +140,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
             </div>
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleContinue} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
-              {loading ? "Sending code..." : "+ CONTINUE"}
+              {loading ? "Sending code..." : "CONTINUE"}
             </button>
           </>
         )}
@@ -158,7 +158,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-6 text-center text-2xl tracking-widest outline-none focus:border-[#C7E36B]"/>
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleVerifyOtp} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60 mb-3">
-              {loading ? "Verifying..." : "+ CONTINUE"}
+              {loading ? "Verifying..." : "CONTINUE"}
             </button>
             <p onClick={handleResendOtp} className="text-center text-gray-400 text-sm cursor-pointer hover:text-white">
               Did not get the code? <span className="text-blue-400">Click to resend</span>
@@ -206,7 +206,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
 
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleSignup} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
-              {loading ? "Creating Account..." : "+ CREATE ACCOUNT"}
+              {loading ? "Creating Account..." : "CREATE ACCOUNT"}
             </button>
             <button onClick={() => { setStep(2); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
               Back

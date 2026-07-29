@@ -303,7 +303,7 @@ export default function LoginModal({ onClose, onSwitchToSignup }) {
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
 
         <button onClick={handleEmailLogin} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold mb-4 disabled:opacity-60">
-          {loading ? "Logging in..." : "+ VERIFY AND LOGIN"}
+          {loading ? "Logging in..." : "VERIFY AND LOGIN"}
         </button>
 
         <p onClick={() => { setView("forgot-email"); setError(""); setMsg(""); setForgotOtp(""); resetTurnstile(); }} className="text-center text-blue-400 text-sm mb-4 cursor-pointer hover:underline">
