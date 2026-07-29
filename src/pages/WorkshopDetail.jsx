@@ -328,7 +328,7 @@ export default function WorkshopDetail() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6" ref={heroRef}>
         {/* LIMITED SEATS BADGE */}
         {!isFull && (
-          <span className="inline-block text-xs font-bold bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/40 px-3 py-1 rounded-full mb-5 tracking-wide">
+          <span className="inline-block text-xs font-bold bg-white/10 text-white border border-white/20 px-3 py-1 rounded-full mb-5 tracking-wide">
             LIMITED SEATS
           </span>
         )}
@@ -343,12 +343,12 @@ export default function WorkshopDetail() {
             )}
             <div className="flex flex-wrap gap-3">
               {fmtDate && (
-                <span className="bg-white/10 text-gray-200 text-sm px-4 py-1.5 rounded-full font-semibold">{fmtDate}</span>
+                <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold">{fmtDate}</span>
               )}
               {timeIST && (
-                <span className="bg-white/10 text-gray-200 text-sm px-4 py-1.5 rounded-full font-semibold">{timeIST}</span>
+                <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold">{timeIST}</span>
               )}
-              <span className="bg-white/10 text-gray-200 text-sm px-4 py-1.5 rounded-full font-semibold">
+              <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold">
                 {workshop.mode === "OFFLINE" ? "Offline" : "Live Online"}
               </span>
             </div>
