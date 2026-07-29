@@ -705,14 +705,15 @@ import { useNavigate } from "react-router-dom";
 const bootcamps = [
   {
     title: "AI Filmmaking Workshop",
-    image: "/bootcamp/bootcamp2.jpg",
+  
+    image: "/bootcamp/bootcamp1.png",
     duration: "3 HOURS",
     price: "INR 999.00",
     date: "25-JUL-2026 | 10 AM",
   },
   {
     title: "AI Advertising Workshop",
-    image: "/bootcamp/bootcamp1.png",
+    image: "/bootcamp/bootcamp2.jpg",
     duration: "3 HOURS",
     price: "INR 999.00",
     date: "28-JUL-2026 | 3 PM",

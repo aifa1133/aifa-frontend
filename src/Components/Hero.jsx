@@ -604,26 +604,26 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* RIGHT SIDE IMAGE THUMBNAILS */}
+  
       {/* RIGHT SIDE IMAGE THUMBNAILS - HIDDEN ON MOBILE */}
+      {/* BOTTOM CENTER THUMBNAILS */}
       <div
         className="
     hidden
     sm:flex
 
     absolute
-
-    sm:right-[24px]
-    md:right-[40px]
-
-    top-1/2
-    -translate-y-1/2
+    left-1/2
+    bottom-[24px]
+    -translate-x-1/2
 
     z-20
 
-    flex-col
+    flex-row
+    items-center
+    justify-center
 
-    gap-[12px]
+    gap-[8px]
   "
       >
         {slides.map((slide, i) => (
@@ -631,87 +631,48 @@ export default function Hero() {
             key={i}
             onClick={() => setActive(i)}
             className={`
-              group
+        group
+        relative
+        overflow-hidden
+        rounded-[4px]
 
-              relative
+        transition-all
+        duration-300
 
-              overflow-hidden
-
-              rounded-[12px]
-
-              transition-all
-              duration-500
-
-              ${
-                active === i
-                  ? "border border-white scale-[1.05]"
-                  : "opacity-60 hover:opacity-100"
-              }
-            `}
+        ${
+          active === i
+            ? "border border-[#D0E46A]"
+            : "opacity-80 hover:opacity-100"
+        }
+      `}
           >
-            {/* THUMB IMAGE */}
             <div
               className="
-                relative
+          relative
 
-                w-[90px]
-                sm:w-[110px]
-                md:w-[130px]
+          w-[54px]
+          h-[34px]
 
-                h-[60px]
-                sm:h-[72px]
-                md:h-[84px]
-
-                overflow-hidden
-              "
+          overflow-hidden
+        "
             >
               <img
                 src={slide.thumb}
                 alt={slide.title}
                 className="
-                  w-full
-                  h-full
+            w-full
+            h-full
+            object-cover
 
-                  object-cover
+            transition-transform
+            duration-300
 
-                  transition-all
-                  duration-[1200ms]
-
-                  group-hover:scale-[1.08]
-                  group-hover:-translate-y-[6px]
-                "
+            group-hover:scale-[1.05]
+          "
               />
             </div>
 
-            {/* DARK OVERLAY */}
-            <div
-              className="
-                absolute
-                inset-0
-
-                bg-black/20
-
-                group-hover:bg-black/0
-
-                transition-all
-                duration-500
-              "
-            />
-
-            {/* ACTIVE BORDER */}
-            {active === i && (
-              <div
-                className="
-                  absolute
-                  inset-0
-
-                  border
-                  border-white
-
-                  rounded-[12px]
-                "
-              />
-            )}
+            <div className="absolute inset-0 bg-black/10" />
           </button>
         ))}
       </div>

@@ -362,7 +362,7 @@ rounded-tr-[10px]
           >
             <div className="flex items-center gap-[6px]">
               <img
-                src="/Tagicon2.svg"
+                src="/tabler_device-laptop.svg"
                 alt=""
                 className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
               />
