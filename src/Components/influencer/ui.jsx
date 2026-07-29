@@ -25,7 +25,7 @@ export const I = ({ name, size = 16, className = "" }) => (
 );
 
 /* ─── Formatters ─── */
-export const money = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+export const money = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 export const dateFmt = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 export const METHOD_LABEL = { coupon: "Coupon", referral_link: "Referral Link" };
