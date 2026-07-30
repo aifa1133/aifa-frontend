@@ -153,6 +153,7 @@ import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
 import CourseSetup from "./pages/CourseSetup";
+import WorkshopDetailPage from "./pages/WorkshopDetailPage";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
 const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
@@ -208,6 +209,7 @@ function AppShell() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/login" element={<UserLogin />} />
+          <Route path="/workshops/:id" element={<WorkshopDetailPage />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/courses/:id/watch" element={<CoursePlayer />} />
           <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
