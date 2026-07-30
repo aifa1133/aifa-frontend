@@ -5,25 +5,26 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const testimonials = [
   {
-    name: "S. S. RAJAMOULI",
-    quote: "AIFA IS A GREAT PLACE FOR THE FUTURE OF AI FILMMAKING.",
-    image: "/movies/movie.png",
+    name: "GEORGE LUCAS",
+    quote: "“AI IS PART OF THE FUTURE OF FILMMAKING, AND FILMMAKERS NEED TO ADAPT TO TECHNOLOGICAL CHANGE.”",
+    image: "/movies/movie4.png",
   },
   {
-    name: "KARAN JOHAR",
-    quote: "AIFA is the perfect stage for the evolution of AI in cinema.",
+    name: "JOE RUSSO",
+    quote: "“The value of AI is the democratization of storytelling.”.",
+    image: "/movies/movie1.png",
+  },
+  {
+    name: "Gareth Edwards",
+    quote: "“It’s going to be better than CGI.”",
     image: "/movies/movie2.png",
   },
   {
-    name: "ZOYA AKHTAR",
-    quote: "AIFA is shaping the future of AI-powered filmmaking.",
-    image: "/movies/movie3.png",
+    name: "Ram Gopal Varma",
+    quote: "AI is a “tsunami” that “will wash away the industry.”",
+    image: "/movies/movie3.jpg",
   },
-  {
-    name: "ANURAG KASHYAP",
-    quote: "AIFA stands at the forefront of AI-driven filmmaking innovation.",
-    image: "/movies/movie4.png",
-  },
+  
 ];
 
 export default function Testimonial() {

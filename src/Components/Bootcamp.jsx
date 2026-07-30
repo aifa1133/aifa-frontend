@@ -853,52 +853,71 @@ export default function Bootcamps() {
                 </div>
 
                 {/* RESERVE BUTTON */}
-                <button
-                  onClick={() => navigate("/workshops")}
-                  className="
-                    col-span-1
-                    lg:col-span-2
+             
+              {/* ACTION BUTTONS */}
+<div className="lg:col-span-2 flex flex-col gap-[8px] mt-[8px]">
+  {/* View Details */}
+  <button
+    type="button"
+    onClick={() =>navigate("/workshops")}
+    className="
+      flex
+      w-full
+      justify-center
+      items-center
+      px-[30px]
+      py-[12px]
+      rounded-[8px]
+      bg-[#F2FEB1]
+      text-[#0F1112]
+      font-[Montserrat]
+      text-[18px]
+      font-bold
+      leading-[28px]
+      hover:bg-[#EAF99A]
+      transition-all
+      duration-300
+      cursor-pointer
+    "
+  >
+    View Details
+  </button>
 
-                    flex
-                    justify-center
-                    items-center
+  {/* Reserve Spot */}
+  <button
+    type="button"
+    onClick={() => navigate("/workshops")}
+    className="
+      flex
+      w-full
+      justify-center
+      items-center
+      px-[30px]
+      py-[12px]
+      gap-[4px]
+      rounded-b-[20px]
+      bg-[#D0E46A]
+      text-[#1A1A1A]
+      font-[Montserrat]
+      text-[14px]
+      font-bold
+      uppercase
+      hover:bg-[#BDD250]
+      transition-all
+      duration-300
+      cursor-pointer
+    "
+  >
+    RESERVE SPOT
+    <img
+      src="/Arrowleft2.svg"
+      alt="arrow"
+      className="w-[16px] h-[16px]"
+    />
+  </button>
+</div>
+</div>
 
-                    px-[20px]
-                    sm:px-[30px]
-
-                    py-[12px]
-
-                    gap-[4px]
-
-                    bg-[#D0E46A]
-                    hover:bg-[#F0F0F0]
-
-                    text-[#1A1A1A]
-
-                    font-bold
-                    font-montserrat
-
-                    text-[12px]
-                    sm:text-[14px]
-
-                    rounded-b-[25px]
-
-                    cursor-pointer
-
-                    active:scale-[0.98]
-
-                    transition-all
-                    duration-300
-                  "
-                >
-                  RESERVE SPOT
-                  <img
-                    src="/Arrowleft2.svg"
-                    alt="arrow"
-                    className="w-[14px] h-[14px] sm:w-[16px] sm:h-[16px]"
-                  />
-                </button>
-              </div>
             </motion.div>
           ))}
         </div>

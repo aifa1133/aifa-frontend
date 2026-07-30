@@ -122,10 +122,10 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const directors = [
-  { name: "Sherin", role: "Head of Product", image: "/team/team3.png" },
-  { name: "Ravi Teja", role: "Head of Academics", image: "/team/team5.png" },
-  { name: "E Arun Kumar", role: "Head of Product", image: "/team/team3.png" },
-  { name: "Satyarth", role: "Head of Product", image: "/team/team4.png" },
+  { name: "SHIVA PRASAD", role: "Creative Director", image: "/team/team1.png" },
+  { name: "HEMANTH", role: "Vfx Supervisor", image: "/team/team2.png" },
+  { name: "RAVI TEJA", role: "Creative Director", image: "/team/team3.png" },
+  { name: "E ARUN KUMAR", role: "Co-Founder", image: "/team/team4.png" },
 ];
 
 export default function Directors() {
