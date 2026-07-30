@@ -459,36 +459,63 @@ export default function WorkshopsPage() {
                     </div>
                   </div>
                 </div>
-
+                <button
+                  type="button"
+                  onClick={() => navigate(`/workshops/${item._id}`)}
+                  className="
+    flex
+    w-full
+    justify-center
+    items-center
+    gap-[4px]
+    px-[30px]
+    py-[12px]
+    mb-[8px]
+    rounded-[8px]
+    bg-[#F2FEB1]
+    text-[#0F1112]
+    font-[Montserrat]
+    text-[18px]
+    font-bold
+    leading-[28px]
+    hover:bg-[#EAF99A]
+    transition-all
+    duration-300
+    cursor-pointer
+  "
+                >
+                  View Details
+                  <span className="text-[18px]">→</span>
+                </button>
                 {/* =====================================
                     RESERVE BUTTON
                 ====================================== */}
-
                 <button
                   type="button"
                   onClick={() => handleReserve(item)}
                   className="
-                    flex
-                    justify-center
-                    items-center
-                    gap-[8px]
-                    px-[30px]
-                    py-[12px]
-                    w-full
-                    rounded-b-[18px]
-                    bg-[#D0E46A]
-                    text-[#0F1112]
-                    font-[Montserrat]
-                    text-[15px]
-                    md:text-[18px]
-                    leading-[28px]
-                    font-black
-                    uppercase
-                    transition-all
-                    duration-300
-                    cursor-pointer
-                    hover:bg-[#bdd250]
-                  "
+    mt-[8px]
+    flex
+    justify-center
+    items-center
+    gap-[8px]
+    px-[30px]
+    py-[12px]
+    w-full
+    rounded-b-[18px]
+    bg-[#D0E46A]
+    text-[#0F1112]
+    font-[Montserrat]
+    text-[15px]
+    md:text-[18px]
+    leading-[28px]
+    font-black
+    uppercase
+    transition-all
+    duration-300
+    cursor-pointer
+    hover:bg-[#bdd250]
+  "
                 >
                   RESERVE SPOT
                   <span className="text-[22px]">→</span>
