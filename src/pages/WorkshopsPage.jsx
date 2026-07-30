@@ -486,6 +486,7 @@ export default function WorkshopsPage() {
                     uppercase
                     transition-all
                     duration-300
+                    cursor-pointer
                     hover:bg-[#bdd250]
                   "
                 >
