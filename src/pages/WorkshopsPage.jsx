@@ -485,7 +485,7 @@ export default function WorkshopsPage() {
   "
                 >
                   View Details
-                  <span className="text-[18px]">→</span>
+                  <span className="text-[22px]">→</span>
                 </button>
                 {/* =====================================
                     RESERVE BUTTON
