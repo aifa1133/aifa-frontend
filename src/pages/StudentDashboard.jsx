@@ -1463,28 +1463,27 @@ function WorkshopsSection({ token }) {
       )}
 
       {/* WhatsApp Contact */}
-      <div className="mt-8 flex justify-center">
-        <div className="w-full max-w-xl bg-[#F4A79D] rounded-3xl px-10 py-10 flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 mb-6 shadow-xl">
-            <img
-              src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=200&h=200&fit=crop&crop=face"
-              alt="Support agent"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <h2 style={{ fontWeight: 900, lineHeight: 1.15 }} className="text-black text-3xl md:text-4xl mb-3">
-            Not sure which<br />workshop is<br />right for you?
-          </h2>
-          <p className="text-black font-bold text-sm mb-7">Get personalised guidance from our team</p>
-          <a
-            href="https://wa.me/919052088000"
-            target="_blank"
-            rel="noreferrer"
-            className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-full hover:bg-[#d4ec85] transition-colors shadow"
-          >
-            Chat on Whats app
-          </a>
+      <div className="mt-6 bg-[#F4A79D] rounded-3xl px-6 py-8 flex flex-col items-center text-center">
+        <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-white/60 mb-5 shadow-md">
+          <img
+            src="https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=144&h=144&fit=crop&crop=face"
+            alt="Support agent"
+            className="w-full h-full object-cover"
+            onError={e => { e.target.src = "https://randomuser.me/api/portraits/women/44.jpg"; }}
+          />
         </div>
+        <h2 className="text-black text-[1.75rem] leading-[1.2] mb-2" style={{ fontWeight: 900 }}>
+          Not sure which<br />workshop is<br />right for you?
+        </h2>
+        <p className="text-black font-bold text-sm mb-6">Get personalised guidance from our team</p>
+        <a
+          href="https://wa.me/919052088000"
+          target="_blank"
+          rel="noreferrer"
+          className="bg-[#C7E36B] text-black font-black text-xs px-6 py-2.5 rounded-full hover:bg-[#d4ec85] transition-colors"
+        >
+          Chat on Whats app
+        </a>
       </div>
     </div>
   );
