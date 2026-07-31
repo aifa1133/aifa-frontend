@@ -84,7 +84,24 @@ export default function WorkshopDetail() {
             if (enrolled) {
               setIsEnrolled(true);
               const stored = JSON.parse(localStorage.getItem(`ws_purchase_${id}`) || "null");
-              if (stored) { setTxId(stored.txId || ""); setPurchaseDate(stored.date || ""); }
+              if (stored && stored.txId) {
+                setTxId(stored.txId);
+                setPurchaseDate(stored.date || "");
+              } else {
+                /* localStorage missing — fetch from backend */
+                fetch(`/api/user/me/order?itemId=${w._id}`, {
+                  headers: { Authorization: `Bearer ${localStorage.getItem("aifa_token") || ""}` },
+                })
+                  .then((r) => r.ok ? r.json() : null)
+                  .then((d) => {
+                    if (d?.txId) {
+                      setTxId(d.txId);
+                      setPurchaseDate(d.createdAt || "");
+                      localStorage.setItem(`ws_purchase_${id}`, JSON.stringify({ txId: d.txId, date: d.createdAt || "" }));
+                    }
+                  })
+                  .catch(() => {});
+              }
             }
           }
         }

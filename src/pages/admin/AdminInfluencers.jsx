@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import AdminCommissions from "./AdminCommissions.jsx";
 
 /* ─── Inline icons ─── */
 const Ic = ({ d, size = 16, className = "" }) => (
@@ -53,35 +54,13 @@ function CopyBtn({ value, label = "Copy", className = "" }) {
   );
 }
 
-function StatCard({ label, value, icon, tone = "lime" }) {
-  const tones = {
-    lime: "bg-[#C7E36B]/10 text-[#C7E36B]",
-    green: "bg-green-500/10 text-green-400",
-    yellow: "bg-yellow-500/10 text-yellow-400",
-    blue: "bg-blue-500/10 text-blue-400",
-  };
-  return (
-    <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-black text-white mt-2">{value}</p>
-        </div>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tones[tone]}`}>
-          <I name={icon} size={17} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const Badge = ({ status }) => {
   const map = {
-    active: "bg-green-500/20 text-green-400",
-    inactive: "bg-red-500/20 text-red-400",
+    active: "border-green-500/50 text-green-400",
+    inactive: "border-gray-500/50 text-gray-400",
   };
   return (
-    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${map[status] || "bg-white/10 text-gray-400"}`}>
+    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase border ${map[status] || "border-white/20 text-gray-400"}`}>
       {status}
     </span>
   );
@@ -102,12 +81,6 @@ const Field = ({ label, value, onChange, type = "text", placeholder = "", requir
   </div>
 );
 
-const Row = ({ label, children }) => (
-  <div className="flex items-start justify-between gap-4 py-2.5 border-b border-white/5 last:border-0">
-    <span className="text-[11px] text-gray-500 font-medium shrink-0">{label}</span>
-    <span className="text-xs text-white text-right break-all">{children || "—"}</span>
-  </div>
-);
 
 /* ═══════════════════════════════════════════════════════════
    MAIN
@@ -132,6 +105,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
 
+  const [tab, setTab] = useState("influencers");
   const [showAdd, setShowAdd] = useState(false);
   const [resetCouponFor, setResetCouponFor] = useState(null);
   const [resetLinkFor, setResetLinkFor] = useState(null);
@@ -252,11 +226,11 @@ export default function AdminInfluencers({ token: tokenProp }) {
       )}
 
       {/* HEADER */}
-      <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div>
           <h1 className="text-2xl font-black text-white">Influencers</h1>
           <p className="text-xs text-gray-400 mt-1">
-            Manage AIFA influencer partners, their coupon codes, referral links and commission rates.
+            Manage influencer accounts, referral assets and performance.
           </p>
         </div>
         <button
@@ -267,40 +241,75 @@ export default function AdminInfluencers({ token: tokenProp }) {
         </button>
       </div>
 
+      {/* TABS */}
+      <div className="flex gap-6 border-b border-white/10 mb-6">
+        <button onClick={() => setTab("influencers")}
+          className={tab === "influencers"
+            ? "pb-2.5 text-sm font-bold transition-colors text-white border-b-2 border-[#C7E36B]"
+            : "pb-2.5 text-sm font-bold transition-colors text-gray-500 hover:text-gray-300 border-b-2 border-transparent"
+          }>
+          Influencers
+        </button>
+        <button onClick={() => setTab("commissions")}
+          className={tab === "commissions"
+            ? "pb-2.5 text-sm font-bold transition-colors text-white border-b-2 border-[#C7E36B]"
+            : "pb-2.5 text-sm font-bold transition-colors text-gray-500 hover:text-gray-300 border-b-2 border-transparent"
+          }>
+          Commissions
+        </button>
+      </div>
+
+      {tab === "commissions" && <AdminCommissions token={token} />}
+
+      {tab === "influencers" && <>
+
       {/* STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Influencers" value={stats?.totalInfluencers ?? "—"} icon="users" tone="lime" />
-        <StatCard label="Active Influencers" value={stats?.activeInfluencers ?? "—"} icon="check" tone="green" />
-        <StatCard label="Pending Approval" value={stats?.pendingApproval ?? "—"} icon="clock" tone="yellow" />
-        <StatCard label="Lifetime Commission Paid" value={stats ? money(stats.lifetimeCommissionPaid) : "—"} icon="money" tone="blue" />
+        {[
+          { label: "Total Influencers", value: stats?.totalInfluencers ?? "—" },
+          { label: "Active Influencers", value: stats?.activeInfluencers ?? "—" },
+          { label: "Pending Approval", value: stats?.pendingApproval ?? "—" },
+          { label: "Lifetime Commission Paid", value: stats ? money(stats.lifetimeCommissionPaid) : "—" },
+        ].map((c) => (
+          <div key={c.label} className="bg-[#0F1112] border border-white/10 rounded-2xl p-5">
+            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{c.label}</p>
+            <p className="text-2xl font-black text-white mt-2">{c.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* FILTERS */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[220px]">
-          <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search by name, email or coupon code..."
-            className="w-full bg-[#0F1112] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60"
-          />
+      <div className="bg-[#0F1112] border border-white/10 rounded-xl p-4 mb-4 flex flex-wrap items-end gap-4">
+        <div className="flex-1 min-w-[200px]">
+          <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5 block">Search Influencer</label>
+          <div className="relative">
+            <I name="search" size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Search influencer"
+              className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg pl-8 pr-4 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"
+            />
+          </div>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="bg-[#0F1112] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60"
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <div className="min-w-[160px]">
+          <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5 block">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 appearance-none cursor-pointer"
+          >
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
       </div>
 
       {/* TABLE */}
       <div className="border border-white/10 rounded-xl overflow-hidden bg-[#0F1112]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[820px] text-left">
             <thead className="bg-white/5">
               <tr className="text-[10px] uppercase tracking-wider text-gray-500">
                 <th className="px-4 py-3 font-bold">Profile</th>
@@ -308,7 +317,6 @@ export default function AdminInfluencers({ token: tokenProp }) {
                 <th className="px-4 py-3 font-bold">Referral Link</th>
                 <th className="px-4 py-3 font-bold">Lifetime Earnings</th>
                 <th className="px-4 py-3 font-bold">Pending Commission</th>
-                <th className="px-4 py-3 font-bold">Signup Leads</th>
                 <th className="px-4 py-3 font-bold">Status</th>
                 <th className="px-4 py-3 font-bold text-right">Action</th>
               </tr>
@@ -338,25 +346,15 @@ export default function AdminInfluencers({ token: tokenProp }) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-block bg-[#C7E36B]/15 text-[#C7E36B] text-[11px] font-black px-2.5 py-1 rounded-lg">
-                        {inf.couponCode}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 max-w-[240px]">
-                        <span className="text-[11px] text-gray-400 truncate">{inf.referralLink}</span>
-                        <CopyBtn value={inf.referralLink} label="" />
-                      </div>
-                    </td>
+                    <td className="px-4 py-3 text-sm text-white font-black">{inf.couponCode}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{inf.status === "active" ? "Active" : "Disabled"}</td>
                     <td className="px-4 py-3 text-sm text-white font-bold">{money(inf.lifetimeEarnings)}</td>
-                    <td className="px-4 py-3 text-sm text-yellow-400 font-bold">{money(inf.pendingCommission)}</td>
-                    <td className="px-4 py-3 text-sm text-[#C7E36B] font-bold">{inf.signupLeads ?? 0} leads</td>
+                    <td className="px-4 py-3 text-sm text-white font-bold">{money(inf.pendingCommission)}</td>
                     <td className="px-4 py-3"><Badge status={inf.status} /></td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => openDetail(inf)}
-                        className="text-[11px] font-bold text-[#C7E36B] border border-[#C7E36B]/30 hover:bg-[#C7E36B]/10 px-3 py-1.5 rounded-lg transition-colors"
+                        className="text-[11px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         View Details
                       </button>
@@ -387,12 +385,14 @@ export default function AdminInfluencers({ token: tokenProp }) {
         </div>
       )}
 
+      </>}
+
       {/* ═══ DETAIL SLIDE-IN PANEL ═══ */}
       {detail && (
         <div className="fixed inset-0 z-[9998] flex justify-end">
           <div className="absolute inset-0 bg-black/70" onClick={() => { setDetail(null); setEditing(false); }} />
           <div className="relative w-full max-w-[520px] h-full bg-[#0F1112] border-l border-white/10 overflow-y-auto">
-            {/* panel header */}
+            {/* panel header — avatar + name + status + Edit button */}
             <div className="sticky top-0 bg-[#0F1112] border-b border-white/10 px-6 py-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-[#C7E36B] flex items-center justify-center overflow-hidden shrink-0">
@@ -402,46 +402,85 @@ export default function AdminInfluencers({ token: tokenProp }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-white truncate">{detail.fullName}</p>
-                  <p className="text-[11px] text-gray-500 truncate">{detail.email}</p>
+                  <p className="text-[11px] text-gray-400 capitalize">{detail.status || "Active"}</p>
                 </div>
               </div>
-              <button onClick={() => { setDetail(null); setEditing(false); }} className="text-gray-400 hover:text-white shrink-0">
-                <I name="close" size={20} />
-              </button>
+              {!editing && (
+                <button onClick={startEdit}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors shrink-0">
+                  <I name="edit" size={12} /> Edit
+                </button>
+              )}
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-5">
               {detailLoading && <p className="text-xs text-gray-500">Loading details…</p>}
 
               {!editing ? (
                 <>
-                  {/* stats */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">Lifetime Earned</p>
-                      <p className="text-base font-black text-white mt-1">{money(detail.lifetimeEarnings)}</p>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">Pending</p>
-                      <p className="text-base font-black text-yellow-400 mt-1">{money(detail.pendingCommission)}</p>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">Signup Leads</p>
-                      <p className="text-base font-black text-[#C7E36B] mt-1">{detail.signupLeads ?? 0}</p>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">Purchases</p>
-                      <p className="text-base font-black text-white mt-1">{detail.totalReferrals ?? 0}</p>
+                  {/* BANK INFORMATION */}
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-3">Bank Information</h3>
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 grid grid-cols-2 gap-4">
+                      {[
+                        { label: "Account Holder", value: detail.bankAccountHolder },
+                        { label: "Bank", value: detail.bankName },
+                        { label: "Account Number", value: detail.bankAccountNumber || "—" },
+                        { label: "IFSC", value: detail.bankIFSC },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{label}</p>
+                          <p className="text-sm font-semibold text-white break-all">{value || "—"}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* coupon + link */}
+                  {/* BASIC INFORMATION */}
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-3">Basic Information</h3>
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 grid grid-cols-2 gap-4">
+                      {[
+                        { label: "Full Name", value: detail.fullName },
+                        { label: "Email Address", value: detail.email },
+                        { label: "Phone Number", value: detail.phone },
+                        { label: "Country", value: detail.country },
+                        { label: "City", value: detail.city },
+                        { label: "Joined On", value: detail.createdAt ? new Date(detail.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{label}</p>
+                          <p className="text-sm font-semibold text-white break-all">{value || "—"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SOCIAL MEDIA */}
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-3">Social Media</h3>
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 grid grid-cols-2 gap-4">
+                      {[
+                        { label: "Instagram", value: detail.instagram },
+                        { label: "YouTube", value: detail.youtube },
+                        { label: "LinkedIn", value: detail.linkedin },
+                        { label: "Other", value: detail.otherSocial },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">{label}</p>
+                          <p className="text-sm font-semibold text-white break-all">{value || "—"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* COUPON + REFERRAL LINK */}
                   <div className="space-y-3">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Coupon Code</p>
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-lg font-black text-[#C7E36B] tracking-wide">{detail.couponCode}</span>
-                        <CopyBtn value={detail.couponCode} />
+                        <CopyBtn value={detail.couponCode} label="Copy Coupon Code" />
                       </div>
                       <p className="text-[10px] text-gray-500 mt-2">
                         Student discount {detail.couponCommissionRate}% · Commission {detail.couponCommissionRate}%
@@ -451,63 +490,53 @@ export default function AdminInfluencers({ token: tokenProp }) {
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Referral Link</p>
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs text-white break-all">{detail.referralLink}</span>
-                        <CopyBtn value={detail.referralLink} />
+                        <CopyBtn value={detail.referralLink} label="Copy Referral Link" />
                       </div>
                       <p className="text-[10px] text-gray-500 mt-2">Commission {detail.referralCommissionRate}%</p>
                     </div>
                   </div>
 
-                  {/* info */}
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-                    <p className="text-[10px] text-gray-500 uppercase font-bold py-2">Basic Info</p>
-                    <Row label="Phone">{detail.phone}</Row>
-                    <Row label="Country">{detail.country}</Row>
-                    <Row label="City">{detail.city}</Row>
-                    <Row label="Status"><Badge status={detail.status} /></Row>
-                    <Row label="Joined">{detail.createdAt ? new Date(detail.createdAt).toLocaleDateString("en-IN") : ""}</Row>
+                  {/* LIFETIME PERFORMANCE */}
+                  <div>
+                    <h3 className="text-sm font-bold text-white mb-3">Lifetime Performance</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: "Lifetime Sales", value: money(detail.lifetimeSales) },
+                        { label: "Lifetime Earnings", value: money(detail.lifetimeEarnings) },
+                        { label: "Pending Approval", value: money(detail.pendingApproval) },
+                        { label: "Pending Payment", value: money(detail.pendingCommission) },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                          <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">{label}</p>
+                          <p className="text-base font-black text-white">{value}</p>
+                        </div>
+                      ))}
+                      <div className="col-span-2 bg-white/5 border border-white/10 rounded-xl p-4">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Total Paid</p>
+                        <p className="text-base font-black text-white">{money(detail.totalPaid)}</p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-                    <p className="text-[10px] text-gray-500 uppercase font-bold py-2">Social Media</p>
-                    <Row label="Instagram">{detail.instagram}</Row>
-                    <Row label="YouTube">{detail.youtube}</Row>
-                    <Row label="LinkedIn">{detail.linkedin}</Row>
-                    <Row label="Other">{detail.otherSocial}</Row>
-                  </div>
-
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-                    <p className="text-[10px] text-gray-500 uppercase font-bold py-2">Payment Info</p>
-                    <Row label="Account Holder">{detail.bankAccountHolder}</Row>
-                    <Row label="Bank">{detail.bankName}</Row>
-                    <Row label="Account No.">{detail.bankAccountNumber}</Row>
-                    <Row label="IFSC">{detail.bankIFSC}</Row>
-                    <Row label="UPI ID">{detail.upiId}</Row>
-                  </div>
-
-                  {/* actions */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={startEdit}
-                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4ec85] transition-colors">
-                      <I name="edit" size={14} /> Edit
-                    </button>
+                  {/* ACTIONS — stacked full-width */}
+                  <div className="space-y-2 pt-2">
                     <button onClick={toggleStatus}
-                      className={`py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                        detail.status === "active"
-                          ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                          : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                      }`}>
-                      {detail.status === "active" ? "Deactivate" : "Activate"}
+                      className={detail.status === "active"
+                        ? "w-full py-3 rounded-xl text-sm font-bold transition-colors bg-red-700/60 text-red-200 hover:bg-red-700/80"
+                        : "w-full py-3 rounded-xl text-sm font-bold transition-colors bg-green-600/30 text-green-300 hover:bg-green-600/50"
+                      }>
+                      {detail.status === "active" ? "Deactivate Influencer" : "Activate Influencer"}
                     </button>
                     <button onClick={() => setResetCouponFor(detail)}
-                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
-                      <I name="refresh" size={14} /> Reset Coupon
+                      className="w-full py-3 rounded-xl bg-white/8 text-white text-sm font-bold hover:bg-white/15 transition-colors border border-white/10">
+                      Reset Coupon Code
                     </button>
                     <button onClick={() => setResetLinkFor(detail)}
-                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
-                      <I name="refresh" size={14} /> Reset Link
+                      className="w-full py-3 rounded-xl bg-white/8 text-white text-sm font-bold hover:bg-white/15 transition-colors border border-white/10">
+                      Reset Referral Link
                     </button>
-                    <button onClick={() => setDetail(null)}
-                      className="col-span-2 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 transition-colors">
+                    <button onClick={() => { setDetail(null); setEditing(false); }}
+                      className="w-full py-3 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 transition-colors">
                       Close
                     </button>
                   </div>
@@ -568,25 +597,65 @@ export default function AdminInfluencers({ token: tokenProp }) {
 
       {/* ═══ RESET COUPON MODAL ═══ */}
       {resetCouponFor && (
-        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md p-6">
-            <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
-              <I name="warning" size={22} className="text-yellow-400" />
+        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-lg p-6 my-4">
+            {/* Header */}
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-11 h-11 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-yellow-400">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Reset Coupon Code</h3>
+                <p className="text-[11px] text-gray-400 mt-0.5">Generate a new unique coupon code for this influencer.</p>
+              </div>
             </div>
-            <h3 className="text-white font-bold text-base mb-1">Reset Coupon Code?</h3>
-            <p className="text-xs text-gray-400 mb-5">
-              The current coupon code will stop working immediately. Any student using the old code at checkout
-              will see it as invalid. Existing commissions are not affected.
-            </p>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="px-3 py-1.5 rounded-full bg-red-500/15 text-red-400 text-xs font-black line-through">
-                {resetCouponFor.couponCode}
-              </span>
-              <span className="text-gray-600">→</span>
-              <span className="px-3 py-1.5 rounded-full bg-[#C7E36B]/15 text-[#C7E36B] text-xs font-black">
-                New code auto-generated
-              </span>
+
+            {/* Warning text box */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-2">
+              <p className="text-xs text-gray-300">You are about to generate a new coupon code for this influencer.</p>
+              <p className="text-xs text-gray-300">The existing coupon code will become inactive immediately and can no longer be used for future purchases.</p>
+              <p className="text-xs text-gray-300">Existing commissions and historical records will remain unchanged.</p>
             </div>
+
+            {/* Current vs New coupon preview */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">Current Coupon</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base font-black text-white">{resetCouponFor.couponCode}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 text-[10px] font-bold">Active</span>
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">New Coupon</p>
+                <p className="text-[10px] text-gray-500 mb-1.5">Automatically Generated</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base font-black text-[#C7E36B]">Auto</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[10px] font-bold">New</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Information checklist */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+              <p className="text-xs font-bold text-white mb-3">Information</p>
+              {[
+                "Existing commission records will not be affected.",
+                "Future purchases will use the new coupon code.",
+                "The influencer will automatically see the updated coupon code in their dashboard.",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2.5 mb-2 last:mb-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#C7E36B] mt-0.5 shrink-0">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                  <p className="text-xs text-gray-300">{item}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Buttons */}
             <div className="flex gap-3">
               <button onClick={() => setResetCouponFor(null)}
                 className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
@@ -594,7 +663,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
               </button>
               <button onClick={doResetCoupon}
                 className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4ec85] transition-colors">
-                Reset Coupon
+                Generate New Coupon Code
               </button>
             </div>
           </div>
@@ -603,24 +672,74 @@ export default function AdminInfluencers({ token: tokenProp }) {
 
       {/* ═══ RESET REFERRAL LINK MODAL ═══ */}
       {resetLinkFor && (
-        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md p-6">
-            <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
-              <I name="warning" size={22} className="text-yellow-400" />
-            </div>
-            <h3 className="text-white font-bold text-base mb-1">Reset Referral Link?</h3>
-            <p className="text-xs text-gray-400 mb-5">
-              The existing referral URL will no longer track sign-ups. Anything the influencer has already shared
-              publicly will stop attributing new referrals.
-            </p>
-            <div className="space-y-2 mb-6">
-              <div className="px-3 py-2 rounded-xl bg-red-500/10 text-red-400 text-[11px] font-semibold break-all">
-                {resetLinkFor.referralLink}
+        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-lg p-6 my-4">
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-5">
+              <div className="w-11 h-11 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-yellow-400">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
               </div>
-              <div className="px-3 py-2 rounded-xl bg-[#C7E36B]/10 text-[#C7E36B] text-[11px] font-semibold">
-                A new unique link will be generated
+              <div>
+                <h3 className="text-white font-bold text-base">Reset Referral Link</h3>
               </div>
             </div>
+
+            {/* Warning paragraphs */}
+            <div className="mb-4 space-y-1.5">
+              <p className="text-xs text-white">You are about to generate a new referral link for this influencer.</p>
+              <p className="text-xs text-gray-400">The existing referral link will become inactive immediately and can no longer be used for new referrals.</p>
+              <p className="text-xs text-gray-400">Historical conversions and commission records will remain unchanged.</p>
+            </div>
+
+            {/* Current referral link card */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-3">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-3">Current Referral Link</p>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+                    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                  </svg>
+                </div>
+                <span className="text-xs text-white break-all">{resetLinkFor.referralLink}</span>
+              </div>
+            </div>
+
+            {/* New referral link card */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">New Referral Link</p>
+                <span className="text-[10px] text-[#C7E36B] font-semibold">Automatically Generated</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#C7E36B]/15 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#C7E36B]">
+                    <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-8 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                  </svg>
+                </div>
+                <span className="text-xs text-[#C7E36B]">A new unique link will be auto-generated</span>
+              </div>
+            </div>
+
+            {/* Information checklist */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-3">Information</p>
+              {[
+                "Existing commission records will not be affected.",
+                "Future referrals will use the new referral link.",
+                "The influencer dashboard will automatically display the updated referral link.",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2.5 mb-2 last:mb-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#C7E36B] mt-0.5 shrink-0">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                  <p className="text-xs text-gray-300">{item}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Buttons */}
             <div className="flex gap-3">
               <button onClick={() => setResetLinkFor(null)}
                 className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
@@ -628,7 +747,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
               </button>
               <button onClick={doResetLink}
                 className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4ec85] transition-colors">
-                Reset Link
+                Generate New Referral Link
               </button>
             </div>
           </div>
@@ -650,6 +769,24 @@ export default function AdminInfluencers({ token: tokenProp }) {
 /* ═══════════════════════════════════════════════════════════
    ADD INFLUENCER MODAL
 ═══════════════════════════════════════════════════════════ */
+const LINK_SVG = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500 shrink-0">
+    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+  </svg>
+);
+
+const inputCls = "w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors";
+
+function IconInput({ value, onChange, placeholder }) {
+  return (
+    <div className="relative flex items-center">
+      <span className="absolute left-3">{LINK_SVG}</span>
+      <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+    </div>
+  );
+}
+
 function AddInfluencerModal({ headers, onClose, onCreated }) {
   const [f, setF] = useState({
     fullName: "", email: "", phone: "", password: "", country: "", city: "", profilePhoto: "",
@@ -659,21 +796,21 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  const [couponSuffix, setCouponSuffix] = useState(10);
 
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
 
-  /* Preview of the auto-generated coupon code */
-  const autoCode = (() => {
-    const first = (f.fullName || "").trim().split(/\s+/)[0].replace(/[^a-zA-Z0-9]/g, "");
-    return first ? `${first.toUpperCase().slice(0, 12)}10` : "AUTO10";
-  })();
+  const baseName = (f.fullName || "").trim().split(/\s+/)[0].replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10) || "AUTO";
+  const autoCode = `${baseName}${couponSuffix}`;
+  const autoLink = `https://aifa.ai/?ref=${baseName.toLowerCase() || "auto"}`;
+  const displayCode = f.couponCode || autoCode;
 
   const submit = async () => {
     if (!f.fullName.trim() || !f.email.trim()) { setErr("Full name and email are required"); return; }
     setSaving(true); setErr("");
     try {
       const res = await fetch("/api/admin/influencers", {
-        method: "POST", headers, body: JSON.stringify(f),
+        method: "POST", headers, body: JSON.stringify({ ...f, couponCode: f.couponCode || autoCode }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.message || "Could not create influencer");
@@ -684,76 +821,191 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/75 z-[9999] flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-3xl my-8">
-        <div className="bg-[#0F1112] border-b border-white/10 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+      <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md my-8">
+
+        {/* Header */}
+        <div className="px-5 py-4 flex items-start justify-between border-b border-white/10">
           <div>
             <h3 className="text-white font-bold text-base">Add Influencer</h3>
-            <p className="text-[11px] text-gray-500">Create a new influencer partner account.</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">Create a new influencer account and generate referral assets.</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white"><I name="close" size={20} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white mt-0.5">
+            <I name="close" size={18} />
+          </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-5 space-y-6">
           {err && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs px-3 py-2.5 rounded-xl">{err}</div>}
 
+          {/* ── BASIC INFORMATION ── */}
           <section>
-            <p className="text-[10px] text-gray-500 uppercase font-bold mb-3 tracking-wider">1 · Basic Info</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Field label="Full Name" value={f.fullName} onChange={set("fullName")} required placeholder="Alex Rivera" />
-              <Field label="Email" type="email" value={f.email} onChange={set("email")} required placeholder="alex@example.com" />
-              <Field label="Phone" value={f.phone} onChange={set("phone")} placeholder="+91 90000 00000" />
-              <Field label="Temp Password" type="text" value={f.password} onChange={set("password")} placeholder="Leave blank to auto-generate" />
-              <Field label="Country" value={f.country} onChange={set("country")} placeholder="India" />
-              <Field label="City" value={f.city} onChange={set("city")} placeholder="Mumbai" />
-              <div className="md:col-span-2">
-                <Field label="Profile Photo URL" value={f.profilePhoto} onChange={set("profilePhoto")} placeholder="https://…" />
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-bold text-white">Basic Information</h4>
+              <span className="text-[10px] text-gray-500">Required fields marked *</span>
+            </div>
+
+            {/* Profile Photo Upload */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                {f.profilePhoto
+                  ? <img src={f.profilePhoto} alt="" className="w-full h-full object-cover" />
+                  : <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                }
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-white mb-2">Profile Photo</p>
+                <label className="cursor-pointer inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                  </svg>
+                  Upload Photo
+                  <input type="file" accept="image/png,image/jpeg,image/jpg" className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => set("profilePhoto")(ev.target.result);
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+                <p className="text-[10px] text-gray-500 mt-1.5">PNG or JPG up to 2MB</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Full Name <span className="text-red-400">*</span></label>
+                <input value={f.fullName} onChange={(e) => set("fullName")(e.target.value)} placeholder="Enter influencer full name" className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Email Address <span className="text-red-400">*</span></label>
+                <input type="email" value={f.email} onChange={(e) => set("email")(e.target.value)} placeholder="name@email.com" className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Mobile Number <span className="text-red-400">*</span></label>
+                <input value={f.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="+91 9876543210" className={inputCls} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Country</label>
+                  <select value={f.country} onChange={(e) => set("country")(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60 appearance-none">
+                    <option value="">Select country</option>
+                    {["India","USA","UK","Canada","Australia","UAE","Singapore","Germany","France","Other"].map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">City</label>
+                  <input value={f.city} onChange={(e) => set("city")(e.target.value)} placeholder="Enter city" className={inputCls} />
+                </div>
               </div>
             </div>
           </section>
 
+          {/* ── SOCIAL MEDIA ── */}
           <section>
-            <p className="text-[10px] text-gray-500 uppercase font-bold mb-3 tracking-wider">2 · Social Media</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Field label="Instagram" value={f.instagram} onChange={set("instagram")} placeholder="@handle or URL" />
-              <Field label="YouTube" value={f.youtube} onChange={set("youtube")} placeholder="Channel URL" />
-              <Field label="LinkedIn" value={f.linkedin} onChange={set("linkedin")} placeholder="Profile URL" />
-              <Field label="Other Social" value={f.otherSocial} onChange={set("otherSocial")} placeholder="X / Threads / …" />
+            <h4 className="text-sm font-bold text-white mb-4">Social Media</h4>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Instagram</label>
+                <IconInput value={f.instagram} onChange={set("instagram")} placeholder="Instagram ID" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">YouTube</label>
+                <IconInput value={f.youtube} onChange={set("youtube")} placeholder="Youtube ID" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">LinkedIn</label>
+                <IconInput value={f.linkedin} onChange={set("linkedin")} placeholder="Linkedin ID" />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Other</label>
+                <IconInput value={f.otherSocial} onChange={set("otherSocial")} placeholder="Other ID" />
+              </div>
             </div>
           </section>
 
+          {/* ── COMMISSION SETTINGS ── */}
           <section>
-            <p className="text-[10px] text-gray-500 uppercase font-bold mb-3 tracking-wider">3 · Commission Settings</p>
+            <h4 className="text-sm font-bold text-white mb-4">Commission Settings</h4>
+
+            {/* Coupon Code card */}
             <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-3">
-              <p className="text-[11px] text-gray-400 mb-1">Auto-generated coupon code</p>
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-black text-[#C7E36B] tracking-wide">{f.couponCode || autoCode}</span>
-                <span className="text-[10px] text-gray-500">Referral link is generated automatically from the name.</span>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="text-xs font-semibold text-white">Coupon Code</p>
+                  <p className="text-[10px] text-gray-500">Auto generated on account creation</p>
+                </div>
+                <button onClick={() => setCouponSuffix((n) => n + 1)}
+                  className="text-[11px] font-bold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition-colors shrink-0">
+                  Generate Again
+                </button>
+              </div>
+              <div className="bg-white/5 border border-white/8 rounded-lg px-3 py-2 flex items-center justify-between">
+                <span className="text-sm font-black text-white">{displayCode}</span>
+                <span className="text-[10px] text-gray-500">Unique code</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Field label="Custom Coupon Code (optional)" value={f.couponCode} onChange={(v) => set("couponCode")(v.toUpperCase())} placeholder={autoCode} />
-              <Field label="Coupon Commission %" type="number" value={f.couponCommissionRate} onChange={set("couponCommissionRate")} />
-              <Field label="Referral Commission %" type="number" value={f.referralCommissionRate} onChange={set("referralCommissionRate")} />
+
+            {/* Referral Link card */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-3">
+              <p className="text-xs font-semibold text-white mb-0.5">Referral Link</p>
+              <p className="text-[10px] text-gray-500 mb-2">Auto generated and read only</p>
+              <div className="bg-white/5 border border-white/8 rounded-lg px-3 py-2">
+                <span className="text-[11px] text-gray-300 break-all">{autoLink}</span>
+              </div>
+            </div>
+
+            {/* Commission rate cards — read only */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Coupon Commission</p>
+                <p className="text-xl font-black text-white">{f.couponCommissionRate}%</p>
+                <p className="text-[10px] text-gray-500 mt-1">Read only</p>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Referral Link Commission</p>
+                <p className="text-xl font-black text-white">{f.referralCommissionRate}%</p>
+                <p className="text-[10px] text-gray-500 mt-1">Read only</p>
+              </div>
             </div>
           </section>
 
+          {/* ── PAYMENT INFORMATION ── */}
           <section>
-            <p className="text-[10px] text-gray-500 uppercase font-bold mb-3 tracking-wider">4 · Payment Info</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Field label="Account Holder Name" value={f.bankAccountHolder} onChange={set("bankAccountHolder")} />
-              <Field label="Bank Name" value={f.bankName} onChange={set("bankName")} />
-              <Field label="Account Number" value={f.bankAccountNumber} onChange={set("bankAccountNumber")} />
-              <Field label="IFSC Code" value={f.bankIFSC} onChange={(v) => set("bankIFSC")(v.toUpperCase())} />
-              <div className="md:col-span-2">
-                <Field label="UPI ID" value={f.upiId} onChange={set("upiId")} placeholder="name@bank" />
+            <h4 className="text-sm font-bold text-white mb-4">Payment Information</h4>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Account Holder Name</label>
+                <input value={f.bankAccountHolder} onChange={(e) => set("bankAccountHolder")(e.target.value)} className={inputCls} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Bank Name</label>
+                  <input value={f.bankName} onChange={(e) => set("bankName")(e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Account Number</label>
+                  <input value={f.bankAccountNumber} onChange={(e) => set("bankAccountNumber")(e.target.value)} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">IFSC Code</label>
+                <input value={f.bankIFSC} onChange={(e) => set("bankIFSC")(e.target.value.toUpperCase())} className={inputCls} />
               </div>
             </div>
           </section>
         </div>
 
-        <div className="px-6 py-4 flex gap-3 rounded-b-2xl">
+        {/* Footer buttons */}
+        <div className="px-5 py-4 flex gap-3 border-t border-white/10">
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
+            className="px-5 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
             Cancel
           </button>
           <button onClick={submit} disabled={saving}
