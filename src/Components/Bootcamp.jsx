@@ -853,14 +853,14 @@ export default function Bootcamps() {
                 </div>
 
                 {/* RESERVE BUTTON */}
-             
-              {/* ACTION BUTTONS */}
-<div className="lg:col-span-2 flex flex-col gap-[8px] mt-[8px]">
-  {/* View Details */}
-  <button
-    type="button"
-    onClick={() =>navigate("/workshops")}
-    className="
+
+                {/* ACTION BUTTONS */}
+                <div className="lg:col-span-2 flex flex-col gap-[8px] mt-[8px]">
+                  {/* View Details */}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/workshops")}
+                    className="
       flex
       w-full
       justify-center
@@ -879,21 +879,21 @@ export default function Bootcamps() {
       duration-300
       cursor-pointer
     "
-  >
-    View Details
-  </button>
+                  >
+                    View Details
+                  </button>
 
-  {/* Reserve Spot */}
-  <button
-    type="button"
-    onClick={() => navigate("/workshops")}
-    className="
+                  {/* Reserve Spot */}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/workshops")}
+                    className="
       flex
       w-full
       justify-center
       items-center
       px-[30px]
-      py-[12px]
+      py-[10px]
       gap-[4px]
       rounded-b-[20px]
       bg-[#D0E46A]
@@ -907,17 +907,16 @@ export default function Bootcamps() {
       duration-300
       cursor-pointer
     "
-  >
-    RESERVE SPOT
-    <img
-      src="/Arrowleft2.svg"
-      alt="arrow"
-      className="w-[16px] h-[16px]"
-    />
-  </button>
-</div>
-</div>
-
+                  >
+                    RESERVE SPOT
+                    <img
+                      src="/Arrowleft2.svg"
+                      alt="arrow"
+                      className="w-[16px] h-[16px]"
+                    />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>

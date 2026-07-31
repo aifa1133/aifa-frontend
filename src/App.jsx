@@ -154,6 +154,7 @@ import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
 import CourseSetup from "./pages/CourseSetup";
 import WorkshopDetailPage from "./pages/WorkshopDetailPage";
+import WorkshopConfirmation from "./pages/WorkshopConfirmation";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
 const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
@@ -215,6 +216,7 @@ function AppShell() {
           <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
           <Route path="/courses/:id/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/workshops/confirmation" element={<WorkshopConfirmation />} />
         </Routes>
       </main>
 
