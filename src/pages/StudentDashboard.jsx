@@ -1463,19 +1463,28 @@ function WorkshopsSection({ token }) {
       )}
 
       {/* WhatsApp Contact */}
-      <div className="mt-8 bg-[#F4A79D] rounded-3xl px-8 py-10 flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white/40 mb-5 shadow-lg">
-          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=160&h=160&fit=crop&crop=face" alt="Support agent"
-            className="w-full h-full object-cover" />
+      <div className="mt-8 flex justify-center">
+        <div className="w-full max-w-xl bg-[#F4A79D] rounded-3xl px-10 py-10 flex flex-col items-center text-center">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 mb-6 shadow-xl">
+            <img
+              src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=200&h=200&fit=crop&crop=face"
+              alt="Support agent"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <h2 style={{ fontWeight: 900, lineHeight: 1.15 }} className="text-black text-3xl md:text-4xl mb-3">
+            Not sure which<br />workshop is<br />right for you?
+          </h2>
+          <p className="text-black font-bold text-sm mb-7">Get personalised guidance from our team</p>
+          <a
+            href="https://wa.me/919052088000"
+            target="_blank"
+            rel="noreferrer"
+            className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-full hover:bg-[#d4ec85] transition-colors shadow"
+          >
+            Chat on Whats app
+          </a>
         </div>
-        <h2 className="text-black font-black text-2xl md:text-3xl leading-tight mb-3">
-          Not sure which<br />workshop is<br />right for you?
-        </h2>
-        <p className="text-black/70 font-semibold text-sm mb-6">Get personalised guidance from our team</p>
-        <a href="https://wa.me/919052088000" target="_blank" rel="noreferrer"
-          className="bg-[#C7E36B] text-black font-black text-sm px-6 py-3 rounded-full hover:bg-[#d4ec85] transition-colors">
-          Chat on Whats app
-        </a>
       </div>
     </div>
   );
