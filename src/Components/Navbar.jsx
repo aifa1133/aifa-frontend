@@ -100,7 +100,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const navLinks = [
   {
@@ -145,6 +145,12 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
+const location = useLocation();
+
+const isActive = (path) => location.pathname === path;
+
+const isDropdownActive = (dropdown) =>
+  dropdown?.some((sub) => location.pathname === sub.path);
 
   useEffect(() => {
     const stored = localStorage.getItem("aifa_user");
@@ -209,12 +215,22 @@ lg:py-[20px]
                 {item.link ? (
                   <Link
                     to={item.link}
-                    className="text-[#F0F0F0] font-montserrat text-[14px] leading-[16px] font-bold text-center hover:text-[#C7E36B] transition-colors duration-300"
+                   className={`font-montserrat text-[14px] leading-[16px] font-bold text-center transition-all duration-300 ${
+  isActive(item.link)
+    ? "text-[#C7E36B] drop-shadow-[0_0_10px_#C7E36B]"
+    : "text-[#F0F0F0] hover:text-[#C7E36B]"
+}`}
                   >
                     {item.name}
                   </Link>
                 ) : (
-                  <span className="text-[#F0F0F0] font-montserrat text-[14px] leading-[16px] font-bold text-center hover:text-[#C7E36B] transition">
+                 <span
+  className={`font-montserrat text-[14px] leading-[16px] font-bold text-center transition-all ${
+    isDropdownActive(item.dropdown)
+      ? "text-[#C7E36B] drop-shadow-[0_0_10px_#C7E36B]"
+      : "text-[#F0F0F0] hover:text-[#C7E36B]"
+  }`}
+>
                     {item.name}
                   </span>
                 )}
@@ -241,14 +257,24 @@ lg:py-[20px]
                       <Link
                         key={idx}
                         to={sub.path}
-                        className="flex items-center gap-[10px] px-[18px] py-[16px] text-[#F0F0F0] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none hover:bg-[#C7E36B] hover:text-[#0F1112] transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-transparent hover:before:bg-[#D0E46A]"
+                       className={`flex items-center gap-[10px] px-[18px] py-[16px] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px]
+${
+  location.pathname === sub.path
+    ? "bg-[#C7E36B] text-[#0F1112] before:bg-[#D0E46A]"
+    : "text-[#F0F0F0] hover:bg-[#C7E36B] hover:text-[#0F1112] hover:before:bg-[#D0E46A]"
+}`}
                       >
                         {sub.label}
                       </Link>
                     ) : (
                       <span
                         key={idx}
-                        className="flex items-center gap-[10px] px-[18px] py-[16px] text-[#F0F0F0] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none hover:bg-[#C7E36B] hover:text-[#0F1112] transition cursor-pointer"
+                        className={`flex items-center gap-[10px] px-[18px] py-[16px] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px]
+${
+  location.pathname === sub.path
+    ? "bg-[#C7E36B] text-[#0F1112] before:bg-[#D0E46A]"
+    : "text-[#F0F0F0] hover:bg-[#C7E36B] hover:text-[#0F1112] hover:before:bg-[#D0E46A]"
+}`}
                       >
                         {sub}
                       </span>
