@@ -141,7 +141,7 @@ lg:py-[20px]
                   <img
                     src="/logos/keywordarrow.svg"
                     alt="dropdown"
-                    className="w-[16px] h-[16px]"
+                    className="w-[16px] h-[16px] "
                   />
                 )}
               </div>
@@ -266,7 +266,7 @@ h-[40px]
     "
           >
             {open ? (
-              <X size={20} />
+              <X size={20} className="text-white" strokeWidth={2.5} />
             ) : (
               <img src="/Menu.svg" alt="Menu" className="w-5 h-5" />
             )}
@@ -278,16 +278,19 @@ h-[40px]
       <div
         className={`
     md:hidden
-    overflow-hidden
     transition-all
     duration-500
     bg-[#0F1112]
     border-t
     border-white/10
-    ${open ? "max-h-[1000px]" : "max-h-0"}
+    ${
+      open
+        ? "max-h-[calc(100vh-72px)] overflow-y-auto"
+        : "max-h-0 overflow-hidden"
+    }
   `}
       >
-        <div className="px-[20px] py-[20px] flex flex-col gap-[14px]">
+        <div className="px-[20px] pt-[20px] pb-[40px] flex flex-col gap-[14px]">
           {navLinks.map((item, i) => (
             <div
               key={i}
@@ -330,6 +333,8 @@ h-[40px]
                 {item.dropdown && (
                   <ChevronDown
                     size={16}
+                    color="#FFFFFF"
+                    strokeWidth={2.5}
                     className={`transition-all duration-300 ${
                       openDropdown === i ? "rotate-180" : ""
                     }`}

@@ -118,8 +118,9 @@ export default function Directors() {
           })}
         </div>
         {/* MOBILE */}
-        <div className="md:hidden w-full mt-[32px] flex flex-col items-center">
-          <div className="relative w-full max-w-[330px] h-[320px] flex items-center justify-center overflow-hidden">
+        {/* MOBILE */}
+        <div className="md:hidden w-full mt-[32px] flex justify-center">
+          <div className="relative w-full max-w-[390px] h-[380px] flex items-center justify-center overflow-hidden">
             {directors.map((item, i) => {
               const offset = i - active;
 
@@ -128,40 +129,47 @@ export default function Directors() {
                   key={i}
                   onClick={() => setActive(i)}
                   animate={{
-                    x: offset * 95,
-                    scale: offset === 0 ? 1 : 0.82,
-                    opacity: offset === 0 ? 1 : 0.45,
+                    x: offset * 115,
+                    scale: offset === 0 ? 1.08 : 0.78,
+                    opacity: offset === 0 ? 1 : 0.4,
                     zIndex: offset === 0 ? 30 : 10,
                   }}
                   transition={{
                     type: "spring",
-                    stiffness: 120,
+                    stiffness: 140,
                     damping: 18,
                   }}
                   className="absolute cursor-pointer"
                 >
                   <div
-                    className={`w-[150px] h-[250px] rounded-[18px] overflow-hidden relative
-            ${
-              offset === 0
-                ? "border border-[#6E6E6E] shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-                : ""
-            }`}
+                    className={`
+              w-[185px]
+              h-[305px]
+              rounded-[22px]
+              overflow-hidden
+              relative
+              bg-[#161616]
+              ${
+                offset === 0
+                  ? "border border-[#6E6E6E] shadow-[0_0_25px_rgba(255,255,255,0.18)]"
+                  : ""
+              }
+            `}
                   >
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top scale-[1.08]"
                     />
 
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0F1112] via-black/20 to-transparent" />
 
-                    <div className="absolute bottom-3 left-0 w-full text-center px-2">
-                      <p className="text-white text-[10px] font-bold uppercase leading-tight">
+                    <div className="absolute bottom-5 left-0 w-full px-3 text-center">
+                      <p className="text-white text-[12px] font-bold uppercase leading-tight tracking-wide">
                         {item.name}
                       </p>
 
-                      <p className="text-[#A0A0A0] text-[8px] mt-1">
+                      <p className="text-[#B5B5B5] text-[10px] mt-1">
                         {item.role}
                       </p>
                     </div>
