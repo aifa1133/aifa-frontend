@@ -199,36 +199,40 @@ export default function WorkshopsPage() {
               <article
                 key={item._id}
                 className="
-                  w-full
-                  rounded-[24px]
-                  overflow-hidden
-                  bg-[#0F1112]
-                  border-[6px]
-                  border-[#0F1112]
-                "
+                    w-full
+    bg-[#0F1112]
+    rounded-[25px]
+    overflow-hidden
+    shadow-[0_12px_40px_rgba(0,0,0,0.35)]
+  "
               >
                 {/* =====================================
                     TOP AREA
                 ====================================== */}
 
-                <div className="flex flex-col md:flex-row gap-[6px] w-full">
+                <div
+                  className="
+    flex
+    flex-col
+    lg:flex-row
+    gap-[4px]
+  "
+                >
                   {/* IMAGE */}
 
                   <div
                     className="
-                    relative
-                    w-full
-                    md:w-[266px]
-                    h-[210px]
-                    md:h-auto
-                    min-h-[200px]
-                    overflow-hidden
-                    rounded-t-[18px]
-                    md:rounded-tr-none
-                    md:rounded-tl-[20px]
-                    shrink-0
-                    bg-[#1A1D1E]
-                  "
+    relative
+    w-full
+    lg:w-[298px]
+    h-[194px]
+    lg:h-[194px]
+    overflow-hidden
+    rounded-tl-[20px]
+    lg:rounded-tr-none
+    flex-shrink-0
+    bg-[#1A1D1E]
+  "
                   >
                     <img
                       src={item.image}
@@ -247,58 +251,83 @@ export default function WorkshopsPage() {
                     />
 
                     {item.limitedSeats && (
-                      <div
-                        className="
-                        absolute
-                        top-3
-                        left-3
-                        bg-[#D0E46A]
-                        text-[#111]
-                        px-3
-                        py-1
-                        rounded-full
-                        font-[Montserrat]
-                        text-[10px]
-                        font-black
-                        uppercase
-                      "
-                      >
-                        Limited Seats
+                      <div className="absolute top-[10px] left-[10px] z-20">
+                        <div
+                          className="
+        flex items-center
+        gap-2
+        bg-[#0B0B0B]
+        border border-[#1A1A1A]
+        rounded-full
+        px-4
+        py-1.5
+        shadow-[0_8px_20px_rgba(0,0,0,0.35)]
+      "
+                        >
+                          {/* Live Dot */}
+                          <span className="relative flex h-2.5 w-2.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-70 animate-ping"></span>
+                            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#C8FF1A]"></span>
+                          </span>
+
+                          {/* Text */}
+                          <span
+                            className="
+          text-[#C8FF1A]
+          font-[Montserrat]
+          font-extrabold
+          uppercase
+          tracking-wider
+          text-[10px]
+          leading-none
+        "
+                          >
+                            Live/Online
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* RIGHT SIDE */}
 
-                  <div className="flex-1 flex flex-col gap-[6px]">
+                  <div
+                    className="
+flex-[1_0_0]
+inline-grid
+grid-cols-1
+grid-rows-[105px_auto]
+gap-[4px]
+
+"
+                  >
                     {/* TITLE */}
 
                     <div
                       className="
-                      flex
-                      min-h-[105px]
-                      px-[16px]
-                      py-[14px]
-                      flex-col
-                      justify-center
-                      items-start
-                      rounded-none
-                      md:rounded-tr-[20px]
-                      bg-[#DCDCDC]
-                    "
+flex
+h-[105px]
+px-[12px]
+py-[10px]
+flex-col
+justify-center
+items-start
+gap-[10px]
+self-stretch
+rounded-tr-[20px]
+bg-[#DCDCDC]
+"
                     >
                       <h2
                         className="
-                        text-[#2B2D30]
-                        font-[Montserrat]
-                        text-[26px]
-                        leading-[32px]
-                        sm:text-[34px]
-                        sm:leading-[40px]
-                        lg:text-[48px]
-                        lg:leading-[54px]
-                        font-black
-                      "
+text-[#2B2D30]
+font-[Montserrat]
+text-[42px]
+leading-[50px]
+font-black
+tracking-[-0.02em]
+font-black
+"
                       >
                         {item.title}
                       </h2>
@@ -313,7 +342,7 @@ export default function WorkshopsPage() {
                       grid
                       grid-cols-1
                       sm:grid-cols-3
-                      gap-[6px]
+                      gap-[4px]
                     "
                     >
                       {/* DURATION */}
@@ -325,7 +354,9 @@ export default function WorkshopsPage() {
                         justify-center
                         items-start
                         gap-[5px]
-                        p-[16px]
+                      px-[12px]
+py-[10px]
+h-[85px]
                         bg-[#DCDCDC]
                       "
                       >
@@ -367,7 +398,9 @@ export default function WorkshopsPage() {
                         justify-center
                         items-start
                         gap-[5px]
-                        p-[16px]
+                    px-[12px]
+py-[10px]
+h-[85px]
                         bg-[#DCDCDC]
                       "
                       >
@@ -423,7 +456,9 @@ export default function WorkshopsPage() {
                         justify-center
                         items-start
                         gap-[5px]
-                        p-[16px]
+                      px-[12px]
+py-[10px]
+h-[85px]
                         bg-[#DCDCDC]
                       "
                       >
@@ -459,66 +494,74 @@ export default function WorkshopsPage() {
                     </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/workshops/${item._id}`)}
+                <div
                   className="
-    flex
     w-full
-    justify-center
-    items-center
-    gap-[4px]
-    px-[30px]
-    py-[12px]
-    mb-[8px]
-    rounded-[8px]
-    bg-[#F2FEB1]
-    text-[#0F1112]
-    font-[Montserrat]
-    text-[18px]
-    font-bold
-    leading-[28px]
-    hover:bg-[#EAF99A]
-    transition-all
-    duration-300
-    cursor-pointer
-  "
-                >
-                  View Details
-                </button>
-                {/* =====================================
-                    RESERVE BUTTON
-                ====================================== */}
-                <button
-                  type="button"
-                  onClick={() => handleReserve(item)}
-                  className="
-    mt-[8px]
     flex
-    justify-center
-    items-center
+    flex-col
     gap-[8px]
-    px-[30px]
-    py-[12px]
-    w-full
-    rounded-b-[18px]
-    bg-[#D0E46A]
-    text-[#0F1112]
-    font-[Montserrat]
-    text-[15px]
-    md:text-[18px]
-    leading-[28px]
-    font-black
-    uppercase
-    transition-all
-    duration-300
-    cursor-pointer
-    hover:bg-[#bdd250]
+    pt-[8px]
+    pb-[8px]
   "
                 >
-                  RESERVE SPOT
-                  <span className="text-[22px]">→</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/workshops/${item._id}`)}
+                    className="
+      flex
+      w-full
+      h-[52px]
+      justify-center
+      items-center
+      gap-[4px]
+      px-[30px]
+      py-[12px]
+      rounded-[8px]
+      bg-[#F2FEB1]
+      text-[#111111]
+      font-[Montserrat]
+      text-[18px]
+      leading-[28px]
+      font-bold
+      transition-all
+      duration-300
+      hover:bg-[#EAF99A]
+      cursor-pointer
+    "
+                  >
+                    View Details
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleReserve(item)}
+                    className="
+      flex
+      w-full
+      h-[52px]
+      justify-center
+      items-center
+      gap-[4px]
+      px-[30px]
+      py-[12px]
+      rounded-b-[25px]
+      bg-[#D0E46A]
+      text-[#111111]
+      font-[Montserrat]
+      text-[18px]
+      leading-[28px]
+      font-extrabold
+      uppercase
+      transition-all
+      duration-300
+      hover:bg-[#BDD250]
+      cursor-pointer
+    "
+                  >
+                    RESERVE SPOT
+                    <span className="text-[20px]">→</span>
+                  </button>
+                </div>
               </article>
             ))}
           </div>

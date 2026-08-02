@@ -6,8 +6,8 @@ import { workshops } from "../data/workshops";
 import VideoSection from "./Bootcamp/Videosection";
 import StudentSuccessStories from "../Components/Studentsucessstories";
 
-
 import { useState } from "react";
+import TestimonialsSection from "./Bootcamp/TestimonialsSection";
 
 const faqs = [
   {
@@ -27,11 +27,10 @@ const faqs = [
   },
 ];
 
-
 export default function WorkshopDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
- const [active, setActive] = useState(0);
+  const [active, setActive] = useState(0);
   // Find selected workshop
   const workshop = workshops.find((item) => item._id === id);
 
@@ -90,69 +89,111 @@ export default function WorkshopDetailPage() {
       ================================================== */}
 
       <section className="w-full bg-[#0F1112]">
-        <div className="max-w-[1366px] mx-auto px-4 sm:px-6 md:px-[50px] lg:px-[93px] py-10 sm:py-14 lg:py-16">
-          {/* Breadcrumb */}
-          <div className="flex flex-wrap items-center gap-2 text-[11px] md:text-[12px] text-[#7C8082] font-medium">
-            <span className="hover:text-white cursor-pointer transition">
+        <div
+          className="
+      max-w-[1366px]
+      mx-auto
+
+      px-[16px]
+      sm:px-[24px]
+      md:px-[50px]
+      lg:px-[93px]
+
+      py-[64px]
+
+      flex
+      flex-col
+      gap-[32px]
+    "
+        >
+          {/* ===========================
+        Breadcrumb
+    ============================ */}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[#7C8082] text-[11px] font-medium cursor-pointer hover:text-white transition">
               Home
             </span>
-            <span>›</span>
-            <span className="hover:text-white cursor-pointer transition">
+
+            <span className="text-[#7C8082]">›</span>
+
+            <span className="text-[#7C8082] text-[11px] font-medium cursor-pointer hover:text-white transition">
               Workshop
             </span>
-            <span>›</span>
-            <span className="text-[#D0E46A]">AI Filmmaking Workshop</span>
+
+            <span className="text-[#7C8082]">›</span>
+
+            <span className="text-[#D0E46A] text-[11px] font-medium">
+              AI Filmmaking Workshop
+            </span>
           </div>
 
-          {/* Hero */}
-          <div className="mt-8 flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-16">
-            {/* Left */}
+          {/* ===========================
+        HERO
+    ============================ */}
+
+          <div
+            className="
+        flex
+        flex-col
+        lg:flex-row
+        justify-between
+        items-start
+        gap-[32px]
+      "
+          >
+            {/* LEFT */}
+
             <div className="flex-1 max-w-[760px]">
               {/* Badge */}
-              <div className="inline-flex items-center rounded-full bg-[#202324] border border-[#2D3132] px-4 py-2">
-                <span className="text-[#D0E46A] text-[10px] md:text-[12px] font-black uppercase tracking-wide">
+
+              <div className="inline-flex items-center rounded-full bg-[#202324] border border-[#2D3132] px-[16px] py-[8px]">
+                <span className="text-[#D0E46A] text-[10px] font-black uppercase tracking-wide">
                   Live Workshop
                 </span>
               </div>
 
               {/* Heading */}
-              <h1 className="mt-6 font-black tracking-[-1px] leading-[1.05]">
-                <span className="block text-white text-[38px] leading-[42px] sm:text-[52px] sm:leading-[56px] lg:text-[72px] lg:leading-[72px]">
+
+              <h1 className="mt-[24px] font-black tracking-[-1px]">
+                <span className="block text-white text-[72px] leading-[72px]">
                   Create Stunning AI
                 </span>
 
-                <span className="block text-white text-[38px] leading-[42px] sm:text-[52px] sm:leading-[56px] lg:text-[72px] lg:leading-[72px]">
+                <span className="block text-white text-[72px] leading-[72px]">
                   Films in
                 </span>
 
-                <span className="block text-[#D0E46A] text-[38px] leading-[42px] sm:text-[52px] sm:leading-[56px] lg:text-[72px] lg:leading-[72px]">
+                <span className="block text-[#D0E46A] text-[72px] leading-[72px]">
                   Just 1 Live Workshop
                 </span>
               </h1>
 
               {/* Description */}
-              <p className="mt-6 max-w-[640px] text-[#A6A8AA] text-[15px] md:text-[16px] leading-7">
+
+              <p className="mt-[24px] max-w-[640px] text-[#A6A8AA] text-[16px] leading-[28px]">
                 Learn how to create cinematic AI videos using today's leading AI
                 tools. Join a live instructor-led workshop and build
-                professional quality films, trailers, advertisements, and social
+                professional-quality films, trailers, advertisements, and social
                 media content from scratch.
               </p>
 
-              {/* Info Pills */}
-              <div className="mt-8 flex flex-wrap gap-3">
-                <div className="rounded-md bg-[#232526] border border-[#323435] px-4 py-3">
+              {/* Pills */}
+
+              <div className="mt-[32px] flex flex-wrap gap-[12px]">
+                <div className="bg-[#232526] border border-[#323435] rounded-[6px] px-[16px] py-[12px]">
                   <p className="text-[#D0E46A] text-[13px] font-semibold">
                     Saturday, July 25
                   </p>
                 </div>
 
-                <div className="rounded-md bg-[#232526] border border-[#323435] px-4 py-3">
+                <div className="bg-[#232526] border border-[#323435] rounded-[6px] px-[16px] py-[12px]">
                   <p className="text-[#D0E46A] text-[13px] font-semibold">
                     10:00 AM IST
                   </p>
                 </div>
 
-                <div className="rounded-md bg-[#232526] border border-[#323435] px-4 py-3">
+                <div className="bg-[#232526] border border-[#323435] rounded-[6px] px-[16px] py-[12px]">
                   <p className="text-[#D0E46A] text-[13px] font-semibold">
                     Live Online
                   </p>
@@ -160,43 +201,41 @@ export default function WorkshopDetailPage() {
               </div>
             </div>
 
-            {/* Right */}
-            <div className="w-full lg:max-w-[320px] lg:pt-10">
-              <div className="flex items-end gap-3">
-                <h2 className="text-white text-[46px] sm:text-[54px] lg:text-[64px] font-black leading-none">
+            {/* RIGHT */}
+
+            <div className="w-full lg:w-[320px] lg:pt-[88px]">
+              <div className="flex items-end gap-[8px]">
+                <h2 className="text-white text-[64px] leading-none font-black">
                   ₹399
                 </h2>
 
-                <span className="text-[#636363] text-[22px] sm:text-[26px] lg:text-[32px] font-bold line-through mb-2">
+                <span className="text-[#666666] text-[32px] font-bold line-through mb-[6px]">
                   ₹999
                 </span>
               </div>
 
-          <button
-  onClick={() =>  navigate("/workshops/confirmation")}
-  className="
-    mt-8
-    w-full
-    h-[56px]
-    md:h-[60px]
-    rounded-lg
-    bg-[#D0E46A]
-    hover:bg-[#C2D95A]
-    transition-all
-    duration-300
-    text-[#111]
-    text-[14px]
-    md:text-[16px]
-    font-black
-    uppercase
-    tracking-wide
-    cursor-pointer
-  "
->
-  Reserve My Seat
-</button>
+              <button
+                onClick={() => navigate("/workshops/confirmation")}
+                className="
+            mt-[32px]
+            w-full
+            h-[60px]
+            rounded-[8px]
+            bg-[#D0E46A]
+            hover:bg-[#C3D85C]
+            transition-all
+            duration-300
+            text-[#111111]
+            text-[16px]
+            font-black
+            uppercase
+            tracking-wide
+          "
+              >
+                Reserve My Seat
+              </button>
 
-              <p className="mt-4 text-[#717374] uppercase tracking-[1px] text-[10px] md:text-[11px]">
+              <p className="mt-[12px] text-[#7C8082] text-[11px] uppercase tracking-[1px]">
                 Secure Payment & Instant Access
               </p>
             </div>
@@ -316,7 +355,24 @@ export default function WorkshopDetailPage() {
       </section>
 
       <section className="w-full bg-[#0F1112]">
-        <div className="max-w-[1366px] mx-auto px-4 sm:px-6 md:px-[50px] lg:px-[93px] py-12 md:py-16">
+        <div
+          className="
+      max-w-[1366px]
+      mx-auto
+
+      px-[16px]
+      sm:px-[24px]
+      md:px-[50px]
+      lg:px-[93px]
+
+      py-[64px]
+
+      flex
+      flex-col
+      items-center
+      gap-[32px]
+    "
+        >
           {/* Heading */}
           <div className="text-center max-w-[700px] mx-auto">
             <h2
@@ -383,7 +439,7 @@ export default function WorkshopDetailPage() {
             {/* Right Image */}
             <div className="w-full lg:max-w-[760px]">
               <img
-                src="/workshops/project-image.webp"
+                src="/airplane1.png"
                 alt="AI Short Film"
                 className="
             w-full
@@ -397,28 +453,41 @@ export default function WorkshopDetailPage() {
           </div>
 
           {/* Button */}
-          <div className="flex justify-center mt-16">
+          <div className="flex justify-center mt-[48px]">
             <button
+              type="button"
               className="
-          bg-[#D0E46A]
-          hover:bg-[#BDD253]
-          transition-all
-          duration-300
-          text-[#0F1112]
-          font-black
-          uppercase
-          text-[14px]
-          md:text-[16px]
-          px-10
-          py-4
-          rounded-lg
-        "
+      flex
+      h-[48px]
+      px-[30px]
+      py-[12px]
+      justify-center
+      items-center
+      gap-[4px]
+
+      rounded-[8px]
+
+      bg-[#D0E46A]
+      hover:bg-[#BDD253]
+
+      text-[#0F1112]
+      font-[Montserrat]
+      text-[14px]
+      leading-[28px]
+      font-extrabold
+      uppercase
+
+      transition-all
+      duration-300
+      cursor-pointer
+    "
             >
               I WANT TO CREATE THIS
             </button>
           </div>
         </div>
       </section>
+
       <section className="w-full bg-[#0F1112]">
         <div className="max-w-[1366px] mx-auto px-4 sm:px-6 md:px-[50px] lg:px-[93px] py-16">
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-12 lg:gap-16 items-start">
@@ -529,11 +598,11 @@ export default function WorkshopDetailPage() {
           </div>
         </div>
       </section>
-      <StudentSuccessStories />
+      <TestimonialsSection/>
       <section
         className="relative w-full bg-[#0F1112] bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/workshops/pricing-bg.webp')", // Replace with your background image
+          backgroundImage: "url('/bannerimage.png')", // Replace with your background image
         }}
       >
         {/* Dark Overlay */}
@@ -554,89 +623,193 @@ export default function WorkshopDetailPage() {
       "
           >
             {/* Offer Badge */}
-            <div
-              className="
-          absolute
-          top-0
-          right-0
-          rounded-tr-[24px]
-          rounded-bl-[14px]
+          {/* Offer Badge */}
+<div
+  className="
+    absolute
+    top-0
+    right-0
+
+    rounded-tr-[24px]
+    rounded-bl-[14px]
+
+    bg-[#D0E46A]
+
+    px-[20px]
+    py-[8px]
+  "
+>
+  <span
+    className="
+      text-[#111111]
+      font-[Montserrat]
+      text-[11px]
+      leading-[16px]
+      font-black
+      uppercase
+      tracking-wide
+    "
+  >
+    70% OFF TODAY
+  </span>
+</div>
+
+{/* Title */}
+<h2
+  className="
+    mt-[8px]
+    text-white
+    font-[Montserrat]
+    text-[36px]
+    leading-[44px]
+    font-black
+  "
+>
+  Workshop Access
+</h2>
+
+{/* Subtitle */}
+<p
+  className="
+    mt-[8px]
+    text-[#A4A7A8]
+    font-[Montserrat]
+    text-[15px]
+    leading-[22px]
+    font-medium
+  "
+>
+  Everything you need to start creating AI Films.
+</p>
+
+{/* Price */}
+<div className="flex items-end gap-[8px] mt-[32px]">
+  <h3
+    className="
+      text-white
+      font-[Montserrat]
+      text-[54px]
+      leading-none
+      font-black
+    "
+  >
+    ₹299
+  </h3>
+
+  <span
+    className="
+      text-[#666666]
+      font-[Montserrat]
+      text-[28px]
+      leading-none
+      font-bold
+      line-through
+      mb-[6px]
+    "
+  >
+    ₹999
+  </span>
+</div>
+
+{/* Features */}
+<div className="mt-[32px] space-y-[18px]">
+  {[
+    "Full Live Session Access",
+    "Lifetime Recording Access",
+    "Verified Certificate",
+    "Exclusive Prompt Pack",
+    "Private Community Access",
+  ].map((item) => (
+    <div key={item} className="flex items-center gap-[12px]">
+      <div
+        className="
+          flex
+          items-center
+          justify-center
+          w-[20px]
+          h-[20px]
+          rounded-full
           bg-[#D0E46A]
-          px-5
-          py-2
         "
-            >
-              <span className="text-[#111] text-[11px] font-black uppercase">
-                70% OFF TODAY
-              </span>
-            </div>
+      >
+        <span className="text-[#111111] text-[11px] font-bold">✓</span>
+      </div>
 
-            {/* Title */}
-            <h2 className="text-white text-[36px] font-black">
-              Workshop Access
-            </h2>
-
-            <p className="mt-2 text-[#A4A7A8] text-[15px]">
-              Everything you need to start creating AI Films.
-            </p>
-
-            {/* Price */}
-            <div className="flex items-end gap-3 mt-8">
-              <h3 className="text-white text-[54px] font-black leading-none">
-                ₹299
-              </h3>
-
-              <span className="text-[#666] text-[28px] font-bold line-through mb-2">
-                ₹999
-              </span>
-            </div>
-
-            {/* Features */}
-            <div className="mt-8 space-y-5">
-              {[
-                "Full Live Session Access",
-                "Lifetime Recording Access",
-                "Verified Certificate",
-                "Exclusive Prompt Pack",
-                "Private Community Access",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-[#D0E46A] flex items-center justify-center">
-                    <span className="text-[#111] text-[11px] font-bold">✓</span>
-                  </div>
-
-                  <span className="text-[#ECECEC] text-[16px]">{item}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Button */}
-            <button
-              className="
-          mt-10
-          w-full
-          h-[62px]
-          rounded-xl
-          bg-[#D0E46A]
-          hover:bg-[#C4DB59]
-          transition-all
-          duration-300
-          text-[#111]
-          text-[18px]
-          font-black
-          uppercase
+      <span
+        className="
+          text-[#ECECEC]
+          font-[Montserrat]
+          text-[16px]
+          leading-[24px]
+          font-medium
         "
-            >
-              Book My Seat Now
-            </button>
+      >
+        {item}
+      </span>
+    </div>
+  ))}
+</div>
 
-            {/* Footer Text */}
-            <p className="mt-5 text-center text-[#7F8283] text-[12px]">
-              Spots are filling up fast. Secure yours today.
-            </p>
+{/* Button */}
+<button
+  type="button"
+  className="
+    mt-[32px]
+
+    flex
+    w-full
+    h-[52px]
+
+    justify-center
+    items-center
+    gap-[4px]
+
+    px-[30px]
+    py-[12px]
+
+    rounded-[8px]
+
+    bg-[#D0E46A]
+    hover:bg-[#C4DB59]
+
+    text-[#111111]
+    font-[Montserrat]
+    text-[18px]
+    leading-[28px]
+    font-extrabold
+    uppercase
+
+    transition-all
+    duration-300
+    cursor-pointer
+  "
+>
+  BOOK MY SEAT NOW
+</button>
+
+{/* Footer */}
+<p
+  className="
+    mt-[12px]
+    text-center
+    text-[#7F8283]
+    font-[Montserrat]
+    text-[11px]
+    leading-[16px]
+    font-medium
+  "
+>
+  Spots are filling up fast. Secure yours today.
+</p>
+          
+
+      
+           
           </div>
         </div>
       </section>
+
+
       <section className="w-full bg-[#0F1112]">
         <div className="max-w-[1366px] mx-auto px-4 sm:px-6 md:px-[50px] lg:px-[93px] py-16">
           {/* Heading */}
