@@ -89,17 +89,35 @@ export default function BootcampCardMobile({
         View Details
       </button>
 
-      <button
-        onClick={onReserve || (() => navigate("/workshops"))}
-        className="mt-2 flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#D0E46A] text-[15px] font-bold uppercase text-[#111]"
-      >
-        RESERVE SPOT
-        <img
-          src="/Arrowleft2.svg"
-          alt=""
-          className="h-4 w-4"
-        />
-      </button>
+    <button
+  onClick={onReserve || (() => navigate("/workshops"))}
+  className="
+    mt-2
+    flex
+    w-full
+    items-center
+    justify-center
+    gap-[4px]
+    px-[16px]
+    py-[8px]
+    rounded-b-[12px]
+    bg-[#D0E46A]
+    text-[#111]
+    text-[14px]
+    font-bold
+    uppercase
+    transition-all
+    duration-300
+    hover:bg-[#C6DD5E]
+  "
+>
+  RESERVE SPOT
+  <img
+    src="/Arrowleft2.svg"
+    alt="arrow"
+    className="w-[16px] h-[16px]"
+  />
+</button>
     </div>
   );
 }

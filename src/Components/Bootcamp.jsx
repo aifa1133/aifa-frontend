@@ -63,7 +63,7 @@ export default function Bootcamps() {
         </h2>
 
         {/* LIST */}
-        <div className="flex flex-col gap-[64px] sm:gap-[10px]">
+        <div className="flex flex-col gap-[0] sm:gap-[10px]">
           {bootcamps.map((item, i) => (
             <motion.div
               key={i}
@@ -94,7 +94,7 @@ export default function Bootcamps() {
                   </div>
 
                   {/* RIGHT CONTENT */}
-                  <div className="flex flex-col gap-[8px]">
+                  <div className="flex flex-col gap-[6px]">
                     {/* TITLE */}
                     <div className="flex flex-col justify-center items-start h-[80px] sm:h-[105px] px-[12px] py-[10px] bg-[#DCDCDC] rounded-tr-[20px]">
                       <h3 className="text-[#282A2C] font-montserrat font-bold text-[16px] sm:text-[24px] md:text-[36px] leading-tight">
@@ -157,7 +157,7 @@ export default function Bootcamps() {
                   {/* RESERVE BUTTON */}
 
                   {/* ACTION BUTTONS */}
-                  <div className="lg:col-span-2 flex flex-col gap-[8px] mt-[8px]">
+                  <div className="lg:col-span-2 flex flex-col gap-[8px] mt-[4px]">
                     {/* View Details */}
                     <button
                       type="button"
