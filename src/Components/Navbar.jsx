@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -49,12 +47,12 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
-const location = useLocation();
+  const location = useLocation();
 
-const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path;
 
-const isDropdownActive = (dropdown) =>
-  dropdown?.some((sub) => location.pathname === sub.path);
+  const isDropdownActive = (dropdown) =>
+    dropdown?.some((sub) => location.pathname === sub.path);
 
   useEffect(() => {
     const stored = localStorage.getItem("aifa_user");
@@ -119,22 +117,22 @@ lg:py-[20px]
                 {item.link ? (
                   <Link
                     to={item.link}
-                   className={`font-montserrat text-[14px] leading-[16px] font-bold text-center transition-all duration-300 ${
-  isActive(item.link)
-    ? "text-[#C7E36B] drop-shadow-[0_0_10px_#C7E36B]"
-    : "text-[#F0F0F0] hover:text-[#C7E36B]"
-}`}
+                    className={`font-montserrat text-[14px] leading-[16px] font-bold text-center transition-all duration-300 ${
+                      isActive(item.link)
+                        ? "text-[#C7E36B] drop-shadow-[0_0_10px_#C7E36B]"
+                        : "text-[#F0F0F0] hover:text-[#C7E36B]"
+                    }`}
                   >
                     {item.name}
                   </Link>
                 ) : (
-                 <span
-  className={`font-montserrat text-[14px] leading-[16px] font-bold text-center transition-all ${
-    isDropdownActive(item.dropdown)
-      ? "text-[#C7E36B] drop-shadow-[0_0_10px_#C7E36B]"
-      : "text-[#F0F0F0] hover:text-[#C7E36B]"
-  }`}
->
+                  <span
+                    className={`font-montserrat text-[14px] leading-[16px] font-bold text-center transition-all ${
+                      isDropdownActive(item.dropdown)
+                        ? "text-[#C7E36B] drop-shadow-[0_0_10px_#C7E36B]"
+                        : "text-[#F0F0F0] hover:text-[#C7E36B]"
+                    }`}
+                  >
                     {item.name}
                   </span>
                 )}
@@ -161,7 +159,7 @@ lg:py-[20px]
                       <Link
                         key={idx}
                         to={sub.path}
-                       className={`flex items-center gap-[10px] px-[18px] py-[16px] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px]
+                        className={`flex items-center gap-[10px] px-[18px] py-[16px] font-montserrat text-[16px] leading-[24px] font-semibold border-t border-[#414243] first:border-none transition relative before:absolute before:left-0 before:top-0 before:h-full before:w-[3px]
 ${
   location.pathname === sub.path
     ? "bg-[#C7E36B] text-[#0F1112] before:bg-[#D0E46A]"
@@ -267,7 +265,11 @@ h-[40px]
       bg-white/5
     "
           >
-            {open ? <X size={22} /> : <Menu size={22} />}
+            {open ? (
+              <X size={20} />
+            ) : (
+              <img src="/Menu.svg" alt="Menu" className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
