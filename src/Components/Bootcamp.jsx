@@ -63,7 +63,7 @@ export default function Bootcamps() {
         </h2>
 
         {/* LIST */}
-        <div className="flex flex-col gap-[12px] sm:gap-[100px]">
+        <div className="flex flex-col gap-[64px] sm:gap-[10px]">
           {bootcamps.map((item, i) => (
             <motion.div
               key={i}
