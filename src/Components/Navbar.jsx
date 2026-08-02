@@ -278,16 +278,16 @@ h-[40px]
       <div
         className={`
     md:hidden
-    fixed
-    top-[68px]
-    left-0
-    right-0
-    bottom-0
-    bg-[#0F1112]
     transition-all
-    duration-300
-    z-40
-    ${open ? "translate-y-0 overflow-y-auto" : "-translate-y-full"}
+    duration-500
+    bg-[#0F1112]
+    border-t
+    border-white/10
+    ${
+      open
+        ? "max-h-[calc(100vh-72px)] overflow-y-auto"
+        : "max-h-0 overflow-hidden"
+    }
   `}
       >
         <div className="px-[20px] pt-[20px] pb-[40px] flex flex-col gap-[14px]">
