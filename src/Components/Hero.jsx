@@ -367,8 +367,6 @@
 //   );
 // }
 
-
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -376,25 +374,25 @@ import { useState, useEffect, useRef } from "react";
 const slides = [
   {
     video: "/hero/web1.mp4",
-    thumb: "/hero/hero1.png",
+    thumb: "/hero/hero4.jpeg",
     tag: "FILMS",
     title: "CREATE HOLLYWOOD STYLE AI FILMS",
   },
   {
     video: "/hero/web2.mp4",
-    thumb: "/hero/hero2.png",
+    thumb: "/hero/hero3.jpeg",
     tag: "MENTORSHIP",
     title: "TRAIN WITH INDUSTRY EXPERTS",
   },
   {
     video: "/hero/web4.mp4",
-    thumb: "/hero/hero3.jpg",
+    thumb: "/hero/hero1.jpeg",
     tag: "PROJECTS",
     title: "BUILD REAL PROJECTS",
   },
   {
     video: "/hero/web5.mp4",
-    thumb: "/hero/hero4.jpg",
+    thumb: "/hero/hero2.jpeg",
     tag: "EARNINGS",
     title: "EARN WITH YOUR SKILLS",
   },

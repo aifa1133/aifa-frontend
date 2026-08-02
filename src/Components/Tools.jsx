@@ -383,7 +383,17 @@ export default function Tools() {
 
         {/* TOOL GRID */}
         {/* TOOLS ROWS */}
-        <div className="w-full flex flex-col gap-[20px] overflow-hidden">
+       {/* TOOL GRID */}
+<div className="relative w-full overflow-hidden">
+
+  {/* Left Shadow */}
+  <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#0F1112] via-[#0F1112] to-transparent z-20 pointer-events-none" />
+
+  {/* Right Shadow */}
+  <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#0F1112] via-[#0F1112] to-transparent z-20 pointer-events-none" />
+
+  {/* TOOLS ROWS */}
+  <div className="w-full flex flex-col gap-[20px] overflow-hidden">
           {/* FIRST ROW */}
           <motion.div
             className="flex gap-[20px] w-max"
@@ -495,8 +505,9 @@ export default function Tools() {
               </div>
             ))}
           </motion.div>
-        </div>
-      </div>
-    </section>
+              </div> {/* End Tool Rows */}
+      </div> {/* End Relative Wrapper */}
+    </div>
+  </section>
   );
 }

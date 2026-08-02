@@ -155,13 +155,30 @@ import CourseEnroll from "./pages/CourseEnroll";
 import CourseSetup from "./pages/CourseSetup";
 import WorkshopDetailPage from "./pages/WorkshopDetailPage";
 import WorkshopConfirmation from "./pages/WorkshopConfirmation";
+import TermsAndConditions from "./pages/Termsandconditions";
+import CopyrightNotice from "./pages/Copyrightnotice";
+import EndUserLicenseAgreement from "./pages/Enduserlicenseagreement";
+import PrivacyPolicy from "./pages/Privacypolicy";
 
-const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll"];
-const FULLSCREEN_PATTERNS = [/^\/courses\/.+\/watch$/, /^\/courses\/.+\/pay$/, /^\/courses\/.+\/setup$/];
+const FULLSCREEN_PATHS = [
+  "/dashboard",
+  "/admin",
+  "/adminlogin",
+  "/login",
+  "/reset-password",
+  "/bootcamp/enroll",
+];
+const FULLSCREEN_PATTERNS = [
+  /^\/courses\/.+\/watch$/,
+  /^\/courses\/.+\/pay$/,
+  /^\/courses\/.+\/setup$/,
+];
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   return null;
 }
 
@@ -172,19 +189,27 @@ function AppShell() {
 
   const isFullScreen =
     FULLSCREEN_PATHS.includes(location.pathname) ||
-    FULLSCREEN_PATTERNS.some(p => p.test(location.pathname));
+    FULLSCREEN_PATTERNS.some((p) => p.test(location.pathname));
 
   return (
     <div className={`w-full min-h-screen bg-[#0B0F10] overflow-x-hidden`}>
       <ScrollToTop />
       {!isFullScreen && (
         <Navbar
-          onLoginClick={() => { setShowSignup(false); setShowLogin(true); }}
-          onSignupClick={() => { setShowLogin(false); setShowSignup(true); }}
+          onLoginClick={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+          onSignupClick={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
         />
       )}
 
-      <main className={!isFullScreen ? "w-full pt-[72px] flex flex-col" : "w-full"}>
+      <main
+        className={!isFullScreen ? "w-full pt-[72px] flex flex-col" : "w-full"}
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<CoursesPage />} />
@@ -213,10 +238,19 @@ function AppShell() {
           <Route path="/workshops/:id" element={<WorkshopDetailPage />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/courses/:id/watch" element={<CoursePlayer />} />
-          <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
+          <Route path="/courses/:id/pay" element={<CourseEnroll />} />
           <Route path="/courses/:id/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/workshops/confirmation" element={<WorkshopConfirmation />} />
+          <Route
+            path="/workshops/confirmation"
+            element={<WorkshopConfirmation />}
+          />
+
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/end-user-license-agreement" element={<EndUserLicenseAgreement />} />
+          <Route path="/copyright-notice" element={<CopyrightNotice />} />
+
+          <Route path="/Terms-conditions" element={<TermsAndConditions />} />
         </Routes>
       </main>
 
@@ -225,13 +259,19 @@ function AppShell() {
       {showLogin && !showSignup && (
         <LoginModal
           onClose={() => setShowLogin(false)}
-          onSwitchToSignup={() => { setShowLogin(false); setShowSignup(true); }}
+          onSwitchToSignup={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
         />
       )}
       {showSignup && !showLogin && (
         <SignUpModal
           onClose={() => setShowSignup(false)}
-          onSwitchToLogin={() => { setShowSignup(false); setShowLogin(true); }}
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
         />
       )}
     </div>

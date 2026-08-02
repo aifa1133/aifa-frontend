@@ -6,27 +6,26 @@ import { motion, AnimatePresence } from "framer-motion";
 const testimonials = [
   {
     name: "GEORGE LUCAS",
-    quote: "“AI IS PART OF THE FUTURE OF FILMMAKING, AND FILMMAKERS NEED TO ADAPT TO TECHNOLOGICAL CHANGE.”",
+    quote:
+      "AI IS PART OF THE FUTURE OF FILMMAKING, AND FILMMAKERS NEED TO ADAPT TO TECHNOLOGICAL CHANGE.",
     image: "/movies/movie4.png",
   },
   {
     name: "JOE RUSSO",
-    quote: "“The value of AI is the democratization of storytelling.”.",
+    quote: "The value of AI is the democratization of storytelling.",
     image: "/movies/movie1.png",
   },
   {
     name: "Gareth Edwards",
-    quote: "“It’s going to be better than CGI.”",
-    image: "/movies/movie2.png",
+    quote: "It's going to be better than CGI.",
+    image: "/movies/movie2.jpeg",
   },
   {
     name: "Ram Gopal Varma",
-    quote: "AI is a “tsunami” that “will wash away the industry.”",
-    image: "/movies/movie3.jpg",
+    quote: "AI is a tsunami that will wash away the industry.",
+    image: "/movies/movie3.jpeg",
   },
-  
 ];
-
 export default function Testimonial() {
   const [active, setActive] = useState(2);
 

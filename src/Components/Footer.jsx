@@ -192,6 +192,7 @@
 // }
 
 "use client";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   const socialIcons = [
@@ -309,26 +310,38 @@ export default function Footer() {
           {/* RIGHT */}
           <div
             className="
-              flex flex-wrap justify-center md:justify-start 
-              gap-[12px] md:gap-[24px] 
-              text-[#9CA3AF]
-            "
+    flex flex-wrap justify-center md:justify-start
+    gap-[12px] md:gap-[24px]
+    text-[#9CA3AF]
+  "
           >
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+            <Link
+              to="/privacy-policy"
+              className="hover:text-[#F0F0F0] transition duration-300"
+            >
               PRIVACY POLICY
-            </span>
+            </Link>
 
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+            <Link
+              to="/terms-conditions"
+              className="hover:text-[#F0F0F0] transition duration-300"
+            >
               TERMS & CONDITIONS
-            </span>
+            </Link>
 
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
-              END-USER LICENSE AGREEMENTS
-            </span>
+            <Link
+              to="/end-user-license-agreement"
+              className="hover:text-[#F0F0F0] transition duration-300"
+            >
+              END-USER LICENSE AGREEMENT
+            </Link>
 
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
-              COPYRIGHTS
-            </span>
+            <Link
+              to="/copyright-notice"
+              className="hover:text-[#F0F0F0] transition duration-300"
+            >
+              COPYRIGHT NOTICE
+            </Link>
           </div>
         </div>
       </div>
