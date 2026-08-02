@@ -383,7 +383,7 @@ export default function WorkshopDetailPage() {
           leading-[42px]
           sm:text-[46px]
           sm:leading-[54px]
-          lg:text-[64px]
+          lg:text-[54px]
           lg:leading-[70px]
           tracking-[-1px]
         "
@@ -428,8 +428,8 @@ export default function WorkshopDetailPage() {
             font-black
             text-[34px]
             leading-[42px]
-            md:text-[46px]
-            md:leading-[54px]
+            md:text-[42px]
+            md:leading-[48px]
           "
               >
                 AI SHORT FILM
@@ -598,7 +598,7 @@ export default function WorkshopDetailPage() {
           </div>
         </div>
       </section>
-      <TestimonialsSection/>
+      <TestimonialsSection />
       <section
         className="relative w-full bg-[#0F1112] bg-cover bg-center bg-no-repeat"
         style={{
@@ -623,9 +623,9 @@ export default function WorkshopDetailPage() {
       "
           >
             {/* Offer Badge */}
-          {/* Offer Badge */}
-<div
-  className="
+            {/* Offer Badge */}
+            <div
+              className="
     absolute
     top-0
     right-0
@@ -638,9 +638,9 @@ export default function WorkshopDetailPage() {
     px-[20px]
     py-[8px]
   "
->
-  <span
-    className="
+            >
+              <span
+                className="
       text-[#111111]
       font-[Montserrat]
       text-[11px]
@@ -649,14 +649,14 @@ export default function WorkshopDetailPage() {
       uppercase
       tracking-wide
     "
-  >
-    70% OFF TODAY
-  </span>
-</div>
+              >
+                70% OFF TODAY
+              </span>
+            </div>
 
-{/* Title */}
-<h2
-  className="
+            {/* Title */}
+            <h2
+              className="
     mt-[8px]
     text-white
     font-[Montserrat]
@@ -664,13 +664,13 @@ export default function WorkshopDetailPage() {
     leading-[44px]
     font-black
   "
->
-  Workshop Access
-</h2>
+            >
+              Workshop Access
+            </h2>
 
-{/* Subtitle */}
-<p
-  className="
+            {/* Subtitle */}
+            <p
+              className="
     mt-[8px]
     text-[#A4A7A8]
     font-[Montserrat]
@@ -678,26 +678,26 @@ export default function WorkshopDetailPage() {
     leading-[22px]
     font-medium
   "
->
-  Everything you need to start creating AI Films.
-</p>
+            >
+              Everything you need to start creating AI Films.
+            </p>
 
-{/* Price */}
-<div className="flex items-end gap-[8px] mt-[32px]">
-  <h3
-    className="
+            {/* Price */}
+            <div className="flex items-end gap-[8px] mt-[32px]">
+              <h3
+                className="
       text-white
       font-[Montserrat]
       text-[54px]
       leading-none
       font-black
     "
-  >
-    ₹299
-  </h3>
+              >
+                ₹299
+              </h3>
 
-  <span
-    className="
+              <span
+                className="
       text-[#666666]
       font-[Montserrat]
       text-[28px]
@@ -706,23 +706,23 @@ export default function WorkshopDetailPage() {
       line-through
       mb-[6px]
     "
-  >
-    ₹999
-  </span>
-</div>
+              >
+                ₹999
+              </span>
+            </div>
 
-{/* Features */}
-<div className="mt-[32px] space-y-[18px]">
-  {[
-    "Full Live Session Access",
-    "Lifetime Recording Access",
-    "Verified Certificate",
-    "Exclusive Prompt Pack",
-    "Private Community Access",
-  ].map((item) => (
-    <div key={item} className="flex items-center gap-[12px]">
-      <div
-        className="
+            {/* Features */}
+            <div className="mt-[32px] space-y-[18px]">
+              {[
+                "Full Live Session Access",
+                "Lifetime Recording Access",
+                "Verified Certificate",
+                "Exclusive Prompt Pack",
+                "Private Community Access",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-[12px]">
+                  <div
+                    className="
           flex
           items-center
           justify-center
@@ -731,29 +731,31 @@ export default function WorkshopDetailPage() {
           rounded-full
           bg-[#D0E46A]
         "
-      >
-        <span className="text-[#111111] text-[11px] font-bold">✓</span>
-      </div>
+                  >
+                    <span className="text-[#111111] text-[11px] font-bold">
+                      ✓
+                    </span>
+                  </div>
 
-      <span
-        className="
+                  <span
+                    className="
           text-[#ECECEC]
           font-[Montserrat]
           text-[16px]
           leading-[24px]
           font-medium
         "
-      >
-        {item}
-      </span>
-    </div>
-  ))}
-</div>
+                  >
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-{/* Button */}
-<button
-  type="button"
-  className="
+            {/* Button */}
+            <button
+              type="button"
+              className="
     mt-[32px]
 
     flex
@@ -783,13 +785,13 @@ export default function WorkshopDetailPage() {
     duration-300
     cursor-pointer
   "
->
-  BOOK MY SEAT NOW
-</button>
+            >
+              BOOK MY SEAT NOW
+            </button>
 
-{/* Footer */}
-<p
-  className="
+            {/* Footer */}
+            <p
+              className="
     mt-[12px]
     text-center
     text-[#7F8283]
@@ -798,17 +800,12 @@ export default function WorkshopDetailPage() {
     leading-[16px]
     font-medium
   "
->
-  Spots are filling up fast. Secure yours today.
-</p>
-          
-
-      
-           
+            >
+              Spots are filling up fast. Secure yours today.
+            </p>
           </div>
         </div>
       </section>
-
 
       <section className="w-full bg-[#0F1112]">
         <div className="max-w-[1366px] mx-auto px-4 sm:px-6 md:px-[50px] lg:px-[93px] py-16">
