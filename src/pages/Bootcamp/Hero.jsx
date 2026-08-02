@@ -211,7 +211,10 @@ export default function Hero() {
               text="Downloadable Content"
             />
 
-            <Feature icon="/bootcampicons/icon4.svg" text="Hands-on Training" />
+            <Feature
+              icon="/bootcampicons/Frame2.svg"
+              text="Hands-on Training"
+            />
 
             <Feature
               icon="/bootcampicons/icon6.svg"
@@ -220,9 +223,12 @@ export default function Hero() {
             {/* 
             <Feature icon="/bootcampicons/icon6.svg" text="Certificate" /> */}
 
-            <Feature icon="/bootcampicons/icon7.svg" text="Class Recordings" />
             <Feature
-              icon="/bootcampicons/icon5.svg"
+              icon="/bootcampicons/play-circle1.svg"
+              text="Class Recordings"
+            />
+            <Feature
+              icon="/bootcampicons/Frame1.svg"
               text="Portfolio Mentorship"
             />
 

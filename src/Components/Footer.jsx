@@ -192,9 +192,12 @@
 // }
 
 "use client";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Footer() {
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
   const socialIcons = [
     {
       src: "/Vector 1.svg",
@@ -317,28 +320,44 @@ export default function Footer() {
           >
             <Link
               to="/privacy-policy"
-              className="hover:text-[#F0F0F0] transition duration-300"
+              className={`transition duration-300 ${
+                isActive("/privacy-policy")
+                  ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+                  : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+              }`}
             >
               PRIVACY POLICY
             </Link>
 
             <Link
               to="/terms-conditions"
-              className="hover:text-[#F0F0F0] transition duration-300"
+              className={`transition duration-300 ${
+                isActive("/terms-conditions")
+                  ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+                  : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+              }`}
             >
               TERMS & CONDITIONS
             </Link>
 
             <Link
               to="/end-user-license-agreement"
-              className="hover:text-[#F0F0F0] transition duration-300"
+              className={`transition duration-300 ${
+                isActive("/end-user-license-agreement")
+                  ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+                  : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+              }`}
             >
               END-USER LICENSE AGREEMENT
             </Link>
 
             <Link
               to="/copyright-notice"
-              className="hover:text-[#F0F0F0] transition duration-300"
+              className={`transition duration-300 ${
+                isActive("/copyright-notice")
+                  ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+                  : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+              }`}
             >
               COPYRIGHT NOTICE
             </Link>
