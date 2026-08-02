@@ -8,6 +8,7 @@ import StudentSuccessStories from "../Components/Studentsucessstories";
 
 import { useState } from "react";
 import TestimonialsSection from "./Bootcamp/TestimonialsSection";
+import StickyWorkshopBar from "../Components/StickyWorkshopBar";
 
 const faqs = [
   {
@@ -872,6 +873,7 @@ export default function WorkshopDetailPage() {
           </div>
         </div>
       </section>
+        <StickyWorkshopBar />
     </main>
   );
 }
