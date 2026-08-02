@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -65,7 +63,7 @@ export default function Bootcamps() {
         </h2>
 
         {/* LIST */}
-        <div className="flex flex-col gap-[12px] sm:gap-[10px]">
+        <div className="flex flex-col gap-[12px] sm:gap-[100px]">
           {bootcamps.map((item, i) => (
             <motion.div
               key={i}

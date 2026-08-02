@@ -23,7 +23,7 @@ export default function BootcampCardMobile({
   const navigate = useNavigate();
 
   return (
-    <div className="w-full rounded-[12px] overflow-hidden bg-[#111]">
+    <div className="w-full rounded-[12px] overflow-hidden bg-[#111] mb-[64px] sm:mb-0">
       {/* Image */}
       <div className="relative">
         <img
