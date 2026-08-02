@@ -159,7 +159,7 @@ import TermsAndConditions from "./pages/Termsandconditions";
 
 import EndUserLicenseAgreement from "./pages/Enduserlicenseagreement";
 import PrivacyPolicy from "./pages/Privacypolicy";
-import CopyrightNotice from "./pages/Copyrightnotice";
+import CopyrightNotice from "./pages/CopyrightNotice";
 
 const FULLSCREEN_PATHS = [
   "/dashboard",
