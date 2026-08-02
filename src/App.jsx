@@ -159,7 +159,8 @@ import TermsAndConditions from "./pages/Termsandconditions";
 
 import EndUserLicenseAgreement from "./pages/Enduserlicenseagreement";
 import PrivacyPolicy from "./pages/Privacypolicy";
-import CopyrightNotice from "./pages/CopyrightNotice";
+import CopyrightNotice from "./pages/Copyright";
+
 
 const FULLSCREEN_PATHS = [
   "/dashboard",
@@ -249,7 +250,7 @@ function AppShell() {
 
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/end-user-license-agreement" element={<EndUserLicenseAgreement />} />
-          <Route path="/copyright-notice" element={<CopyrightNotice />} />
+         <Route path="/copyright-notice" element={<CopyrightNotice />} />
 
           <Route path="/Terms-conditions" element={<TermsAndConditions />} />
         </Routes>
