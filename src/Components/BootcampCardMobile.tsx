@@ -8,82 +8,98 @@ interface Props {
     image: string;
     duration: string;
     price: string;
+    date: string;
+    mode?: string;
   };
+  onViewDetails?: () => void;
+  onReserve?: () => void;
 }
 
-export default function BootcampCardMobile({ item }: Props) {
+export default function BootcampCardMobile({
+  item,
+  onViewDetails,
+  onReserve,
+}: Props) {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full rounded-[10px] bg-[#3F3F3F] overflow-hidden shadow-lg">
+    <div className="w-full rounded-[12px] overflow-hidden bg-[#111]">
       {/* Image */}
-      <img
-        src={item.image}
-        alt={item.title}
-        className="w-full h-[190px] object-cover"
-      />
+      <div className="relative">
+        <img
+          src={item.image}
+          alt={item.title}
+          className="w-full h-[190px] object-cover rounded-[12px]"
+        />
 
-      {/* Content */}
-      <div className="px-4 py-4">
-        <p className="text-[9px] uppercase tracking-[0.08em] font-semibold text-[#BEBEBE]">
-          Beginner
-        </p>
-
-        <h3 className="mt-2 text-white font-black uppercase text-[18px] leading-[24px]">
-          AI FILMMAKING
-          <br />
-          BOOTCAMP
-        </h3>
-
-        <p className="mt-3 text-[#D2D2D2] text-[12px] leading-[19px]">
-          Master AI-Powered Filmmaking from Concept to final cut while learning
-          how to create stunning, high-quality films faster using cutting-edge
-          AI tools.
-        </p>
-
-        <button
-          onClick={() => navigate("/workshops")}
-          className="mt-5 w-full h-[42px] rounded-[6px] bg-[#D5EC63] text-[#161616] text-[13px] font-bold uppercase transition-all duration-300 active:scale-[0.98]"
-        >
-          ENROLL WORKSHOP
-        </button>
+        <div className="absolute left-2 top-2 rounded-full bg-[#111]/90 px-2 py-1">
+          <span className="text-[10px] font-bold text-[#D6F25C] uppercase">
+            {item.mode || "LIVE/ONLINE"}
+          </span>
+        </div>
       </div>
 
-      {/* Bottom Info */}
-      <div className="grid grid-cols-3 gap-[2px] bg-[#0F1112]">
-        {/* Duration */}
-        <div className="bg-[#4A4A4A] px-2 py-2">
-          <p className="text-[7px] uppercase text-[#BDBDBD] font-semibold">
-            ⏱ Duration
+      {/* Title */}
+      <div className="mt-2 rounded-[8px] bg-[#D9D9D9] px-4 py-3">
+        <h3 className="text-[18px] font-bold text-[#1A1A1A]">
+          {item.title}
+        </h3>
+      </div>
+
+      {/* Info */}
+      <div className="mt-2 grid grid-cols-3 gap-1">
+        <div className="rounded bg-[#D9D9D9] p-2">
+          <p className="text-[8px] font-semibold uppercase text-[#555]">
+            Duration
           </p>
 
-          <p className="mt-1 text-[11px] font-bold text-white">
+          <p className="mt-1 text-[14px] font-bold text-[#1A1A1A]">
             {item.duration}
           </p>
         </div>
 
-        {/* Pricing */}
-        <div className="bg-[#4A4A4A] px-2 py-2">
-          <p className="text-[7px] uppercase text-[#BDBDBD] font-semibold">
-            💳 Pricing
+        <div className="rounded bg-[#D9D9D9] p-2">
+          <p className="text-[8px] font-semibold uppercase text-[#555]">
+            Pricing
           </p>
 
-          <p className="mt-1 text-[11px] font-bold text-white">
-            ₹14,000
+          <p className="mt-1 text-[14px] font-bold text-[#1A1A1A]">
+            {item.price}
           </p>
         </div>
 
-        {/* Mode */}
-        <div className="bg-[#4A4A4A] px-2 py-2">
-          <p className="text-[7px] uppercase text-[#BDBDBD] font-semibold">
-            💻 Mode
+        <div className="rounded bg-[#D9D9D9] p-2">
+          <p className="text-[8px] font-semibold uppercase text-[#555]">
+            Date & Time
           </p>
 
-          <p className="mt-1 text-[11px] font-bold text-white">
-            LIVE
+          <p className="mt-1 whitespace-pre-line text-[12px] font-bold text-[#1A1A1A]">
+            {item.date}
           </p>
         </div>
       </div>
+
+      {/* Buttons */}
+      <button
+        onClick={
+          onViewDetails || (() => navigate("/workshops/ai-filmmaking"))
+        }
+        className="mt-2 h-[42px] w-full rounded-[8px] bg-[#D6F25C] text-[15px] font-bold text-[#111]"
+      >
+        View Details
+      </button>
+
+      <button
+        onClick={onReserve || (() => navigate("/workshops"))}
+        className="mt-2 flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#D6F25C] text-[15px] font-bold uppercase text-[#111]"
+      >
+        RESERVE SPOT
+        <img
+          src="/Arrowleft2.svg"
+          alt=""
+          className="h-4 w-4"
+        />
+      </button>
     </div>
   );
 }
