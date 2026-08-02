@@ -156,9 +156,10 @@ import CourseSetup from "./pages/CourseSetup";
 import WorkshopDetailPage from "./pages/WorkshopDetailPage";
 import WorkshopConfirmation from "./pages/WorkshopConfirmation";
 import TermsAndConditions from "./pages/Termsandconditions";
-import CopyrightNotice from "./pages/Copyrightnotice";
+
 import EndUserLicenseAgreement from "./pages/Enduserlicenseagreement";
 import PrivacyPolicy from "./pages/Privacypolicy";
+import CopyrightNotice from "./pages/Copyrightnotice";
 
 const FULLSCREEN_PATHS = [
   "/dashboard",
