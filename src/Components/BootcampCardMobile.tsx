@@ -84,14 +84,14 @@ export default function BootcampCardMobile({
         onClick={
           onViewDetails || (() => navigate("/workshops/ai-filmmaking"))
         }
-        className="mt-2 h-[42px] w-full rounded-[8px] bg-[#D6F25C] text-[15px] font-bold text-[#111]"
+        className="mt-2 h-[42px] w-full rounded-[8px] bg-[#F2FEB1] text-[15px] font-bold text-[#111]"
       >
         View Details
       </button>
 
       <button
         onClick={onReserve || (() => navigate("/workshops"))}
-        className="mt-2 flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#D6F25C] text-[15px] font-bold uppercase text-[#111]"
+        className="mt-2 flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#D0E46A] text-[15px] font-bold uppercase text-[#111]"
       >
         RESERVE SPOT
         <img
