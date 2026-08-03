@@ -12,6 +12,7 @@ const bootcamps = [
     duration: "3 HOURS",
     price: "INR 999.00",
     date: "25-JUL-2026 | 10 AM",
+      slug: "ai-filmmaking",
   },
   {
     title: "AI Advertising Workshop",
@@ -19,6 +20,7 @@ const bootcamps = [
     duration: "3 HOURS",
     price: "INR 999.00",
     date: "28-JUL-2026 | 3 PM",
+      slug: "ai-advertising",
   },
   {
     title: "AI Animation Workshop",
@@ -26,6 +28,7 @@ const bootcamps = [
     duration: "3 HOURS",
     price: "INR 999.00",
     date: "30-JUL-2026 | 5 PM",
+      slug: "ai-animation",
   },
   {
     title: "AI Content Creation Workshop",
@@ -33,6 +36,7 @@ const bootcamps = [
     duration: "3 HOURS",
     price: "INR 999.00",
     date: "30-JUL-2026 | 4 PM",
+      slug: "ai-content-creation",
   },
 ];
 
@@ -161,7 +165,7 @@ export default function Bootcamps() {
                     {/* View Details */}
                     <button
                       type="button"
-                      onClick={() => navigate("/workshops/ai-filmmaking")}
+                      onClick={() => navigate(`/workshops/${item.slug}`)}
                       className="
       flex
       w-full

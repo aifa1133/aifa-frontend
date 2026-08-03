@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { workshops } from "../data/workshops";
-import VideoSection from "./Bootcamp/Videosection";
-import StudentSuccessStories from "../Components/Studentsucessstories";
+import { useNavigate } from "react-router-dom";
+
+import VideoSection from "../Bootcamp/Videosection";
+import StudentSuccessStories from "../../Components/Studentsucessstories";
 
 import { useState } from "react";
-import TestimonialsSection from "./Bootcamp/TestimonialsSection";
-import StickyWorkshopBar from "../Components/StickyWorkshopBar";
+import TestimonialsSection from "../Bootcamp/TestimonialsSection";
+import StickyWorkshopBar from "../../Components/StickyWorkshopBar";
 
 const faqs = [
   {
@@ -28,44 +28,18 @@ const faqs = [
   },
 ];
 
-export default function WorkshopDetailPage() {
-  const { id } = useParams();
+export default function AIContentCreationPage() {
   const navigate = useNavigate();
   const [active, setActive] = useState(0);
-  // Find selected workshop
-  const workshop = workshops.find((item) => item._id === id);
 
   // Always open page from top
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
+  }, []);
 
   // ==========================
   // WORKSHOP NOT FOUND
   // ==========================
-  if (!workshop) {
-    return (
-      <main className="min-h-screen bg-[#0B0F10] flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-white font-[Montserrat] text-[32px] md:text-[48px] font-black mb-5">
-            Workshop Not Found
-          </h1>
-
-          <p className="text-[#9B9D9E] font-[Montserrat] mb-6">
-            The workshop you're looking for is unavailable.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => navigate("/workshops")}
-            className="bg-[#D0E46A] text-[#0F1112] px-6 py-3 rounded-[8px] font-[Montserrat] font-black uppercase"
-          >
-            Back to Workshops
-          </button>
-        </div>
-      </main>
-    );
-  }
 
   // ==========================
   // RESERVE / BOOK
@@ -80,7 +54,7 @@ export default function WorkshopDetailPage() {
     }
 
     // Change this route if your checkout route is different
-    navigate(`/workshops/${workshop._id}/checkout`);
+    navigate("/workshops/confirmation");
   };
 
   return (
@@ -125,7 +99,7 @@ export default function WorkshopDetailPage() {
             <span className="text-[#7C8082]">›</span>
 
             <span className="text-[#D0E46A] text-[11px] font-medium">
-              AI Filmmaking Workshop
+              AI Content Creation Workshop
             </span>
           </div>
 
@@ -158,11 +132,11 @@ export default function WorkshopDetailPage() {
 
               <h1 className="mt-[24px] font-black tracking-[-1px]">
                 <span className="block text-white text-[72px] leading-[72px]">
-                  Create Stunning AI
+                  Create Professional AI
                 </span>
 
                 <span className="block text-white text-[72px] leading-[72px]">
-                  Films in
+                  Content in
                 </span>
 
                 <span className="block text-[#D0E46A] text-[72px] leading-[72px]">
@@ -289,28 +263,28 @@ export default function WorkshopDetailPage() {
           <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-5">
             {[
               {
-                title: "AI Storytelling & Script Writing",
-                desc: "Generate engaging stories and scripts using AI.",
+                title: "Content Planning",
+                desc: "Learn how to research ideas and plan high-performing content.",
               },
               {
                 title: "Prompt Engineering",
-                desc: "Write effective prompts for consistent cinematic results.",
+                desc: "Write effective AI prompts for text, images, and videos.",
               },
               {
-                title: "Image Generation",
-                desc: "Create high-quality scenes and characters with AI.",
+                title: "AI Copywriting",
+                desc: "Generate blogs, captions, scripts, and marketing content using AI.",
               },
               {
-                title: "AI Video Creation",
-                desc: "Transform images into cinematic videos using modern AI tools.",
+                title: "Visual Content Creation",
+                desc: "Create eye-catching images, graphics, and thumbnails with AI.",
               },
               {
-                title: "Voice, Music & Sound Design",
-                desc: "Add realistic narration, music, and sound effects.",
+                title: "AI Video Content",
+                desc: "Produce short-form videos and reels using modern AI tools.",
               },
               {
-                title: "Editing & Final Export",
-                desc: "Combine everything into a polished final film.",
+                title: "Publishing & Growth Strategy",
+                desc: "Optimize and publish content for YouTube, Instagram, LinkedIn, Facebook, and other platforms.",
               },
             ].map((item) => (
               <div
@@ -433,14 +407,14 @@ export default function WorkshopDetailPage() {
             md:leading-[48px]
           "
               >
-                AI SHORT FILM
+               Social Media Content Pack
               </h3>
             </div>
 
             {/* Right Image */}
             <div className="w-full lg:max-w-[760px]">
               <img
-                src="/airplane1.png"
+                src="/AIcontent.png"
                 alt="AI Short Film"
                 className="
             w-full
@@ -533,28 +507,32 @@ export default function WorkshopDetailPage() {
 
             {/* Right Cards */}
             <div className="flex flex-col gap-4">
-              {[
-                {
-                  title: "FILMMAKERS & VIDEO CREATORS",
-                  desc: "Level up your storytelling with AI-powered video creation.",
-                },
-                {
-                  title: "AD & MARKETING PROFESSIONALS",
-                  desc: "Create high-converting ads and brand content using AI tools.",
-                },
-                {
-                  title: "CONTENT CREATORS & INFLUENCERS",
-                  desc: "Produce scroll-stopping reels and videos faster with AI.",
-                },
-                {
-                  title: "DESIGNERS & CREATIVE PROFESSIONALS",
-                  desc: "Expand your skillset with AI-driven visuals and workflows.",
-                },
-                {
-                  title: "FREELANCERS & AGENCY OWNERS",
-                  desc: "Offer AI video services and grow your income streams.",
-                },
-              ].map((item) => (
+             {[
+  {
+    title: "CONTENT CREATORS & INFLUENCERS",
+    desc: "Produce scroll-stopping reels, short videos, and engaging content faster using AI.",
+  },
+  {
+    title: "DIGITAL MARKETERS",
+    desc: "Create high-performing ad creatives, social media campaigns, and AI-powered marketing assets.",
+  },
+  {
+    title: "SOCIAL MEDIA MANAGERS",
+    desc: "Learn practical AI skills to plan, create, schedule, and manage engaging content across platforms.",
+  },
+  {
+    title: "DESIGNERS & CREATIVE PROFESSIONALS",
+    desc: "Expand your creative skillset with AI-generated visuals, graphics, thumbnails, and digital assets.",
+  },
+  {
+    title: "BUSINESS OWNERS",
+    desc: "Grow your business with AI-powered marketing videos, product showcases, and promotional content.",
+  },
+  {
+    title: "AD & MARKETING PROFESSIONALS",
+    desc: "Create high-converting advertisements, promotional campaigns, and brand content using AI tools.",
+  },
+].map((item) => (
                 <div
                   key={item.title}
                   className="
@@ -694,7 +672,7 @@ export default function WorkshopDetailPage() {
       font-black
     "
               >
-                ₹299
+                ₹399
               </h3>
 
               <span
@@ -715,11 +693,11 @@ export default function WorkshopDetailPage() {
             {/* Features */}
             <div className="mt-[32px] space-y-[18px]">
               {[
-                "Full Live Session Access",
-                "Lifetime Recording Access",
-                "Verified Certificate",
+                "Live Interactive Session",
+                "Workshop Resources",
+                "Live Q&A Session",
                 "Exclusive Prompt Pack",
-                "Private Community Access",
+                "AI Tools Guide & Resources",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-[12px]">
                   <div
@@ -873,7 +851,7 @@ export default function WorkshopDetailPage() {
           </div>
         </div>
       </section>
-        <StickyWorkshopBar />
+      <StickyWorkshopBar />
     </main>
   );
 }

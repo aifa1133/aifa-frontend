@@ -153,7 +153,7 @@ import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
 import CourseSetup from "./pages/CourseSetup";
-import WorkshopDetailPage from "./pages/WorkshopDetailPage";
+
 import WorkshopConfirmation from "./pages/WorkshopConfirmation";
 import TermsAndConditions from "./pages/Termsandconditions";
 
@@ -161,6 +161,10 @@ import EndUserLicenseAgreement from "./pages/Enduserlicenseagreement";
 import PrivacyPolicy from "./pages/Privacypolicy";
 import CopyrightNotice from "./pages/Copyright";
 
+import AIFilmmakingPage from "./pages/Workshopspages/AIFilmmakingPage";
+import AIAdvertisingPage from "./pages/Workshopspages/AIAdvertisingPage";
+import AIAnimationPage from "./pages/Workshopspages/AIAnimationPage";
+import AIContentCreationPage from "./pages/Workshopspages/AIContentCreationPage";
 
 const FULLSCREEN_PATHS = [
   "/dashboard",
@@ -237,7 +241,19 @@ function AppShell() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/login" element={<UserLogin />} />
-          <Route path="/workshops/:id" element={<WorkshopDetailPage />} />
+          <Route
+            path="/workshops/ai-filmmaking"
+            element={<AIFilmmakingPage />}
+          />
+          <Route
+            path="/workshops/ai-advertising"
+            element={<AIAdvertisingPage />}
+          />
+          <Route path="/workshops/ai-animation" element={<AIAnimationPage />} />
+          <Route
+            path="/workshops/ai-content-creation"
+            element={<AIContentCreationPage />}
+          />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/courses/:id/watch" element={<CoursePlayer />} />
           <Route path="/courses/:id/pay" element={<CourseEnroll />} />
@@ -249,8 +265,11 @@ function AppShell() {
           />
 
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/end-user-license-agreement" element={<EndUserLicenseAgreement />} />
-         <Route path="/copyright-notice" element={<CopyrightNotice />} />
+          <Route
+            path="/end-user-license-agreement"
+            element={<EndUserLicenseAgreement />}
+          />
+          <Route path="/copyright-notice" element={<CopyrightNotice />} />
 
           <Route path="/Terms-conditions" element={<TermsAndConditions />} />
         </Routes>
