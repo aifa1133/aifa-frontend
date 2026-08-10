@@ -374,25 +374,25 @@ import { useState, useEffect, useRef } from "react";
 const slides = [
   {
     video: "/hero/web1.mp4",
-    thumb: "/hero/hero1.jpg",
+    thumb: "/hero/hero4.jpeg",
     tag: "FILMS",
     title: "CREATE HOLLYWOOD STYLE AI FILMS",
   },
   {
     video: "/hero/web2.mp4",
-    thumb: "/hero/hero2.jpg",
+    thumb: "/hero/hero3.jpeg",
     tag: "MENTORSHIP",
     title: "TRAIN WITH INDUSTRY EXPERTS",
   },
   {
     video: "/hero/web4.mp4",
-    thumb: "/hero/hero3.jpg",
+    thumb: "/hero/hero1.jpeg",
     tag: "PROJECTS",
     title: "BUILD REAL PROJECTS",
   },
   {
     video: "/hero/web5.mp4",
-    thumb: "/hero/hero4.jpg",
+    thumb: "/hero/hero2.jpeg",
     tag: "EARNINGS",
     title: "EARN WITH YOUR SKILLS",
   },
@@ -415,23 +415,26 @@ export default function Hero() {
     const vid = videoRef.current;
     if (!vid) return;
     vid.pause();
-    // Update source and reload without unmounting the element
-    const source = vid.querySelector("source");
-    if (source) source.src = slides[active].video;
     vid.load();
-    vid.play().catch(() => {});
+    const playPromise = vid.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {});
+    }
+    return () => {
+      vid.pause();
+    };
   }, [active]);
 
   return (
-    <section className="relative w-full h-[100dvh] min-h-[500px] overflow-hidden bg-black">
+    <section className="relative w-full h-screen overflow-hidden bg-black">
       {/* MAIN VIDEO */}
       <video
+        key={slides[active].video}
         ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
-        poster={slides[active].thumb}
         className="
           absolute
           inset-0
@@ -520,17 +523,17 @@ export default function Hero() {
 
               tracking-[-0.05em]
 
-              text-[28px]
-              leading-[32px]
+              text-[42px]
+              leading-[42px]
 
-              sm:text-[42px]
-              sm:leading-[46px]
+              sm:text-[64px]
+              sm:leading-[64px]
 
-              md:text-[58px]
-              md:leading-[60px]
+              md:text-[90px]
+              md:leading-[86px]
 
-              lg:text-[72px]
-              lg:leading-[76px]
+              lg:text-[120px]
+              lg:leading-[110px]
 
               max-w-[1000px]
             "
@@ -602,24 +605,26 @@ export default function Hero() {
       </div>
 
       {/* RIGHT SIDE IMAGE THUMBNAILS */}
+      {/* RIGHT SIDE IMAGE THUMBNAILS - HIDDEN ON MOBILE */}
       <div
         className="
-          absolute
+    hidden
+    sm:flex
 
-          right-[16px]
-          sm:right-[24px]
-          md:right-[40px]
+    absolute
 
-          top-1/2
-          -translate-y-1/2
+    sm:right-[24px]
+    md:right-[40px]
 
-          z-20
+    top-1/2
+    -translate-y-1/2
 
-          flex
-          flex-col
+    z-20
 
-          gap-[12px]
-        "
+    flex-col
+
+    gap-[12px]
+  "
       >
         {slides.map((slide, i) => (
           <button

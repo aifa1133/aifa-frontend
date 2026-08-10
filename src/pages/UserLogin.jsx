@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function UserLogin() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const redirectTo = location.state?.redirect || "/dashboard";
 
   // modes: "login" | "signup" | "verify-email" | "verify-phone" | "forgot"
   const [mode, setMode] = useState("login");
@@ -35,7 +33,7 @@ export default function UserLogin() {
       if (data.role === "admin") { setError("Use the admin portal to sign in."); return; }
       localStorage.setItem("aifa_token", data.token);
       localStorage.setItem("aifa_user", JSON.stringify(data));
-      navigate(redirectTo);
+      navigate("/dashboard");
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   };
@@ -117,7 +115,7 @@ export default function UserLogin() {
 
       localStorage.setItem("aifa_token", data2.token);
       localStorage.setItem("aifa_user", JSON.stringify(data2));
-      navigate(redirectTo);
+      navigate("/dashboard");
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   };

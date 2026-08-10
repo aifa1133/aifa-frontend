@@ -18,7 +18,7 @@ export default function Stats() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-[64px] w-full">
           {/* ITEM */}
           <div className="flex flex-col items-center gap-3">
-            <img src="/baseline-ondemand-video1.svg" className="w-10 h-10" />
+            <img src="/Vectorstats1.svg" className="w-10 h-10" />
             <h3 className="text-[#F0F0F0] font-montserrat font-semibold text-[36px] leading-[42px]">
               500+
             </h3>
@@ -29,7 +29,7 @@ export default function Stats() {
 
           {/* ITEM */}
           <div className="flex flex-col items-center gap-3">
-            <img src="/baseline-ondemand-video2.svg" className="w-10 h-10" />
+            <img src="/Vectorstats2.svg" className="w-10 h-10" />
             <h3 className="text-[#F0F0F0] font-montserrat font-semibold text-[36px] leading-[42px]">
               40+
             </h3>
@@ -40,7 +40,7 @@ export default function Stats() {
 
           {/* ITEM */}
           <div className="flex flex-col items-center gap-3">
-            <img src="/baseline-ondemand-video3.svg" className="w-10 h-10" />
+            <img src="/Vectorstats3.svg" className="w-10 h-10" />
             <h3 className="text-[#F0F0F0] font-montserrat font-semibold text-[36px] leading-[42px]">
               60+
             </h3>

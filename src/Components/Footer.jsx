@@ -73,57 +73,382 @@
 //     </footer>
 //   );
 // }
+
+// "use client";
+
+// export default function Footer() {
+//   const socialIcons = [
+//     { src: "/Vector 1.svg", alt: "LinkedIn", link: "#" },
+//     { src: "/Icon 21.svg", alt: "YouTube", link: "#" },
+//     { src: "/Group 21.svg", alt: "Facebook", link: "#" },
+//     { src: "/Vector 21.svg", alt: "Instagram", link: "#" },
+//   ];
+
+//   return (
+//     <footer className="w-full bg-[#0F1112] flex justify-center">
+//       {/* MAIN CONTAINER */}
+//       <div
+//         className="
+//     max-w-[1366px] w-full
+//     px-[16px] md:px-[93px]
+//     py-[32px] md:py-[48px]
+//     flex flex-col justify-center items-start gap-[16px]
+//   "
+//       >
+//         {/* TOP BAR */}
+//         <div
+//           className="
+//       flex flex-col md:flex-row
+//       justify-between items-center
+//       gap-[12px] md:gap-0
+//       w-full bg-[#2A2D31]
+//       rounded-[12px] px-[16px] py-[12px]
+//     "
+//         >
+//           {/* LEFT */}
+//           <div
+//             className="
+//         flex flex-col sm:flex-row
+//         items-center gap-[12px] md:gap-[16px]
+//         text-[#F0F0F0] text-center md:text-left
+//       "
+//           >
+//             <span className="text-[12px] md:text-[14px] font-medium">
+//               FOLLOW US
+//             </span>
+
+//             <div className="flex gap-[8px]">
+//               {socialIcons.map((icon, i) => (
+//                 <a
+//                   key={i}
+//                   href={icon.link}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="bg-white/10 p-[8px] rounded-[4px] hover:bg-white/20 transition"
+//                 >
+//                   <img
+//                     src={icon.src}
+//                     alt={icon.alt}
+//                     className="w-[16px] h-[16px]"
+//                   />
+//                 </a>
+//               ))}
+//             </div>
+//           </div>
+
+//           {/* RIGHT */}
+//           <div
+//             className="
+//         flex items-center gap-[4px]
+//         border border-[#F0F0F0]
+//         px-[14px] md:px-[16px]
+//         py-[6px] md:py-[8px]
+//         rounded-[4px] text-[#F0F0F0]
+//         text-[12px] md:text-[14px]
+//       "
+//           >
+//             INR
+//             <img src="/Vector 212.svg" alt="" className="w-[14px] h-[14px]" />
+//           </div>
+//         </div>
+
+//         {/* BOTTOM BAR */}
+//         <div
+//           className="
+//       flex flex-col md:flex-row
+//       justify-between items-center
+//       gap-[12px] md:gap-0
+//       w-full text-[12px] md:text-[14px] text-center md:text-left
+//     "
+//         >
+//           {/* LEFT */}
+//           <p className="text-[#F0F0F0]">© AIFA AI Film Academy</p>
+
+//           {/* RIGHT */}
+//           <div
+//             className="
+//         flex flex-wrap justify-center md:justify-start
+//         gap-[12px] md:gap-[24px]
+//         text-[#9CA3AF]
+//       "
+//           >
+//             <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+//               PRIVACY POLICY
+//             </span>
+//             <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+//               TERMS & CONDITIONS
+//             </span>
+//             <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+//               END-USER LICENSE AGREEMENTS
+//             </span>
+//             <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+//               COPYRIGHTS
+//             </span>
+//           </div>
+//         </div>
+//       </div>
+//     </footer>
+//   );
+// }
+
+// "use client";
+// import { Link, useLocation } from "react-router-dom";
+
+// export default function Footer() {
+//   const location = useLocation();
+
+//   const isActive = (path) => location.pathname === path;
+//   const socialIcons = [
+//     {
+//       src: "/Vector 1.svg",
+//       alt: "LinkedIn",
+//       link: "https://www.linkedin.com/company/ai-film-academy/",
+//     },
+//     {
+//       src: "/Icon 21.svg",
+//       alt: "YouTube",
+//       link: "https://www.youtube.com/@aifilmacedemy",
+//     },
+//     {
+//       src: "/Group 21.svg",
+//       alt: "Facebook",
+
+//       link: "https://www.instagram.com/aifafilmmaking?igsh=MWN6cGF5eGZ4NThkZw==",
+//     },
+//     {
+//       src: "/Vector 21.svg",
+//       alt: "Instagram",
+//       link: "https://www.facebook.com/share/1K9chpvBA8/?mibextid=wwXIfr",
+//     },
+//   ];
+
+//   return (
+//     <footer className="w-full bg-[#0F1112] flex justify-center">
+//       {/* MAIN CONTAINER */}
+//       <div
+//         className="
+//           max-w-[1366px] w-full 
+//           px-[16px] md:px-[93px] 
+//           py-[32px] md:py-[48px] 
+//           flex flex-col justify-center items-start gap-[16px]
+//         "
+//       >
+//         {/* TOP BAR */}
+//         <div
+//           className="
+//             flex flex-col md:flex-row 
+//             justify-between items-center 
+//             gap-[12px] md:gap-0
+//             w-full bg-[#2A2D31] 
+//             rounded-[12px] px-[16px] py-[12px]
+//           "
+//         >
+//           {/* LEFT */}
+//           <div
+//             className="
+//               flex flex-col sm:flex-row 
+//               items-center gap-[12px] md:gap-[16px] 
+//               text-[#F0F0F0] text-center md:text-left
+//             "
+//           >
+//             <span className="text-[12px] md:text-[14px] font-medium">
+//               FOLLOW US
+//             </span>
+
+//             <div className="flex gap-[8px]">
+//               {socialIcons.map((icon, i) => (
+//                 <a
+//                   key={i}
+//                   href={icon.link}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   aria-label={icon.alt}
+//                   className="
+//                     bg-white/10 
+//                     p-[8px] 
+//                     rounded-[4px] 
+//                     hover:bg-white/20 
+//                     transition
+//                     cursor-pointer
+//                   "
+//                 >
+//                   <img
+//                     src={icon.src}
+//                     alt={icon.alt}
+//                     className="w-[16px] h-[16px]"
+//                   />
+//                 </a>
+//               ))}
+//             </div>
+//           </div>
+
+//           {/* RIGHT */}
+//           <div
+//             className="
+//               flex items-center gap-[4px] 
+//               border border-[#F0F0F0] 
+//               px-[14px] md:px-[16px] 
+//               py-[6px] md:py-[8px] 
+//               rounded-[4px] text-[#F0F0F0] 
+//               text-[12px] md:text-[14px]
+//             "
+//           >
+//             INR
+//             <img src="/Vector 212.svg" alt="" className="w-[14px] h-[14px]" />
+//           </div>
+//         </div>
+
+//         {/* BOTTOM BAR */}
+//         <div
+//           className="
+//             flex flex-col md:flex-row 
+//             justify-between items-center 
+//             gap-[12px] md:gap-0
+//             w-full text-[12px] md:text-[14px] text-center md:text-left
+//           "
+//         >
+//           {/* LEFT */}
+//           <p className="text-[#F0F0F0]">© AIFA AI Film Academy</p>
+
+//           {/* RIGHT */}
+//           <div
+//             className="
+//     flex flex-wrap justify-center md:justify-start
+//     gap-[12px] md:gap-[24px]
+//     text-[#9CA3AF]
+//   "
+//           >
+//             <Link
+//               to="/privacy-policy"
+//               className={`transition duration-300 ${
+//                 isActive("/privacy-policy")
+//                   ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+//                   : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+//               }`}
+//             >
+//               PRIVACY POLICY
+//             </Link>
+
+//             <Link
+//               to="/terms-conditions"
+//               className={`transition duration-300 ${
+//                 isActive("/terms-conditions")
+//                   ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+//                   : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+//               }`}
+//             >
+//               TERMS & CONDITIONS
+//             </Link>
+
+//             <Link
+//               to="/end-user-license-agreement"
+//               className={`transition duration-300 ${
+//                 isActive("/end-user-license-agreement")
+//                   ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+//                   : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+//               }`}
+//             >
+//               END-USER LICENSE AGREEMENT
+//             </Link>
+
+//             <Link
+//               to="/copyright-notice"
+//               className={`transition duration-300 ${
+//                 isActive("/copyright-notice")
+//                   ? "text-[#C7E36B] font-semibold drop-shadow-[0_0_10px_#C7E36B]"
+//                   : "text-[#9CA3AF] hover:text-[#F0F0F0]"
+//               }`}
+//             >
+//               COPYRIGHT NOTICE
+//             </Link>
+//           </div>
+//         </div>
+//       </div>
+//     </footer>
+//   );
+// }
+
+
+
 "use client";
 
+import { Link, useLocation } from "react-router-dom";
+
 export default function Footer() {
+  const location = useLocation();
+  
+const isActive = (path) => location.pathname === path;
   const socialIcons = [
-    { src: "/Vector 1.svg", alt: "LinkedIn", link: "#" },
-    { src: "/Icon 21.svg", alt: "YouTube", link: "#" },
-    { src: "/Group 21.svg", alt: "Facebook", link: "#" },
-    { src: "/Vector 21.svg", alt: "Instagram", link: "#" },
+    {
+      src: "/Vector 1.svg",
+      alt: "LinkedIn",
+      link: "https://www.linkedin.com/company/ai-film-academy/",
+    },
+    {
+      src: "/Icon 21.svg",
+      alt: "YouTube",
+      link: "https://www.youtube.com/@aifilmacedemy",
+    },
+    {
+      src: "/Group 21.svg",
+      alt: "Instagram",
+      link: "https://www.instagram.com/aifafilmmaking?igsh=MWN6cGF5eGZ4NThkZw==",
+    },
+    {
+      src: "/Vector 21.svg",
+      alt: "Facebook",
+      link: "https://www.facebook.com/share/1K9chpvBA8/?mibextid=wwXIfr",
+    },
   ];
 
   return (
     <footer className="w-full bg-[#0F1112] flex justify-center">
-      {/* MAIN CONTAINER */}
       <div
         className="
-    max-w-[1366px] w-full 
-    px-[16px] md:px-[93px] 
-    py-[32px] md:py-[48px] 
-    flex flex-col justify-center items-start gap-[16px]
-  "
+          w-full
+          max-w-[1366px]
+          px-[16px]
+          md:px-[93px]
+          py-[32px]
+          md:py-[48px]
+          flex
+          flex-col
+          gap-[16px]
+        "
       >
-        {/* TOP BAR */}
-        <div
-          className="
-      flex flex-col md:flex-row 
-      justify-between items-center 
-      gap-[12px] md:gap-0
-      w-full bg-[#2A2D31] 
-      rounded-[12px] px-[16px] py-[12px]
-    "
-        >
+        {/* ========================= */}
+        {/* DESKTOP TOP BAR */}
+        {/* ========================= */}
+
+        <div className="hidden md:flex justify-between items-center w-full bg-[#2A2D31] rounded-[12px] px-[16px] py-[12px]">
+
           {/* LEFT */}
-          <div
-            className="
-        flex flex-col sm:flex-row 
-        items-center gap-[12px] md:gap-[16px] 
-        text-[#F0F0F0] text-center md:text-left
-      "
-          >
-            <span className="text-[12px] md:text-[14px] font-medium">
+
+          <div className="flex items-center gap-[16px]">
+
+            <span className="text-[#F0F0F0] text-[14px] font-medium">
               FOLLOW US
             </span>
 
             <div className="flex gap-[8px]">
+
               {socialIcons.map((icon, i) => (
                 <a
                   key={i}
                   href={icon.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/10 p-[8px] rounded-[4px] hover:bg-white/20 transition"
+                  className="
+                    w-[32px]
+                    h-[32px]
+                    rounded-[4px]
+                    bg-white/10
+                    flex
+                    items-center
+                    justify-center
+                    hover:bg-white/20
+                    transition
+                  "
                 >
                   <img
                     src={icon.src}
@@ -132,59 +457,233 @@ export default function Footer() {
                   />
                 </a>
               ))}
+
+            </div>
+
+          </div>
+
+          {/* RIGHT */}
+
+          <div
+            className="
+              flex
+              items-center
+              gap-[8px]
+              border
+              border-[#F0F0F0]
+              rounded-[4px]
+              px-[16px]
+              py-[8px]
+              text-[#F0F0F0]
+              text-[14px]
+            "
+          >
+            INR
+
+            <img
+              src="/Vector 212.svg"
+              alt=""
+              className="w-[14px] h-[14px]"
+            />
+          </div>
+
+        </div>
+
+        {/* ========================= */}
+        {/* MOBILE TOP */}
+        {/* ========================= */}
+
+        <div className="md:hidden flex flex-col gap-[10px]">
+
+          {/* FOLLOW US */}
+
+          <div
+            className="
+              bg-[#2A2D31]
+              rounded-[8px]
+              px-[12px]
+              py-[10px]
+              flex
+              items-center
+              justify-between
+            "
+          >
+            <p className="text-[#F0F0F0] text-[12px] font-bold uppercase">
+              FOLLOW US
+            </p>
+
+            <div className="flex gap-[6px]">
+
+              {socialIcons.map((icon, i) => (
+                <a
+                  key={i}
+                  href={icon.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="
+                    w-[24px]
+                    h-[24px]
+                    rounded-[4px]
+                    bg-white/10
+                    flex
+                    items-center
+                    justify-center
+                  "
+                >
+                  <img
+                    src={icon.src}
+                    alt={icon.alt}
+                    className="w-[12px] h-[12px]"
+                  />
+                </a>
+              ))}
+
             </div>
           </div>
 
-          {/* RIGHT */}
+          {/* CURRENCY */}
+
           <div
             className="
-        flex items-center gap-[4px] 
-        border border-[#F0F0F0] 
-        px-[14px] md:px-[16px] 
-        py-[6px] md:py-[8px] 
-        rounded-[4px] text-[#F0F0F0] 
-        text-[12px] md:text-[14px]
-      "
+              bg-[#2A2D31]
+              rounded-[8px]
+              px-[12px]
+              py-[10px]
+              flex
+              justify-between
+              items-center
+            "
           >
-            INR
-            <img src="/Vector 212.svg" alt="" className="w-[14px] h-[14px]" />
+            <span className="text-[#F0F0F0] text-[13px] font-medium">
+              INR
+            </span>
+
+            <img
+              src="/Vector 212.svg"
+              alt=""
+              className="w-[14px] h-[14px]"
+            />
           </div>
         </div>
+                {/* ========================= */}
+        {/* DESKTOP BOTTOM */}
+        {/* ========================= */}
 
-        {/* BOTTOM BAR */}
-        <div
-          className="
-      flex flex-col md:flex-row 
-      justify-between items-center 
-      gap-[12px] md:gap-0
-      w-full text-[12px] md:text-[14px] text-center md:text-left
-    "
-        >
+        <div className="hidden md:flex justify-between items-center w-full">
+
           {/* LEFT */}
-          <p className="text-[#F0F0F0]">© AIFA AI Film Academy</p>
+
+          <p className="text-[#F0F0F0] text-[14px]">
+            © AIFA AI Film Academy
+          </p>
 
           {/* RIGHT */}
-          <div
-            className="
-        flex flex-wrap justify-center md:justify-start 
-        gap-[12px] md:gap-[24px] 
-        text-[#9CA3AF]
-      "
-          >
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+
+          <div className="flex items-center gap-[24px] text-[14px]">
+
+            <Link
+              to="/privacy-policy"
+              className={`transition ${
+                isActive("/privacy-policy")
+                  ? "text-[#D0E46A] font-semibold"
+                  : "text-[#9CA3AF] hover:text-white"
+              }`}
+            >
               PRIVACY POLICY
-            </span>
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+            </Link>
+
+            <Link
+              to="/terms-conditions"
+              className={`transition ${
+                isActive("/terms-conditions")
+                  ? "text-[#D0E46A] font-semibold"
+                  : "text-[#9CA3AF] hover:text-white"
+              }`}
+            >
               TERMS & CONDITIONS
-            </span>
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
-              END-USER LICENSE AGREEMENTS
-            </span>
-            <span className="hover:text-[#F0F0F0] cursor-pointer transition">
+            </Link>
+
+            <Link
+              to="/end-user-license-agreement"
+              className={`transition ${
+                isActive("/end-user-license-agreement")
+                  ? "text-[#D0E46A] font-semibold"
+                  : "text-[#9CA3AF] hover:text-white"
+              }`}
+            >
+              END-USER LICENSE AGREEMENT
+            </Link>
+
+            <Link
+              to="/copyright-notice"
+              className={`transition ${
+                isActive("/copyright-notice")
+                  ? "text-[#D0E46A] font-semibold"
+                  : "text-[#9CA3AF] hover:text-white"
+              }`}
+            >
               COPYRIGHTS
-            </span>
+            </Link>
+
           </div>
         </div>
+
+        {/* ========================= */}
+        {/* MOBILE BOTTOM */}
+        {/* ========================= */}
+
+        <div className="md:hidden flex flex-col gap-[10px]">
+
+          <Link
+            to="/privacy-policy"
+            className={`text-[12px] font-semibold transition ${
+              isActive("/privacy-policy")
+                ? "text-[#D0E46A]"
+                : "text-[#F0F0F0]"
+            }`}
+          >
+            PRIVACY POLICY
+          </Link>
+
+          <Link
+            to="/terms-conditions"
+            className={`text-[12px] font-semibold transition ${
+              isActive("/terms-conditions")
+                ? "text-[#D0E46A]"
+                : "text-[#F0F0F0]"
+            }`}
+          >
+            TERMS & CONDITIONS
+          </Link>
+
+          <Link
+            to="/end-user-license-agreement"
+            className={`text-[12px] font-semibold transition ${
+              isActive("/end-user-license-agreement")
+                ? "text-[#D0E46A]"
+                : "text-[#F0F0F0]"
+            }`}
+          >
+            END-USER LICENSE AGREEMENTS
+          </Link>
+
+          <Link
+            to="/copyright-notice"
+            className={`text-[12px] font-semibold transition ${
+              isActive("/copyright-notice")
+                ? "text-[#D0E46A]"
+                : "text-[#F0F0F0]"
+            }`}
+          >
+            COPYRIGHTS
+          </Link>
+
+          <p className="pt-[6px] text-[12px] text-[#C9C9C9]">
+            © AIFA AI Film Academy
+          </p>
+
+        </div>
+
       </div>
     </footer>
   );

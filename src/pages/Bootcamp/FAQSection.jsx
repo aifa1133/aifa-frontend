@@ -5,24 +5,28 @@ import { FaPlus, FaMinus } from "react-icons/fa";
 
 const faqs = [
   {
-    q: "How is this microcourse different from YouTube tutorials?",
-    a: "Focused, structured, and practical. Each lesson is concise and designed to deliver clear results without unnecessary fluff. You'll follow a step-by-step system that builds real photo enhancement skills, not just random tips.",
+    q: "How is this bootcamp different from YouTube tutorials?",
+    a: "Live, structured, and mentor-led. You'll build complete AI filmmaking projects, receive expert feedback, attend live sessions, and follow a proven roadmap instead of piecing together random tutorials.",
   },
   {
-    q: "What’s the difference between buying a single microcourse and getting All-Access?",
-    a: "All-access gives you access to every course including future updates, making it more cost-effective long term.",
+    q: "Do I need any prior editing or filmmaking experience?",
+    a: "No. The bootcamp starts from the fundamentals and gradually moves to advanced AI workflows. Whether you're a beginner or a creator, you'll learn step by step.",
   },
   {
-    q: "How long will I have access to the course?",
-    a: "You get lifetime access to all purchased content.",
+    q: "How long will I have access to the bootcamp?",
+    a: "You'll receive lifetime access to all recorded sessions, downloadable resources, future updates, and the AIFA community so you can revisit the content anytime.",
   },
   {
-    q: "Do I need prior experience with AI tools?",
-    a: "No, the course is beginner-friendly and guides you step-by-step.",
+    q: "Will I build a portfolio during the program?",
+    a: "Yes. Throughout the bootcamp you'll create multiple real-world AI films, advertisements, and creative projects that strengthen your portfolio and showcase your skills.",
   },
   {
-    q: "What software do I need?",
-    a: "We cover industry-standard tools and AI platforms used in modern workflows.",
+    q: "Will I receive a certificate after completion?",
+    a: "Yes. Students who successfully complete the bootcamp requirements receive an industry-recognized AIFA Certificate of Completion to showcase on their portfolio and LinkedIn profile.",
+  },
+  {
+    q: "Will this help me get freelance or job opportunities?",
+    a: "Yes. Along with practical skills, you'll gain portfolio guidance, industry insights, and access to the AIFA community where freelance projects, internships, and job opportunities are shared.",
   },
 ];
 

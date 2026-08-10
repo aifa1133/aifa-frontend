@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminInfluencers from "./admin/AdminInfluencers";
-import AdminCommissions from "./admin/AdminCommissions";
 
 /* ─── INLINE SVG ICON ─── */
 const Ic = ({ d, size = 16, className = "" }) => (
@@ -63,12 +61,10 @@ const NAV_ITEMS = [
   { id: "platform-settings", label: "Settings",       icon: "settings"  },
 ];
 const MGMT_ITEMS = [
-  { id: "users",        label: "Users",       icon: "users"      },
-  { id: "payments",     label: "Payments",    icon: "payments"   },
-  { id: "enrolments",   label: "Enrolments",  icon: "enrolments" },
-  { id: "membership",   label: "Membership",  icon: "membership" },
-  { id: "influencers",  label: "Influencers", icon: "hire"       },
-  { id: "commissions",  label: "Commissions", icon: "sales"      },
+  { id: "users",      label: "Users",      icon: "users"      },
+  { id: "payments",   label: "Payments",   icon: "payments"   },
+  { id: "enrolments", label: "Enrolments", icon: "enrolments" },
+  { id: "membership", label: "Membership", icon: "membership" },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -80,7 +76,6 @@ export default function AdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [adminNotifs, setAdminNotifs] = useState([]);
   const [adminNotifCount, setAdminNotifCount] = useState(0);
 
@@ -118,28 +113,11 @@ export default function AdminDashboard() {
     localStorage.removeItem("aifa_user");
     navigate("/");
   };
-  const confirmLogout = () => { setShowProfileMenu(false); setShowLogoutModal(true); };
 
   const name = profile?.name || user?.name || "Alex Rivera";
 
   return (
     <div className="flex h-screen bg-[#0B0F10] text-white overflow-hidden">
-      {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-xs p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-              <I name="logout" size={22} className="text-red-400"/>
-            </div>
-            <h3 className="text-white font-bold text-base mb-1">Log Out?</h3>
-            <p className="text-xs text-gray-400 mb-6">You will be signed out of your admin account. Any unsaved changes will be lost.</p>
-            <div className="flex gap-3">
-              <button onClick={()=>setShowLogoutModal(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">Cancel</button>
-              <button onClick={handleLogout} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors">Log Out</button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* SIDEBAR */}
       <aside className="w-[160px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         <div className="px-4 py-5 border-b border-white/5">
@@ -170,7 +148,7 @@ export default function AdminDashboard() {
             <p className="text-[10px] text-white font-semibold truncate">{name}</p>
             <p className="text-[9px] text-gray-500">Super Admin</p>
           </div>
-          <button onClick={e => { e.stopPropagation(); confirmLogout(); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
+          <button onClick={e => { e.stopPropagation(); handleLogout(); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
         </div>
       </aside>
 
@@ -246,7 +224,7 @@ export default function AdminDashboard() {
                   <div className="py-1">
                     <button onClick={()=>{ setShowProfileMenu(false); setPage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
                     <button onClick={()=>{ setShowProfileMenu(false); setPage("platform-settings"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="settings" size={13}/>Settings</button>
-                    <button onClick={confirmLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
                   </div>
                 </div>
               )}
@@ -255,7 +233,7 @@ export default function AdminDashboard() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {activePage === "dashboard"       && <AdminOverview token={token} onNavigate={setPage} />}
+          {activePage === "dashboard"       && <AdminOverview token={token} onNavigate={setActivePage} />}
           {activePage === "bootcamp"        && <BootcampAdmin token={token} />}
           {activePage === "workshops"       && <WorkshopsAdmin token={token} />}
           {activePage === "video-courses"   && <VideoCoursesAdmin token={token} />}
@@ -271,8 +249,6 @@ export default function AdminDashboard() {
           {activePage === "sales-consultation" && <SalesConsultAdmin token={token} />}
           {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
           {activePage === "membership"         && <MembershipAdmin token={token} />}
-          {activePage === "influencers"        && <AdminInfluencers token={token} />}
-          {activePage === "commissions"        && <AdminCommissions token={token} />}
           {activePage === "platform-settings"  && <PlatformSettings token={token} />}
         </main>
       </div>
@@ -298,10 +274,10 @@ function AdminOverview({ token, onNavigate }) {
   const fmtPct = (n, total) => total ? ((n/total)*100).toFixed(1)+"%" : "0%";
 
   const topCards = [
-    { label:"Total Revenue",     value: fmtRev(stats.revenue??0),                           icon:"payments",   color:"text-[#C7E36B]",  bg:"bg-[#C7E36B]/10"  },
-    { label:"Total Enrollments", value: (stats.enrollments??0).toLocaleString("en-IN"),      icon:"enrolments", color:"text-blue-400",   bg:"bg-blue-500/10"   },
-    { label:"Active Bootcamps",  value: String(stats.bootcamps??0).padStart(2,"0"),          icon:"bootcamp",   color:"text-purple-400", bg:"bg-purple-500/10" },
-    { label:"Active Workshops",  value: String(stats.workshops??0).padStart(2,"0"),          icon:"workshop",   color:"text-orange-400", bg:"bg-orange-500/10" },
+    { label:"Total Revenue",     value: fmtRev(stats.revenue??0),     icon:"payments",   color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10", trend:"+12.5%", up:true  },
+    { label:"Total Enrollments", value: stats.enrollments??0,          icon:"enrolments", color:"text-blue-400",  bg:"bg-blue-500/10",  trend:"+8.2%",  up:true  },
+    { label:"Active Users",      value: stats.users??0,                icon:"users",      color:"text-green-400", bg:"bg-green-500/10", trend:"+4.1%",  up:true  },
+    { label:"Courses",           value: (stats.courses??0)+(stats.workshops??0)+(stats.bootcamps??0), icon:"video", color:"text-purple-400", bg:"bg-purple-500/10", trend:"-2.4%", up:false },
   ];
 
   /* Build chart data from analytics.monthlyData (last 6 points) */
@@ -317,9 +293,10 @@ function AdminOverview({ token, onNavigate }) {
   const topCourses = analytics?.topCourses ?? [];
 
   const quickActions = [
-    { label:"Add Bootcamp",    desc:"Setup a new cohort",    icon:"bootcamp", page:"bootcamp"      },
-    { label:"Upload Course",   desc:"Add video lessons",      icon:"upload",   page:"video-courses" },
-    { label:"Create Workshop", desc:"Schedule live session",  icon:"workshop", page:"workshops"     },
+    { label:"Add Bootcamp",    icon:"bootcamp", bg:"bg-white/5 hover:bg-white/10", page:"bootcamp"      },
+    { label:"Create Workshop", icon:"workshop", bg:"bg-white/5 hover:bg-white/10", page:"workshops"     },
+    { label:"Upload Course",   icon:"upload",   bg:"bg-white/5 hover:bg-white/10", page:"video-courses" },
+    { label:"View Users",      icon:"users",    bg:"bg-white/5 hover:bg-white/10", page:"users"         },
   ];
 
   /* Build activity feed from recent txs + static items */
@@ -346,6 +323,9 @@ function AdminOverview({ token, onNavigate }) {
               <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center`}>
                 <I name={s.icon} size={18} className={s.color} />
               </div>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${s.up ? "text-green-400 bg-green-500/10":"text-red-400 bg-red-500/10"}`}>
+                {s.up?"↑":"↓"} {s.trend}
+              </span>
             </div>
             <p className="text-xs text-gray-400 mb-0.5">{s.label}</p>
             <p className="text-2xl font-black text-white">{s.value}</p>
@@ -420,23 +400,44 @@ function AdminOverview({ token, onNavigate }) {
         </div>
       </div>
 
-      {/* Quick Actions — 3 vertical cards */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h3 className="text-sm font-bold text-white mb-3">Quick Actions</h3>
-        <div className="space-y-3">
-          {quickActions.map(({label,desc,icon,page}) => (
+      {/* Top Performing Courses + Quick Actions */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4">
+        {/* Top courses */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-white">Top Performing Courses</h3>
+            <button className="text-[10px] text-gray-500 hover:text-white">• • •</button>
+          </div>
+          {topCourses.length === 0 ? (
+            <p className="text-xs text-gray-500 text-center py-6">No course enrollments yet</p>
+          ) : topCourses.map((c,i) => (
+            <div key={i} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                  <I name="video" size={15} className="text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-white line-clamp-1">{c._id}</p>
+                  <p className="text-[10px] text-gray-500">Course · {c.count} students</p>
+                </div>
+              </div>
+              <div className="text-right shrink-0 ml-3">
+                <p className="text-xs font-bold text-white">{fmtRev(c.revenue)}</p>
+                <p className="text-[10px] text-green-400">+ growth</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Actions grid (2×2) */}
+        <div className="grid grid-cols-2 gap-3 content-start" style={{minWidth:"260px"}}>
+          {quickActions.map(({label,icon,bg,page}) => (
             <button key={label} onClick={() => onNavigate(page)}
-              className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#C7E36B]/30 rounded-xl px-4 py-3 transition-all group">
-              <div className="w-10 h-10 rounded-full bg-[#C7E36B]/10 flex items-center justify-center shrink-0 group-hover:bg-[#C7E36B]/20 transition-colors">
-                <I name={icon} size={18} className="text-[#C7E36B]" />
+              className={`${bg} border border-white/10 rounded-xl p-4 flex flex-col items-center gap-2 text-xs font-semibold text-white hover:border-white/20 transition-all`}>
+              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                <I name={icon} size={18} className="text-gray-300" />
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-semibold text-white">{label}</p>
-                <p className="text-[11px] text-gray-500">{desc}</p>
-              </div>
-              <svg className="w-4 h-4 text-gray-500 group-hover:text-[#C7E36B] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <span className="text-center leading-tight">{label}</span>
             </button>
           ))}
         </div>
@@ -1618,619 +1619,250 @@ function WorkshopsAdmin({ token }) {
   const [view, setView] = useState("list");
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tabFilter, setTabFilter] = useState("Upcoming");
-  const [wsPage, setWsPage] = useState(1);
-  const WS_PAGE_SIZE = 6;
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [sel, setSel] = useState(null);
-  const [selDetail, setSelDetail] = useState(null); // populated version with registrations
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailTab, setDetailTab] = useState("overview");
-  const [studentDrawer, setStudentDrawer] = useState(null);
-  const [successMsg, setSuccessMsg] = useState("");
-
-  const fmtDur = (mins) => { const m=parseInt(mins)||120; if(m<60) return `${m} Min`; const h=Math.floor(m/60),r=m%60; return r?`${h} Hr ${r} Min`:`${h} ${h===1?"Hour":"Hours"}`; };
-  const CF_DEFAULT = { title:"", shortDesc:"", duration:"120", currency:"INR", price:"999", mode:"ONLINE", seats:"50", date:"", time:"", endTime:"", published:true, image:"", ctaText:"Reserve Spot", ctaType:"INTERNAL", ctaUrl:"", sessionCode:"", trainer:"", zoomLink:"" };
-  const [cf, setCf] = useState(CF_DEFAULT);
-  const [imgUploading, setImgUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
   const loadWorkshops = () => {
     setLoading(true);
-    fetch("/api/workshops?all=true", { headers:{ Authorization:`Bearer ${token}` } })
+    fetch("/api/workshops", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
-  useEffect(() => { loadWorkshops(); }, [token]);
-
-  const loadDetail = (w) => {
-    setSel(w); setSelDetail(null); setDetailTab("overview"); setSuccessMsg(""); setView("detail");
-    setDetailLoading(true);
-    fetch(`/api/workshops/${w._id}`, { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ setSelDetail(d); setDetailLoading(false); })
-      .catch(()=>{ setSelDetail(w); setDetailLoading(false); });
-  };
-
-  const parseDurToMins = (dur) => {
-    if(!dur) return "120";
-    const lower = dur.toLowerCase();
-    const num = parseInt(dur);
-    if(isNaN(num)) return "120";
-    if(lower.includes("hour")||lower.includes("hr")) return String(num*60);
-    return String(num);
-  };
-
-  const getStatus = (w) => {
-    if(w.isCancelled) return "Cancelled";
-    if(!w.isPublished) return "Draft";
-    if(!w.scheduledAt) return "Upcoming";
-    const now = Date.now();
-    const start = new Date(w.scheduledAt).getTime();
-    const durMins = parseInt(parseDurToMins(w.duration)) || 120;
-    const end = start + durMins * 60000;
-    if(now < start) return "Upcoming";
-    if(now >= start && now <= end) return "Live";
-    return "Completed";
-  };
-
-  const STATUS_STYLES = {
-    Live:      "bg-green-500/20 text-green-400 border border-green-500/30",
-    Upcoming:  "bg-blue-500/20 text-blue-400 border border-blue-500/30",
-    Completed: "bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/30",
-    Draft:     "bg-white/10 text-gray-400 border border-white/20",
-    Cancelled: "bg-red-500/20 text-red-400 border border-red-500/30",
-  };
-
-  const fmtRevenue = (w) => {
-    const sym = w.currency==="USD"?"$":"₹";
-    return `${sym}${((w.registrations?.length||0)*(w.price||0)).toLocaleString("en-IN")}`;
-  };
+  useEffect(loadWorkshops, [token]);
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", published:true });
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const startEdit = (w) => {
-    const scheduled = w.scheduledAt ? new Date(w.scheduledAt) : null;
-    const dateStr = scheduled ? scheduled.toISOString().slice(0,10) : "";
-    const timeStr = scheduled ? scheduled.toTimeString().slice(0,5) : "";
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:parseDurToMins(w.duration)||"120", currency:w.currency||"INR", price:String(w.price||999), mode:w.mode||"ONLINE", seats:String(w.seats||50), date:dateStr, time:timeStr, endTime:w.endTime||"", published:!!w.isPublished, image:w.image||"", ctaText:w.ctaText||"Reserve Spot", ctaType:w.ctaType||"INTERNAL", ctaUrl:w.ctaUrl||"", sessionCode:w.sessionCode||"", trainer:w.trainer||"", zoomLink:w.zoomLink||"" });
-    setIsEditing(true); setSuccessMsg(""); setSel(w); setView("create");
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:"", time:"", published:!!w.isPublished });
+    setIsEditing(true); setView("create");
   };
 
-  const doSave = async () => {
-    if(!cf.title.trim()) { alert("Workshop title is required."); return; }
+  const doCreate = async () => {
     setSaving(true);
     try {
-      let scheduledAt = null;
-      if(cf.date) {
-        const d = new Date(`${cf.date}${cf.time?"T"+cf.time:"T00:00"}`);
-        if(!isNaN(d.getTime())) scheduledAt = d.toISOString();
-      }
-      let computedDur = fmtDur(cf.duration);
-      if(cf.time && cf.endTime) {
-        const [sh,sm]=cf.time.split(":").map(Number);
-        const [eh,em]=cf.endTime.split(":").map(Number);
-        let mins=(eh*60+em)-(sh*60+sm);
-        if(mins<0) mins+=1440;
-        if(mins>0) computedDur=fmtDur(mins);
-      }
-      const body = { title:cf.title, description:cf.shortDesc, duration:computedDur, currency:cf.currency, price:parseFloat(String(cf.price).replace(/[^0-9.]/g,""))||0, mode:cf.mode.toUpperCase(), seats:parseInt(cf.seats)||50, isPublished:cf.published, image:cf.image||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:cf.ctaType||"INTERNAL", ctaUrl:cf.ctaUrl||"", sessionCode:cf.sessionCode||"", trainer:cf.trainer||"", zoomLink:cf.zoomLink||"", endTime:cf.endTime||"", ...(scheduledAt&&{scheduledAt}) };
-      const url  = isEditing&&sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
-      const meth = isEditing&&sel?._id ? "PUT" : "POST";
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published };
+      const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
+      const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
       const data = await res.json();
       if(res.ok){
-        setSuccessMsg(isEditing?"Workshop Updated!":"Workshop Created!");
+        setSel(data); setSuccessMsg(isEditing?"Workshop Updated Successfully!":"Workshop Created Successfully!");
         if(isEditing) setWorkshops(ws=>ws.map(w=>w._id===data._id?data:w));
-        else setWorkshops(ws=>[data,...ws]);
-        setCf(CF_DEFAULT); setIsEditing(false);
-        if(isEditing&&sel) { setSel(data); loadDetail(data); } else { setView("list"); }
-      } else { alert(data.message||"Failed to save."); }
-    } catch { alert("Network error."); }
+        else { setWorkshops(ws=>[data,...ws]); }
+        setIsEditing(false); setView("manage");
+      }
+    } catch(e){}
     setSaving(false);
   };
 
+  const doPublish = async (w) => {
+    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
+    const data = await res.json();
+    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop published!"); }
+  };
+
   const doDelete = async (id) => {
-    if(!window.confirm("Delete this workshop? This cannot be undone.")) return;
+    if(!window.confirm("Delete?")) return;
     await fetch(`/api/workshops/${id}`,{ method:"DELETE", headers:{Authorization:`Bearer ${token}`} });
     setWorkshops(ws=>ws.filter(w=>w._id!==id));
-    setView("list");
   };
 
-  const doMarkCompleted = async (w) => {
-    const wk = w||sel; if(!wk) return;
-    const res = await fetch(`/api/workshops/${wk._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
-    const data = await res.json();
-    if(res.ok){ setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Marked as completed!"); }
-  };
-
-  const doCancel = async (w) => {
-    const wk = w||sel; if(!wk) return;
-    if(!window.confirm("Cancel this session? This cannot be undone.")) return;
-    const res = await fetch(`/api/workshops/${wk._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isCancelled:true, isPublished:false }) });
-    const data = await res.json();
-    if(res.ok){ setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Session cancelled."); if(sel?._id===wk._id) setSel(data); }
-  };
-
-  const doPublish = async (w) => {
-    const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true, isCancelled:false }) });
-    const data = await res.json();
-    if(res.ok){ setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSel(data); setSuccessMsg("Workshop published!"); }
-  };
-
-  const initials = (name="") => name.split(" ").map(n=>n[0]||"").join("").toUpperCase().slice(0,2)||"??";
-  const INITIALS_COLORS = ["bg-[#C7E36B] text-black","bg-blue-500 text-white","bg-purple-500 text-white","bg-orange-500 text-white","bg-pink-500 text-white","bg-teal-500 text-white"];
-  const avatarColor = (name="") => INITIALS_COLORS[name.charCodeAt(0)%INITIALS_COLORS.length];
-
-  /* ── CREATE / EDIT FORM ── */
   if(view==="create") return (
-    <div className="p-6">
+    <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">{isEditing?"Edit Session":"Create New Session"}</h1>
-          <p className="text-xs text-gray-400">{isEditing?"Update session details":"Schedule a new live workshop."}</p>
+          <h1 className="text-xl font-bold text-white">{isEditing?"Edit Workshop":"Create Workshop"}</h1>
+          <p className="text-xs text-gray-400">{isEditing?"Update workshop details":"Add workshop details for website display"}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing&&sel?"detail":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
-          <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doSave} disabled={saving}>{saving?"Saving...":(isEditing?"Save Changes":"Create Session")}</button>
+          <button onClick={()=>{ setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+          <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300" onClick={doCreate} disabled={saving}>{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-6">
-        <div className="col-span-3 space-y-4">
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-4">
           <Sect icon="resources" title="Basic Information">
-            <Fld label="Workshop Title *" value={cf.title} onChange={v=>setCf({...cf,title:v})} placeholder="AI Cinematography Masterclass" />
-            <div className="grid grid-cols-2 gap-3">
-              <Fld label="Session Code" value={cf.sessionCode} onChange={v=>setCf({...cf,sessionCode:v})} placeholder="A01 (auto-generated)" />
-              <Fld label="Trainer" value={cf.trainer} onChange={v=>setCf({...cf,trainer:v})} placeholder="Alex Rivera" />
-            </div>
+            <Fld label="Workshop Title" value={cf.title} onChange={v=>setCf({...cf,title:v})} placeholder="AI Cinematography Masterclass" />
             <Fld label="Short Description" value={cf.shortDesc} onChange={v=>setCf({...cf,shortDesc:v})} textarea placeholder="Master the art of visual storytelling..." />
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">THUMBNAIL IMAGE</p>
-              <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer transition-all ${cf.image?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/20 hover:border-[#C7E36B]/50 hover:bg-white/5"} ${imgUploading?"opacity-60 pointer-events-none":""}`}
-                style={{ minHeight: cf.image?0:"90px" }}>
-                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async e => {
-                  const file = e.target.files?.[0]; if(!file) return;
-                  setImgUploading(true);
-                  try {
-                    const fd = new FormData(); fd.append("image",file);
-                    const res = await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                    const data = await res.json();
-                    if(res.ok) setCf(c=>({...c,image:data.url})); else alert(data.message||"Upload failed");
-                  } catch { alert("Upload failed."); }
-                  setImgUploading(false); e.target.value="";
-                }} />
-                {cf.image ? (
-                  <div className="relative w-full">
-                    <img src={cf.image} alt="thumbnail" className="w-full h-[140px] object-cover rounded-[10px]"/>
-                    <button type="button" onClick={e=>{e.preventDefault();setCf(c=>({...c,image:""}));}} className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500/80">✕</button>
-                    <div className="absolute bottom-2 left-2 bg-black/60 text-[#C7E36B] text-[10px] font-bold px-2 py-0.5 rounded">Click to change</div>
-                  </div>
-                ) : imgUploading ? (
-                  <div className="py-5 flex flex-col items-center gap-2"><div className="w-5 h-5 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/><p className="text-[11px] text-gray-400">Uploading...</p></div>
-                ) : (
-                  <div className="py-5 flex flex-col items-center gap-1"><I name="upload" size={20} className="text-gray-500"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP · Max 5MB</p></div>
-                )}
-              </label>
-            </div>
-          </Sect>
-          <Sect icon="workshop" title="Schedule">
-            <div className="grid grid-cols-2 gap-3">
-              <Fld label="Date *" type="date" value={cf.date} onChange={v=>setCf({...cf,date:v})} min={new Date().toISOString().slice(0,10)} readOnly />
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">TIMEZONE</p>
-                <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 select-none">IST (GMT+5:30)</div>
-              </div>
-              <Fld label="Start Time *" type="time" value={cf.time} onChange={v=>setCf({...cf,time:v})} />
-              <Fld label="End Time" type="time" value={cf.endTime} onChange={v=>setCf({...cf,endTime:v})} />
+            <div className="border-2 border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all">
+              <I name="upload" size={20} className="mx-auto text-gray-500 mb-1"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP (Max 5MB)</p>
             </div>
           </Sect>
           <Sect icon="service" title="Key Details">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">DURATION</p>
-                {(()=>{
-                  let label = "—";
-                  if(cf.time && cf.endTime) {
-                    const [sh,sm]=cf.time.split(":").map(Number);
-                    const [eh,em]=cf.endTime.split(":").map(Number);
-                    let mins=(eh*60+em)-(sh*60+sm);
-                    if(mins<0) mins+=1440;
-                    if(mins>0) label=fmtDur(mins);
-                  }
-                  return <div className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white select-none">{label}</div>;
-                })()}
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">PRICING</p>
-                <div className="flex rounded-lg overflow-hidden border border-white/10 focus-within:border-[#C7E36B]/50">
-                  <select value={cf.currency} onChange={e=>setCf({...cf,currency:e.target.value})} className="bg-[#252829] text-white text-xs px-2 py-2 outline-none border-r border-white/10 shrink-0 [color-scheme:dark]">
-                    <option value="INR">₹ INR</option><option value="USD">$ USD</option>
-                  </select>
-                  <input type="number" value={cf.price} onChange={e=>setCf({...cf,price:e.target.value})} placeholder="999" min="0" className="flex-1 bg-[#1A1D1E] text-white text-sm px-3 py-2 outline-none min-w-0"/>
-                </div>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">MODE</p>
-                <select value={cf.mode} onChange={e=>setCf({...cf,mode:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]">
-                  <option value="ONLINE">Online (Zoom)</option><option value="OFFLINE">Offline</option>
-                </select>
-              </div>
-              <Fld label="SEAT LIMIT" value={cf.seats} onChange={v=>setCf({...cf,seats:v.replace(/\D/g,"")})} placeholder="50"/>
+            <div className="grid grid-cols-3 gap-3">
+              <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} />
+              <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} />
+              <Fld label="MODE" value={cf.mode} onChange={v=>setCf({...cf,mode:v})} />
             </div>
-            <Fld label="Zoom Meeting Link" value={cf.zoomLink} onChange={v=>setCf({...cf,zoomLink:v})} placeholder="https://zoom.us/j/xxxxxxxxxx"/>
           </Sect>
           <Sect icon="link" title="CTA Section">
             <div className="grid grid-cols-2 gap-3">
-              <Fld label="Button Text" value={cf.ctaText} onChange={v=>setCf({...cf,ctaText:v})} placeholder="Reserve Spot"/>
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">Action Type</p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={()=>setCf({...cf,ctaType:"EXTERNAL"})} className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${cf.ctaType==="EXTERNAL"?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-300 hover:bg-white/20"}`}>External Link</button>
-                  <button type="button" onClick={()=>setCf({...cf,ctaType:"INTERNAL"})} className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${cf.ctaType==="INTERNAL"?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-300 hover:bg-white/20"}`}>Internal Checkout</button>
-                </div>
-              </div>
+              <Fld label="Button Text" value="Reserve Spot" onChange={()=>{}} />
+              <div><p className="text-[10px] text-gray-400 mb-1">Action Type</p><div className="flex gap-2"><button className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg">External Link</button><button className="flex-1 bg-white/10 text-gray-300 text-xs py-2 rounded-lg">Internal Checkout</button></div></div>
             </div>
-            {cf.ctaType==="EXTERNAL" && <Fld label="Redirect URL" value={cf.ctaUrl} onChange={v=>setCf({...cf,ctaUrl:v})} placeholder="https://checkout.aifa.com/workshop-id"/>}
+            <Fld label="Redirect URL" value="https://checkout.aifa.com/workshop-id" onChange={()=>{}} />
+          </Sect>
+          <Sect icon="workshop" title="Schedule">
+            <div className="grid grid-cols-3 gap-3">
+              <Fld label="Date" value={cf.date} onChange={v=>setCf({...cf,date:v})} placeholder="mm/dd/yyyy" />
+              <Fld label="Time" value={cf.time} onChange={v=>setCf({...cf,time:v})} placeholder="--:-- --" />
+              <Fld label="Timezone" value="UTC (GMT+0)" onChange={()=>{}} />
+            </div>
           </Sect>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})}/><span className="text-sm text-white">Published</span></div>
+            <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})} /><span className="text-sm text-white">Published</span></div>
             <div className="flex gap-2">
-              <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setView(isEditing&&sel?"detail":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-              <button onClick={doSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?"Saving...":(isEditing?"Save Changes":"Create Session")}</button>
+              <button onClick={()=>{ setIsEditing(false); setView(isEditing?"manage":"list"); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+              <button onClick={doCreate} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">{saving?(isEditing?"Updating...":"Publishing..."):(isEditing?"Save Changes":"Publish Workshop")}</button>
             </div>
           </div>
         </div>
         <div>
           <p className="text-[10px] text-green-400 font-semibold mb-2">● LIVE PREVIEW</p>
           <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-            {cf.image&&<img src={cf.image} alt="" className="w-full h-[100px] object-cover rounded-lg mb-2"/>}
             <span className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-0.5 rounded">WORKSHOP</span>
             <p className="text-sm font-bold text-white mt-2">{cf.title||"Workshop Title"}</p>
             <p className="text-[11px] text-gray-400 mt-1">{cf.shortDesc||"Short description..."}</p>
             <div className="grid grid-cols-3 gap-1 mt-2 text-[10px] text-gray-400">
-              <div><span className="text-gray-500 block">DURATION</span>{fmtDur(cf.duration)}</div>
-              <div><span className="text-gray-500 block">PRICE</span>{cf.currency==="USD"?"$":"₹"}{cf.price}</div>
+              <div><span className="text-gray-500 block">DURATION</span>{cf.duration}</div>
+              <div><span className="text-gray-500 block">PRICE</span>{cf.price}</div>
               <div><span className="text-gray-500 block">MODE</span>{cf.mode}</div>
             </div>
             <button className="w-full bg-[#C7E36B] text-black text-[11px] font-bold py-1.5 rounded-lg mt-2">RESERVE SPOT</button>
+          </div>
+          <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/20 rounded-xl p-3 mt-3">
+            <p className="text-[10px] text-[#C7E36B] font-semibold mb-2">Admin Tips</p>
+            {["Use high-quality 16:9 images for better card display.","Titles under 50 characters work best for mobile layouts.","Ensure the CTA redirect URL is a secure HTTPS link."].map((t,i)=>(
+              <p key={i} className="text-[10px] text-gray-400 flex items-start gap-1 mb-1"><span>•</span>{t}</p>
+            ))}
           </div>
         </div>
       </div>
     </div>
   );
 
-  /* ── SESSION DETAIL VIEW ── */
-  if(view==="detail"&&sel) {
-    const status = getStatus(sel);
-    const detail = selDetail||sel;
-    const regList = Array.isArray(detail.registrations) ? detail.registrations : [];
-    const revenue = (regList.length)*(sel.price||0);
-    const sym = sel.currency==="USD"?"$":"₹";
-    const fmtDate = sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric",weekday:"long"}) : "Not scheduled";
-    const fmtTime = sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "";
-    const timeRange = fmtTime + (sel.endTime?` - ${sel.endTime}`:"");
-    return (
-      <div className="p-6">
-        {/* BREADCRUMB */}
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-          <button onClick={()=>setView("list")} className="hover:text-white flex items-center gap-1"><I name="back" size={12}/>Back</button>
-          <span>/</span><span className="hover:text-white cursor-pointer" onClick={()=>setView("list")}>Workshops</span>
-          <span>/</span><span className="text-gray-300">Session Details</span>
-        </div>
-        {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
-
-        {/* HEADER */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-white">{sel.title}</h1>
-              {sel.sessionCode && <span className="text-[11px] bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/30 font-bold px-2 py-0.5 rounded-full">{sel.sessionCode}</span>}
-            </div>
-            <div className="flex items-center gap-3 mt-1 text-sm text-gray-400 flex-wrap">
-              {sel.scheduledAt&&<span>📅 {new Date(sel.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>}
-              {fmtTime&&<span>⏰ {timeRange}</span>}
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[status]||STATUS_STYLES.Draft}`}>{status}</span>
-            </div>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            {sel.zoomLink&&<a href={sel.zoomLink} target="_blank" rel="noreferrer" className="text-xs border border-white/20 text-gray-300 px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="videocam" size={12}/>Join Zoom</a>}
-            <button onClick={()=>startEdit(sel)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1"><I name="edit" size={12}/>Edit Session</button>
-          </div>
-        </div>
-
-        {/* TABS */}
-        <div className="flex gap-6 border-b border-white/10 mb-5">
-          {["overview","students"].map(t=>(
-            <button key={t} onClick={()=>setDetailTab(t)} className={`text-sm font-semibold pb-3 transition-all capitalize ${detailTab===t?"text-white border-b-2 border-[#C7E36B]":"text-gray-500 hover:text-gray-300"}`}>{t==="students"?`Students (${regList.length})`:t.charAt(0).toUpperCase()+t.slice(1)}</button>
-          ))}
-        </div>
-
-        {detailLoading&&<AdminLoader label="Loading session details"/>}
-
-        {!detailLoading&&detailTab==="overview"&&(
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* SESSION INFORMATION */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-              <h3 className="text-base font-bold text-white mb-4">Session Information</h3>
-              {[
-                ["Workshop", sel.title],
-                sel.sessionCode&&["Session Code", sel.sessionCode],
-                sel.trainer&&["Trainer", sel.trainer],
-                ["Date", fmtDate],
-                fmtTime&&["Time", timeRange],
-                sel.zoomLink&&["Zoom Meeting Link", sel.zoomLink],
-                ["Price per seat", `${sym}${sel.price||0}`],
-                ["Mode", sel.mode||"ONLINE"],
-                ["Seat Limit", `${sel.seats||50} seats`],
-              ].filter(Boolean).map(([k,v])=>(
-                <div key={k} className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
-                  <span className="text-[11px] text-gray-500 font-semibold w-[120px] shrink-0">{k}</span>
-                  {k==="Zoom Meeting Link"?(
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <a href={v} target="_blank" rel="noreferrer" className="text-[#C7E36B] text-sm truncate hover:underline">{v}</a>
-                      <button onClick={()=>navigator.clipboard.writeText(v)} className="text-gray-500 hover:text-white shrink-0"><I name="copy" size={12}/></button>
-                    </div>
-                  ):<span className="text-sm text-white">{v}</span>}
-                </div>
-              ))}
-            </div>
-
-            {/* PERFORMANCE */}
-            <div className="space-y-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                <h3 className="text-base font-bold text-white mb-4">Performance</h3>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white/5 rounded-xl p-4">
-                    <p className="text-[10px] text-gray-400 font-semibold mb-1">Registered Students</p>
-                    <p className="text-3xl font-black text-white">{regList.length}</p>
-                    <p className="text-[11px] text-[#C7E36B] mt-1 cursor-pointer hover:underline" onClick={()=>setDetailTab("students")}>View all students →</p>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4">
-                    <p className="text-[10px] text-gray-400 font-semibold mb-1">Revenue</p>
-                    <p className="text-2xl font-black text-white">{sym}{revenue.toLocaleString("en-IN")}</p>
-                    <p className="text-[11px] text-gray-500 mt-1">All Completed Sessions</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {label:"Join Zoom",icon:"videocam",fn:()=>sel.zoomLink&&window.open(sel.zoomLink,"_blank"),disabled:!sel.zoomLink},
-                    {label:"Send Reminder",icon:"bell",fn:()=>alert("Reminder feature coming soon!"),disabled:false},
-                    {label:"Mark as Completed",icon:"checkCircle",fn:()=>doMarkCompleted(sel),disabled:status==="Completed"},
-                    {label:"Cancel Session",icon:"warning",fn:()=>doCancel(sel),disabled:status==="Cancelled",danger:true},
-                  ].map(({label,icon,fn,disabled,danger})=>(
-                    <button key={label} onClick={fn} disabled={disabled} className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all text-left ${disabled?"opacity-40 cursor-default":danger?"border-red-500/20 hover:bg-red-500/10":"border-white/10 hover:bg-white/5"}`}>
-                      <I name={icon} size={18} className={danger?"text-red-400":disabled?"text-gray-600":"text-[#C7E36B]"}/>
-                      <span className={`text-xs font-semibold ${danger?"text-red-400":"text-white"}`}>{label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <p className="text-xs font-semibold text-white mb-3">Quick Actions</p>
-                {[
-                  ["Edit Session","edit",()=>startEdit(sel)],
-                  ["Preview on Website","eye",()=>window.open("/workshops","_blank")],
-                  ["Copy Registration Link","copy",()=>{ navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`); alert("Link copied!"); }],
-                  ...(!sel.isPublished?[["Publish Workshop","checkCircle",()=>doPublish(sel)]]:[[`Unpublish (Draft)`,"warning",()=>doCancel(sel)]]),
-                  ["Delete Workshop","trash",()=>doDelete(sel._id)],
-                ].map(([l,ic,fn])=>(
-                  <button key={l} onClick={fn} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")||l.includes("Unpublish")?"text-red-400":"text-gray-300"} hover:text-white`}>
-                    <I name={ic} size={12}/>{l}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!detailLoading&&detailTab==="students"&&(
-          <div>
-            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-white/10">
-                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">#</th>
-                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Student</th>
-                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Phone</th>
-                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Email</th>
-                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">Joined</th>
-                    <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3"></th>
-                  </tr></thead>
-                  <tbody>
-                    {regList.length===0&&<tr><td colSpan={6} className="text-center text-gray-500 py-10">No registrations yet</td></tr>}
-                    {regList.map((u,i)=>{
-                      const nm = typeof u==="object"?(u.name||"Student"):"Student";
-                      const em = typeof u==="object"?(u.email||"—"):"—";
-                      const ph = typeof u==="object"?(u.phone||"—"):"—";
-                      const ic = initials(nm);
-                      const cl = avatarColor(nm);
-                      return (
-                        <tr key={typeof u==="object"?u._id:u} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                          <td className="px-4 py-3 text-gray-500 text-xs">{i+1}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${cl}`}>{ic}</div>
-                              <span className="text-white font-semibold text-sm">{nm}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-gray-400 text-xs">{ph}</td>
-                          <td className="px-4 py-3 text-gray-400 text-xs">{em}</td>
-                          <td className="px-4 py-3 text-gray-400 text-xs">
-                            {typeof u==="object"&&u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN") : "—"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button onClick={()=>setStudentDrawer({name:nm,email:em,phone:ph,joined:typeof u==="object"&&u.createdAt?new Date(u.createdAt).toLocaleString("en-IN"):"—"})} className="text-xs border border-white/20 text-gray-300 px-3 py-1 rounded-lg hover:bg-white/5">View Details</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-4 py-3 text-xs text-gray-500 border-t border-white/5">Showing {regList.length} of {regList.length} students</div>
-            </div>
-          </div>
-        )}
-
-        {/* STUDENT DETAILS DRAWER */}
-        {studentDrawer&&(
-          <div className="fixed inset-0 z-50 flex" onClick={()=>setStudentDrawer(null)}>
-            <div className="flex-1 bg-black/50"/>
-            <div className="w-[320px] bg-[#0F1112] border-l border-white/10 p-6 overflow-y-auto" onClick={e=>e.stopPropagation()}>
-              <button onClick={()=>setStudentDrawer(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white text-sm">✕</button>
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold mx-auto mt-4 mb-3 ${avatarColor(studentDrawer.name)}`}>{initials(studentDrawer.name)}</div>
-              <p className="text-white font-bold text-lg text-center">{studentDrawer.name}</p>
-              <span className="block mx-auto w-fit text-[11px] bg-[#C7E36B]/20 text-[#C7E36B] border border-[#C7E36B]/30 font-semibold px-3 py-0.5 rounded-full mt-1 mb-5">Paid</span>
-              {[
-                ["Phone Number",studentDrawer.phone],
-                ["Email",studentDrawer.email],
-                ["Joined",studentDrawer.joined],
-              ].map(([k,v])=>(
-                <div key={k} className="border-b border-white/10 py-3">
-                  <p className="text-[10px] text-gray-500 font-semibold mb-1">{k}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-white flex-1">{v}</p>
-                    {(k==="Phone Number"||k==="Email")&&<button onClick={()=>navigator.clipboard.writeText(v)} className="text-gray-500 hover:text-white"><I name="copy" size={12}/></button>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  /* ── LIST VIEW ── */
-  const STATUS_TABS = ["Upcoming","Live","Completed","Cancelled","Draft","All Sessions"];
-  const filtered = workshops.filter(w => {
-    const s = getStatus(w);
-    if(tabFilter==="All Sessions") return true;
-    if(tabFilter==="Cancelled") return w.isCancelled;
-    return s===tabFilter;
-  });
-
-  const totalReg = workshops.reduce((s,w)=>s+(w.registrations?.length||0),0);
-  const totalRev = workshops.reduce((s,w)=>s+(w.registrations?.length||0)*(w.price||0),0);
-
-  return (
+  if(view==="manage"&&sel) return (
     <div className="p-6">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="text-xl font-bold text-white">Workshops</h1>
-          <p className="text-xs text-gray-400">Manage all your workshop templates and sessions in one place.</p>
-        </div>
-        <button onClick={()=>{ setCf(CF_DEFAULT); setIsEditing(false); setSuccessMsg(""); setView("create"); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1">
-          Create New Session
-        </button>
-      </div>
-
-      {/* STATS */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
-        {[
-          {label:"Total Sessions",icon:"workshop",val:workshops.length,sub:"All Upcoming & Past"},
-          {label:"Total Registrations",icon:"users",val:totalReg.toLocaleString("en-IN"),sub:"Across all sessions"},
-          {label:"Total Revenue",icon:"payments",val:`₹${totalRev.toLocaleString("en-IN")}`,sub:"All Completed Sessions"},
-        ].map(({label,icon,val,sub})=>(
-          <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0"><I name={icon} size={18} className="text-[#C7E36B]"/></div>
-            <div>
-              <p className="text-[11px] text-gray-400 font-semibold mb-0.5">{label}</p>
-              <p className="text-2xl font-black text-white leading-none">{val}</p>
-              <p className="text-[10px] text-gray-500 mt-1">{sub}</p>
-            </div>
+      <button onClick={()=>setView("list")} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 mb-3"><I name="back" size={14}/>Back to Workshops</button>
+      {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
+      <div className="flex gap-6">
+        <div className="flex-1">
+          <div className="flex gap-2 mb-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span><span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span></div>
+          <h2 className="text-2xl font-black text-white">{sel.title}</h2>
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            {[["PRICE",sel.price||"₹1,499"],["DURATION",sel.duration||"4 Hours"],["SEAT LIMIT","50 Seats"]].map(([k,v])=>(
+              <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-3"><p className="text-[10px] text-gray-400 font-semibold">{k}</p><p className="text-base font-bold text-white">{v}</p></div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* FILTER TABS */}
-      <div className="flex gap-1 mb-4 overflow-x-auto">
-        {STATUS_TABS.map(t=>{
-          const isLive = t==="Live";
-          const cnt = t==="All Sessions"?workshops.length:workshops.filter(w=>{ const s=getStatus(w); if(t==="Cancelled") return w.isCancelled; return s===t; }).length;
-          return (
-            <button key={t} onClick={()=>{setTabFilter(t);setWsPage(1);}} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1 transition-all ${tabFilter===t?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10"}`}>
-              {t}{isLive&&<span className={`w-2 h-2 rounded-full ${tabFilter===t?"bg-black":"bg-green-400"} animate-pulse`}/>}{cnt>0&&<span className={`text-[10px] ${tabFilter===t?"text-black/70":"text-gray-500"}`}>{cnt}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* TABLE */}
-      {loading ? <AdminLoader label="Loading Workshops"/> : (
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-white/10">
-                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">WORKSHOP</th>
-                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">DATE & TIME</th>
-                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">REGISTERED</th>
-                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">REVENUE</th>
-                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">STATUS</th>
-                <th className="text-left text-[10px] text-gray-500 font-semibold px-4 py-3">ACTIONS</th>
-              </tr></thead>
-              <tbody>
-                {filtered.length===0&&<tr><td colSpan={6} className="text-center text-gray-500 py-10">No workshops found</td></tr>}
-                {filtered.slice((wsPage-1)*WS_PAGE_SIZE, wsPage*WS_PAGE_SIZE).map(w=>{
-                  const status = getStatus(w);
-                  const dt = w.scheduledAt ? new Date(w.scheduledAt) : null;
-                  return (
-                    <tr key={w._id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-[60px] h-[40px] bg-white/10 rounded-lg overflow-hidden shrink-0">
-                            <img src={w.image||"/courses/v1.png"} alt="" className="w-full h-full object-cover"/>
-                          </div>
-                          <div>
-                            {w.sessionCode&&<span className="text-[9px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-1.5 py-0.5 rounded mr-1">{w.sessionCode}</span>}
-                            <p className="text-white font-semibold text-sm leading-tight">{w.title}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {dt ? (
-                          <div className="text-xs">
-                            <p className="text-gray-300">📅 {dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</p>
-                            <p className="text-gray-500">⏰ {dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}{w.endTime?` - ${w.endTime}`:""}</p>
-                          </div>
-                        ) : <span className="text-gray-500 text-xs">Not scheduled</span>}
-                      </td>
-                      <td className="px-4 py-3 text-white font-semibold">{w.registrations?.length||0}</td>
-                      <td className="px-4 py-3 text-white font-semibold">{fmtRevenue(w)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[status]||STATUS_STYLES.Draft}`}>{status}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          <button onClick={()=>loadDetail(w)} title="View" className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all"><I name="eye" size={14}/></button>
-                          <button onClick={()=>startEdit(w)} title="Edit" className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-all"><I name="edit" size={14}/></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-3 flex items-center justify-between border-t border-white/5">
-            <span className="text-xs text-gray-500">Showing {Math.min((wsPage-1)*WS_PAGE_SIZE+1,filtered.length)||0}–{Math.min(wsPage*WS_PAGE_SIZE,filtered.length)} of {filtered.length} sessions</span>
-            {filtered.length > WS_PAGE_SIZE && (
-              <div className="flex items-center gap-1">
-                <button onClick={()=>setWsPage(p=>Math.max(1,p-1))} disabled={wsPage===1} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/10 disabled:opacity-30 transition-all">← Prev</button>
-                {Array.from({length:Math.ceil(filtered.length/WS_PAGE_SIZE)},(_,i)=>i+1).map(n=>(
-                  <button key={n} onClick={()=>setWsPage(n)} className={`w-6 h-6 text-xs rounded-lg transition-all ${wsPage===n?"bg-[#C7E36B] text-black font-bold":"border border-white/10 text-gray-400 hover:bg-white/10"}`}>{n}</button>
-                ))}
-                <button onClick={()=>setWsPage(p=>Math.min(Math.ceil(filtered.length/WS_PAGE_SIZE),p+1))} disabled={wsPage===Math.ceil(filtered.length/WS_PAGE_SIZE)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/10 disabled:opacity-30 transition-all">Next →</button>
-              </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6 mt-4 flex flex-col items-center justify-center min-h-[180px]">
+            <I name="users" size={32} className="text-gray-600 mb-2"/>
+            <p className="text-sm text-gray-400 font-semibold">{sel.registrations?.length ? `${sel.registrations.length} registrations` : "No registrations yet"}</p>
+            <p className="text-xs text-gray-500 mt-1 text-center">Once published, learner registrations will appear here in real-time.</p>
+            {!sel.isPublished && (
+              <button onClick={()=>doPublish(sel)} className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300">📣 Publish Workshop to Live</button>
+            )}
+            {sel.isPublished && (
+              <span className="mt-4 text-xs text-green-400 font-semibold">✓ Published and Live</span>
             )}
           </div>
         </div>
+        <div className="w-[200px] shrink-0 space-y-3">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <p className="text-xs font-semibold text-white mb-3">Management Actions</p>
+            {[
+              ["Edit Details","edit",()=>startEdit(sel)],
+              ["Preview Website Card","eye",()=>window.open("/workshops","_blank")],
+              ["Copy Registration Link","copy",()=>{ navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`); alert("Link copied!"); }],
+              ["Delete Workshop","trash",()=>{ doDelete(sel._id); setView("list"); }],
+            ].map(([l,ic,fn])=>(
+              <button key={l} onClick={fn} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")?"text-red-400":"text-gray-300"} hover:text-white`}>
+                <I name={ic} size={12}/>{l}
+              </button>
+            ))}
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <p className="text-xs font-semibold text-white mb-3">Schedule Summary</p>
+            {[
+              ["DATE", sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleDateString("en-IN") : "Not scheduled"],
+              ["DURATION", sel.duration || "—"],
+              ["MODE", sel.mode || "ONLINE"],
+            ].map(([k,v])=>(
+              <div key={k} className="mb-2"><p className="text-[9px] text-gray-500 font-semibold">{k}</p><p className="text-xs text-white">{v}</p></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const published = workshops.filter(w=>w.isPublished);
+  const filtered = workshops.filter(w => {
+    const matchSearch = w.title.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter==="All" || (statusFilter==="Published"&&w.isPublished) || (statusFilter==="Draft"&&!w.isPublished);
+    return matchSearch && matchStatus;
+  });
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full">{published.length} PUBLISHED WORKSHOPS</span>
+          <h1 className="text-xl font-bold text-white mt-1">Workshop Repository</h1>
+          <p className="text-xs text-gray-400">Manage all your published and draft workshops in one place.</p>
+        </div>
+        <button onClick={()=>setView("create")} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">
+          Create New Workshop
+        </button>
+      </div>
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search workshops by title..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+        </div>
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          <option>All</option><option>Published</option><option>Draft</option>
+        </select>
+      </div>
+      {loading ? <AdminLoader label="Loading Workshops" /> : (
+        <div className="space-y-3">
+          {filtered.length===0 && <p className="text-gray-500 text-sm py-8 text-center">No workshops found</p>}
+          {filtered.map(w=>(
+            <div key={w._id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4 hover:border-white/20 transition-all">
+              <div className="w-[110px] h-[72px] bg-white/10 rounded-lg overflow-hidden shrink-0">
+                <img src={w.image||"/courses/v1.png"} alt="" className="w-full h-full object-cover"/>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${w.isPublished?"bg-green-500/20 text-green-400":"bg-yellow-500/20 text-yellow-400"}`}>{w.isPublished?"PUBLISHED":"DRAFT"}</span>
+                  {w.scheduledAt && <span className="text-[10px] text-gray-500">📅 {new Date(w.scheduledAt).toLocaleDateString()}</span>}
+                </div>
+                <h3 className="text-sm font-bold text-white">{w.title}</h3>
+                <div className="flex items-center gap-4 mt-1 text-[10px] text-gray-400">
+                  <span>👥 {w.registrations?.length||0}/{w.seats||50} registered</span>
+                  <span>⌨ {w.mode||"ONLINE"}</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <span className="text-base font-bold text-white">₹{w.price}</span>
+                <div className="flex gap-2">
+                  <button onClick={()=>{setSel(w);setView("manage");}} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
+                    {w.isPublished?"Manage Workshop":"Continue Editing"}
+                  </button>
+                  <button onClick={()=>doDelete(w._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={12}/></button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+      <p className="text-xs text-gray-500 mt-3">Showing {filtered.length} of {workshops.length} workshops</p>
     </div>
   );
 }
 
 /* ── VIDEO COURSES ADMIN ── */
-const VCA_F_DEFAULT = { title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false };
-const VCA_S_DEFAULT = [{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }];
-
 function VideoCoursesAdmin({ token }) {
   const [view, setView] = useState("list");
   const [step, setStep] = useState(1);
@@ -2243,10 +1875,10 @@ function VideoCoursesAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCourses([...d].reverse()); setCoursesLoading(false); }).catch(()=>setCoursesLoading(false));
   };
   useEffect(() => { loadCourses(); }, [token]);
-  const [f, setF] = useState(VCA_F_DEFAULT);
+  const [f, setF] = useState({ title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false });
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
-  const [sections, setSections] = useState(VCA_S_DEFAULT);
+  const [sections, setSections] = useState([{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }]);
   const [activeL, setActiveL] = useState({ s:0, l:0 });
   const [saving, setSaving]       = useState(false);
   const [editCourse, setEditCourse] = useState(null);
@@ -2271,35 +1903,30 @@ function VideoCoursesAdmin({ token }) {
     isPublished,
   });
 
-  const resetCreateForm = () => { setF(VCA_F_DEFAULT); setSections(VCA_S_DEFAULT); setStep(1); setScheduleDate(""); setShowSchedule(false); };
-
   const saveDraft = async () => {
-    if (!f.title.trim()) { alert("Please enter a course title before saving."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false)) });
-      if(res.ok){ await loadCourses(); resetCreateForm(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
 
   const publish = async () => {
-    if (!f.title.trim()) { alert("Please enter a course title before publishing."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(true)) });
-      if(res.ok){ await loadCourses(); resetCreateForm(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
 
   const schedulePublish = async () => {
     if(!scheduleDate) return;
-    if (!f.title.trim()) { alert("Please enter a course title before scheduling."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false, scheduleDate)) });
-      if(res.ok){ await loadCourses(); resetCreateForm(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); }
     } catch(e){}
     setSaving(false);
   };
@@ -2778,7 +2405,7 @@ function VideoCoursesAdmin({ token }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-white">Video Courses</h1>
-        <button onClick={()=>{resetCreateForm();setView("create");}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Create New Course</button>
+        <button onClick={()=>{setView("create");setStep(1);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Create New Course</button>
       </div>
       <div className="flex gap-3 mb-4">
         <div className="relative">
@@ -2806,7 +2433,7 @@ function VideoCoursesAdmin({ token }) {
                   <span className="text-[10px] text-gray-400">{c.level||"Beginner"}</span>
                 </div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] text-gray-500">👥 {c.enrollmentCount ?? 0} enrolled</span>
+                  <span className="text-[10px] text-gray-500">👥 {c.enrolledCourses?.length ?? c.enrollmentCount ?? 0} enrolled</span>
                   <button onClick={async()=>{
                     const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
                     if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
@@ -2817,7 +2444,7 @@ function VideoCoursesAdmin({ token }) {
                 <div className="flex gap-2">
                   <button onClick={()=>window.open(`/courses/${c._id}/watch`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
                   <button onClick={()=>{ setEditCourse(c); setEditInfo({}); setEditLessons(c.lessons&&c.lessons.length>0?c.lessons.map(l=>({...l})):[{title:"",videoUrl:"",duration:"",isFree:false}]); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
-                  <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10 flex items-center gap-1"><I name="trash" size={11}/>Delete</button>
+                  <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={11}/></button>
                 </div>
               </div>
             </div>
@@ -3174,191 +2801,143 @@ function UsersAdmin({ token }) {
   const [loading, setLoading] = useState(true);
   const [uSearch, setUSearch] = useState("");
   const [uRole, setURole]     = useState("All");
-  const [uStatus, setUStatus] = useState("All");
+  const [uSort, setUSort]     = useState("Newest");
   const [viewUser, setViewUser] = useState(null);
 
   useEffect(() => {
-    const handleEsc = (e) => { if (e.key === "Escape") setViewUser(null); };
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setViewUser(null);
+    };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
+  const adminId = JSON.parse(localStorage.getItem("aifa_user")||"{}") ._id;
 
   useEffect(() => {
-    fetch("/api/users", { headers:{ Authorization:`Bearer ${token}` } })
+    fetch("/api/users",{ headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setUsers(d); setLoading(false); }).catch(()=>setLoading(false));
-  }, [token]);
+  },[token]);
 
-  const toggleActivate = async u => {
-    const newStatus = u.isActive === false;
-    try {
-      await fetch(`/api/users/${u._id}/status`, {
-        method:"PUT",
-        headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`},
-        body: JSON.stringify({ isActive: newStatus }),
-      });
-    } catch(e) {}
-    setUsers(us=>us.map(x=>x._id===u._id?{...x,isActive:newStatus}:x));
-    setViewUser(v=>v?{...v,isActive:newStatus}:null);
+  const toggleRole = async u => {
+    const newRole = u.role==="admin"?"student":"admin";
+    await fetch(`/api/users/${u._id}/role`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({role:newRole}) });
+    setUsers(us=>us.map(x=>x._id===u._id?{...x,role:newRole}:x));
   };
 
-  const filtered = users.filter(u => {
-    const q = uSearch.toLowerCase();
-    const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
-    const matchRole   = uRole==="All" || u.role===uRole.toLowerCase();
-    const matchStatus = uStatus==="All" || (uStatus==="Active" ? u.isActive!==false : u.isActive===false);
-    return matchSearch && matchRole && matchStatus;
-  }).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+  const delUser = async id => {
+    if(String(id)===String(adminId)){ alert("You cannot delete your own admin account."); return; }
+    if(!window.confirm("Delete this user permanently?")) return;
+    await fetch(`/api/users/${id}`,{ method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    setUsers(us=>us.filter(x=>x._id!==id));
+    if(viewUser?._id===id) setViewUser(null);
+  };
 
-  const totalUsers    = users.length;
-  const activeUsers   = users.filter(u=>u.isActive!==false).length;
-  const inactiveUsers = users.filter(u=>u.isActive===false).length;
-
-  const ROLE_TABS = ["All","Student","Instructor"];
+  const filtered = users
+    .filter(u => {
+      const q = uSearch.toLowerCase();
+      const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
+      const matchRole   = uRole==="All" || u.role===uRole.toLowerCase();
+      return matchSearch && matchRole;
+    })
+    .sort((a,b) => {
+      if(uSort==="Name A-Z") return (a.name||"").localeCompare(b.name||"");
+      if(uSort==="Oldest")   return new Date(a.createdAt)-new Date(b.createdAt);
+      return new Date(b.createdAt)-new Date(a.createdAt); // Newest
+    });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-6">
       {/* User Detail Modal */}
       {viewUser && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setViewUser(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">User Details</h3>
-              <button onClick={()=>setViewUser(null)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-[#C7E36B] text-black font-black text-2xl flex items-center justify-center">
-                  {(viewUser.name||"U")[0].toUpperCase()}
-                </div>
-                <p className="text-white font-bold text-base">{viewUser.name}</p>
-                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${viewUser.isActive!==false?"bg-[#0B5F2A] text-[#C7E36B]":"bg-white/10 text-gray-400"}`}>
-                  {viewUser.isActive!==false?"Active":"Inactive"}
-                </span>
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-[#C7E36B] text-black font-black text-lg flex items-center justify-center">{(viewUser.name||"U")[0].toUpperCase()}</div>
+              <div className="flex-1">
+                <p className="text-white font-bold">{viewUser.name}</p>
+                <p className="text-xs text-gray-400">{viewUser.email}</p>
               </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                  <span className="text-gray-400">Email</span>
-                  <span className="text-white font-semibold truncate ml-3 max-w-[180px]">{viewUser.email}</span>
-                </div>
-                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                  <span className="text-gray-400">Phone</span>
-                  <span className="text-white font-semibold">{viewUser.phone||"—"}</span>
-                </div>
-                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                  <span className="text-gray-400">Joined</span>
-                  <span className="text-white font-semibold">{new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
-                </div>
-                <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                  <span className="text-gray-400">Role</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${viewUser.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":viewUser.role==="instructor"?"bg-gray-500/20 text-gray-300":"bg-[#0B5F2A] text-[#C7E36B]"}`}>
-                    {viewUser.role||"student"}
-                  </span>
-                </div>
-              </div>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${viewUser.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{viewUser.role}</span>
+              <button onClick={()=>setViewUser(null)} className="text-gray-400 hover:text-white ml-2">✕</button>
             </div>
-            <div className="p-4 border-t border-white/10">
-              {viewUser.isActive!==false ? (
-                <button onClick={()=>toggleActivate(viewUser)}
-                  className="w-full py-2.5 rounded-xl bg-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/30 transition-colors border border-red-500/20">
-                  DEACTIVATE
-                </button>
-              ) : (
-                <button onClick={()=>toggleActivate(viewUser)}
-                  className="w-full py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4f070] transition-colors">
-                  ACTIVATE STUDENT
-                </button>
-              )}
+            <div className="space-y-3 text-xs">
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-1">JOINED</p>
+                <p className="text-white">{new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-2">ENROLLED COURSES ({viewUser.enrolledCourses?.length||0})</p>
+                {viewUser.enrolledCourses?.length > 0
+                  ? viewUser.enrolledCourses.map((c,i)=><p key={i} className="text-white py-0.5">📹 {c?.title||String(c).slice(-8)}</p>)
+                  : <p className="text-gray-600">None</p>}
+              </div>
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-2">ENROLLED WORKSHOPS ({viewUser.enrolledWorkshops?.length||0})</p>
+                {viewUser.enrolledWorkshops?.length > 0
+                  ? viewUser.enrolledWorkshops.map((w,i)=><p key={i} className="text-white py-0.5">🎓 {w?.title||String(w).slice(-8)}</p>)
+                  : <p className="text-gray-600">None</p>}
+              </div>
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-gray-400 font-semibold mb-2">ENROLLED BOOTCAMPS ({viewUser.enrolledBootcamps?.length||0})</p>
+                {viewUser.enrolledBootcamps?.length > 0
+                  ? viewUser.enrolledBootcamps.map((b,i)=><p key={i} className="text-white py-0.5">🚀 {b?.title||String(b).slice(-8)}</p>)
+                  : <p className="text-gray-600">None</p>}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      <div>
-        <h1 className="text-xl font-bold text-white">Users</h1>
-        <p className="text-xs text-gray-400">Manage platform users and roles</p>
+      <div className="flex items-center justify-between mb-5">
+        <div><h1 className="text-xl font-bold text-white">Users</h1><p className="text-xs text-gray-400">Manage platform users and roles · {users.length} total</p></div>
       </div>
 
-      {/* 3 stat cards */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label:"Total Users",    value:totalUsers,    color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10" },
-          { label:"Active Users",   value:activeUsers,   color:"text-green-400", bg:"bg-green-500/10"  },
-          { label:"Inactive Users", value:inactiveUsers, color:"text-gray-400",  bg:"bg-white/10"      },
-        ].map(s=>(
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-              <I name="users" size={18} className={s.color}/>
-            </div>
-            <p className="text-xs text-gray-400 mb-0.5">{s.label}</p>
-            <p className="text-2xl font-black text-white">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Search + Status + Role tabs */}
-      <div className="space-y-3">
-        <div className="flex gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <input value={uSearch} onChange={e=>setUSearch(e.target.value)} placeholder="Search Users..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
-            <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
-          </div>
-          <select value={uStatus} onChange={e=>setUStatus(e.target.value)}
-            className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-            {["All","Active","Inactive"].map(o=><option key={o}>{o}</option>)}
-          </select>
+      {/* Search + Filters */}
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <input value={uSearch} onChange={e=>setUSearch(e.target.value)} placeholder="Search by name or email..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
         </div>
-        <div className="flex gap-1">
-          {ROLE_TABS.map(tab=>(
-            <button key={tab} onClick={()=>setURole(tab)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${uRole===tab?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10"}`}>
-              {tab}
-            </button>
-          ))}
-        </div>
+        <select value={uRole} onChange={e=>setURole(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          {["All","Student","Admin"].map(o=><option key={o}>{o}</option>)}
+        </select>
+        <select value={uSort} onChange={e=>setUSort(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+          {["Newest","Oldest","Name A-Z"].map(o=><option key={o}>{o}</option>)}
+        </select>
       </div>
 
-      {/* Table */}
       {loading ? <AdminLoader label="Loading Users" /> : (
         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           <table className="w-full">
             <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-              {["USERS","NUMBER","ROLE","STATUS","ACTIONS"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
+              {["Name","Email","Role","Enrolled","Joined","Actions"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
             </tr></thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.length===0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No users match your search</td></tr>}
+              {filtered.length===0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No users match your search</td></tr>}
               {filtered.map(u=>(
                 <tr key={u._id} className="hover:bg-white/5 transition-all">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center shrink-0">{(u.name||"U")[0].toUpperCase()}</div>
-                      <div>
-                        <p className="text-sm text-white font-semibold">{u.name}</p>
-                        <p className="text-[11px] text-gray-400">{u.email}</p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(u.name||"U")[0].toUpperCase()}</div>
+                      <span className="text-sm text-white font-semibold">{u.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{u.phone||"—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-400">{u.email}</td>
+                  <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{u.role}</span></td>
+                  <td className="px-4 py-3 text-sm text-gray-400">{(u.enrolledCourses?.length||0)+(u.enrolledWorkshops?.length||0)+(u.enrolledBootcamps?.length||0)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-400">{new Date(u.createdAt||Date.now()).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full capitalize ${u.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":u.role==="instructor"?"bg-gray-500/20 text-gray-300":"bg-[#0B5F2A] text-[#C7E36B]"}`}>
-                      {u.role||"Student"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.isActive!==false?"bg-amber-500/10 text-amber-400":"bg-white/5 text-gray-500"}`}>
-                      {u.isActive!==false?"Active":"Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button onClick={()=>setViewUser(u)} className="text-xs font-semibold text-[#C7E36B] hover:underline">
-                      View Details
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={()=>setViewUser(u)} className="text-gray-400 hover:text-[#C7E36B]"><I name="eye" size={14}/></button>
+                      <button onClick={()=>toggleRole(u)} className="text-[10px] border border-white/20 text-gray-300 px-2 py-1 rounded hover:bg-white/10">→ {u.role==="admin"?"Student":"Admin"}</button>
+                      <button onClick={()=>delUser(u._id)} className={`text-[10px] border px-2 py-1 rounded ${String(u._id)===String(adminId)?"border-gray-700 text-gray-700 cursor-not-allowed":"border-red-500/30 text-red-400 hover:bg-red-500/10"}`} disabled={String(u._id)===String(adminId)}><I name="trash" size={11}/></button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {!loading && <p className="text-xs text-gray-500 px-4 py-2">Showing {filtered.length} of {users.length} users</p>}
+          {!loading&&<p className="text-xs text-gray-500 px-4 py-2">Showing {filtered.length} of {users.length} users</p>}
         </div>
       )}
     </div>
@@ -3444,194 +3023,71 @@ function EnrolmentsAdmin({ token }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
-  const [selEnrollment, setSelEnrollment] = useState(null);
-  const [ePage, setEPage] = useState(1);
-  const PAGE_SIZE = 10;
-
-  useEffect(() => {
-    const handleEsc = (e) => { if (e.key === "Escape") setSelEnrollment(null); };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, []);
 
   useEffect(() => {
     fetch("/api/admin/enrollments", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setEnrollments(d); setLoading(false); }).catch(()=>setLoading(false));
   }, [token]);
 
-  const typeBadge = t => t==="bootcamp"?"bg-purple-500/20 text-purple-400":t==="workshop"?"bg-green-500/20 text-green-400":"bg-blue-500/20 text-blue-400";
-  const typeIcon  = t => t==="bootcamp"?"bootcamp":t==="workshop"?"workshop":"video";
-
   const filtered = enrollments.filter(e => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || (e.user?.name||"").toLowerCase().includes(q) || (e.user?.email||"").toLowerCase().includes(q) || (e.item||"").toLowerCase().includes(q);
-    const matchType = typeFilter==="All" || e.type===typeFilter.toLowerCase().replace(" ","_").replace(" course","");
+    const matchSearch = (e.user?.name||"").toLowerCase().includes(search.toLowerCase()) || (e.item||"").toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === "All" || e.type === typeFilter;
     return matchSearch && matchType;
   });
 
-  const totalAmount  = enrollments.reduce((s,e)=>s+(e.price||0),0);
-  const totalPages   = Math.ceil(filtered.length/PAGE_SIZE);
-  const paginated    = filtered.slice((ePage-1)*PAGE_SIZE, ePage*PAGE_SIZE);
-
-  const fmtInvDate = d => { try { return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}); } catch{return "—";} };
+  const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
 
   return (
-    <div className="p-6 space-y-5">
-      {/* Enrollment Detail Modal */}
-      {selEnrollment && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setSelEnrollment(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <div>
-                <h3 className="text-sm font-bold text-white">Enrollment Details</h3>
-                <p className="text-[11px] text-gray-500">Payment ID: #{(selEnrollment._id||selEnrollment.paymentId||"—").toString().slice(-12).toUpperCase()}</p>
-              </div>
-              <button onClick={()=>setSelEnrollment(null)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
-            </div>
-            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Student Info */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Student Information</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#C7E36B] text-black font-black text-base flex items-center justify-center shrink-0">
-                    {(selEnrollment.user?.name||"U")[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">{selEnrollment.user?.name||"—"}</p>
-                    <p className="text-xs text-gray-400">{selEnrollment.user?.email||"—"}</p>
-                    <p className="text-xs text-gray-500">{selEnrollment.user?.phone||"No phone"}</p>
-                  </div>
-                </div>
-              </div>
-              {/* Purchase Details */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Purchase Details</p>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0">
-                    <I name={typeIcon(selEnrollment.type)} size={18} className="text-[#C7E36B]"/>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">{selEnrollment.item||"—"}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-full ${typeBadge(selEnrollment.type)}`}>{selEnrollment.type}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Enrolled: {fmtInvDate(selEnrollment.enrolledAt)}</p>
-                  </div>
-                </div>
-              </div>
-              {/* Order Summary */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Order Summary</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Total Amount</span>
-                  <span className="text-sm font-bold text-white">{selEnrollment.price ? `₹${selEnrollment.price.toLocaleString("en-IN")}` : "—"}</span>
-                </div>
-              </div>
-              {/* Invoice */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-3">Invoice</p>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between"><span className="text-gray-400">Invoice #</span><span className="text-white font-semibold">INV-{(selEnrollment._id||"").toString().slice(-8).toUpperCase()}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Date</span><span className="text-white">{fmtInvDate(selEnrollment.enrolledAt)}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Amount</span><span className="text-white font-bold">{selEnrollment.price ? `₹${selEnrollment.price.toLocaleString("en-IN")}` : "Free"}</span></div>
-                </div>
-                <button className="mt-3 w-full py-2 rounded-lg bg-[#C7E36B]/10 border border-[#C7E36B]/20 text-[#C7E36B] text-xs font-semibold hover:bg-[#C7E36B]/20 transition-colors">
-                  Download Invoice
-                </button>
-              </div>
-            </div>
-            <div className="p-4 border-t border-white/10">
-              <button onClick={()=>setSelEnrollment(null)} className="w-full py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <h1 className="text-xl font-bold text-white">Enrolments</h1>
-        <p className="text-xs text-gray-400">All student enrollments</p>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div><h1 className="text-xl font-bold text-white">Enrolments</h1><p className="text-xs text-gray-400">All student enrollments · {enrollments.length} total</p></div>
       </div>
-
-      {/* 5 stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        {[
-          { label:"Total Enrollments",       value: enrollments.length,                                    icon:"enrolments", color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10"  },
-          { label:"Bootcamp Enrollments",    value: enrollments.filter(e=>e.type==="bootcamp").length,     icon:"bootcamp",   color:"text-purple-400", bg:"bg-purple-500/10" },
-          { label:"Video Course Enrollments",value: enrollments.filter(e=>e.type==="course").length,       icon:"video",      color:"text-blue-400",   bg:"bg-blue-500/10"   },
-          { label:"Workshop Enrollments",    value: enrollments.filter(e=>e.type==="workshop").length,     icon:"workshop",   color:"text-green-400",  bg:"bg-green-500/10"  },
-          { label:"Total Amount",            value: `₹${totalAmount.toLocaleString("en-IN")}`,            icon:"payments",   color:"text-[#C7E36B]",  bg:"bg-[#C7E36B]/10"  },
-        ].map(s=>(
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-              <I name={s.icon} size={18} className={s.color}/>
-            </div>
-            <p className="text-xs text-gray-400 mb-0.5 leading-snug">{s.label}</p>
-            <p className="text-xl font-black text-white">{s.value}</p>
+      <div className="grid grid-cols-3 gap-4 mb-5">
+        {[["Total Enrolments", enrollments.length, "enrolments"],["Course Enrolments", enrollments.filter(e=>e.type==="course").length,"video"],["Bootcamp Enrolments",enrollments.filter(e=>e.type==="bootcamp").length,"bootcamp"]].map(([l,v,ic])=>(
+          <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0"><I name={ic} size={20} className="text-[#C7E36B]"/></div>
+            <div><p className="text-2xl font-bold text-white">{v}</p><p className="text-xs text-gray-400">{l}</p></div>
           </div>
         ))}
       </div>
-
-      {/* Search + Type filter */}
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <input type="text" value={search} onChange={e=>{ setSearch(e.target.value); setEPage(1); }} placeholder="Search by student or program..."
-            className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1 max-w-xs">
+          <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by student or program..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
           <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
         </div>
-        <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setEPage(1); }}
-          className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
+        <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
           <option value="All">All Types</option>
-          <option value="bootcamp">Bootcamp</option>
-          <option value="course">Video Course</option>
+          <option value="course">Course</option>
           <option value="workshop">Workshop</option>
+          <option value="bootcamp">Bootcamp</option>
         </select>
       </div>
-
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
         <table className="w-full">
           <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-            {["STUDENT","PROGRAM","TYPE","AMOUNT","DATE","ACTIONS"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
+            {["Student","Program","Type","Enrolled On","Amount"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
           </tr></thead>
           <tbody className="divide-y divide-white/5">
-            {loading ? <tr><td colSpan={6}><AdminLoader /></td></tr>
-              : paginated.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No enrollments found</td></tr>
-              : paginated.map((e,i) => (
+            {loading ? <tr><td colSpan={5}><AdminLoader /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No enrollments found</td></tr>
+              : filtered.map((e,i) => (
               <tr key={i} className="hover:bg-white/5 transition-all">
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center shrink-0">{(e.user?.name||"U")[0].toUpperCase()}</div>
-                    <div>
-                      <p className="text-xs font-semibold text-white">{e.user?.name||"—"}</p>
-                      <p className="text-[10px] text-gray-500">{e.user?.email||""}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(e.user?.name||"U")[0]}</div>
+                    <div><p className="text-xs font-semibold text-white">{e.user?.name||"—"}</p><p className="text-[10px] text-gray-500">{e.user?.email||""}</p></div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-300 max-w-[200px]"><p className="truncate">{e.item||"—"}</p></td>
-                <td className="px-4 py-3"><span className={`text-[10px] font-bold capitalize px-2 py-1 rounded-full ${typeBadge(e.type)}`}>{e.type==="course"?"Video Course":e.type}</span></td>
-                <td className="px-4 py-3 text-sm font-bold text-white">{e.price ? `₹${e.price.toLocaleString("en-IN")}` : "—"}</td>
-                <td className="px-4 py-3 text-sm text-gray-400">{fmtInvDate(e.enrolledAt)}</td>
-                <td className="px-4 py-3">
-                  <button onClick={()=>setSelEnrollment(e)} className="text-xs font-semibold text-[#C7E36B] hover:underline">View</button>
-                </td>
+                <td className="px-4 py-3 text-sm text-gray-300 max-w-[200px] truncate">{e.item||"—"}</td>
+                <td className="px-4 py-3"><span className={`text-[10px] font-bold capitalize px-2 py-1 rounded-full ${typeBadge(e.type)}`}>{e.type}</span></td>
+                <td className="px-4 py-3 text-sm text-gray-400">{new Date(e.enrolledAt).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-sm font-bold text-white">{e.price ? `₹${e.price}` : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Showing {(ePage-1)*PAGE_SIZE+1}–{Math.min(ePage*PAGE_SIZE,filtered.length)} of {filtered.length}</span>
-          <div className="flex gap-1">
-            <button disabled={ePage===1} onClick={()=>setEPage(p=>p-1)} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">← Prev</button>
-            {Array.from({length:totalPages},(_, i)=>i+1).map(p=>(
-              <button key={p} onClick={()=>setEPage(p)} className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${ePage===p?"bg-[#C7E36B] text-black":"bg-white/5 hover:bg-white/10 text-gray-400"}`}>{p}</button>
-            ))}
-            <button disabled={ePage===totalPages} onClick={()=>setEPage(p=>p+1)} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">Next →</button>
-          </div>
-        </div>
-      )}
+      <p className="text-xs text-gray-500 mt-3">Showing {filtered.length} of {enrollments.length} enrollments</p>
     </div>
   );
 }
@@ -3764,7 +3220,7 @@ function AdminLoader({ label = "Loading" }) {
   );
 }
 
-function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min, readOnly }) {
+function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min }) {
   const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600";
   return (
     <div>
@@ -3773,7 +3229,7 @@ function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min,
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
           ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 ${prefix?"pl-7":""}`}/>
-          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} onKeyDown={readOnly?e=>e.preventDefault():undefined} onPaste={readOnly?e=>e.preventDefault():undefined} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""} ${readOnly?"cursor-pointer":""}`}/>
+          : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
         }
       </div>
     </div>
@@ -5051,11 +4507,8 @@ function Placeholder({ title }) {
 
 /* ── ADMIN PROFILE ── */
 function AdminProfile({ token, profile, onUpdated }) {
-  const [subPage, setSubPage]     = useState("profile");
   const [editing, setEditing]     = useState(false);
   const [name, setName]           = useState(profile?.name || "");
-  const [email, setEmail]         = useState(profile?.email || "");
-  const [phone, setPhone]         = useState(profile?.phone || "");
   const [saving, setSaving]       = useState(false);
   const [msg, setMsg]             = useState("");
   const [current, setCurrent]     = useState("");
@@ -5065,6 +4518,8 @@ function AdminProfile({ token, profile, onUpdated }) {
   const [pwdSaving, setPwdSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
+
+  const memberId = `AIFA-ADMIN-${String(profile?._id || "00001").slice(-5).toUpperCase()}`;
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -5082,7 +4537,7 @@ function AdminProfile({ token, profile, onUpdated }) {
 
   const handleSave = async () => {
     setSaving(true); setMsg("");
-    const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ name, phone }) });
+    const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ name }) });
     const data = await res.json();
     if (res.ok) { onUpdated(data); localStorage.setItem("aifa_user", JSON.stringify({ name:data.name, _id:data._id, role:data.role })); setMsg("Saved!"); setEditing(false); }
     else setMsg(data.message || "Failed.");
@@ -5101,103 +4556,62 @@ function AdminProfile({ token, profile, onUpdated }) {
     setPwdSaving(false);
   };
 
-  const startEdit = () => { setName(profile?.name||""); setEmail(profile?.email||""); setPhone(profile?.phone||""); setMsg(""); setEditing(true); };
-
   return (
-    <div className="p-6 max-w-xl mx-auto space-y-5">
-      {/* Sub-page tabs */}
-      <div className="flex gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
-        {[["profile","My Profile"],["settings","Settings"]].map(([key,label])=>(
-          <button key={key} onClick={()=>{ setSubPage(key); setEditing(false); setMsg(""); setPwdMsg(""); }}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${subPage===key?"bg-[#C7E36B] text-black":"text-gray-400 hover:text-white"}`}>
-            {label}
-          </button>
-        ))}
+    <div className="p-6 max-w-2xl space-y-5">
+      <h1 className="text-xl font-bold text-white">Admin Profile</h1>
+
+      {/* Identity card */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+        <div className="flex items-center gap-4 mb-5">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-full overflow-hidden">
+              {profile?.profilePicture
+                ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+                : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold">{(profile?.name||"A")[0]}</span>
+              }
+            </div>
+            {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
+            <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all" title="Change photo">
+              <I name="edit" size={10} className="text-black" />
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">{profile?.name}</p>
+            <p className="text-xs text-gray-400">{profile?.email}</p>
+            <span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full mt-1 inline-block">Super Admin</span>
+          </div>
+        </div>
+        <div className="flex gap-6 mb-4 text-xs text-gray-400">
+          <div><p className="text-[9px] text-gray-600 font-semibold uppercase mb-0.5">Member ID</p><p className="text-white font-semibold">{memberId}</p></div>
+          <div><p className="text-[9px] text-gray-600 font-semibold uppercase mb-0.5">Member Since</p><p className="text-white font-semibold">{new Date(profile?.createdAt||Date.now()).toLocaleDateString("en-US",{year:"numeric",month:"long"})}</p></div>
+          <div><p className="text-[9px] text-gray-600 font-semibold uppercase mb-0.5">Status</p><span className="flex items-center gap-1 text-green-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-green-400"/>Active</span></div>
+        </div>
+        {editing ? (
+          <div className="space-y-3">
+            <Fld label="DISPLAY NAME" value={name} onChange={setName} />
+            {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
+            <div className="flex gap-2">
+              <button onClick={()=>setEditing(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save"}</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={()=>{ setName(profile?.name||""); setEditing(true); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5"><I name="edit" size={12}/>Edit Name</button>
+        )}
       </div>
 
-      {subPage === "profile" && (
-        <>
-          <div>
-            <h1 className="text-xl font-bold text-white">My Profile</h1>
-            <p className="text-xs text-gray-400">Manage your personal information</p>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
-            {/* Avatar */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full overflow-hidden">
-                  {profile?.profilePicture
-                    ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-                    : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-2xl font-black">{(profile?.name||"A")[0]}</span>
-                  }
-                </div>
-                {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
-                {editing && (
-                  <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                    className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all shadow-lg" title="Change photo">
-                    <I name="edit" size={12} className="text-black" />
-                  </button>
-                )}
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-              </div>
-              {editing && <button onClick={() => fileRef.current?.click()} className="text-xs text-[#C7E36B] underline">Change Picture</button>}
-            </div>
-
-            {editing ? (
-              /* Edit mode */
-              <div className="space-y-3">
-                <Fld label="FULL NAME" value={name} onChange={setName} />
-                <Fld label="EMAIL ADDRESS" value={email} onChange={setEmail} type="email" />
-                <Fld label="PHONE NUMBER" value={phone} onChange={setPhone} placeholder="+91 XXXXX XXXXX" />
-                <div className="bg-white/5 rounded-lg p-3">
-                  <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Role</p>
-                  <span className="text-xs font-bold text-[#C7E36B] bg-[#C7E36B]/10 px-2 py-0.5 rounded-full">Super Admin</span>
-                </div>
-                {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
-                <div className="flex gap-3 pt-2">
-                  <button onClick={()=>setEditing(false)} className="flex-1 py-2.5 rounded-xl border border-white/20 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors">Cancel</button>
-                  <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4f070] disabled:opacity-60 transition-colors">{saving?"Saving...":"Save Changes"}</button>
-                </div>
-              </div>
-            ) : (
-              /* View mode */
-              <div className="space-y-3">
-                {[["Full Name",profile?.name||"—"],["Email Address",profile?.email||"—"],["Phone Number",profile?.phone||"Not set"],["Role","Super Admin"]].map(([label,value])=>(
-                  <div key={label} className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3">
-                    <span className="text-xs text-gray-400">{label}</span>
-                    <span className={`text-xs font-semibold ${label==="Role"?"text-[#C7E36B]":"text-white"}`}>{value}</span>
-                  </div>
-                ))}
-                <button onClick={startEdit} className="w-full mt-2 py-2.5 rounded-xl border border-white/20 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
-                  <I name="edit" size={14}/>Edit Profile
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {subPage === "settings" && (
-        <>
-          <div>
-            <h1 className="text-xl font-bold text-white">Settings</h1>
-            <p className="text-xs text-gray-400">Manage your account security</p>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-white mb-1">Change Password</h3>
-            <p className="text-xs text-gray-500 mb-5">Update your password to keep your account secure</p>
-            <div className="space-y-3">
-              <Fld label="CURRENT PASSWORD" value={current} onChange={setCurrent} type="password" placeholder="••••••••" />
-              <Fld label="NEW PASSWORD" value={newPwd} onChange={setNewPwd} type="password" placeholder="••••••••" />
-              <Fld label="CONFIRM NEW PASSWORD" value={confirm} onChange={setConfirm} type="password" placeholder="••••••••" />
-              {pwdMsg && <p className={`text-xs ${pwdMsg.includes("updated")?"text-green-400":"text-red-400"}`}>{pwdMsg}</p>}
-              <button onClick={handlePwd} disabled={pwdSaving} className="w-full py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4f070] disabled:opacity-60 transition-colors mt-2">{pwdSaving?"Updating...":"Update Password"}</button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Change password */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-white mb-4">Change Password</h3>
+        <div className="space-y-3 max-w-sm">
+          <Fld label="CURRENT PASSWORD" value={current} onChange={setCurrent} placeholder="••••••••" />
+          <Fld label="NEW PASSWORD" value={newPwd} onChange={setNewPwd} placeholder="••••••••" />
+          <Fld label="CONFIRM NEW PASSWORD" value={confirm} onChange={setConfirm} placeholder="••••••••" />
+          {pwdMsg && <p className={`text-xs ${pwdMsg.includes("updated")?"text-green-400":"text-red-400"}`}>{pwdMsg}</p>}
+          <button onClick={handlePwd} disabled={pwdSaving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{pwdSaving?"Updating...":"Update Password"}</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -5363,7 +4777,7 @@ function CertificatesAdmin({ token }) {
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-400">{certs.length} certificates issued</p>
             <button onClick={()=>setShowForm(!showForm)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-              <I name="plus" size={14}/>{showForm?"← Back":"Issue Certificate"}
+              <I name="plus" size={14}/>{showForm?"← Back":"+ Issue Certificate"}
             </button>
           </div>
           {/* Search + Type filter */}
@@ -5518,7 +4932,7 @@ function JobsAdmin({ token }) {
       <div className="flex items-center justify-between mb-5">
         <div><h1 className="text-xl font-bold text-white">Jobs</h1><p className="text-xs text-gray-400">Manage job listings · {jobs.length} total ({jobs.filter(j=>j.isActive!==false).length} active)</p></div>
         <button onClick={()=>{ if(showForm){setShowForm(false);setEditJob(null);setForm(BLANK_FORM);}else openCreate(); }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-          <I name="plus" size={14}/>{showForm?"← Back":"Post New Job"}
+          <I name="plus" size={14}/>{showForm?"← Back":"+ Post New Job"}
         </button>
       </div>
 

@@ -5,27 +5,27 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const testimonials = [
   {
-    name: "S. S. RAJAMOULI",
-    quote: "AIFA IS A GREAT PLACE FOR THE FUTURE OF AI FILMMAKING.",
-    image: "/movies/movie.png",
-  },
-  {
-    name: "KARAN JOHAR",
-    quote: "AIFA is the perfect stage for the evolution of AI in cinema.",
-    image: "/movies/movie2.png",
-  },
-  {
-    name: "ZOYA AKHTAR",
-    quote: "AIFA is shaping the future of AI-powered filmmaking.",
-    image: "/movies/movie3.png",
-  },
-  {
-    name: "ANURAG KASHYAP",
-    quote: "AIFA stands at the forefront of AI-driven filmmaking innovation.",
+    name: "GEORGE LUCAS",
+    quote:
+      "AI IS PART OF THE FUTURE OF FILMMAKING, AND FILMMAKERS NEED TO ADAPT TO TECHNOLOGICAL CHANGE.",
     image: "/movies/movie4.png",
   },
+  {
+    name: "JOE RUSSO",
+    quote: "The value of AI is the democratization of storytelling.",
+    image: "/movies/movie1.png",
+  },
+  {
+    name: "Gareth Edwards",
+    quote: "It's going to be better than CGI.",
+    image: "/movies/movie2.jpeg",
+  },
+  {
+    name: "Ram Gopal Varma",
+    quote: "AI is a tsunami that will wash away the industry.",
+    image: "/movies/movie3.jpeg",
+  },
 ];
-
 export default function Testimonial() {
   const [active, setActive] = useState(2);
 
@@ -86,9 +86,9 @@ export default function Testimonial() {
               transition={{ duration: 0.5 }}
               className="
                 text-[#F0F0F0] font-montserrat font-black 
-                text-[22px] leading-[30px]
+                text-[26px] leading-[30px]
                 sm:text-[34px] sm:leading-[42px]
-                md:text-[44px] md:leading-[52px]
+                md:text-[48px] md:leading-[52px]
                 tracking-[-0.5px] 
                 mb-4 sm:mb-6
               "

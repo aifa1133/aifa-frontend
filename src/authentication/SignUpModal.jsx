@@ -32,13 +32,12 @@ function PasswordStrength({ password }) {
   );
 }
 
-export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral = "" }) {
+export default function SignUpModal({ onClose, onSwitchToLogin }) {
   const [name, setName]       = useState("");
   const [email, setEmail]     = useState("");
   const [phone, setPhone]     = useState("");
   const [otp, setOtp]         = useState("");
   const [password, setPassword] = useState("");
-  const [referralCode, setReferralCode] = useState(initialReferral);
   const [showPwd, setShowPwd] = useState(false);
   const [showPwdStrength, setShowPwdStrength] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
@@ -103,12 +102,11 @@ export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral 
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password, referralCode: referralCode.trim() || undefined }),
+        body: JSON.stringify({ name, email, phone, password }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.message || "Signup failed.");
       else {
-        sessionStorage.removeItem("aifa_referral");
         localStorage.setItem("aifa_token", data.token);
         localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role }));
         onClose();
@@ -135,17 +133,14 @@ export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral 
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
             <input type="email" placeholder="Enter Email" value={email} onChange={e => setEmail(e.target.value)}
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
-            <div className="flex gap-3 mb-4">
+            <div className="flex gap-3 mb-6">
               <div className="flex items-center border border-white/20 rounded-xl px-4 py-3 text-white shrink-0">+91</div>
-              <input type="text" placeholder="Enter Phone" value={phone} maxLength={10}
-                onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              <input type="text" placeholder="Enter Phone" value={phone} onChange={e => setPhone(e.target.value)}
                 className="flex-1 bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
             </div>
-            <input type="text" placeholder="Referral Code (optional)" value={referralCode} onChange={e => setReferralCode(e.target.value)}
-              className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-6 outline-none focus:border-[#C7E36B] uppercase placeholder:normal-case" />
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleContinue} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
-              {loading ? "Sending code..." : "CONTINUE"}
+              {loading ? "Sending code..." : "+ CONTINUE"}
             </button>
           </>
         )}
@@ -163,7 +158,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral 
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-6 text-center text-2xl tracking-widest outline-none focus:border-[#C7E36B]"/>
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleVerifyOtp} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60 mb-3">
-              {loading ? "Verifying..." : "CONTINUE"}
+              {loading ? "Verifying..." : "+ CONTINUE"}
             </button>
             <p onClick={handleResendOtp} className="text-center text-gray-400 text-sm cursor-pointer hover:text-white">
               Did not get the code? <span className="text-blue-400">Click to resend</span>
@@ -211,7 +206,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin, initialReferral 
 
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleSignup} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
-              {loading ? "Creating Account..." : "CREATE ACCOUNT"}
+              {loading ? "Creating Account..." : "+ CREATE ACCOUNT"}
             </button>
             <button onClick={() => { setStep(2); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
               Back

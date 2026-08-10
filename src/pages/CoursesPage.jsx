@@ -5,27 +5,11 @@ import { useNavigate } from "react-router-dom";
 import ProPlanBanner from "./ProPlanBanner";
 
 const parseDurationMinutes = (d) => {
-  if (!d) return 0;
-  const m = d.match(/(\d+)h\s*(\d+)m/i);
+  const m = d?.match(/(\d+)h\s*(\d+)m/);
   if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
-  const h = d.match(/(\d+)\s*h/i);
+  const h = d?.match(/(\d+)h/);
   if (h) return parseInt(h[1]) * 60;
-  const mins = d.match(/^(\d+)m/i);
-  if (mins) return parseInt(mins[1]);
   return 0;
-};
-
-/* Normalize "6 Hours" → "6h" and "1h 30m" → "1h 30m" for consistent display */
-const normDuration = (d) => {
-  if (!d) return "";
-  const hrs = d.match(/(\d+)\s*hours?/i);
-  const mins = d.match(/(\d+)\s*min/i);
-  const hm = d.match(/(\d+)h\s*(\d+)m/i);
-  if (hm) return `${hm[1]}h ${hm[2]}m`;
-  if (hrs && mins) return `${hrs[1]}h ${mins[1]}m`;
-  if (hrs) return `${hrs[1]}h`;
-  if (mins) return `${mins[1]}m`;
-  return d;
 };
 
 const MOCK_COURSES = [
@@ -51,12 +35,9 @@ export default function CoursesPage() {
   const [search, setSearch]               = useState("");
   const [sortOpen, setSortOpen]           = useState(false);
   const [selected, setSelected]           = useState("Newest");
-  const [levelFilter, setLevelFilter]     = useState("All");
-  const [catFilter, setCatFilter]         = useState("All");
   const [courses, setCourses]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [enrolledLoading, setEnrolledLoading] = useState(true);
   const navigate = useNavigate();
 
   const token     = localStorage.getItem("aifa_token");
@@ -73,10 +54,7 @@ export default function CoursesPage() {
       fetch("/api/courses/enrolled", { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then(data => { if (Array.isArray(data)) setEnrolledCourses(data); })
-        .catch(() => {})
-        .finally(() => setEnrolledLoading(false));
-    } else {
-      setEnrolledLoading(false);
+        .catch(() => {});
     }
   }, []);
 
@@ -85,15 +63,10 @@ export default function CoursesPage() {
   const myCourses       = enrolledCourses.filter(c => (c.percentComplete || 0) < 100);
 
   const options = ["Newest", "Price: Low to High", "Price: High to Low", "Duration"];
-  const LEVELS = ["All", "Beginner", "Intermediate", "Advanced"];
-  const uniqueCategories = ["All", ...new Set(courses.map(c => c.category).filter(Boolean))];
 
-  const filteredAll = courses.filter(c => {
-    if (!c.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (levelFilter !== "All" && c.level !== levelFilter) return false;
-    if (catFilter !== "All" && c.category !== catFilter) return false;
-    return true;
-  });
+  const filteredAll = courses.filter(c =>
+    c.title.toLowerCase().includes(search.toLowerCase()),
+  );
   const sortedAll = [...filteredAll].sort((a, b) => {
     if (selected === "Duration")            return parseDurationMinutes(a.duration) - parseDurationMinutes(b.duration);
     if (selected === "Price: Low to High")  return a.price - b.price;
@@ -141,11 +114,10 @@ export default function CoursesPage() {
               ))}
             </div>
 
-            {/* SEARCH + FILTERS — only for All Courses */}
+            {/* SEARCH + SORT — only for All Courses */}
             {activeTab === "all" && (
-              <div className="flex flex-col gap-4 mb-12 max-sm:mb-8">
-                {/* Row 1: search */}
-                <div className="relative w-full">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 max-sm:items-stretch max-sm:mb-8">
+                <div className="w-full md:w-[60%] relative">
                   <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -158,64 +130,32 @@ export default function CoursesPage() {
                   </span>
                 </div>
 
-                {/* Row 2: Level + Category + Sort */}
-                <div className="flex flex-wrap gap-3 items-center">
-                  {/* Level filter */}
-                  <select
-                    value={levelFilter}
-                    onChange={e => setLevelFilter(e.target.value)}
-                    className="bg-[#0F1112] border border-[#414243] text-white text-sm rounded-[12px] px-4 py-3 outline-none focus:border-white cursor-pointer"
+                <div className="relative w-full md:w-[260px]">
+                  <button
+                    onClick={() => setSortOpen(!sortOpen)}
+                    className="w-full flex justify-between items-center border border-[#414243] px-4 py-3 rounded-[12px] text-white transition-all duration-300 hover:bg-white/5"
                   >
-                    {LEVELS.map(l => <option key={l} value={l}>{l === "All" ? "All Levels" : l}</option>)}
-                  </select>
+                    <span>Sort By: {selected}</span>
+                    <span className={`transition-all duration-300 ${sortOpen ? "rotate-180" : ""}`}>
+                      <img src="/Vectorup.svg" alt="arrow" className="w-[14px]" />
+                    </span>
+                  </button>
 
-                  {/* Category filter */}
-                  <select
-                    value={catFilter}
-                    onChange={e => setCatFilter(e.target.value)}
-                    className="bg-[#0F1112] border border-[#414243] text-white text-sm rounded-[12px] px-4 py-3 outline-none focus:border-white cursor-pointer"
-                  >
-                    {uniqueCategories.map(c => <option key={c} value={c}>{c === "All" ? "All Categories" : c}</option>)}
-                  </select>
-
-                  {/* Sort By */}
-                  <div className="relative ml-auto">
-                    <button
-                      onClick={() => setSortOpen(!sortOpen)}
-                      className="flex justify-between items-center gap-4 border border-[#414243] px-4 py-3 rounded-[12px] text-white text-sm transition-all duration-300 hover:bg-white/5 whitespace-nowrap"
-                    >
-                      <span>Sort: {selected}</span>
-                      <span className={`transition-all duration-300 ${sortOpen ? "rotate-180" : ""}`}>
-                        <img src="/Vectorup.svg" alt="arrow" className="w-[14px]" />
-                      </span>
-                    </button>
-
-                    {sortOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-[220px] bg-[#1A1F22] border border-[#414243] rounded-[12px] overflow-hidden z-50">
-                        <div className="px-4 py-3 text-gray-400 text-sm border-b border-[#414243]">Sort by</div>
-                        {options.map(item => (
-                          <div
-                            key={item}
-                            onClick={() => { setSelected(item); setSortOpen(false); }}
-                            className={`px-4 py-3 cursor-pointer text-sm transition-all duration-300 ${
-                              selected === item ? "bg-white/10 text-white" : "text-gray-300 hover:bg-white/5"
-                            }`}
-                          >
-                            {item}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Active filter pills */}
-                  {(levelFilter !== "All" || catFilter !== "All") && (
-                    <button
-                      onClick={() => { setLevelFilter("All"); setCatFilter("All"); }}
-                      className="text-xs text-gray-400 hover:text-white border border-white/10 px-3 py-2 rounded-lg transition-colors"
-                    >
-                      Clear filters ×
-                    </button>
+                  {sortOpen && (
+                    <div className="absolute top-full mt-2 w-full bg-[#1A1F22] border border-[#414243] rounded-[12px] overflow-hidden z-50">
+                      <div className="px-4 py-3 text-gray-400 text-sm border-b border-[#414243]">Sort by</div>
+                      {options.map(item => (
+                        <div
+                          key={item}
+                          onClick={() => { setSelected(item); setSortOpen(false); }}
+                          className={`px-4 py-3 cursor-pointer text-sm transition-all duration-300 ${
+                            selected === item ? "bg-white/10 text-white" : "text-gray-300 hover:bg-white/5"
+                          }`}
+                        >
+                          {item}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -246,24 +186,8 @@ export default function CoursesPage() {
               </div>
             )}
 
-            {/* LOADING — My Courses / Completed */}
-            {enrolledLoading && activeTab !== "all" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] w-full">
-                {[1,2,3].map(i => (
-                  <div key={i} className="w-full rounded-[8px] border border-[#414243] bg-[#0F1112] overflow-hidden animate-pulse">
-                    <div className="w-full h-[240px] bg-[#1A1F22]" />
-                    <div className="p-6 flex flex-col gap-4">
-                      <div className="h-5 bg-[#1A1F22] rounded w-3/4" />
-                      <div className="h-4 bg-[#1A1F22] rounded w-full" />
-                      <div className="h-10 bg-[#1A1F22] rounded mt-4" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* EMPTY STATE */}
-            {!enrolledLoading && activeTab !== "all" && displayCourses.length === 0 && (
+            {!loading && activeTab !== "all" && displayCourses.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <span className="text-5xl">🎬</span>
                 <p className="text-white font-semibold text-lg">{emptyMessages[activeTab]?.title}</p>
@@ -277,7 +201,7 @@ export default function CoursesPage() {
             )}
 
             {/* GRID */}
-            {!(activeTab === "all" ? loading : enrolledLoading) && displayCourses.length > 0 && (
+            {!loading && displayCourses.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] w-full max-sm:gap-[16px]">
                 {displayCourses.map((course, i) => (
                   <CourseCard
@@ -295,7 +219,7 @@ export default function CoursesPage() {
           </div>
         </div>
       </section>
-      {activeTab !== "completed" && <ProPlanBanner />}
+      <ProPlanBanner />
     </>
   );
 }
@@ -315,7 +239,7 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue }) {
         />
         {course.duration && (
           <span className="absolute top-[14px] left-[14px] bg-black/80 text-white text-[12px] font-medium px-[10px] py-[6px] rounded-[6px]">
-            {normDuration(course.duration)}
+            {course.duration}
           </span>
         )}
         {/* Progress bar for enrolled courses */}

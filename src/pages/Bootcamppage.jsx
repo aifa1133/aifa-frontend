@@ -42,7 +42,7 @@ export default function Bootcamppage() {
       <IncludedSection />
       <CourseContent />
       <WhoSection />
-      <InstructorsSection />
+      {/* <InstructorsSection /> */}
       <TestimonialsSection />
       <FAQSection />
 

@@ -293,7 +293,7 @@ export default function BootcampEnroll() {
               {[
                 ["name",  "Full Name",      "text",  "John Doe"],
                 ["email", "Email Address",  "email", "john@example.com"],
-                ["phone", "Mobile Number",  "tel",   "Enter mobile number"],
+                ["phone", "Mobile Number",  "tel",   "+91 98566 55558"],
               ].map(([key, label, type, placeholder]) => (
                 <div key={key}>
                   <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-1.5">{label}</label>

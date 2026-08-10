@@ -39,16 +39,16 @@ import { useEffect, useRef, useState } from "react";
 
 export default function Companies() {
   const logos = [
-    "/logos/companylogo1.png",
-    "/logos/companylogo2.png",
+    { src: "/logos/companylogo1.png", scale: 1 },
+    { src: "/logos/companylogo2.png", scale: 1 },
 
-    "/logos/companylogo4.png",
-    "/logos/companylogo5.png",
+    // { src: "/logos/companylogo4.png", scale: 1 },
+    // { src: "/logos/companylogo5.png", scale: 3.2 }, // Meta - bigger
 
-    "/logos/companylogo7.png",
-    "/logos/companylogo8.png",
-    "/logos/companylogo9.png",
-    "/logos/companylogo10.png",
+    // { src: "/logos/companylogo7.png", scale: 1 }, // Epic Games - bigger
+    { src: "/logos/companylogo8.png", scale: 1 },
+    { src: "/logos/companylogo9.png", scale: 1 },
+    { src: "/logos/companylogo10.png", scale: 1 },
   ];
 
   const scrollRef = useRef(null);
@@ -146,29 +146,32 @@ export default function Companies() {
               >
                 {/* LOGO */}
                 <img
-                  src={logo}
+                  src={logo.src}
                   alt={`company-logo-${index}`}
+                  style={{
+                    transform: `scale(${logo.scale})`,
+                  }}
                   className="
-                    h-[32px]
-                    sm:h-[32px]
-                    md:h-[40px]
-                    object-contain
+    h-[32px]
+    sm:h-[32px]
+    md:h-[40px]
 
-                    opacity-90
-                    brightness-110
+    max-w-[160px]
+    object-contain
 
-                    transition-all
-                    duration-300
+    opacity-90
+    brightness-110
 
-                    hover:scale-110
-                    hover:opacity-100
-                    hover:brightness-125
+    transition-all
+    duration-300
 
-                    relative
-                    z-10
-                  "
+    hover:opacity-100
+    hover:brightness-125
+
+    relative
+    z-10
+  "
                 />
-
                 {/* GLOW EFFECT */}
                 <div
                   className="

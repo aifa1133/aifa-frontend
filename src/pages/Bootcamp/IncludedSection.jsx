@@ -115,9 +115,9 @@ export default function IncludedSection() {
               beyond the course.
             </p>
 
-            <div className="w-[320px] max-sm:w-[220px]">
+            <div className="w-[426px] max-sm:w-[220px]">
               <img
-                src="/testing2.png"
+                src="/vector images.png"
                 alt="illustration"
                 className="w-full object-contain drop-shadow-xl"
               />

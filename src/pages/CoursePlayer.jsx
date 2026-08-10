@@ -16,22 +16,17 @@ export default function CoursePlayer() {
   useEffect(() => {
     if (!token) { navigate("/"); return; }
     const headers = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`/api/courses/${id}`, { headers }).then(r => r.json()),
-      fetch("/api/courses/enrolled", { headers }).then(r => r.json()).catch(() => []),
-    ]).then(([courseData, enrolled]) => {
-      if (courseData.message) { setError(courseData.message); }
-      else {
-        setCourse(courseData);
-        if (courseData.lessons?.length > 0) setActiveLesson(courseData.lessons[0]);
-        if (Array.isArray(enrolled)) {
-          const prog = enrolled.find(c => String(c._id) === id);
-          if (prog?.completedLessons?.length > 0)
-            setCompletedLessons(prog.completedLessons.map(String));
+    fetch(`/api/courses/${id}`, { headers })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.message) { setError(data.message); }
+        else {
+          setCourse(data);
+          if (data.lessons?.length > 0) setActiveLesson(data.lessons[0]);
         }
-      }
-      setLoading(false);
-    }).catch(() => { setError("Failed to load course."); setLoading(false); });
+        setLoading(false);
+      })
+      .catch(() => { setError("Failed to load course."); setLoading(false); });
   }, [id, token, navigate]);
 
   if (loading) return (
