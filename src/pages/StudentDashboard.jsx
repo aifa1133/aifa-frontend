@@ -1925,7 +1925,7 @@ function CertificatesSection({ token, profile }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {filtered.map((c) => (
-            <div key={c._id} className="bg-[#141718] border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all flex flex-col">
+            <div key={c._id} className="bg-[#141718] rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-all flex flex-col">
               <CertThumbnail profile={profile} />
               <div className="p-4 flex flex-col flex-1">
                 <span className={`self-start text-[9px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-wide mb-2 ${typeBadgeStyle(c.itemType)}`}>
