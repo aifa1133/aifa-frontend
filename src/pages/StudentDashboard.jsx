@@ -1692,39 +1692,33 @@ function VideoCoursesSection({ profile, onNavigate }) {
    CERTIFICATES SECTION
 ════════════════════════════════════════════ */
 
+const CERT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtCertDate = d => {
+  const dt = new Date(d);
+  return `${String(dt.getDate()).padStart(2,"0")}-${CERT_MONTHS[dt.getMonth()]}-${dt.getFullYear()}`;
+};
+
 /* Full certificate document — white A4-landscape style matching Figma */
 function CertificateDocument({ cert, studentName }) {
-  const fmtDate = d => {
-    const dt = new Date(d);
-    const dd = String(dt.getDate()).padStart(2, "0");
-    const mm = String(dt.getMonth() + 1).padStart(2, "0");
-    const yy = dt.getFullYear();
-    return `${dd}-${mm}-${yy}`;
-  };
   return (
     <div className="relative bg-white rounded-lg overflow-hidden select-none" style={{ fontFamily: "Georgia, 'Times New Roman', serif", border: "3px solid #b8d400" }}>
-      {/* Corner bracket squares */}
+      {/* Corner bracket squares — black outline, white fill */}
       {[["top-2 left-2"],["top-2 right-2"],["bottom-2 left-2"],["bottom-2 right-2"]].map(([pos], i) => (
-        <div key={i} className={`absolute ${pos} w-4 h-4 border-[2.5px] border-[#b8d400] bg-white z-10`} />
+        <div key={i} className={`absolute ${pos} w-4 h-4 bg-white z-10`} style={{ border: "2.5px solid #111" }} />
       ))}
-      {/* Watermarks */}
-      <div className="absolute top-6 right-8 text-[#000] font-black opacity-[0.06] text-5xl select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif", letterSpacing: "-0.02em" }}>
-        A<span style={{ color: "#b8d400" }}>i</span>FA
+      {/* Watermarks — faint brand logo text, top-right and bottom-left */}
+      <div className="absolute top-5 right-6 select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif", fontSize: "52px", fontWeight: 900, opacity: 0.055, lineHeight: 1, letterSpacing: "-1px" }}>
+        <span style={{ color: "#b8d400" }}>Ai</span><span style={{ color: "#111" }}>FA</span>
       </div>
-      <div className="absolute bottom-14 left-6 text-[#000] font-black opacity-[0.06] text-5xl select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif" }}>
-        A<span style={{ color: "#b8d400" }}>i</span>FA
+      <div className="absolute bottom-12 left-5 select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif", fontSize: "52px", fontWeight: 900, opacity: 0.055, lineHeight: 1, letterSpacing: "-1px" }}>
+        <span style={{ color: "#b8d400" }}>Ai</span><span style={{ color: "#111" }}>FA</span>
       </div>
       {/* Content */}
       <div className="flex flex-col items-center text-center px-10 pt-8 pb-6">
-        {/* Logo */}
-        <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-10 mb-3" onError={e => {
-          e.target.style.display = "none";
-          const fallback = e.target.nextSibling;
-          if (fallback) fallback.style.display = "block";
-        }} />
-        <span className="hidden text-2xl font-black text-black mb-3" style={{ fontFamily: "Arial Black, sans-serif" }}>
-          A<span style={{ color: "#b8d400" }}>i</span>FA
-        </span>
+        {/* Logo — green Ai + black FA */}
+        <div className="mb-3" style={{ fontFamily: "Arial Black, sans-serif", fontSize: "30px", fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1 }}>
+          <span style={{ color: "#b8d400" }}>Ai</span><span style={{ color: "#111" }}>FA</span>
+        </div>
         <h2 className="text-xl font-bold mb-1" style={{ color: "#5a6a20", fontFamily: "Georgia, serif" }}>Certificates of Completion</h2>
         <p className="text-xs text-gray-500 mb-4">Proudly presented to</p>
         <div className="mb-3 w-full">
@@ -1736,7 +1730,7 @@ function CertificateDocument({ cert, studentName }) {
           your hard work and commitment are truly commendable.
         </p>
         <p className="mt-4 text-xs text-gray-500">
-          Presented on <span className="font-bold" style={{ color: "#b8d400" }}>{fmtDate(cert.issuedAt)}</span>
+          Presented on <span className="font-bold" style={{ color: "#b8d400" }}>{fmtCertDate(cert.issuedAt)}</span>
         </p>
       </div>
       {/* Footer row */}
@@ -1784,10 +1778,7 @@ function CertDetailPage({ cert, profile, onBack }) {
     "bg-green-500/20 text-green-300 border-green-500/30";
 
   const fmtDate = d => new Date(d).toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" });
-  const fmtShort = d => {
-    const dt = new Date(d);
-    return `${String(dt.getDate()).padStart(2,"0")}-${String(dt.getMonth()+1).padStart(2,"0")}-${dt.getFullYear()}`;
-  };
+  const fmtShort = d => fmtCertDate(d);
 
   const handleDownloadPDF = () => {
     const studentName = profile?.name || "Student";
@@ -1801,13 +1792,14 @@ function CertDetailPage({ cert, profile, onBack }) {
   body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Georgia,serif}
   @media print{body{min-height:unset}@page{size:A4 landscape;margin:0}.no-print{display:none}}
   .cert{width:800px;min-height:566px;border:3px solid #b8d400;position:relative;padding:0;background:#fff;display:flex;flex-direction:column}
-  .corner{position:absolute;width:18px;height:18px;border:2.5px solid #b8d400;background:#fff}
+  .corner{position:absolute;width:18px;height:18px;border:2.5px solid #111;background:#fff}
   .tl{top:8px;left:8px} .tr{top:8px;right:8px} .bl{bottom:8px;left:8px} .br{bottom:8px;right:8px}
-  .wm{position:absolute;font-size:72px;font-weight:900;opacity:.05;font-family:'Arial Black',sans-serif;letter-spacing:-2px;user-select:none;pointer-events:none;color:#000}
-  .wm1{top:30px;right:40px} .wm2{bottom:60px;left:20px}
+  .wm{position:absolute;font-size:72px;font-weight:900;opacity:.055;font-family:'Arial Black',sans-serif;letter-spacing:-2px;user-select:none;pointer-events:none}
+  .wm1{top:24px;right:36px} .wm2{bottom:55px;left:20px}
+  .wm .lime{color:#b8d400} .wm .dark{color:#111}
   .body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 80px 20px}
   .logo{font-size:36px;font-weight:900;font-family:'Arial Black',sans-serif;margin-bottom:8px;letter-spacing:-1px}
-  .logo span{color:#b8d400}
+  .logo .lime{color:#b8d400} .logo .dark{color:#111}
   h1{font-size:28px;color:#5a6a20;font-family:Georgia,serif;font-weight:700;margin-bottom:6px}
   .sub{font-size:13px;color:#888;margin-bottom:20px}
   .name{font-size:30px;font-weight:700;color:#111;margin-bottom:4px}
@@ -1826,10 +1818,10 @@ function CertDetailPage({ cert, profile, onBack }) {
   <div class="cert">
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>
-    <div class="wm wm1">AiFA</div>
-    <div class="wm wm2">AiFA</div>
+    <div class="wm wm1"><span class="lime">Ai</span><span class="dark">FA</span></div>
+    <div class="wm wm2"><span class="lime">Ai</span><span class="dark">FA</span></div>
     <div class="body">
-      <div class="logo">Ai<span>FA</span></div>
+      <div class="logo"><span class="lime">Ai</span><span class="dark">FA</span></div>
       <h1>Certificates of Completion</h1>
       <p class="sub">Proudly presented to</p>
       <p class="name">${studentName}</p>
