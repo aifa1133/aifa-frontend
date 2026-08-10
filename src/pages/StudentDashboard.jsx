@@ -1691,6 +1691,188 @@ function VideoCoursesSection({ profile, onNavigate }) {
 /* ════════════════════════════════════════════
    CERTIFICATES SECTION
 ════════════════════════════════════════════ */
+
+/* Full certificate document — white A4-landscape style matching Figma */
+function CertificateDocument({ cert, studentName }) {
+  const fmtDate = d => {
+    const dt = new Date(d);
+    const dd = String(dt.getDate()).padStart(2, "0");
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const yy = dt.getFullYear();
+    return `${dd}-${mm}-${yy}`;
+  };
+  return (
+    <div className="relative bg-white rounded-lg overflow-hidden select-none" style={{ fontFamily: "Georgia, 'Times New Roman', serif", border: "3px solid #b8d400" }}>
+      {/* Corner bracket squares */}
+      {[["top-2 left-2"],["top-2 right-2"],["bottom-2 left-2"],["bottom-2 right-2"]].map(([pos], i) => (
+        <div key={i} className={`absolute ${pos} w-4 h-4 border-[2.5px] border-[#b8d400] bg-white z-10`} />
+      ))}
+      {/* Watermarks */}
+      <div className="absolute top-6 right-8 text-[#000] font-black opacity-[0.06] text-5xl select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif", letterSpacing: "-0.02em" }}>
+        A<span style={{ color: "#b8d400" }}>i</span>FA
+      </div>
+      <div className="absolute bottom-14 left-6 text-[#000] font-black opacity-[0.06] text-5xl select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif" }}>
+        A<span style={{ color: "#b8d400" }}>i</span>FA
+      </div>
+      {/* Content */}
+      <div className="flex flex-col items-center text-center px-10 pt-8 pb-6">
+        {/* Logo */}
+        <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-10 mb-3" onError={e => {
+          e.target.style.display = "none";
+          const fallback = e.target.nextSibling;
+          if (fallback) fallback.style.display = "block";
+        }} />
+        <span className="hidden text-2xl font-black text-black mb-3" style={{ fontFamily: "Arial Black, sans-serif" }}>
+          A<span style={{ color: "#b8d400" }}>i</span>FA
+        </span>
+        <h2 className="text-xl font-bold mb-1" style={{ color: "#5a6a20", fontFamily: "Georgia, serif" }}>Certificates of Completion</h2>
+        <p className="text-xs text-gray-500 mb-4">Proudly presented to</p>
+        <div className="mb-3 w-full">
+          <p className="text-[22px] font-bold text-gray-900 leading-tight">{studentName || "Student"}</p>
+          <div className="border-b-2 border-gray-800 mt-2 mx-auto w-48" />
+        </div>
+        <p className="text-[10px] text-gray-500 max-w-[260px] leading-relaxed">
+          has successfully completed the course <strong className="text-gray-700">"{cert.courseTitle}"</strong> under the expert guidance of AIFA.<br />
+          your hard work and commitment are truly commendable.
+        </p>
+        <p className="mt-4 text-xs text-gray-500">
+          Presented on <span className="font-bold" style={{ color: "#b8d400" }}>{fmtDate(cert.issuedAt)}</span>
+        </p>
+      </div>
+      {/* Footer row */}
+      <div className="flex justify-between items-end px-8 pb-6">
+        <p className="text-[10px] text-gray-700">Certificate no: {cert.certificateId}</p>
+        <div className="text-right border-t border-gray-800 pt-1 min-w-[100px]">
+          <p className="text-[10px] font-bold text-gray-900 uppercase tracking-wide">MADHAV REDDY</p>
+          <p className="text-[9px] text-gray-500">CEO, Mentor</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Certificate list thumbnail (card top half) */
+function CertThumbnail({ profile }) {
+  return (
+    <div className="h-[160px] relative overflow-hidden rounded-t-xl" style={{ background: "linear-gradient(135deg, #2e3d1c 0%, #3b5020 50%, #283618 100%)" }}>
+      <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] select-none pointer-events-none">
+        <span className="text-[90px] font-black text-white tracking-[0.3em]">AIFA</span>
+      </div>
+      <div className="absolute inset-[6px] border border-[#8faa55]/35 rounded-lg pointer-events-none" />
+      <div className="absolute inset-[10px] border border-[#8faa55]/15 rounded-md pointer-events-none" />
+      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 text-center gap-0.5">
+        <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-3.5 mb-1 opacity-75 brightness-200" onError={e => e.target.style.display = "none"} />
+        <p className="text-[8.5px] text-[#c5d895] font-semibold tracking-[0.18em] uppercase">Certificates of Completion</p>
+        <p className="text-[7.5px] text-[#8fa870] tracking-wide">Proudly presented to</p>
+        <p className="text-[14px] text-white font-bold mt-0.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          {profile?.name || "Student"}
+        </p>
+        <div className="w-16 border-b border-[#8faa55]/40 mt-1.5" />
+      </div>
+    </div>
+  );
+}
+
+/* Certificate detail — full-page sub-view */
+function CertDetailPage({ cert, profile, onBack }) {
+  const typeLabel = t => t === "bootcamp" ? "Bootcamp" : t === "workshop" ? "Workshop" : "Video Course";
+  const typeBadgeStyle = t =>
+    t === "bootcamp" ? "bg-blue-500/20 text-blue-300 border-blue-500/30" :
+    t === "workshop" ? "bg-purple-500/20 text-purple-300 border-purple-500/30" :
+    "bg-green-500/20 text-green-300 border-green-500/30";
+
+  const fmtDate = d => new Date(d).toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" });
+
+  const Row = ({ label, children }) => (
+    <div className="flex items-center justify-between py-3.5 border-b border-white/8">
+      <div className="flex items-center gap-3 text-gray-400 text-sm">
+        <span>{label}</span>
+      </div>
+      <div className="text-sm text-white text-right">{children}</div>
+    </div>
+  );
+
+  return (
+    <div className="p-6 max-w-[1000px]">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-xs mb-5">
+        <button onClick={onBack} className="text-[#C7E36B] hover:underline">My Certificates</button>
+        <span className="text-gray-600">›</span>
+        <span className="text-gray-400">Certificates Details</span>
+      </nav>
+
+      {/* Title row */}
+      <div className="flex items-start justify-between mb-7">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Certificates Details</h1>
+          <p className="text-gray-400 text-sm mt-1">View and download your earned certificates.</p>
+        </div>
+        <button onClick={onBack}
+          className="flex items-center gap-2 bg-white text-black text-sm font-semibold px-4 py-2 rounded-full hover:bg-gray-100 transition-all shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          Back to My Certificates
+        </button>
+      </div>
+
+      {/* Main content card */}
+      <div className="bg-[#141718] border border-white/10 rounded-2xl p-7 flex flex-col md:flex-row gap-8">
+        {/* Left — certificate image */}
+        <div className="md:w-[45%] shrink-0">
+          <CertificateDocument cert={cert} studentName={profile?.name || "Student"} />
+        </div>
+
+        {/* Right — details */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-full bg-[#C7E36B]/15 border border-[#C7E36B]/30 flex items-center justify-center shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#C7E36B">
+                <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white leading-tight">Certificate of Completion</h2>
+              <p className="text-sm text-gray-400 mt-0.5">{cert.courseTitle}</p>
+            </div>
+          </div>
+
+          {/* Detail rows */}
+          <div className="divide-y divide-white/8 border-t border-white/8">
+            <Row label="Student Name">
+              <span className="font-semibold">{profile?.name || "Student"}</span>
+            </Row>
+            <Row label="Issued Date">
+              {fmtDate(cert.issuedAt)}
+            </Row>
+            <Row label="Type">
+              <span className={`text-[11px] font-bold px-3 py-1 rounded-full border capitalize ${typeBadgeStyle(cert.itemType)}`}>
+                {typeLabel(cert.itemType)}
+              </span>
+            </Row>
+            <Row label="Certificate ID">
+              <span className="font-mono text-[13px]">{cert.certificateId}</span>
+            </Row>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 mt-6">
+            <button onClick={() => navigator.clipboard.writeText(cert.certificateId)}
+              className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-100 transition-all">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              View Certificate
+            </button>
+            <button onClick={() => alert("PDF download coming soon!")}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+              Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CertificatesSection({ token, profile }) {
   const [certs, setCerts]           = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -1698,12 +1880,6 @@ function CertificatesSection({ token, profile }) {
   const [sortOrder, setSortOrder]   = useState("Latest");
   const [sortOpen, setSortOpen]     = useState(false);
   const [viewCert, setViewCert]     = useState(null);
-
-  useEffect(() => {
-    const handleEsc = (e) => { if (e.key === "Escape") setViewCert(null); };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, []);
 
   useEffect(() => {
     fetch("/api/certificates/me", { headers: { Authorization: `Bearer ${token}` } })
@@ -1722,71 +1898,13 @@ function CertificatesSection({ token, profile }) {
     .filter(c => typeFilter === "all" || c.itemType === typeFilter)
     .sort((a, b) => sortOrder === "Latest" ? new Date(b.issuedAt) - new Date(a.issuedAt) : new Date(a.issuedAt) - new Date(b.issuedAt));
 
-  /* Realistic certificate preview thumbnail */
-  const CertThumbnail = ({ cert }) => (
-    <div className="h-[160px] relative overflow-hidden rounded-t-xl" style={{ background: "linear-gradient(135deg, #2e3d1c 0%, #3b5020 50%, #283618 100%)" }}>
-      {/* Watermark */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] select-none pointer-events-none">
-        <span className="text-[90px] font-black text-white tracking-[0.3em]">AIFA</span>
-      </div>
-      {/* Outer decorative border */}
-      <div className="absolute inset-[6px] border border-[#8faa55]/35 rounded-lg pointer-events-none" />
-      <div className="absolute inset-[10px] border border-[#8faa55]/15 rounded-md pointer-events-none" />
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 text-center gap-0.5">
-        <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-3.5 mb-1 opacity-75 brightness-200" onError={e => e.target.style.display="none"} />
-        <p className="text-[8.5px] text-[#c5d895] font-semibold tracking-[0.18em] uppercase">Certificates of Completion</p>
-        <p className="text-[7.5px] text-[#8fa870] tracking-wide">Proudly presented to</p>
-        <p className="text-[14px] text-white font-bold mt-0.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: "0.02em" }}>
-          {profile?.name || "Student"}
-        </p>
-        <div className="w-16 border-b border-[#8faa55]/40 mt-1.5" />
-      </div>
-    </div>
-  );
+  /* When a cert is selected, show full-page detail instead of grid */
+  if (viewCert) {
+    return <CertDetailPage cert={viewCert} profile={profile} onBack={() => setViewCert(null)} />;
+  }
 
   return (
     <div className="p-6">
-      {/* Certificate Viewer Modal */}
-      {viewCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setViewCert(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative">
-              <button onClick={() => setViewCert(null)} className="absolute top-3 right-3 w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white hover:bg-black/70 text-lg z-10">✕</button>
-            </div>
-            <CertThumbnail cert={viewCert} />
-            <div className="p-5 space-y-3">
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-semibold">Course</p>
-                <p className="text-sm font-bold text-white">{viewCert.courseTitle}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-semibold">Student Name</p>
-                <p className="text-sm font-bold text-white">{profile?.name || "Student"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-semibold">Issued Date</p>
-                <p className="text-sm text-white">{new Date(viewCert.issuedAt).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase font-semibold">Certificate ID</p>
-                <p className="text-xs text-[#C7E36B] font-mono">{viewCert.certificateId}</p>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button onClick={() => navigator.clipboard.writeText(viewCert.certificateId)}
-                  className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 transition-all">
-                  Copy ID
-                </button>
-                <button onClick={() => alert("PDF download coming soon!")}
-                  className="flex-1 text-xs bg-[#C7E36B] text-black font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
-                  Download PDF
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -1833,12 +1951,8 @@ function CertificatesSection({ token, profile }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {filtered.map((c) => (
             <div key={c._id} className="bg-[#141718] border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all flex flex-col">
-              {/* Realistic certificate thumbnail */}
-              <CertThumbnail cert={c} />
-
-              {/* Card body */}
+              <CertThumbnail profile={profile} />
               <div className="p-4 flex flex-col flex-1">
-                {/* Type badge */}
                 <span className={`self-start text-[9px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-wide mb-2 ${typeBadgeStyle(c.itemType)}`}>
                   {typeLabel(c.itemType)}
                 </span>
@@ -1847,8 +1961,6 @@ function CertificatesSection({ token, profile }) {
                 {c.description && (
                   <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">{c.description}</p>
                 )}
-
-                {/* Footer: cert ID left, View button right */}
                 <div className="flex items-center justify-between pt-3 mt-auto border-t border-white/8">
                   <div>
                     <p className="text-[9px] text-gray-500 font-semibold uppercase tracking-wider">Certificate ID</p>
