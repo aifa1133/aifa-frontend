@@ -119,6 +119,18 @@ export default function StudentDashboard() {
         setProfile(d);
         setEmailVerified(!!d.emailVerified);
         setLoading(false);
+        // Auto-refresh influencer token for students whose influencer account was created after login
+        if (!localStorage.getItem("influencer_token")) {
+          fetch("/api/auth/influencer-token", { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (data?.influencerToken) {
+                localStorage.setItem("influencer_token", data.influencerToken);
+                if (data.influencer) localStorage.setItem("influencer_user", JSON.stringify(data.influencer));
+              }
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => setLoading(false));
   }, [navigate, token]);

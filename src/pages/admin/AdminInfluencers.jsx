@@ -806,13 +806,18 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
   const displayCode = f.couponCode || autoCode;
 
   const submit = async () => {
-    if (!f.fullName.trim() || !f.email.trim()) { setErr("Full name and email are required"); return; }
+    if (!f.fullName.trim()) { setErr("Full name is required"); return; }
+    if (!f.email.trim()) { setErr("Email is required"); return; }
+    if (!f.phone.trim()) { setErr("Mobile number is required"); return; }
+    if (!/^\d{7,15}$/.test(f.phone.replace(/[\s\-\+]/g, ""))) { setErr("Mobile number must contain only digits (7–15 digits)"); return; }
+    if (f.city && /[^a-zA-Z\s]/.test(f.city)) { setErr("City name must contain only letters"); return; }
     setSaving(true); setErr("");
     try {
       const res = await fetch("/api/admin/influencers", {
         method: "POST", headers, body: JSON.stringify({ ...f, couponCode: f.couponCode || autoCode }),
       });
-      const d = await res.json();
+      let d;
+      try { d = await res.json(); } catch { throw new Error("Server returned an unexpected response"); }
       if (!res.ok) throw new Error(d.message || "Could not create influencer");
       onCreated(`Influencer created. Temp password: ${d.tempPassword}`);
     } catch (e) { setErr(e.message); }
@@ -886,22 +891,33 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
               </div>
               <div>
                 <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Mobile Number <span className="text-red-400">*</span></label>
-                <input value={f.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="+91 9876543210" className={inputCls} />
+                <input
+                  value={f.phone}
+                  onChange={(e) => { const v = e.target.value.replace(/[^\d\s\-\+]/g, ""); set("phone")(v); }}
+                  placeholder="+91 9876543210"
+                  inputMode="tel"
+                  className={inputCls}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Country</label>
                   <select value={f.country} onChange={(e) => set("country")(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60 appearance-none">
-                    <option value="">Select country</option>
+                    className="w-full bg-[#1a1e20] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60 appearance-none">
+                    <option value="" className="bg-[#1a1e20] text-gray-400">Select country</option>
                     {["India","USA","UK","Canada","Australia","UAE","Singapore","Germany","France","Other"].map(c => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c} className="bg-[#1a1e20] text-white">{c}</option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">City</label>
-                  <input value={f.city} onChange={(e) => set("city")(e.target.value)} placeholder="Enter city" className={inputCls} />
+                  <input
+                    value={f.city}
+                    onChange={(e) => { const v = e.target.value.replace(/[^a-zA-Z\s]/g, ""); set("city")(v); }}
+                    placeholder="Enter city"
+                    className={inputCls}
+                  />
                 </div>
               </div>
             </div>

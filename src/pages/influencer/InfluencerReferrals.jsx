@@ -65,9 +65,19 @@ export default function InfluencerReferrals() {
 
   return (
     <div className="p-6 text-white max-w-[1100px]">
-      <div className="mb-5">
-        <h1 className="text-2xl font-black text-white">Referrals</h1>
-        <p className="text-xs text-gray-400 mt-1">Track every successful referral made using your coupon code or referral link.</p>
+      <div className="mb-5 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-[#C7E36B]/15 border border-[#C7E36B]/30 flex items-center justify-center flex-shrink-0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div>
+          <h1 className="text-2xl font-black text-white">Referrals</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Track every successful referral made using your coupon code or referral link.</p>
+        </div>
       </div>
 
       {error && (
