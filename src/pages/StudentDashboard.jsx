@@ -209,18 +209,18 @@ export default function StudentDashboard() {
           <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" />
         </div>
         {/* Nav */}
-        <nav className="flex-1 py-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <nav className="flex-1 py-3 px-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {NAV.map(item => (
             <button
               key={item.id}
               onClick={() => !item.soon && navigateTo(item.id)}
               disabled={item.soon}
               title={item.soon ? "Coming soon" : undefined}
-              className={`w-full flex items-center justify-between gap-2.5 px-4 py-2.5 text-left transition-all text-[13px] font-medium ${
+              className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-left transition-all text-[13px] font-medium rounded-xl ${
                 item.soon
                   ? "text-gray-600 cursor-not-allowed"
                   : activePage === item.id
-                  ? "bg-[#C7E36B]/10 text-[#C7E36B] border-r-2 border-[#C7E36B]"
+                  ? "bg-[#C7E36B]/15 text-[#C7E36B]"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
@@ -282,29 +282,18 @@ export default function StudentDashboard() {
 
         {/* Top Bar */}
         <header className="bg-[#0F1112] border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            {navHistory.length > 0 && (
-              <button
-                onClick={goBack}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-all bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
-              >
-                <Ic name="back" size={14} />
-                Back
-              </button>
-            )}
-            <p className="text-sm text-gray-400">
-              Welcome back, <span className="text-white font-semibold">{userName}</span>
-            </p>
-          </div>
+          <p className="text-sm text-gray-400">
+            Welcome back, <span className="text-white font-semibold">{userName}</span>
+          </p>
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative hidden md:block">
               <input
                 type="text"
                 placeholder="Search courses..."
-                className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 w-[200px]"
+                className="bg-white/5 border border-white/10 rounded-full pl-9 pr-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 w-[220px]"
               />
-              <Ic name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Ic name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             </div>
 
             {/* Notifications */}
@@ -1703,38 +1692,58 @@ function VideoCoursesSection({ profile, onNavigate }) {
    CERTIFICATES SECTION
 ════════════════════════════════════════════ */
 function CertificatesSection({ token, profile }) {
-  const [certs, setCerts]       = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [certs, setCerts]           = useState([]);
+  const [loading, setLoading]       = useState(true);
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortOrder, setSortOrder]   = useState("Latest");
   const [sortOpen, setSortOpen]     = useState(false);
   const [viewCert, setViewCert]     = useState(null);
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") setViewCert(null);
-    };
+    const handleEsc = (e) => { if (e.key === "Escape") setViewCert(null); };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
   useEffect(() => {
-    fetch("/api/certificates/me", { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCerts(d); setLoading(false); }).catch(()=>setLoading(false));
+    fetch("/api/certificates/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setCerts(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [token]);
 
-  const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
-  const typeGrad  = t => t==="bootcamp"?"from-blue-900/60 to-blue-950":t==="workshop"?"from-purple-900/60 to-purple-950":"from-[#1a1a2e] to-[#16213e]";
+  const typeLabel = t => t === "bootcamp" ? "Bootcamp" : t === "workshop" ? "Workshop" : "Video Course";
+  const typeBadgeStyle = t =>
+    t === "bootcamp" ? "border-blue-400/40 text-blue-400 bg-blue-400/10" :
+    t === "workshop" ? "border-purple-400/40 text-purple-400 bg-purple-400/10" :
+    "border-green-400/40 text-green-400 bg-green-400/10";
 
   const filtered = certs
-    .filter(c => typeFilter==="all" || c.itemType===typeFilter)
-    .sort((a, b) => sortOrder==="Latest" ? new Date(b.issuedAt)-new Date(a.issuedAt) : new Date(a.issuedAt)-new Date(b.issuedAt));
+    .filter(c => typeFilter === "all" || c.itemType === typeFilter)
+    .sort((a, b) => sortOrder === "Latest" ? new Date(b.issuedAt) - new Date(a.issuedAt) : new Date(a.issuedAt) - new Date(b.issuedAt));
 
-  const STATS = [
-    { icon:"🏆", label:"Total Earned",       value: certs.length },
-    { icon:"🎬", label:"Courses Completed",  value: certs.filter(c=>c.itemType==="course").length },
-    { icon:"⏳", label:"Ongoing Courses",    value: 2 },
-  ];
+  /* Realistic certificate preview thumbnail */
+  const CertThumbnail = ({ cert }) => (
+    <div className="h-[160px] relative overflow-hidden rounded-t-xl" style={{ background: "linear-gradient(135deg, #2e3d1c 0%, #3b5020 50%, #283618 100%)" }}>
+      {/* Watermark */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] select-none pointer-events-none">
+        <span className="text-[90px] font-black text-white tracking-[0.3em]">AIFA</span>
+      </div>
+      {/* Outer decorative border */}
+      <div className="absolute inset-[6px] border border-[#8faa55]/35 rounded-lg pointer-events-none" />
+      <div className="absolute inset-[10px] border border-[#8faa55]/15 rounded-md pointer-events-none" />
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 text-center gap-0.5">
+        <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-3.5 mb-1 opacity-75 brightness-200" onError={e => e.target.style.display="none"} />
+        <p className="text-[8.5px] text-[#c5d895] font-semibold tracking-[0.18em] uppercase">Certificates of Completion</p>
+        <p className="text-[7.5px] text-[#8fa870] tracking-wide">Proudly presented to</p>
+        <p className="text-[14px] text-white font-bold mt-0.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: "0.02em" }}>
+          {profile?.name || "Student"}
+        </p>
+        <div className="w-16 border-b border-[#8faa55]/40 mt-1.5" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-6">
@@ -1742,36 +1751,22 @@ function CertificatesSection({ token, profile }) {
       {viewCert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setViewCert(null)}>
           <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            {/* ✕ close button top-right */}
             <div className="relative">
               <button onClick={() => setViewCert(null)} className="absolute top-3 right-3 w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white hover:bg-black/70 text-lg z-10">✕</button>
             </div>
-            {/* Certificate preview */}
-            <div className={`bg-gradient-to-br ${typeGrad(viewCert.itemType)} p-8 flex flex-col items-center border-b border-white/10`}>
-              <div className="w-12 h-12 bg-[#C7E36B] rounded-xl flex items-center justify-center mb-3">
-                <span className="text-black font-black text-xl">A</span>
-              </div>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Certificate of Completion</p>
-              <p className="text-white font-black text-xl text-center mb-1">{viewCert.courseTitle}</p>
-              <p className="text-gray-300 text-sm">Awarded to <span className="font-bold text-white">{profile?.name || "Student"}</span></p>
-              <p className="text-gray-500 text-xs mt-2">Issued {new Date(viewCert.issuedAt).toLocaleDateString("en",{day:"numeric",month:"long",year:"numeric"})}</p>
-              <code className="mt-3 text-[10px] text-[#C7E36B] font-mono bg-[#C7E36B]/10 px-3 py-1 rounded-full">{viewCert.certificateId}</code>
-            </div>
-            {/* Right: Details */}
+            <CertThumbnail cert={viewCert} />
             <div className="p-5 space-y-3">
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase font-semibold">Course</p>
+                <p className="text-sm font-bold text-white">{viewCert.courseTitle}</p>
+              </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-semibold">Student Name</p>
                 <p className="text-sm font-bold text-white">{profile?.name || "Student"}</p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-semibold">Issued Date</p>
-                <p className="text-sm text-white">{new Date(viewCert.issuedAt).toLocaleDateString("en",{day:"numeric",month:"long",year:"numeric"})}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-gray-500 uppercase font-semibold">Type</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${typeBadge(viewCert.itemType)}`}>{viewCert.itemType}</span>
-                </div>
+                <p className="text-sm text-white">{new Date(viewCert.issuedAt).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })}</p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-semibold">Certificate ID</p>
@@ -1780,7 +1775,7 @@ function CertificatesSection({ token, profile }) {
               <div className="flex gap-2 pt-2">
                 <button onClick={() => navigator.clipboard.writeText(viewCert.certificateId)}
                   className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 transition-all">
-                  View Certificate
+                  Copy ID
                 </button>
                 <button onClick={() => alert("PDF download coming soon!")}
                   className="flex-1 text-xs bg-[#C7E36B] text-black font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
@@ -1792,31 +1787,30 @@ function CertificatesSection({ token, profile }) {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">My Certificates</h1>
-          <p className="text-gray-400 text-xs mt-0.5">Certificates earned from your courses and programs</p>
+          <h1 className="text-2xl font-bold text-white">My Certificates</h1>
+          <p className="text-gray-400 text-sm mt-0.5">View and download certificates earned from your courses</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Filter */}
-          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}
-            className="bg-white/5 border border-white/10 text-sm text-white px-3 py-1.5 rounded-lg outline-none">
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+            className="bg-[#1a1d1e] border border-white/10 text-sm text-white px-4 py-2 rounded-xl outline-none appearance-none cursor-pointer">
             <option value="all">Filter by Type</option>
-            <option value="course">Course</option>
+            <option value="course">Video Course</option>
             <option value="bootcamp">Bootcamp</option>
             <option value="workshop">Workshop</option>
           </select>
-          {/* Sort */}
           <div className="relative">
-            <button onClick={()=>setSortOpen(!sortOpen)} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-sm text-white px-3 py-1.5 rounded-lg hover:bg-white/10">
-              Sort: {sortOrder} <Ic name="chevron" size={12} className={sortOpen?"rotate-90":""}/>
+            <button onClick={() => setSortOpen(!sortOpen)}
+              className="flex items-center gap-1.5 bg-[#1a1d1e] border border-white/10 text-sm text-white px-4 py-2 rounded-xl hover:bg-white/10">
+              Sort: {sortOrder} <Ic name="chevron" size={12} className={sortOpen ? "rotate-90" : ""} />
             </button>
             {sortOpen && (
               <div className="absolute right-0 top-full mt-1 bg-[#1A1D1E] border border-white/10 rounded-xl overflow-hidden z-10 w-[140px]">
-                {["Latest","Oldest"].map(o=>(
-                  <button key={o} onClick={()=>{setSortOrder(o);setSortOpen(false);}}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${sortOrder===o?"text-[#C7E36B] bg-white/5":"text-gray-300 hover:bg-white/5"}`}>{o}</button>
+                {["Latest", "Oldest"].map(o => (
+                  <button key={o} onClick={() => { setSortOrder(o); setSortOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${sortOrder === o ? "text-[#C7E36B] bg-white/5" : "text-gray-300 hover:bg-white/5"}`}>{o}</button>
                 ))}
               </div>
             )}
@@ -1824,23 +1818,11 @@ function CertificatesSection({ token, profile }) {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 my-5">
-        {STATS.map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
-            <span className="text-2xl">{s.icon}</span>
-            <div>
-              <p className="text-xl font-bold text-white">{loading ? "—" : s.value}</p>
-              <p className="text-[10px] text-gray-400">{s.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
+      {/* Cards grid */}
       {loading ? (
-        <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading certificates...</p>
+        <p className="text-gray-500 text-sm animate-pulse text-center py-16">Loading certificates...</p>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="text-center py-20">
           <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Ic name="cert" size={28} className="text-gray-600" />
           </div>
@@ -1848,31 +1830,35 @@ function CertificatesSection({ token, profile }) {
           <p className="text-gray-500 text-xs mt-1">Complete a course, workshop, or bootcamp to earn your first certificate.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {filtered.map((c) => (
-            <div key={c._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all flex flex-col">
-              {/* Certificate thumbnail */}
-              <div className={`bg-gradient-to-br ${typeGrad(c.itemType)} p-6 flex items-center justify-center h-[140px] relative`}>
-                <div className="text-center">
-                  <div className="w-10 h-10 bg-[#C7E36B] rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <span className="text-black font-black text-sm">A</span>
-                  </div>
-                  <p className="text-[9px] text-gray-400 uppercase font-semibold tracking-wider">{c.title}</p>
-                  <p className="text-[11px] text-white font-semibold mt-1">{profile?.name || "Student"}</p>
-                </div>
-                <span className={`absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${typeBadge(c.itemType)}`}>{c.itemType}</span>
-              </div>
+            <div key={c._id} className="bg-[#141718] border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all flex flex-col">
+              {/* Realistic certificate thumbnail */}
+              <CertThumbnail cert={c} />
+
               {/* Card body */}
               <div className="p-4 flex flex-col flex-1">
-                <h3 className="text-sm font-bold text-white mb-1">{c.courseTitle}</h3>
-                <p className="text-[10px] text-gray-500 line-clamp-1 mb-3">Awarded on {new Date(c.issuedAt).toLocaleDateString("en",{day:"numeric",month:"short",year:"numeric"})}</p>
-                <div className="border-t border-white/8 pt-3 mb-3">
-                  <p className="text-[10px] text-gray-600 font-mono">CERT ID: {c.certificateId}</p>
+                {/* Type badge */}
+                <span className={`self-start text-[9px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-wide mb-2 ${typeBadgeStyle(c.itemType)}`}>
+                  {typeLabel(c.itemType)}
+                </span>
+                <p className="text-[10px] text-gray-500 mb-2">Earned on {new Date(c.issuedAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
+                <h3 className="text-sm font-bold text-white leading-snug mb-1">{c.courseTitle}</h3>
+                {c.description && (
+                  <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">{c.description}</p>
+                )}
+
+                {/* Footer: cert ID left, View button right */}
+                <div className="flex items-center justify-between pt-3 mt-auto border-t border-white/8">
+                  <div>
+                    <p className="text-[9px] text-gray-500 font-semibold uppercase tracking-wider">Certificate ID</p>
+                    <p className="text-[10px] text-gray-300 font-mono mt-0.5">{c.certificateId}</p>
+                  </div>
+                  <button onClick={() => setViewCert(c)}
+                    className="bg-white text-black text-[11px] font-bold px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-all">
+                    View
+                  </button>
                 </div>
-                <button onClick={() => setViewCert(c)}
-                  className="w-full text-xs bg-white/10 hover:bg-white/20 text-white font-semibold py-2 rounded-lg transition-all mt-auto border border-white/10">
-                  View
-                </button>
               </div>
             </div>
           ))}
