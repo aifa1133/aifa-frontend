@@ -13,7 +13,7 @@ const ICONS = {
   bootcamp: "M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z",
   workshop: "M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",
   video: "M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 8l-7 4V7l7 4zm2-6.5l7 4-7 4V4.5z",
-  cert: "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z",
+  cert: "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z",
   jobs: "M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.51 15.5 0 12.36 0c-1.73 0-3.24.87-4.16 2.16L12 6.55l3.8-3.8c.4.4.7.86.9 1.37L13.13 8H20v12H4V8h3.13L5.97 6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z",
   resources: "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z",
   community: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
@@ -220,7 +220,7 @@ export default function StudentDashboard() {
                 item.soon
                   ? "text-gray-600 cursor-not-allowed"
                   : activePage === item.id
-                  ? "bg-[#C7E36B]/15 text-[#C7E36B]"
+                  ? "bg-[#FBBF24]/15 text-[#FBBF24]"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
@@ -1754,7 +1754,7 @@ function CertificateDocument({ cert, studentName }) {
 /* Certificate list thumbnail (card top half) */
 function CertThumbnail({ profile }) {
   return (
-    <div className="h-[160px] relative overflow-hidden rounded-t-xl" style={{ background: "linear-gradient(135deg, #2e3d1c 0%, #3b5020 50%, #283618 100%)" }}>
+    <div className="h-[160px] relative overflow-hidden" style={{ background: "linear-gradient(135deg, #2e3d1c 0%, #3b5020 50%, #283618 100%)" }}>
       <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] select-none pointer-events-none">
         <span className="text-[90px] font-black text-white tracking-[0.3em]">AIFA</span>
       </div>
@@ -1906,34 +1906,9 @@ function CertificatesSection({ token, profile }) {
   return (
     <div className="p-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">My Certificates</h1>
-          <p className="text-gray-400 text-sm mt-0.5">View and download certificates earned from your courses</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            className="bg-[#1a1d1e] border border-white/10 text-sm text-white px-4 py-2 rounded-xl outline-none appearance-none cursor-pointer">
-            <option value="all">Filter by Type</option>
-            <option value="course">Video Course</option>
-            <option value="bootcamp">Bootcamp</option>
-            <option value="workshop">Workshop</option>
-          </select>
-          <div className="relative">
-            <button onClick={() => setSortOpen(!sortOpen)}
-              className="flex items-center gap-1.5 bg-[#1a1d1e] border border-white/10 text-sm text-white px-4 py-2 rounded-xl hover:bg-white/10">
-              Sort: {sortOrder} <Ic name="chevron" size={12} className={sortOpen ? "rotate-90" : ""} />
-            </button>
-            {sortOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-[#1A1D1E] border border-white/10 rounded-xl overflow-hidden z-10 w-[140px]">
-                {["Latest", "Oldest"].map(o => (
-                  <button key={o} onClick={() => { setSortOrder(o); setSortOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${sortOrder === o ? "text-[#C7E36B] bg-white/5" : "text-gray-300 hover:bg-white/5"}`}>{o}</button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">My Certificates</h1>
+        <p className="text-gray-400 text-sm mt-0.5">View and download certificates earned from your courses</p>
       </div>
 
       {/* Cards grid */}
@@ -1958,9 +1933,14 @@ function CertificatesSection({ token, profile }) {
                 </span>
                 <p className="text-[10px] text-gray-500 mb-2">Earned on {new Date(c.issuedAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
                 <h3 className="text-sm font-bold text-white leading-snug mb-1">{c.courseTitle}</h3>
-                {c.description && (
-                  <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">{c.description}</p>
-                )}
+                <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">
+                  {c.description ||
+                    (c.itemType === "bootcamp"
+                      ? "Master the complete AI filmmaking pipeline with hands-on projects and expert mentorship."
+                      : c.itemType === "workshop"
+                      ? "An intensive hands-on session to develop practical AI skills with industry guidance."
+                      : "Learn cutting-edge AI techniques to accelerate your creative and professional career.")}
+                </p>
                 <div className="flex items-center justify-between pt-3 mt-auto border-t border-white/8">
                   <div>
                     <p className="text-[9px] text-gray-500 font-semibold uppercase tracking-wider">Certificate ID</p>
