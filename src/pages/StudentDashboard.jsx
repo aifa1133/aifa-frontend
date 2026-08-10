@@ -1775,6 +1775,8 @@ function CertThumbnail({ profile }) {
 
 /* Certificate detail — full-page sub-view */
 function CertDetailPage({ cert, profile, onBack }) {
+  const [showViewer, setShowViewer] = useState(false);
+
   const typeLabel = t => t === "bootcamp" ? "Bootcamp" : t === "workshop" ? "Workshop" : "Video Course";
   const typeBadgeStyle = t =>
     t === "bootcamp" ? "bg-blue-500/20 text-blue-300 border-blue-500/30" :
@@ -1782,6 +1784,73 @@ function CertDetailPage({ cert, profile, onBack }) {
     "bg-green-500/20 text-green-300 border-green-500/30";
 
   const fmtDate = d => new Date(d).toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" });
+  const fmtShort = d => {
+    const dt = new Date(d);
+    return `${String(dt.getDate()).padStart(2,"0")}-${String(dt.getMonth()+1).padStart(2,"0")}-${dt.getFullYear()}`;
+  };
+
+  const handleDownloadPDF = () => {
+    const studentName = profile?.name || "Student";
+    const date = fmtShort(cert.issuedAt);
+    const win = window.open("", "_blank", "width=900,height=660");
+    if (!win) { alert("Please allow popups to download the certificate."); return; }
+    win.document.write(`<!DOCTYPE html><html><head><title>Certificate — ${cert.courseTitle}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Georgia,serif}
+  @media print{body{min-height:unset}@page{size:A4 landscape;margin:0}.no-print{display:none}}
+  .cert{width:800px;min-height:566px;border:3px solid #b8d400;position:relative;padding:0;background:#fff;display:flex;flex-direction:column}
+  .corner{position:absolute;width:18px;height:18px;border:2.5px solid #b8d400;background:#fff}
+  .tl{top:8px;left:8px} .tr{top:8px;right:8px} .bl{bottom:8px;left:8px} .br{bottom:8px;right:8px}
+  .wm{position:absolute;font-size:72px;font-weight:900;opacity:.05;font-family:'Arial Black',sans-serif;letter-spacing:-2px;user-select:none;pointer-events:none;color:#000}
+  .wm1{top:30px;right:40px} .wm2{bottom:60px;left:20px}
+  .body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 80px 20px}
+  .logo{font-size:36px;font-weight:900;font-family:'Arial Black',sans-serif;margin-bottom:8px;letter-spacing:-1px}
+  .logo span{color:#b8d400}
+  h1{font-size:28px;color:#5a6a20;font-family:Georgia,serif;font-weight:700;margin-bottom:6px}
+  .sub{font-size:13px;color:#888;margin-bottom:20px}
+  .name{font-size:30px;font-weight:700;color:#111;margin-bottom:4px}
+  .line{width:200px;border-bottom:2px solid #333;margin:0 auto 16px}
+  .body p{font-size:12px;color:#666;max-width:400px;line-height:1.7}
+  .date{margin-top:16px;font-size:13px;color:#888}
+  .date b{color:#b8d400}
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;padding:0 40px 30px;margin-top:auto}
+  .foot .id{font-size:11px;color:#555}
+  .sig{text-align:right;border-top:1.5px solid #333;padding-top:6px;min-width:140px}
+  .sig .sname{font-size:11px;font-weight:700;color:#111;text-transform:uppercase;letter-spacing:.5px}
+  .sig .stitle{font-size:10px;color:#888}
+  .btn{margin-top:24px;padding:10px 32px;background:#b8d400;color:#000;border:none;font-size:14px;font-weight:700;cursor:pointer;border-radius:6px;font-family:sans-serif}
+</style></head><body>
+<div style="display:flex;flex-direction:column;align-items:center">
+  <div class="cert">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="wm wm1">AiFA</div>
+    <div class="wm wm2">AiFA</div>
+    <div class="body">
+      <div class="logo">Ai<span>FA</span></div>
+      <h1>Certificates of Completion</h1>
+      <p class="sub">Proudly presented to</p>
+      <p class="name">${studentName}</p>
+      <div class="line"></div>
+      <p>has successfully completed the course <strong>"${cert.courseTitle}"</strong> under the expert guidance of AIFA. Your hard work and commitment are truly commendable.</p>
+      <p class="date">Presented on <b>${date}</b></p>
+    </div>
+    <div class="foot">
+      <div class="id">Certificate no: ${cert.certificateId}</div>
+      <div class="sig">
+        <div class="sname">MADHAV REDDY</div>
+        <div class="stitle">CEO, Mentor</div>
+      </div>
+    </div>
+  </div>
+  <button class="btn no-print" onclick="window.print();window.close()">Print / Save as PDF</button>
+</div>
+</body></html>`);
+    win.document.close();
+    win.focus();
+  };
 
   const Row = ({ label, children }) => (
     <div className="flex items-center justify-between py-3.5 border-b border-white/8">
@@ -1856,12 +1925,12 @@ function CertDetailPage({ cert, profile, onBack }) {
 
           {/* Action buttons */}
           <div className="flex gap-3 mt-6">
-            <button onClick={() => navigator.clipboard.writeText(cert.certificateId)}
+            <button onClick={() => setShowViewer(true)}
               className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-100 transition-all">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
               View Certificate
             </button>
-            <button onClick={() => alert("PDF download coming soon!")}
+            <button onClick={handleDownloadPDF}
               className="flex-1 flex items-center justify-center gap-2 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
               Download PDF
@@ -1869,6 +1938,21 @@ function CertDetailPage({ cert, profile, onBack }) {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen certificate viewer */}
+      {showViewer && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+          onClick={() => setShowViewer(false)}>
+          <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowViewer(false)}
+              className="absolute -top-10 right-0 text-white/70 hover:text-white text-sm flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              Close
+            </button>
+            <CertificateDocument cert={cert} studentName={profile?.name || "Student"} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
