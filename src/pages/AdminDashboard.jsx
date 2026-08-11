@@ -5007,118 +5007,423 @@ function ServiceRequestAdmin({ token }) {
 }
 
 /* ── SALES CONSULTATION ADMIN ── */
-const CON_STATUS_COLORS = { pending:"bg-orange-500/20 text-orange-400", confirmed:"bg-blue-500/20 text-blue-400", completed:"bg-green-500/20 text-green-400", cancelled:"bg-red-500/20 text-red-400" };
+
+const SC_STATUS = {
+  "New":       "bg-[#C7E36B] text-black",
+  "Contacted": "bg-pink-500 text-white",
+  "Booked":    "bg-blue-500 text-white",
+  "Follow up": "bg-purple-500 text-white",
+  "Converted": "bg-green-500 text-white",
+  "Lost":      "bg-gray-600 text-gray-300",
+};
+const SC_PRIORITY = {
+  "High":   "bg-orange-500/25 text-orange-400 border border-orange-500/30",
+  "Normal": "bg-white/10 text-gray-300",
+  "Low":    "bg-white/5 text-gray-500",
+};
 
 function SalesConsultAdmin({ token }) {
-  const [consultations, setConsultations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [saving, setSaving]     = useState(false);
-  const [filter, setFilter]     = useState("all");
-  const [status, setStatus]     = useState("");
-  const [meetLink, setMeetLink] = useState("");
-  const [note, setNote]         = useState("");
+  const BLANK_LEAD = { name:"", phone:"", email:"", consultType:"Workshop", status:"New", priority:"Normal", date:"", assignedTo:"", source:"", note:"" };
+  const BLANK_UPD  = { consultType:"", status:"", assignedTo:"", followDate:"", note:"" };
+
+  const [leads, setLeads]             = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [search, setSearch]           = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [priorityFilter, setPriorityFilter] = useState("All Priorities");
+
+  /* modals */
+  const [viewLead, setViewLead]       = useState(null);   // details modal
+  const [editLead, setEditLead]       = useState(null);   // update modal
+  const [deleteLead, setDeleteLead]   = useState(null);   // delete confirm
+  const [showAdd, setShowAdd]         = useState(false);  // add new lead
+  const [showExport, setShowExport]   = useState(false);  // export modal
+  const [exportFmt, setExportFmt]     = useState("xlsx");
+
+  /* add lead form */
+  const [newLead, setNewLead]         = useState(BLANK_LEAD);
+  /* update form */
+  const [upd, setUpd]                 = useState(BLANK_UPD);
+  const [saving, setSaving]           = useState(false);
 
   useEffect(() => {
     fetch("/api/consultations", { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setConsultations(d); setLoading(false); }).catch(()=>setLoading(false));
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setLeads(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [token]);
 
-  const selectC = (c) => { setSelected(c); setStatus(c.status); setMeetLink(c.meetLink||""); setNote(c.adminNote||""); };
+  const openEdit = (l) => { setEditLead(l); setUpd({ consultType: l.consultType||"", status: l.status||"", assignedTo: l.assignedTo||"", followDate: l.followDate||"", note: l.note||"" }); };
 
-  const handleSave = async () => {
-    if (!selected) return;
+  const handleUpdate = async () => {
+    if (!editLead) return;
     setSaving(true);
-    const res = await fetch(`/api/consultations/${selected._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ status, meetLink, adminNote:note }) });
-    const data = await res.json();
-    if (res.ok) { setConsultations(cs=>cs.map(c=>c._id===data._id?data:c)); setSelected(data); }
+    const merged = { ...editLead, ...upd };
+    try {
+      const res = await fetch(`/api/consultations/${editLead._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(upd) });
+      if (res.ok) { const data = await res.json(); setLeads(ls => ls.map(l => l._id===data._id ? data : l)); setEditLead(null); }
+      else { setLeads(ls => ls.map(l => l._id===editLead._id ? merged : l)); setEditLead(null); }
+    } catch { setLeads(ls => ls.map(l => l._id===editLead._id ? merged : l)); setEditLead(null); }
     setSaving(false);
   };
 
-  const handleDelete = async () => {
-    if (!selected || !window.confirm("Delete this consultation?")) return;
-    await fetch(`/api/consultations/${selected._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
-    setConsultations(cs=>cs.filter(c=>c._id!==selected._id)); setSelected(null);
+  const handleAdd = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/consultations", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(newLead) });
+      if (res.ok) { const data = await res.json(); setLeads(ls => [data, ...ls]); }
+      else { setLeads(ls => [{ ...newLead, _id:`tmp_${Date.now()}`, date: new Date().toLocaleDateString("en",{year:"numeric",month:"short",day:"numeric"}) }, ...ls]); }
+    } catch { setLeads(ls => [{ ...newLead, _id:`tmp_${Date.now()}`, date: new Date().toLocaleDateString("en",{year:"numeric",month:"short",day:"numeric"}) }, ...ls]); }
+    setNewLead(BLANK_LEAD); setShowAdd(false); setSaving(false);
   };
 
-  const filtered = consultations.filter(c=>filter==="all"||c.status===filter);
-  const newCount = consultations.filter(c=>c.status==="pending").length;
+  const handleDelete = async () => {
+    if (!deleteLead) return;
+    try { await fetch(`/api/consultations/${deleteLead._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } }); } catch {}
+    setLeads(ls => ls.filter(l => l._id !== deleteLead._id));
+    setDeleteLead(null); setViewLead(null);
+  };
 
-  return (
-    <div className="flex h-full overflow-hidden">
-      <div className="w-[340px] shrink-0 border-r border-white/5 overflow-y-auto">
-        <div className="p-4 border-b border-white/5">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-base font-bold text-white">Sales Consultations</h1>
-            {newCount>0 && <span className="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded-full">{newCount} Pending</span>}
-          </div>
-          <div className="flex gap-1 flex-wrap">
-            {["all","pending","confirmed","completed","cancelled"].map(f=>(
-              <button key={f} onClick={()=>setFilter(f)} className={`text-[10px] px-2 py-1 rounded-full font-semibold capitalize transition-all ${filter===f?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10"}`}>{f==="all"?"All":f}</button>
-            ))}
-          </div>
-        </div>
-        {loading ? <AdminLoader /> : (
-          <div className="divide-y divide-white/5">
-            {filtered.length===0 && <p className="text-gray-500 text-sm p-4">No consultations</p>}
-            {filtered.map(c=>(
-              <button key={c._id} onClick={()=>selectC(c)} className={`w-full text-left p-4 hover:bg-white/5 transition-all ${selected?._id===c._id?"border-l-2 border-[#C7E36B] bg-white/5":""}`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-white">{c.name}</span>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full capitalize ${CON_STATUS_COLORS[c.status]}`}>{c.status}</span>
-                </div>
-                <p className="text-[10px] text-gray-500 mb-1">{c.email}</p>
-                {c.preferredDate && <p className="text-[10px] text-gray-400">{c.preferredDate} {c.preferredTime && `at ${c.preferredTime}`}</p>}
-                {c.topic && <p className="text-[10px] text-gray-600 mt-1 line-clamp-1">{c.topic}</p>}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="flex-1 overflow-y-auto p-6">
-        {!selected ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="text-center"><p className="text-3xl mb-2">📅</p><p className="text-sm">Select a consultation to view details</p></div>
-          </div>
-        ) : (
-          <div className="max-w-2xl space-y-5">
-            <div>
-              <h2 className="text-lg font-bold text-white">{selected.name}</h2>
-              <p className="text-sm text-gray-400">{selected.email} {selected.phone && `· ${selected.phone}`}</p>
-            </div>
-            {(selected.preferredDate||selected.preferredTime) && (
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-6">
-                <div><p className="text-[10px] text-gray-500 uppercase font-semibold mb-0.5">Date</p><p className="text-sm text-white">{selected.preferredDate||"—"}</p></div>
-                <div><p className="text-[10px] text-gray-500 uppercase font-semibold mb-0.5">Time</p><p className="text-sm text-white">{selected.preferredTime||"—"}</p></div>
-              </div>
-            )}
-            {selected.topic && <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Topic</p><p className="text-sm text-gray-300">{selected.topic}</p></div>}
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">STATUS</p>
-              <select value={status} onChange={e=>setStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                <option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">MEET LINK</p>
-              <div className="flex gap-2">
-                <input value={meetLink} onChange={e=>setMeetLink(e.target.value)} placeholder="https://meet.google.com/..." className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50"/>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">ADMIN NOTE</p>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 resize-none" placeholder="Add internal notes..."/>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Changes"}</button>
-              <button onClick={()=>alert(`Confirmation would be sent to ${selected.email}. Configure SMTP in Platform Settings to enable email sending.`)} className="text-xs border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-500/10">Send Confirmation</button>
-              <button onClick={handleDelete} className="text-xs border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10">Delete</button>
-            </div>
-          </div>
-        )}
-      </div>
+  const handleExport = () => {
+    const rows = filtered;
+    if (exportFmt === "csv") {
+      const hdr = ["Name","Phone","Email","Consultation Type","Status","Priority","Date","Assigned To","Note"];
+      const body = rows.map(l => [l.name,l.phone,l.email,l.consultType,l.status,l.priority,l.date,l.assignedTo,l.note].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
+      const blob = new Blob([[hdr.join(","), ...body].join("\n")], { type:"text/csv" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultations.csv"; a.click();
+    } else {
+      alert("XLSX export requires a server-side endpoint. CSV is available for client-side export.");
+    }
+    setShowExport(false);
+  };
+
+  const filtered = leads.filter(l => {
+    const q = search.toLowerCase();
+    const matchQ = !q || l.name?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q) || l.phone?.includes(q);
+    const matchS = statusFilter === "All Status" || l.status === statusFilter;
+    const matchP = priorityFilter === "All Priorities" || l.priority === priorityFilter;
+    return matchQ && matchS && matchP;
+  });
+
+  const initials = (name) => (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+
+  /* ── SELECT component ── */
+  const Sel = ({ value, onChange, options, placeholder, className="" }) => (
+    <div className="relative">
+      <select value={value} onChange={e => onChange(e.target.value)}
+        className={`appearance-none w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/40 pr-9 ${className}`}>
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
   );
+
+  return (
+    <div className="flex-1 overflow-y-auto p-6">
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Sales Consultation</h1>
+          <p className="text-sm text-gray-400 mt-1">Manage and track all consultation requests from prospective students.</p>
+        </div>
+        <div className="flex gap-3 shrink-0">
+          <button onClick={() => setShowAdd(true)} className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 transition-all">Add New Lead</button>
+          <button onClick={() => setShowExport(true)} className="border border-white/20 text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all">Export</button>
+        </div>
+      </div>
+
+      {/* Search + Filters */}
+      <div className="flex items-center gap-3 my-5">
+        <div className="flex-1 relative">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email or..."
+            className="w-full bg-[#111315] border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/>
+        </div>
+        <div className="relative">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="appearance-none bg-[#111315] border border-white/10 rounded-xl pl-4 pr-9 py-3 text-sm text-gray-300 outline-none focus:border-[#C7E36B]/40">
+            {["All Status","New","Contacted","Booked","Follow up","Converted","Lost"].map(s => <option key={s}>{s}</option>)}
+          </select>
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div className="relative">
+          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+            className="appearance-none bg-[#111315] border border-white/10 rounded-xl pl-4 pr-9 py-3 text-sm text-gray-300 outline-none focus:border-[#C7E36B]/40">
+            {["All Priorities","High","Normal","Low"].map(p => <option key={p}>{p}</option>)}
+          </select>
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+        {/* Table header */}
+        <div className="grid grid-cols-[1.6fr_1.8fr_1.4fr_1fr_1fr_1.1fr_100px] px-5 py-3.5 border-b border-white/10">
+          {["LEAD","CONTACT","CONSULTATION TYPE","STATUS","PRIORITY","DATE","ACTIONS"].map(h => (
+            <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="py-16 flex justify-center"><AdminLoader label="Loading Leads"/></div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-3xl mb-3">📋</p>
+            <p className="text-sm text-gray-400">No leads found</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {filtered.map((l, i) => (
+              <div key={l._id||i} className="grid grid-cols-[1.6fr_1.8fr_1.4fr_1fr_1fr_1.1fr_100px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+                <span className="text-sm font-semibold text-white">{l.name}</span>
+                <div>
+                  <p className="text-sm text-gray-300">{l.phone}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{l.email}</p>
+                </div>
+                <span className="text-sm text-gray-300">{l.consultType}</span>
+                <span className={`inline-flex items-center justify-center text-[11px] font-bold px-3 py-1 rounded-md w-fit ${SC_STATUS[l.status] || "bg-white/10 text-gray-300"}`}>{l.status}</span>
+                <span className={`inline-flex items-center justify-center text-[11px] font-bold px-3 py-1 rounded-md w-fit ${SC_PRIORITY[l.priority] || "bg-white/10 text-gray-300"}`}>{l.priority}</span>
+                <span className="text-sm text-gray-300">{l.date}</span>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setViewLead(l)} title="View" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button onClick={() => openEdit(l)} title="Edit" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button onClick={() => setDeleteLead(l)} title="Delete" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-all">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── VIEW DETAILS MODAL ── */}
+      {viewLead && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setViewLead(null)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h2 className="text-base font-bold text-white">Consultation Details</h2>
+              <button onClick={() => setViewLead(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            {/* Avatar + name */}
+            <div className="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] font-black text-sm flex items-center justify-center shrink-0">{initials(viewLead.name)}</div>
+              <div>
+                <p className="text-sm font-bold text-white">{viewLead.name}</p>
+                <p className="text-xs text-gray-400">{viewLead.email}</p>
+                <p className="text-xs text-gray-400">{viewLead.phone}</p>
+              </div>
+            </div>
+            {/* Detail rows */}
+            <div className="divide-y divide-white/5">
+              {[
+                { label:"Consultation Type", value: viewLead.consultType },
+                { label:"Assigned To",       value: viewLead.assignedTo || "—" },
+                { label:"Date",              value: viewLead.date || "—" },
+                { label:"Note",              value: viewLead.note || "—" },
+              ].map(r => (
+                <div key={r.label} className="grid grid-cols-2 gap-2 px-5 py-3.5">
+                  <span className="text-xs text-gray-500">{r.label}</span>
+                  <span className="text-xs font-semibold text-white">{r.value}</span>
+                </div>
+              ))}
+            </div>
+            {/* Actions */}
+            <div className="flex border-t border-white/10">
+              <button onClick={() => { openEdit(viewLead); setViewLead(null); }} className="flex-1 py-3.5 text-sm font-semibold text-white hover:bg-white/5 transition-all border-r border-white/10">Edit</button>
+              <button onClick={() => setDeleteLead(viewLead)} className="flex-1 py-3.5 text-sm font-semibold text-red-400 hover:bg-red-500/5 flex items-center justify-center gap-2 transition-all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── UPDATE CONSULTATION MODAL ── */}
+      {editLead && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setEditLead(null)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h2 className="text-base font-bold text-white">Update Consultation</h2>
+              <button onClick={() => setEditLead(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-white mb-1.5">Consultation Type</label>
+                <Sel value={upd.consultType} onChange={v=>setUpd({...upd,consultType:v})} options={["Workshop","Bootcamp","One on One call","Video Course","Masterclass"]} placeholder="Select consultation type"/>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white mb-1.5">Status</label>
+                <Sel value={upd.status} onChange={v=>setUpd({...upd,status:v})} options={["New","Contacted","Booked","Follow up","Converted","Lost"]} placeholder="Select Status"/>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white mb-1.5">Assigned To</label>
+                <Sel value={upd.assignedTo} onChange={v=>setUpd({...upd,assignedTo:v})} options={["Ravi","Priya","Arun","Team Lead"]} placeholder="Select team member"/>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white mb-1.5">Follow-up Date</label>
+                <div className="relative">
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <input type="date" value={upd.followDate} onChange={e => setUpd({...upd,followDate:e.target.value})}
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/40"/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white mb-1.5">Note <span className="text-gray-500 font-normal">(Optional)</span></label>
+                <textarea value={upd.note} onChange={e => setUpd({...upd,note:e.target.value})} rows={3}
+                  placeholder="Add any notes or details about..."
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 resize-none"/>
+              </div>
+            </div>
+            <div className="flex gap-0 border-t border-white/10">
+              <button onClick={() => setEditLead(null)} className="flex-1 py-3.5 text-sm font-bold text-gray-300 hover:bg-white/5 uppercase tracking-wider transition-all">Cancel</button>
+              <button onClick={handleUpdate} disabled={saving} className="flex-1 py-3.5 text-sm font-bold bg-[#C7E36B] text-black hover:bg-lime-300 disabled:opacity-60 transition-all">
+                {saving ? "Saving..." : "Save Consultation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD NEW LEAD MODAL ── */}
+      {showAdd && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setShowAdd(false)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between px-6 py-5 border-b border-white/10">
+              <div>
+                <h2 className="text-lg font-bold text-white">Add New Lead</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Enter lead details to track and follow up.</p>
+              </div>
+              <button onClick={() => setShowAdd(false)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white mt-0.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Name</label>
+                  <input value={newLead.name} onChange={e => setNewLead({...newLead,name:e.target.value})} placeholder="Enter full name"
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Mobile Number</label>
+                  <input value={newLead.phone} onChange={e => setNewLead({...newLead,phone:e.target.value})} placeholder="Enter Mobile Number"
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Email</label>
+                  <input type="email" value={newLead.email} onChange={e => setNewLead({...newLead,email:e.target.value})} placeholder="Enter full name"
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Interested Program</label>
+                  <Sel value={newLead.consultType} onChange={v=>setNewLead({...newLead,consultType:v})} options={["Workshop","Bootcamp","One on One call","Video Course","Masterclass"]} placeholder="Select program"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Source</label>
+                  <Sel value={newLead.source} onChange={v=>setNewLead({...newLead,source:v})} options={["Instagram","Facebook","WhatsApp","Referral","Website","Other"]} placeholder="Select Source"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Assigned to</label>
+                  <Sel value={newLead.assignedTo} onChange={v=>setNewLead({...newLead,assignedTo:v})} options={["Ravi","Priya","Arun","Team Lead"]} placeholder="Select team member"/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-1.5">Follow-up Date</label>
+                <div className="relative">
+                  <input type="date" value={newLead.date} onChange={e => setNewLead({...newLead,date:e.target.value})}
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/40"/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white mb-1.5">Note <span className="text-gray-500 font-normal text-xs">(Optional)</span></label>
+                <textarea value={newLead.note} onChange={e => setNewLead({...newLead,note:e.target.value})} rows={3}
+                  placeholder="Add any notes or details about..."
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 resize-none"/>
+              </div>
+            </div>
+            <div className="flex border-t border-white/10">
+              <button onClick={() => setShowAdd(false)} className="flex-1 py-4 text-sm font-bold text-gray-300 hover:bg-white/5 uppercase tracking-wider transition-all">Cancel</button>
+              <button onClick={handleAdd} disabled={saving || !newLead.name.trim()} className="flex-1 py-4 text-sm font-bold bg-[#C7E36B] text-black hover:bg-lime-300 disabled:opacity-50 transition-all">
+                {saving ? "Saving..." : "Save Lead"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EXPORT MODAL ── */}
+      {showExport && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setShowExport(false)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+              <h2 className="text-base font-bold text-white">Export Consultation</h2>
+              <button onClick={() => setShowExport(false)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-400 mb-5">Choose the data you want to export and the format for your file.</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">FILE FORMAT</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id:"csv",  label:"CSV",          desc:"Export data in CSV (Comma separated values) format." },
+                  { id:"xlsx", label:"Excel (XLSX)",  desc:"Export data in Excel spreadsheet format." },
+                ].map(f => (
+                  <button key={f.id} onClick={() => setExportFmt(f.id)}
+                    className={`border rounded-xl p-4 text-left transition-all ${exportFmt===f.id ? "border-[#C7E36B] bg-[#C7E36B]/5" : "border-white/10 hover:border-white/20"}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${exportFmt===f.id ? "border-[#C7E36B]" : "border-gray-500"}`}>
+                        {exportFmt===f.id && <div className="w-2 h-2 rounded-full bg-[#C7E36B]"/>}
+                      </div>
+                      <span className="text-sm font-semibold text-white">{f.label}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">{f.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setShowExport(false)} className="flex-1 py-3 text-sm font-bold border border-white/20 text-gray-300 rounded-xl hover:bg-white/5 transition-all">Cancel</button>
+              <button onClick={handleExport} className="flex-1 py-3 text-sm font-bold bg-[#C7E36B] text-black rounded-xl hover:bg-lime-300 transition-all">Export</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE CONFIRM MODAL ── */}
+      {deleteLead && (
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setDeleteLead(null)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative">
+            <button onClick={() => setDeleteLead(null)} className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div className="w-14 h-14 rounded-full bg-red-800/40 border border-red-700/40 flex items-center justify-center mx-auto mb-5">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </div>
+            <h2 className="text-lg font-bold text-white mb-2">Delete Consultation?</h2>
+            <p className="text-sm text-gray-400 mb-7">This action cannot be undone.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setDeleteLead(null)} className="py-3 text-sm font-bold border border-white/20 text-white rounded-xl hover:bg-white/5 transition-all">Cancel</button>
+              <button onClick={handleDelete} className="py-3 text-sm font-bold bg-[#b45309] text-white rounded-xl hover:bg-orange-700 transition-all">Delete Consultation</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
 }
 
 /* ── HIRE TALENT ADMIN ── */
