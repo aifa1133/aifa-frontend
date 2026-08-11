@@ -82,7 +82,7 @@ export default function BootcampCardMobile({
       {/* Buttons */}
       <button
         onClick={
-          onViewDetails || (() => navigate("/workshops/ai-filmmaking"))
+          onViewDetails || (() => navigate("/workshops"))
         }
         className="mt-2 h-[42px] w-full rounded-[8px] bg-[#F2FEB1] text-[15px] font-bold text-[#111]"
       >
