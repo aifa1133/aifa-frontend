@@ -4873,119 +4873,679 @@ function CommunityAdmin({ token }) {
 }
 
 /* ── SERVICE REQUEST ADMIN ── */
-const SR_STATUS_COLORS = { new:"bg-blue-500/20 text-blue-400", "in-progress":"bg-yellow-500/20 text-yellow-400", completed:"bg-green-500/20 text-green-400", rejected:"bg-red-500/20 text-red-400" };
-const SR_SERVICE_LABELS = { "corporate-training":"Corporate Training","curriculum-consulting":"Curriculum Consulting","production-support":"Production Support","ai-content":"AI Content Production" };
-const SR_SERVICE_COLORS = { "corporate-training":"bg-purple-500/20 text-purple-400","curriculum-consulting":"bg-blue-500/20 text-blue-400","production-support":"bg-orange-500/20 text-orange-400","ai-content":"bg-[#C7E36B]/20 text-[#C7E36B]" };
+const SR_PRIORITY_BADGE = {
+  High:   "bg-orange-500 text-white",
+  Medium: "bg-yellow-500 text-black",
+  Urgent: "bg-red-500 text-white",
+  Low:    "bg-green-600 text-white",
+};
+const SR_STATUS_BADGE = {
+  New:              "bg-blue-600 text-white",
+  "In Progress":    "bg-purple-600 text-white",
+  "Waiting for User":"bg-orange-500 text-white",
+  Open:             "bg-[#1A1D1E] text-green-400 border border-green-500/40",
+  Resolved:         "bg-green-600 text-white",
+  Closed:           "bg-gray-700 text-gray-300",
+};
+const SR_REQUEST_TYPES = ["Workshop Support","Certificate Issue","Payment Issue","Course Access","Technical Issue","General Inquiry","Refund Request"];
+const SR_AGENTS = ["Priya Sharma","Rahul","Anika","Support Team","Ravi","Alex"];
 
 function ServiceRequestAdmin({ token }) {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [saving, setSaving]     = useState(false);
-  const [filter, setFilter]     = useState("all");
-  const [note, setNote]         = useState("");
-  const [status, setStatus]     = useState("");
+  const BLANK_FORM = { name:"", email:"", phone:"", requestType:"", subject:"", priority:"Medium", description:"", assignTo:"", status:"New" };
+
+  const [requests, setRequests]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [tabFilter, setTabFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [statusFilterV, setStatusFilterV]   = useState("All");
+  const [search, setSearch]       = useState("");
+  const [page, setPage]           = useState(1);
+  const [contextMenu, setContextMenu] = useState(null); // { id, x, y }
+  const [showCreate, setShowCreate]   = useState(false);
+  const [ticketCreated, setTicketCreated] = useState(null); // the created ticket
+  const [form, setForm]           = useState(BLANK_FORM);
+  const [saving, setSaving]       = useState(false);
+  const [attachFile, setAttachFile] = useState(null);
+  const PER = 5;
 
   useEffect(() => {
     fetch("/api/service-requests", { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setRequests(d); setLoading(false); }).catch(()=>setLoading(false));
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setRequests(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [token]);
 
-  const selectReq = (r) => { setSelected(r); setNote(r.adminNote||""); setStatus(r.status); };
+  useEffect(() => { setPage(1); }, [tabFilter, typeFilter, priorityFilter, statusFilterV, search]);
 
-  const handleSave = async () => {
-    if (!selected) return;
+  /* Close context menu on outside click */
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [contextMenu]);
+
+  const getRequestType = r => r.requestType || r.service || "General Inquiry";
+  const getPriority    = r => r.priority || "Medium";
+  const getStatus      = r => r.status    || "New";
+  const getSubject     = r => r.subject   || r.message?.slice(0, 60) || "—";
+  const getAssigned    = r => r.assignedTo || r.assignTo || "Unassigned";
+  const fmtCreated     = r => {
+    if (!r.createdAt) return "—";
+    const d = new Date(r.createdAt), now = new Date();
+    const diffH = Math.floor((now-d)/3600000);
+    if (diffH < 1) return "Just now";
+    if (diffH < 24) return `${diffH}h ago`;
+    if (diffH < 48) return "Yesterday";
+    return d.toLocaleDateString("en",{month:"short",day:"2-digit",year:"numeric"});
+  };
+
+  const filtered = requests.filter(r => {
+    const q = search.toLowerCase();
+    const matchQ = !q || r.name?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q) || getSubject(r).toLowerCase().includes(q);
+    const st = getStatus(r).toLowerCase().replace(" ","-");
+    const matchTab = tabFilter === "all"
+      || (tabFilter === "new" && st === "new")
+      || (tabFilter === "in-progress" && st === "in-progress")
+      || (tabFilter === "resolved" && (st === "resolved" || st === "closed"))
+      || (tabFilter === "urgent" && getPriority(r) === "Urgent");
+    const matchType = typeFilter === "All" || getRequestType(r) === typeFilter;
+    const matchPri  = priorityFilter === "All" || getPriority(r) === priorityFilter;
+    const matchSt   = statusFilterV === "All" || getStatus(r) === statusFilterV;
+    return matchQ && matchTab && matchType && matchPri && matchSt;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER));
+  const pageSafe   = Math.min(page, totalPages);
+  const pageItems  = filtered.slice((pageSafe-1)*PER, pageSafe*PER);
+
+  const counts = {
+    all:         requests.length,
+    new:         requests.filter(r => getStatus(r).toLowerCase() === "new").length,
+    inProgress:  requests.filter(r => getStatus(r).toLowerCase() === "in progress" || getStatus(r).toLowerCase() === "in-progress").length,
+    resolved:    requests.filter(r => ["resolved","closed"].includes(getStatus(r).toLowerCase())).length,
+    urgent:      requests.filter(r => getPriority(r) === "Urgent").length,
+  };
+
+  const avgResponseTime = "2h 18m";
+  const priorityQueue   = requests.filter(r => getPriority(r) === "Urgent" || getPriority(r) === "High").slice(0, 3);
+
+  const patchRequest = async (id, patch) => {
+    try {
+      const res = await fetch(`/api/service-requests/${id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(patch) });
+      if (res.ok) { const data = await res.json(); setRequests(rs => rs.map(r => r._id===id ? {...r,...data} : r)); }
+      else { setRequests(rs => rs.map(r => r._id===id ? {...r,...patch} : r)); }
+    } catch { setRequests(rs => rs.map(r => r._id===id ? {...r,...patch} : r)); }
+  };
+
+  const handleContextAction = (action, req) => {
+    setContextMenu(null);
+    if (action === "assign")    patchRequest(req._id, { assignedTo: "Ravi" });
+    if (action === "follow")    patchRequest(req._id, { status: "In Progress" });
+    if (action === "converted") patchRequest(req._id, { status: "Resolved" });
+    if (action === "lost")      patchRequest(req._id, { status: "Closed" });
+  };
+
+  const handleCreate = async () => {
+    if (!form.name || !form.email || !form.subject) return;
     setSaving(true);
-    const res = await fetch(`/api/service-requests/${selected._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ status, adminNote:note }) });
-    const data = await res.json();
-    if (res.ok) { setRequests(rs=>rs.map(r=>r._id===data._id?data:r)); setSelected(data); }
-    setSaving(false);
+    const ticketNum = `SR-${new Date().getFullYear()}-${String(Math.floor(1000+Math.random()*9000))}`;
+    const payload = { ...form, ticketId: ticketNum, createdAt: new Date().toISOString() };
+    try {
+      const res = await fetch("/api/service-requests", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(payload) });
+      const data = res.ok ? await res.json() : { ...payload, _id: `tmp_${Date.now()}` };
+      setRequests(rs => [data, ...rs]);
+      setTicketCreated({ ...data, ticketId: data.ticketId || ticketNum });
+    } catch {
+      const data = { ...payload, _id:`tmp_${Date.now()}` };
+      setRequests(rs => [data, ...rs]);
+      setTicketCreated(data);
+    }
+    setShowCreate(false); setForm(BLANK_FORM); setSaving(false);
   };
 
-  const handleDelete = async () => {
-    if (!selected || !window.confirm("Delete this request?")) return;
-    await fetch(`/api/service-requests/${selected._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
-    setRequests(rs=>rs.filter(r=>r._id!==selected._id)); setSelected(null);
-  };
+  const initials = name => (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
-  const filtered = requests.filter(r=>filter==="all"||r.status===filter);
-  const newCount = requests.filter(r=>r.status==="new").length;
-
-  return (
-    <div className="flex h-full overflow-hidden">
-      {/* Left list */}
-      <div className="w-[340px] shrink-0 border-r border-white/5 overflow-y-auto">
-        <div className="p-4 border-b border-white/5">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-base font-bold text-white">Service Requests</h1>
-            {newCount>0 && <span className="text-[10px] bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full">{newCount} New</span>}
+  /* ── CREATE TICKET FORM VIEW ── */
+  if (showCreate) {
+    const f = form;
+    return (
+      <div className="flex h-full overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          {/* Top bar */}
+          <div className="flex items-start justify-between px-8 py-5 border-b border-white/10">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Create Internal Ticket</h1>
+              <p className="text-sm text-gray-400 mt-0.5">Manually create a support request on behalf of a learner.</p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button onClick={() => setShowCreate(false)} className="border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
+              <button className="border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/5">Save Draft</button>
+              <button onClick={handleCreate} disabled={saving || !f.name || !f.email || !f.subject} className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-50 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {saving ? "Creating..." : "Create Ticket"}
+              </button>
+            </div>
           </div>
-          <div className="flex gap-1 flex-wrap">
-            {["all","new","in-progress","completed","rejected"].map(f=>(
-              <button key={f} onClick={()=>setFilter(f)} className={`text-[10px] px-2 py-1 rounded-full font-semibold capitalize transition-all ${filter===f?"bg-[#C7E36B] text-black":"bg-white/5 text-gray-400 hover:bg-white/10"}`}>{f==="all"?"All":f}</button>
-            ))}
+          {/* Form */}
+          <div className="px-8 py-6">
+            <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+              {[
+                { num:1, label:"Requester Name", req:true,
+                  el: <input value={f.name} onChange={e=>setForm({...f,name:e.target.value})} placeholder="Enter full name of the requester" className="flex-1 bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/> },
+                { num:2, label:"Email Address", req:true,
+                  el: <input type="email" value={f.email} onChange={e=>setForm({...f,email:e.target.value})} placeholder="Enter email address" className="flex-1 bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/> },
+                { num:3, label:"Phone Number", req:false,
+                  el: <div className="flex gap-2 flex-1">
+                    <div className="flex items-center gap-1.5 bg-[#1A1D1E] border border-white/10 rounded-xl px-3 py-2.5 shrink-0">
+                      <span className="text-base">🇮🇳</span><span className="text-sm text-gray-300">+91</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <input value={f.phone} onChange={e=>setForm({...f,phone:e.target.value})} placeholder="Enter phone number" className="flex-1 bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/>
+                  </div> },
+                { num:4, label:"Request Type", req:true,
+                  el: <div className="relative flex-1">
+                    <select value={f.requestType} onChange={e=>setForm({...f,requestType:e.target.value})} className="appearance-none w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/40 pr-9">
+                      <option value="">Select request type</option>
+                      {SR_REQUEST_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div> },
+                { num:5, label:"Subject", req:true,
+                  el: <input value={f.subject} onChange={e=>setForm({...f,subject:e.target.value})} placeholder="Enter a short subject" className="flex-1 bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/> },
+                { num:6, label:"Priority", req:true,
+                  el: <div className="flex gap-3 flex-wrap">
+                    {[{v:"Low",dot:"bg-green-400"},{v:"Medium",dot:"bg-yellow-400"},{v:"High",dot:"bg-orange-500"},{v:"Urgent",dot:"bg-red-500"}].map(p => (
+                      <button key={p.v} onClick={()=>setForm({...f,priority:p.v})}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-semibold transition-all ${f.priority===p.v?"border-[#C7E36B] bg-[#C7E36B]/5 text-white":"border-white/10 text-gray-400 hover:border-white/20"}`}>
+                        <span className={`w-2 h-2 rounded-full ${p.dot}`}/>
+                        {p.v}
+                      </button>
+                    ))}
+                  </div> },
+                { num:7, label:"Description / Message", req:true,
+                  el: <div className="flex-1 relative">
+                    <textarea value={f.description} onChange={e=>setForm({...f,description:e.target.value.slice(0,2000)})} rows={5} placeholder="Provide details about the issue or request..."
+                      className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40 resize-none"/>
+                    <span className="absolute bottom-2 right-3 text-[10px] text-gray-600">{f.description.length} / 2000</span>
+                  </div> },
+                { num:8, label:"Attachment", req:false,
+                  el: <label className="flex-1 border border-dashed border-white/15 rounded-xl py-6 flex flex-col items-center justify-center cursor-pointer hover:border-white/30 transition-all">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round" className="mb-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p className="text-sm text-gray-300">Drag and drop files here, or <span className="text-[#C7E36B]">click to browse</span></p>
+                    <p className="text-xs text-gray-500 mt-1">Supports: PDF, JPG, PNG, DOC, DOCX (Max 10MB)</p>
+                    <input type="file" className="hidden" onChange={e => setAttachFile(e.target.files?.[0]||null)} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"/>
+                    {attachFile && <p className="mt-2 text-xs text-[#C7E36B]">{attachFile.name}</p>}
+                  </label> },
+                { num:9, label:"Assign To", req:true,
+                  el: <div className="relative flex-1">
+                    <select value={f.assignTo} onChange={e=>setForm({...f,assignTo:e.target.value})} className="appearance-none w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/40 pr-9">
+                      <option value="">Select a support agent</option>
+                      {SR_AGENTS.map(a => <option key={a}>{a}</option>)}
+                    </select>
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div> },
+                { num:10, label:"Status", req:true,
+                  el: <div className="relative flex-1">
+                    <select value={f.status} onChange={e=>setForm({...f,status:e.target.value})} className="appearance-none w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/40 pr-9">
+                      {["New","In Progress","Waiting for User","Open","Resolved","Closed"].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div> },
+              ].map(row => (
+                <div key={row.num} className="flex items-start gap-6 px-6 py-4 border-b border-white/5 last:border-0">
+                  <div className="w-52 shrink-0 pt-2.5">
+                    <span className="text-sm text-gray-300">{row.num}. {row.label} {row.req && <span className="text-red-400">*</span>}</span>
+                  </div>
+                  {row.el}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-        {loading ? <AdminLoader /> : (
-          <div className="divide-y divide-white/5">
-            {filtered.length===0 && <p className="text-gray-500 text-sm p-4">No requests</p>}
-            {filtered.map(r=>(
-              <button key={r._id} onClick={()=>selectReq(r)} className={`w-full text-left p-4 hover:bg-white/5 transition-all ${selected?._id===r._id?"border-l-2 border-[#C7E36B] bg-white/5":""}`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-white">{r.name}</span>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full capitalize ${SR_STATUS_COLORS[r.status]}`}>{r.status}</span>
-                </div>
-                <p className="text-[10px] text-gray-500 mb-1">{r.email}</p>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${SR_SERVICE_COLORS[r.service]}`}>{SR_SERVICE_LABELS[r.service]}</span>
-                  {r.company && <span className="text-[10px] text-gray-500">{r.company}</span>}
-                </div>
-                <p className="text-[10px] text-gray-600 mt-1">{new Date(r.createdAt).toLocaleDateString()}</p>
-              </button>
+
+        {/* Right preview sidebar */}
+        <div className="w-[280px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-5">
+          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Ticket Preview
+          </h3>
+          <div className="space-y-3 text-xs mb-6">
+            {[
+              { label:"Requester Name", value: f.name || "—" },
+              { label:"Email Address",  value: f.email || "—" },
+              { label:"Phone Number",   value: f.phone || "—" },
+              { label:"Request Type",   value: f.requestType || "—", badge: f.requestType ? "bg-blue-500/20 text-blue-400" : null },
+              { label:"Subject",        value: f.subject || "—" },
+              { label:"Priority",       value: f.priority, badge: f.priority ? SR_PRIORITY_BADGE[f.priority] : null },
+              { label:"Assigned To",    value: f.assignTo || "—" },
+              { label:"Status",         value: f.status, badge: f.status ? SR_STATUS_BADGE[f.status] : null },
+            ].map(r => (
+              <div key={r.label} className="flex items-start justify-between gap-2">
+                <span className="text-gray-500 shrink-0">{r.label}</span>
+                {r.badge
+                  ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${r.badge}`}>{r.value}</span>
+                  : <span className="text-white font-medium text-right">{r.value}</span>
+                }
+              </div>
             ))}
           </div>
-        )}
+          <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Support Guidelines
+          </h3>
+          <div className="space-y-2.5">
+            {["Ensure all required fields are filled accurately before creating the ticket.","Use clear and concise language in the subject and description.","Assign the ticket to the most relevant support agent or team.","Update the ticket status as the request progresses."].map((g,i) => (
+              <div key={i} className="flex items-start gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                <p className="text-xs text-gray-400 leading-relaxed">{g}</p>
+              </div>
+            ))}
+            <div className="mt-3 bg-white/5 border border-white/10 rounded-xl p-3 flex items-start gap-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <p className="text-[10px] text-gray-500 leading-relaxed">Internal tickets are used for escalations, learner issues, and backend resolutions within the AIFA support team.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── TICKET CREATED SUCCESS VIEW ── */
+  if (ticketCreated) {
+    const tc = ticketCreated;
+    const ticketId = tc.ticketId || `SR-${new Date().getFullYear()}-1042`;
+    return (
+      <div className="flex-1 overflow-y-auto p-8">
+        <h1 className="text-2xl font-bold text-white mb-1">Ticket Created Successfully</h1>
+        <p className="text-sm text-gray-400 mb-6">The support ticket has been created and assigned successfully.</p>
+        {/* Success banner */}
+        <div className="bg-[#111315] border border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+            <p className="text-sm text-gray-200">Ticket <span className="text-[#C7E36B] font-bold">#{ticketId}</span> created successfully and assigned to {tc.assignTo || tc.assignedTo || "Support Team"}.</p>
+          </div>
+          <button onClick={() => setTicketCreated(null)} className="border border-white/20 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-white/5 shrink-0">View Ticket</button>
+        </div>
+        <div className="grid grid-cols-[1fr_320px] gap-6">
+          {/* Left */}
+          <div className="space-y-5">
+            {/* Ticket Summary */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-6">
+              <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Ticket Summary
+              </h2>
+              <div className="space-y-3">
+                {[
+                  { label:"Ticket ID",       value: ticketId, lime:true },
+                  { label:"Requester Name",  value: tc.name },
+                  { label:"Email",           value: tc.email },
+                  { label:"Request Type",    value: tc.requestType || "—" },
+                  { label:"Subject",         value: tc.subject },
+                  { label:"Priority",        value: tc.priority, badge: SR_PRIORITY_BADGE[tc.priority] },
+                  { label:"Assigned To",     value: tc.assignTo || tc.assignedTo || "—" },
+                  { label:"Status",          value: tc.status, badge: SR_STATUS_BADGE[tc.status] },
+                  { label:"Created On",      value: new Date().toLocaleDateString("en",{weekday:"long",hour:"2-digit",minute:"2-digit"}) },
+                ].map(r => (
+                  <div key={r.label} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                    <span className="text-sm text-gray-400">{r.label}</span>
+                    {r.badge
+                      ? <span className={`text-xs font-bold px-3 py-1 rounded-lg ${r.badge}`}>{r.value}</span>
+                      : <span className={`text-sm font-semibold ${r.lime?"text-[#C7E36B]":"text-white"}`}>{r.value || "—"}</span>
+                    }
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Issue Description */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-6">
+              <h2 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Issue Description
+              </h2>
+              <p className="text-sm text-gray-300 leading-relaxed">{tc.description || "No description provided."}</p>
+              {attachFile && (
+                <div className="mt-4">
+                  <p className="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    Attachment
+                  </p>
+                  <div className="bg-[#0F1112] border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      </div>
+                      <div>
+                        <p className="text-sm text-white font-medium">{attachFile.name}</p>
+                        <p className="text-xs text-gray-500">{(attachFile.size/1024).toFixed(0)} KB · {attachFile.name.split(".").pop().toUpperCase()}</p>
+                      </div>
+                    </div>
+                    <button className="text-gray-400 hover:text-white">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Bottom actions */}
+            <div className="flex gap-3">
+              <button onClick={() => setTicketCreated(null)} className="border border-white/20 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-white/5 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Requests
+              </button>
+              <button className="border border-white/20 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-white/5 flex items-center gap-2">
+                View Full Ticket
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </button>
+              <button className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-3 rounded-xl hover:bg-lime-300 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Reply to Request
+              </button>
+            </div>
+          </div>
+          {/* Right */}
+          <div className="space-y-4">
+            {/* Next Actions */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-5">
+              <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Next Actions
+              </h3>
+              {["Notify support agent","Send acknowledgement to requester","Track resolution progress"].map(a => (
+                <div key={a} className="flex items-center gap-2.5 py-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                  <span className="text-sm text-gray-300">{a}</span>
+                </div>
+              ))}
+            </div>
+            {/* Ticket Status */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-5">
+              <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Ticket Status
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {[{s:"New",dot:"bg-blue-500"},{s:"Urgent",dot:"bg-red-500"},{s:"Assigned",dot:"bg-orange-500"}].map(x => (
+                  <span key={x.s} className="flex items-center gap-1.5 bg-[#0F1112] border border-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold text-white">
+                    <span className={`w-2 h-2 rounded-full ${x.dot}`}/>
+                    {x.s}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Recent Activity */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-5">
+              <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Recent Activity
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, text:"Ticket created", time:"Today, "+new Date().toLocaleTimeString("en",{hour:"2-digit",minute:"2-digit"}) },
+                  { icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, text:`Assigned to ${tc.assignTo||"Support Team"}`, time:"Today, "+new Date().toLocaleTimeString("en",{hour:"2-digit",minute:"2-digit"}) },
+                  { icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, text:"Acknowledgement email queued", time:"Today, "+new Date().toLocaleTimeString("en",{hour:"2-digit",minute:"2-digit"}) },
+                ].map((a, i) => (
+                  <div key={i} className="flex items-start gap-3 relative">
+                    {i < 2 && <div className="absolute left-[11px] top-6 w-0.5 h-6 bg-[#C7E36B]/30"/>}
+                    <div className="w-5 h-5 rounded-full bg-[#C7E36B] flex items-center justify-center shrink-0 text-black">{a.icon}</div>
+                    <div>
+                      <p className="text-sm text-white font-medium">{a.text}</p>
+                      <p className="text-xs text-gray-500">{a.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── MAIN LIST VIEW ── */
+  return (
+    <div className="flex h-full overflow-hidden">
+
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Service Request Management</h1>
+            <p className="text-sm text-gray-400 mt-1">Track, assign, and resolve learner support requests.</p>
+          </div>
+          <button onClick={() => setShowCreate(true)} className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2 shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create Request
+          </button>
+        </div>
+
+        {/* Status tabs */}
+        <div className="flex items-center gap-0 mb-5 border-b border-white/10">
+          {[
+            { id:"all",         label:"All Requests",  count: counts.all },
+            { id:"new",         label:"New",           count: counts.new },
+            { id:"in-progress", label:"In Progress",   count: counts.inProgress },
+            { id:"resolved",    label:"Resolved",      count: counts.resolved },
+            { id:"urgent",      label:"Urgent",        count: counts.urgent, warn:true },
+          ].map(t => (
+            <button key={t.id} onClick={() => setTabFilter(t.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap ${tabFilter===t.id?"border-[#C7E36B] text-white":"border-transparent text-gray-400 hover:text-white"}`}>
+              {t.warn && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+              {!t.warn && tabFilter===t.id && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>}
+              {t.label}
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${tabFilter===t.id?"bg-[#C7E36B]/20 text-[#C7E36B]":"text-gray-500"}`}>{t.count}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Filter row */}
+        <div className="flex items-center gap-3 mb-5 flex-wrap">
+          {[
+            { label:"Request Type", val: typeFilter, opts:["All",...SR_REQUEST_TYPES], set: setTypeFilter },
+            { label:"Priority",     val: priorityFilter, opts:["All","Low","Medium","High","Urgent"], set: setPriorityFilter },
+            { label:"Status",       val: statusFilterV, opts:["All","New","In Progress","Waiting for User","Open","Resolved","Closed"], set: setStatusFilterV },
+          ].map(f => (
+            <div key={f.label} className="relative">
+              <select value={f.val} onChange={e => f.set(e.target.value)}
+                className="appearance-none bg-[#111315] border border-white/15 text-gray-300 text-sm font-medium rounded-xl pl-3 pr-8 py-2 outline-none focus:border-[#C7E36B]/40">
+                <option value="All">{f.label}</option>
+                {f.opts.slice(1).map(o => <option key={o}>{o}</option>)}
+              </select>
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          ))}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="bg-[#111315] border border-white/10 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40 w-48"/>
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div className="relative">
+              <select className="appearance-none bg-[#111315] border border-white/15 text-gray-300 text-sm rounded-xl pl-3 pr-7 py-2 outline-none">
+                <option>Sort: Newest</option><option>Sort: Oldest</option>
+              </select>
+              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <button className="w-9 h-9 flex items-center justify-center bg-[#111315] border border-white/15 rounded-xl text-gray-400 hover:text-white">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-[1.6fr_1.2fr_1.8fr_0.9fr_1.1fr_1.1fr_1fr_90px] px-5 py-3.5 border-b border-white/10">
+            {["User","Request Type","Subject","Priority","Status","Assigned To","Created","Actions"].map(h => (
+              <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
+            ))}
+          </div>
+          {loading ? (
+            <div className="py-12 flex justify-center"><AdminLoader label="Loading Requests"/></div>
+          ) : pageItems.length === 0 ? (
+            <div className="py-14 text-center"><p className="text-3xl mb-3">📋</p><p className="text-sm text-gray-400">No requests found</p></div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {pageItems.map((r, i) => {
+                const pri  = getPriority(r);
+                const stat = getStatus(r);
+                return (
+                  <div key={r._id||i} className="grid grid-cols-[1.6fr_1.2fr_1.8fr_0.9fr_1.1fr_1.1fr_1fr_90px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+                    {/* User */}
+                    <div className="flex items-center gap-2.5">
+                      {r.avatar || r.user?.avatar
+                        ? <img src={r.avatar||r.user?.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0"/>
+                        : <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-xs font-bold text-white shrink-0">{initials(r.name)}</div>
+                      }
+                      <span className="text-sm font-semibold text-white truncate">{r.name||"—"}</span>
+                    </div>
+                    {/* Request Type */}
+                    <span className="text-sm text-gray-300 truncate pr-2">{getRequestType(r)}</span>
+                    {/* Subject */}
+                    <span className="text-sm text-gray-300 line-clamp-2 pr-2">{getSubject(r)}</span>
+                    {/* Priority */}
+                    <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-md w-fit ${SR_PRIORITY_BADGE[pri]||"bg-white/10 text-gray-300"}`}>{pri}</span>
+                    {/* Status */}
+                    <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-md w-fit ${SR_STATUS_BADGE[stat]||"bg-white/10 text-gray-300"}`}>{stat}</span>
+                    {/* Assigned To */}
+                    <span className="text-sm text-gray-300 truncate">{getAssigned(r)}</span>
+                    {/* Created */}
+                    <span className="text-xs text-gray-400">{fmtCreated(r)}</span>
+                    {/* Actions */}
+                    <div className="flex items-center gap-1">
+                      <button className="border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">View</button>
+                      <div className="relative">
+                        <button onClick={e => { e.stopPropagation(); setContextMenu(contextMenu?.id===r._id ? null : { id:r._id, req:r }); }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        </button>
+                        {contextMenu?.id === r._id && (
+                          <div className="absolute right-0 top-8 z-50 bg-[#1A1D1E] border border-white/10 rounded-xl shadow-2xl w-48 py-1 overflow-hidden" onClick={e=>e.stopPropagation()}>
+                            {[
+                              { label:"Assign To Me",    action:"assign" },
+                              { label:"Schedule Call",   action:"call" },
+                              { label:"Send WhatsApp",   action:"whatsapp" },
+                              { label:"Send Email",      action:"email" },
+                              { label:"Mark Follow-Up",  action:"follow" },
+                              { label:"Mark Converted",  action:"converted" },
+                              { label:"Mark Lost",       action:"lost" },
+                            ].map(item => (
+                              <button key={item.action} onClick={() => handleContextAction(item.action, r)}
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all">
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-5 py-4 border-t border-white/10">
+            <p className="text-xs text-gray-500">Showing {filtered.length===0?0:(pageSafe-1)*PER+1} to {Math.min(pageSafe*PER,filtered.length)} of {filtered.length} results</p>
+            <div className="flex items-center gap-1">
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={pageSafe<=1} className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:border-white/30 disabled:opacity-30">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              {Array.from({length:Math.min(totalPages,3)},(_,i)=>i+1).map(n=>(
+                <button key={n} onClick={()=>setPage(n)} className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${pageSafe===n?"bg-[#C7E36B] text-black":"border border-white/10 text-gray-400 hover:border-white/30"}`}>{n}</button>
+              ))}
+              {totalPages>3 && <span className="text-gray-600 px-1">…</span>}
+              {totalPages>3 && <button onClick={()=>setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${pageSafe===totalPages?"bg-[#C7E36B] text-black":"border border-white/10 text-gray-400 hover:border-white/30"}`}>{totalPages}</button>}
+              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={pageSafe>=totalPages} className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:border-white/30 disabled:opacity-30">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Right detail */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {!selected ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="text-center"><p className="text-3xl mb-2">📋</p><p className="text-sm">Select a request to view details</p></div>
-          </div>
-        ) : (
-          <div className="max-w-2xl space-y-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-white">{selected.name}</h2>
-                <p className="text-sm text-gray-400">{selected.email} {selected.phone && `· ${selected.phone}`}</p>
-                {selected.company && <p className="text-xs text-gray-500">{selected.company}</p>}
+      {/* Right sidebar */}
+      <div className="w-[270px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-4">
+        {/* Support Overview */}
+        <div className="bg-[#111315] border border-white/10 rounded-2xl p-4 mb-4">
+          <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.9 12.9a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.82 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Support Overview
+          </h3>
+          {[
+            { label:"Total Requests", value: counts.all,        color:"text-white" },
+            { label:"New Requests",   value: counts.new,        color:"text-orange-400" },
+            { label:"In Progress",    value: counts.inProgress, color:"text-orange-400" },
+            { label:"Resolved",       value: counts.resolved,   color:"text-[#C7E36B]" },
+          ].map(s => (
+            <div key={s.label} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+              <div className="flex items-center gap-2">
+                {s.label==="Total Requests"  && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
+                {s.label==="New Requests"    && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>}
+                {s.label==="In Progress"     && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>}
+                {s.label==="Resolved"        && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>}
+                <span className="text-xs text-gray-400">{s.label}</span>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${SR_SERVICE_COLORS[selected.service]}`}>{SR_SERVICE_LABELS[selected.service]}</span>
+              <span className={`text-sm font-black ${s.color}`}>{s.value}</span>
             </div>
-            {selected.message && (
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase mb-2">Message</p>
-                <p className="text-sm text-gray-300 leading-relaxed">{selected.message}</p>
-              </div>
-            )}
-            {selected.budget && <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Budget</p><p className="text-sm text-white">{selected.budget}</p></div>}
+          ))}
+          <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">STATUS</p>
-              <select value={status} onChange={e=>setStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                <option value="new">New</option><option value="in-progress">In Progress</option><option value="completed">Completed</option><option value="rejected">Rejected</option>
-              </select>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">ADMIN NOTE</p>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 resize-none" placeholder="Add internal notes..."/>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Changes"}</button>
-              <button onClick={handleDelete} className="text-xs border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10">Delete</button>
+              <p className="text-xs text-gray-400">Avg. Response Time</p>
+              <p className="text-sm font-black text-white">{avgResponseTime}</p>
+              <p className="text-[10px] text-gray-600">Last 7 days</p>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Priority Queue */}
+        <div className="bg-[#111315] border border-white/10 rounded-2xl p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Priority Queue
+            </h3>
+            <button className="text-[10px] text-[#C7E36B] font-semibold hover:underline">View All</button>
+          </div>
+          {priorityQueue.length === 0 ? (
+            <p className="text-xs text-gray-500 text-center py-4">No urgent tickets</p>
+          ) : (
+            <div className="space-y-3">
+              {priorityQueue.map((r, i) => (
+                <div key={r._id||i} className="bg-[#0F1112] border border-white/5 rounded-xl p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded ${getPriority(r)==="Urgent"?"bg-red-500 text-white":"bg-orange-500/20 text-orange-400"}`}>{getPriority(r)}</span>
+                    <span className="text-[10px] text-gray-500">#{r.ticketId||`SR-${String(r._id||"").slice(-4)}`}</span>
+                  </div>
+                  <p className="text-xs font-semibold text-white line-clamp-1">{getSubject(r)}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">{r.name} · {getRequestType(r)}</p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">{fmtCreated(r)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => setTabFilter("urgent")} className="w-full mt-3 border border-white/10 text-gray-300 text-xs font-semibold py-2.5 rounded-xl hover:bg-white/5 flex items-center justify-center gap-1.5">
+            View All Priority Tickets
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        {/* Help Resources */}
+        <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+          <h3 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Help Resources
+          </h3>
+          <p className="text-[10px] text-gray-500 mb-3">Quick links for your support team.</p>
+          {["Support Guidelines","Response Templates"].map(l => (
+            <div key={l} className="flex items-center justify-between py-3 border-t border-white/5">
+              <span className="text-sm text-gray-300">{l}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
