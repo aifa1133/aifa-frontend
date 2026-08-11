@@ -168,12 +168,14 @@ import InfluencerReferrals from "./pages/influencer/InfluencerReferrals";
 import InfluencerPayouts from "./pages/influencer/InfluencerPayouts";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll", "/influencer"];
+const DASHBOARD_SECTIONS = ["dashboard","bootcamp","workshops","video-courses","certificates","jobs","resources","community","hire-talent","profile","settings","billing"];
 const FULLSCREEN_PATTERNS = [
   /^\/courses\/.+\/watch$/,
   /^\/courses\/.+\/pay$/,
   /^\/courses\/.+\/setup$/,
   /^\/influencer(\/.*)?$/,
   /^\/admin(\/.*)?$/,
+  /^\/dashboard(\/.*)?$/,
 ];
 
 function ScrollToTop() {
@@ -238,7 +240,8 @@ function AppShell() {
           <Route path="/clubs" element={<Clubs />} />
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/awards" element={<Awards />} />
-          <Route path="/dashboard" element={<StudentDashboard />} />
+          <Route path="/dashboard" element={<Navigate to="/dashboard/dashboard" replace />} />
+          <Route path="/dashboard/:section" element={<StudentDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/login" element={<UserLogin />} />

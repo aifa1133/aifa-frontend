@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 
 /* ─── ICONS (inline SVG keeps bundle tiny) ─── */
@@ -68,12 +68,18 @@ const NAV = [
    MAIN LAYOUT
 ════════════════════════════════════════════ */
 export default function StudentDashboard() {
-  const location = useLocation();
-  const [activePage, setActivePage] = useState(() => {
-    const nav = sessionStorage.getItem("aifa_dashTab");
-    if (nav) { sessionStorage.removeItem("aifa_dashTab"); return nav; }
-    return location.state?.page || sessionStorage.getItem("aifa_currentTab") || "dashboard";
-  });
+  const { section } = useParams();
+  const activePage = section || "dashboard";
+  const navigate = useNavigate();
+
+  const navigateTo = (page) => {
+    navigate(`/dashboard/${page}`);
+  };
+
+  const goBack = () => {
+    navigate(-1);
+  };
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNotif, setShowNotif] = useState(false);
@@ -82,31 +88,15 @@ export default function StudentDashboard() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [invoiceItem, setInvoiceItem] = useState(null);
   const [liveClass, setLiveClass] = useState(null);
-  const [navHistory, setNavHistory] = useState([]);
   const [emailVerified, setEmailVerified] = useState(() => {
     const u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
-    return u.emailVerified !== false; // default true unless explicitly false
+    return u.emailVerified !== false;
   });
-
-  const navigateTo = (page) => {
-    setNavHistory(prev => [...prev, activePage]);
-    setActivePage(page);
-  };
-
-  const goBack = () => {
-    setNavHistory(prev => {
-      const history = [...prev];
-      const last = history.pop();
-      if (last) setActivePage(last);
-      return history;
-    });
-  };
-  const navigate = useNavigate();
   const token = localStorage.getItem("aifa_token");
   const notifRef = useRef(null);
   const userRef = useRef(null);
 
-  useEffect(() => { sessionStorage.setItem("aifa_currentTab", activePage); }, [activePage]);
+  // activePage is now derived from the URL — no sessionStorage needed
 
   useEffect(() => {
     if (!token) { navigate("/"); return; }
@@ -143,14 +133,13 @@ export default function StudentDashboard() {
       .then(data => {
         if (!Array.isArray(data)) return;
         const now = Date.now();
-        const in24h = now + 24 * 60 * 60 * 1000;
         const upcoming = data
           .filter(w => {
             if (!w.scheduledAt) return false;
             const t = new Date(w.scheduledAt).getTime();
             const registered = Array.isArray(w.registrations) &&
               w.registrations.some(r => (r._id || r) === profile._id);
-            return registered && t >= now && t <= in24h;
+            return registered && t >= now;
           })
           .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
         setLiveClass(upcoming[0] || null);
@@ -345,9 +334,9 @@ export default function StudentDashboard() {
                   email={profile?.email}
                   avatar={profile?.profilePicture}
                   isGuest={!emailVerified}
-                  onProfile={() => { setActivePage("profile"); setShowUserMenu(false); }}
-                  onSettings={() => { setActivePage("settings"); setShowUserMenu(false); }}
-                  onBilling={() => { setActivePage("billing"); setShowUserMenu(false); }}
+                  onProfile={() => { navigateTo("profile"); setShowUserMenu(false); }}
+                  onSettings={() => { navigateTo("settings"); setShowUserMenu(false); }}
+                  onBilling={() => { navigateTo("billing"); setShowUserMenu(false); }}
                   onLogout={handleLogout}
                 />
               )}
@@ -632,9 +621,9 @@ function DashboardHome({ profile, token, onNavigate }) {
   const workshopsAttended = stats?.enrolledWorkshops  ?? profile?.enrolledWorkshops?.length ?? 0;
 
   const statCards = [
-    { icon: "video",    label: "Courses Enrolled",   value: coursesEnrolled,   color: "text-blue-400",   bg: "bg-blue-500/10"   },
-    { icon: "cert",     label: "Certificates Earned", value: certCount,         color: "text-[#C7E36B]",  bg: "bg-[#C7E36B]/10"  },
-    { icon: "workshop", label: "Workshops Attended",  value: workshopsAttended, color: "text-purple-400", bg: "bg-purple-500/10" },
+    { icon: "video",    label: "Courses Enrolled",   value: coursesEnrolled,   color: "text-blue-400",   bg: "bg-blue-500/10",    borderColor: "border-blue-500/30"    },
+    { icon: "cert",     label: "Certificates Earned", value: certCount,         color: "text-[#C7E36B]",  bg: "bg-[#C7E36B]/10",   borderColor: "border-[#C7E36B]/30"   },
+    { icon: "workshop", label: "Workshops Attended",  value: workshopsAttended, color: "text-purple-400", bg: "bg-purple-500/10",  borderColor: "border-purple-500/30"  },
   ];
 
   return (
@@ -642,12 +631,14 @@ function DashboardHome({ profile, token, onNavigate }) {
       {/* 3 STAT CARDS */}
       <div className="grid grid-cols-3 gap-4">
         {statCards.map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 flex items-center gap-3.5">
+            <div className={`w-10 h-10 rounded-xl border ${s.borderColor} flex items-center justify-center shrink-0`}>
               <Ic name={s.icon} size={18} className={s.color}/>
             </div>
-            <p className="text-2xl font-black text-white">{s.value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+            <div>
+              <p className="text-2xl font-black text-white leading-none">{String(s.value).padStart(2, "0")}</p>
+              <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -664,13 +655,13 @@ function DashboardHome({ profile, token, onNavigate }) {
             <button onClick={() => onNavigate("video-courses")} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Browse Courses</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-wrap gap-4">
             {enrolledCourses.slice(0, 3).map((c, i) => {
               const pct = c.percentComplete || 0;
               const lessons = c.totalLessons || c.lessons?.length || 0;
               const done    = Math.round((pct/100)*lessons);
               return (
-                <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#C7E36B]/30 transition-all">
+                <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#C7E36B]/30 transition-all w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)] max-w-[380px]">
                   <div className="relative h-28">
                     {c.image ? <img src={c.image} alt={c.title} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-purple-900/60 to-blue-900/40"/>}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"/>
@@ -681,8 +672,8 @@ function DashboardHome({ profile, token, onNavigate }) {
                       <div className="bg-[#C7E36B] h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] text-gray-400">{pct}% complete</span>
-                      {lessons > 0 && <span className="text-[10px] text-gray-400">{done}/{lessons} lessons</span>}
+                      <span className="text-[10px] text-gray-400">{pct}% completed</span>
+                      <span className="text-[10px] text-gray-400">{done}/{lessons} lessons</span>
                     </div>
                     <button onClick={() => navigate(`/courses/${c._id}/watch`)}
                       className="w-full bg-[#C7E36B] hover:bg-[#d4f070] text-black text-xs font-bold py-2 rounded-lg transition-all">
@@ -710,17 +701,27 @@ function DashboardHome({ profile, token, onNavigate }) {
         ) : (
           <div className="space-y-3">
             {upcomingWorkshops.map((w, i) => (
-              <div key={i} className="bg-white/5 border border-[#C7E36B]/20 rounded-xl p-4 flex items-start gap-4 hover:border-[#C7E36B]/40 transition-all">
-                <div className="w-14 h-14 rounded-xl bg-white/10 shrink-0 overflow-hidden">
-                  {w.image ? <img src={w.image} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-gradient-to-br from-[#C7E36B]/20 to-transparent flex items-center justify-center"><Ic name="workshop" size={22} className="text-[#C7E36B]"/></div>}
+              <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center gap-4 hover:border-white/20 transition-all">
+                {/* 16:9 banner thumbnail */}
+                <div className="w-[100px] aspect-[16/9] rounded-lg bg-white/10 shrink-0 overflow-hidden">
+                  {w.image
+                    ? <img src={w.image} alt="" className="w-full h-full object-cover"/>
+                    : <div className="w-full h-full bg-gradient-to-br from-purple-900/60 to-blue-900/40 flex items-center justify-center"><Ic name="workshop" size={20} className="text-[#C7E36B]/60"/></div>
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-[#C7E36B] font-bold mb-0.5">📅 {fmtDateBadge(w.scheduledAt)}</p>
+                  <p className="text-[10px] text-[#C7E36B] font-bold mb-0.5">
+                    📅 {fmtDateBadge(w.scheduledAt)}
+                  </p>
                   <h3 className="text-sm font-semibold text-white line-clamp-1">{w.title}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{w.description}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                    {w.description?.trim() || "You're successfully registered. Get ready to join the live workshop and start creating AI-powered cinematic videos."}
+                  </p>
                 </div>
-                <button onClick={() => w._id && navigate(`/workshops/${w._id}`)}
-                  className="text-xs border border-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all shrink-0">
+                <button
+                  onClick={() => w._id && navigate(`/workshops/${w._id}`)}
+                  className="text-xs bg-white text-[#0F1112] font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-all shrink-0"
+                >
                   View Details
                 </button>
               </div>
@@ -949,7 +950,7 @@ function BootcampSection({ token, profile }) {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80')] bg-cover bg-center opacity-20"/>
         <div className="relative px-6 py-5">
           <div className="flex items-center gap-2 mb-2 text-[10px] text-white/60">
-            <button onClick={()=>setActivePage("bootcamp")} className="hover:text-white transition-colors">← Back to Bootcamps</button>
+            <button onClick={()=>navigateTo("bootcamp")} className="hover:text-white transition-colors">← Back to Bootcamps</button>
           </div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">IN PROGRESS</span>
@@ -2505,6 +2506,7 @@ function ProfileSection({ profile, token, onUpdated }) {
   const [saving, setSaving]         = useState(false);
   const [msg, setMsg]               = useState("");
   const [uploading, setUploading]   = useState(false);
+  const [avatarErr, setAvatarErr]   = useState(false);
   const fileRef = useRef(null);
 
 
@@ -2541,6 +2543,7 @@ function ProfileSection({ profile, token, onUpdated }) {
   const memberId = `AIFA-${String(profile?._id || "98234").slice(-5).toUpperCase()}`;
   const avatarSrc = profile?.profilePicture;
   const initial = (profile?.name || "A")[0].toUpperCase();
+  const showAvatar = avatarSrc && !avatarErr;
 
   return (
     <div className="p-6 bg-[#0B0F10] min-h-full text-white">
@@ -2562,9 +2565,9 @@ function ProfileSection({ profile, token, onUpdated }) {
             {/* Avatar picker */}
             <div className="flex flex-col items-center mb-6">
               <div className="relative w-20 h-20 mb-3">
-                {avatarSrc
-                  ? <img src={avatarSrc} alt="avatar" className="w-20 h-20 rounded-full object-cover" />
-                  : <div className="w-20 h-20 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-2xl font-bold">{initial}</div>
+                {showAvatar
+                  ? <img src={avatarSrc} alt="avatar" onError={() => setAvatarErr(true)} className="w-20 h-20 rounded-full object-cover ring-2 ring-white/25" />
+                  : <div className="w-20 h-20 rounded-full bg-[#C7E36B] ring-2 ring-white/25 flex items-center justify-center text-black text-2xl font-bold">{initial}</div>
                 }
                 {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
               </div>
@@ -2626,9 +2629,9 @@ function ProfileSection({ profile, token, onUpdated }) {
           </div>
         ) : (
           <div className="flex items-start gap-6">
-            {avatarSrc
-              ? <img src={avatarSrc} alt="avatar" className="w-16 h-16 rounded-full object-cover shrink-0" />
-              : <div className="w-16 h-16 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold shrink-0">{initial}</div>
+            {showAvatar
+              ? <img src={avatarSrc} alt="avatar" onError={() => setAvatarErr(true)} className="w-16 h-16 rounded-full object-cover shrink-0 ring-2 ring-white/25" />
+              : <div className="w-16 h-16 rounded-full bg-[#C7E36B] ring-2 ring-white/25 flex items-center justify-center text-black text-xl font-bold shrink-0">{initial}</div>
             }
             <div className="grid grid-cols-2 gap-6 flex-1">
               <div>
@@ -2659,23 +2662,23 @@ function ProfileSection({ profile, token, onUpdated }) {
       </div>
 
       {/* Account Info */}
-      <div>
-        <h2 className="text-base font-bold text-white mb-4">Account Information</h2>
-        <div className="flex items-center gap-10">
+      <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
+        <h2 className="text-base font-bold text-white mb-5">Account Information</h2>
+        <div className="grid grid-cols-3 gap-6">
           <div>
-            <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Member ID</p>
-            <p className="text-sm font-semibold text-gray-300">{memberId}</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Member ID</p>
+            <p className="text-sm font-bold text-white">{memberId}</p>
           </div>
           <div>
-            <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Member Since</p>
-            <p className="text-sm font-semibold text-gray-300">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Member Since</p>
+            <p className="text-sm font-bold text-white">
               {new Date(profile?.createdAt || "2023-10-12").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Account Status</p>
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />Active
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Account Status</p>
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-400 border border-green-500/50 px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />Active
             </span>
           </div>
         </div>
@@ -2688,7 +2691,7 @@ function ProfileSection({ profile, token, onUpdated }) {
    SETTINGS SECTION
 ════════════════════════════════════════════ */
 function SettingsSection({ token, profile }) {
-  const [tab, setTab] = useState("password");
+  const [activeSection, setActiveSection] = useState("password");
   const [current, setCurrent] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -2698,13 +2701,21 @@ function SettingsSection({ token, profile }) {
   const [msg, setMsg] = useState("");
   const DEFAULT_PREFS = { newCourses: true, workshopAlerts: true, progressEmails: false, promotions: true };
   const [prefs, setPrefs] = useState(() => ({ ...DEFAULT_PREFS, ...(profile?.notificationPrefs || {}) }));
+  const [prefMsg, setPrefMsg] = useState("");
+  const [prefSaving, setPrefSaving] = useState(false);
 
-  /* Sync prefs when profile loads */
+  const pwdRef  = useRef(null);
+  const notifRef = useRef(null);
+
   useEffect(() => {
     if (profile?.notificationPrefs) setPrefs(p => ({ ...DEFAULT_PREFS, ...profile.notificationPrefs }));
   }, [profile]);
-  const [prefMsg, setPrefMsg] = useState("");
-  const [prefSaving, setPrefSaving] = useState(false);
+
+  const scrollTo = (section) => {
+    setActiveSection(section);
+    const el = section === "password" ? pwdRef.current : notifRef.current;
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const handlePwdUpdate = async () => {
     if (!current || !newPwd || !confirm) { setMsg("Fill in all fields."); return; }
@@ -2722,96 +2733,112 @@ function SettingsSection({ token, profile }) {
     setSaving(false);
   };
 
+  const NAV = [
+    { id: "password",      label: "Change Password" },
+    { id: "notifications", label: "Notifications"   },
+  ];
+
   return (
     <div className="p-6 bg-[#0B0F10] min-h-full text-white">
       <h1 className="text-lg font-bold text-white mb-6">Settings</h1>
-      <div className="flex gap-6">
-        {/* Sidebar tabs */}
-        <div className="w-[180px] shrink-0">
-          {[["password", "Change Password"], ["notifications", "Notifications"]].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)}
-              className={`w-full flex items-center justify-between px-4 py-2.5 text-xs rounded-lg mb-1 transition-all ${tab === id ? "bg-[#7C3AED] text-white font-semibold" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}>
-              {label} {tab === id && <Ic name="chevron" size={14} />}
-            </button>
-          ))}
+      <div className="flex gap-6 items-start">
+
+        {/* ── Left sidebar (sticky anchor nav) ── */}
+        <div className="w-[200px] shrink-0 sticky top-6">
+          {NAV.map(({ id, label }) => {
+            const active = activeSection === id;
+            return (
+              <button key={id} onClick={() => scrollTo(id)}
+                className={`w-full flex items-center justify-between px-4 py-2.5 text-xs rounded-xl mb-1.5 font-semibold transition-all ${
+                  active
+                    ? "bg-white text-[#0F1112]"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}>
+                {label}
+                {active && <Ic name="chevron" size={14} className="text-[#0F1112]" />}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 space-y-4">
-          {tab === "password" && (
-            <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
-              <h2 className="text-sm font-bold text-white mb-1">Change Password</h2>
-              <p className="text-xs text-gray-400 mb-6">Update your password to keep your account secure.</p>
-              <div className="space-y-4 max-w-md">
-                <div>
-                  <label className="text-xs text-gray-400 font-medium mb-1.5 block">Current Password</label>
-                  <div className="relative">
-                    <input type={showCurrent ? "text" : "password"} value={current} onChange={e => setCurrent(e.target.value)}
-                      className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]" />
-                    <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                      <Ic name="eye" size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 font-medium mb-1.5 block">New Password</label>
-                  <div className="relative">
-                    <input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Enter new password"
-                      className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]" />
-                    <button onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                      <Ic name="eye" size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 font-medium mb-1.5 block">Confirm New Password</label>
-                  <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Confirm new password"
-                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#7C3AED]" />
-                </div>
-                {msg && <p className={`text-xs ${msg.includes("success") ? "text-green-400" : "text-red-400"}`}>{msg}</p>}
-                <button onClick={handlePwdUpdate} disabled={saving}
-                  className="bg-[#C7E36B] text-black font-bold text-xs px-5 py-2.5 rounded-lg hover:bg-lime-300 disabled:opacity-60">
-                  {saving ? "Updating..." : "Update Password"}
-                </button>
-              </div>
-            </div>
-          )}
+        {/* ── Right: stacked panels ── */}
+        <div className="flex-1 space-y-6">
 
-          {tab === "notifications" && (
-            <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
-              <h2 className="text-sm font-bold text-white mb-1">Notifications</h2>
-              <p className="text-xs text-gray-400 mb-6">Manage how you receive updates and alerts.</p>
-              <div className="space-y-4 max-w-md">
-                {[
-                  { key: "newCourses",     label: "New Course Alerts",    desc: "Get notified when new courses are published" },
-                  { key: "workshopAlerts", label: "Workshop Alerts",      desc: "Reminders before your registered workshops" },
-                  { key: "progressEmails", label: "Progress Emails",      desc: "Weekly progress summary emails" },
-                  { key: "promotions",     label: "Promotions & Offers",  desc: "Discounts and special offers" },
-                ].map(n => (
-                  <div key={n.key} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{n.label}</p>
-                      <p className="text-xs text-gray-400">{n.desc}</p>
-                    </div>
-                    <button onClick={() => setPrefs(p => ({ ...p, [n.key]: !p[n.key] }))}
-                      className={`w-12 h-6 rounded-full transition-all ${prefs[n.key] ? "bg-[#7C3AED]" : "bg-gray-200"}`}>
-                      <span className={`block w-5 h-5 bg-white rounded-full shadow transition-all mx-0.5 ${prefs[n.key] ? "translate-x-6" : "translate-x-0"}`} />
-                    </button>
-                  </div>
-                ))}
-                {prefMsg && <p className={`text-sm ${prefMsg.includes("saved") ? "text-green-600" : "text-red-500"}`}>{prefMsg}</p>}
-                <button onClick={async () => {
-                  setPrefSaving(true); setPrefMsg("");
-                  const res = await fetch("/api/users/me/notifications", { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(prefs) });
-                  setPrefMsg(res.ok ? "Preferences saved!" : "Failed to save.");
-                  setPrefSaving(false);
-                }} disabled={prefSaving}
-                  className="bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-800 disabled:opacity-60">
-                  {prefSaving ? "Saving..." : "Save Preferences"}
-                </button>
+          {/* Change Password */}
+          <div ref={pwdRef} className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
+            <h2 className="text-sm font-bold text-white mb-1">Change Password</h2>
+            <p className="text-xs text-gray-400 mb-6">Update your password to keep your account secure.</p>
+            <div className="space-y-4 max-w-lg">
+              <div>
+                <label className="text-xs text-gray-400 font-medium mb-1.5 block">Current Password</label>
+                <div className="relative">
+                  <input type={showCurrent ? "text" : "password"} value={current} onChange={e => setCurrent(e.target.value)}
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-white/30 pr-10" />
+                  <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                    <Ic name="eye" size={16} />
+                  </button>
+                </div>
               </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium mb-1.5 block">New Password</label>
+                <div className="relative">
+                  <input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Enter new password"
+                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-white/30 placeholder-gray-600 pr-10" />
+                  <button onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                    <Ic name="eye" size={16} />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium mb-1.5 block">Confirm New Password</label>
+                <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Confirm new password"
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-white/30 placeholder-gray-600" />
+              </div>
+              {msg && <p className={`text-xs ${msg.includes("success") ? "text-green-400" : "text-red-400"}`}>{msg}</p>}
+              <button onClick={handlePwdUpdate} disabled={saving}
+                className="bg-white text-[#0F1112] font-bold text-xs px-6 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60 transition-colors">
+                {saving ? "Updating..." : "Update Password"}
+              </button>
             </div>
-          )}
+          </div>
+
+          {/* Notifications */}
+          <div ref={notifRef} className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
+            <h2 className="text-sm font-bold text-white mb-1">Notifications</h2>
+            <p className="text-xs text-gray-400 mb-6">Manage how you receive updates and alerts.</p>
+            <div className="max-w-lg">
+              {[
+                { key: "newCourses",     label: "New Course Alerts",   desc: "Get notified when new courses are published" },
+                { key: "workshopAlerts", label: "Workshop Alerts",     desc: "Reminders before your registered workshops" },
+                { key: "progressEmails", label: "Progress Emails",     desc: "Weekly progress summary emails" },
+                { key: "promotions",     label: "Promotions & Offers", desc: "Discounts and special offers" },
+              ].map(n => (
+                <div key={n.key} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-gray-300">{n.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
+                  </div>
+                  <button
+                    onClick={() => setPrefs(p => ({ ...p, [n.key]: !p[n.key] }))}
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${prefs[n.key] ? "bg-[#C7E36B]" : "bg-white/15"}`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${prefs[n.key] ? "left-[calc(100%-22px)]" : "left-0.5"}`} />
+                  </button>
+                </div>
+              ))}
+              {prefMsg && <p className={`text-xs mt-3 ${prefMsg.includes("saved") ? "text-green-400" : "text-red-400"}`}>{prefMsg}</p>}
+              <button onClick={async () => {
+                setPrefSaving(true); setPrefMsg("");
+                const res = await fetch("/api/users/me/notifications", { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(prefs) });
+                setPrefMsg(res.ok ? "Preferences saved!" : "Failed to save.");
+                setPrefSaving(false);
+              }} disabled={prefSaving}
+                className="mt-5 bg-white text-[#0F1112] font-bold text-xs px-6 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60 transition-colors">
+                {prefSaving ? "Saving..." : "Save Preferences"}
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -2822,11 +2849,11 @@ function SettingsSection({ token, profile }) {
    RESOURCES SECTION
 ════════════════════════════════════════════ */
 const RES_TABS = [
-  { key: "prompt",   label: "Prompt Library" },
-  { key: "workflow", label: "Workflows"       },
-  { key: "project",  label: "Projects"        },
-  { key: "tip",      label: "Learning Tips"   },
-  { key: "deal",     label: "AI Deals"        },
+  { key: "prompt",   label: "PROMPT LIBRARY" },
+  { key: "workflow", label: "WORK FLOW"       },
+  { key: "project",  label: "PROJECT"         },
+  { key: "tip",      label: "LEARNING TIPS"   },
+  { key: "deal",     label: "AI DEAL"         },
 ];
 
 const PLACEHOLDER_IMGS = [
@@ -2839,12 +2866,14 @@ const PLACEHOLDER_IMGS = [
 ];
 
 function ResourcesSection({ token }) {
-  const [tab, setTab]         = useState("prompt");
-  const [resources, setRes]   = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch]   = useState("");
-  const [copied, setCopied]   = useState(null);
-  const [detail, setDetail]   = useState(null);
+  const [tab, setTab]               = useState("prompt");
+  const [resources, setRes]         = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [copied, setCopied]         = useState(null);
+  const [detail, setDetail]         = useState(null);
+  const [catFilter, setCatFilter]   = useState("All");
+  const [subCatFilter, setSubCatFilter] = useState("All");
+  const [dealCatFilter, setDealCatFilter] = useState("All Benefits");
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -2862,10 +2891,6 @@ function ResourcesSection({ token }) {
       .finally(() => setLoading(false));
   }, [tab]);
 
-  const filtered = resources.filter(r =>
-    !search || r.title.toLowerCase().includes(search.toLowerCase())
-  );
-
   const img = (r, i) => r.logo || PLACEHOLDER_IMGS[i % PLACEHOLDER_IMGS.length];
 
   const copyText = r => {
@@ -2874,32 +2899,70 @@ function ResourcesSection({ token }) {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const activeTabLabel = tab === "project" ? "Projects Showcase" : tab === "tip" ? "Learning Tips" : tab === "deal" ? "AI Deals" : RES_TABS.find(t => t.key === tab)?.label || "Resources";
+  const activeTabSubtitle = tab === "project"
+    ? "Manage and curate the portfolio of student projects featured on the platform."
+    : tab === "tip"
+    ? "Manage and publish high-impact video learning content."
+    : tab === "deal"
+    ? "Manage promotional cards and exclusive offers for AI tools."
+    : "Tools, prompts and workflows to supercharge your AI filmmaking";
+  const cats    = ["All", ...Array.from(new Set(resources.map(r => r.category).filter(Boolean)))];
+  const subCats = ["All", ...Array.from(new Set(resources.filter(r => catFilter === "All" || r.category === catFilter).map(r => r.subCategory).filter(Boolean)))];
+
+  const filtered = resources.filter(r => {
+    const matchCat = catFilter === "All" || r.category === catFilter;
+    const matchSub = subCatFilter === "All" || r.subCategory === subCatFilter;
+    return matchCat && matchSub;
+  });
+
   return (
     <div className="p-6">
+      {/* Header row: dynamic title + dropdown filters */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-white">Resources</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Tools, prompts and workflows to supercharge your AI filmmaking</p>
+          <h1 className="text-xl font-bold text-white">{activeTabLabel}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{activeTabSubtitle}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <select value={catFilter} onChange={e => { setCatFilter(e.target.value); setSubCatFilter("All"); }}
+              className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer min-w-[100px]">
+              {cats.map(c => <option key={c} value={c} className="bg-[#1a1e20]">{c}</option>)}
+            </select>
+            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div className="relative">
+            <select value={subCatFilter} onChange={e => setSubCatFilter(e.target.value)}
+              className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer min-w-[130px]">
+              {subCats.map(c => <option key={c} value={c} className="bg-[#1a1e20]">{c === "All" ? "Sub category" : c}</option>)}
+            </select>
+            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-fit mb-5 overflow-x-auto">
+      {/* Tab bar — uppercase pill style, lime active */}
+      <div className="flex gap-2 mb-4">
         {RES_TABS.map(t => (
-          <button key={t.key} onClick={() => { setTab(t.key); setSearch(""); }}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${tab === t.key ? "bg-[#7C3AED] text-white" : "text-gray-400 hover:text-white"}`}>
+          <button key={t.key} onClick={() => { setTab(t.key); setCatFilter("All"); setSubCatFilter("All"); setDealCatFilter("All Benefits"); }}
+            className={`px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap ${tab === t.key ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative mb-5 w-[280px]">
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder={`Search ${RES_TABS.find(t => t.key === tab)?.label.toLowerCase()}...`}
-          className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#7C3AED]/50" />
-        <Ic name="search" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-      </div>
+      {/* Deal category pill filters */}
+      {tab === "deal" && (
+        <div className="flex items-center gap-2 flex-wrap mb-6">
+          {["All Benefits", "video", "design", "marketing", "voice", "Automation"].map(c => (
+            <button key={c} onClick={() => setDealCatFilter(c)}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${dealCatFilter === c ? "bg-[#C7E36B] text-black border-[#C7E36B]" : "border-white/15 text-gray-400 hover:text-white hover:border-white/30"}`}>
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-48">
@@ -2922,7 +2985,7 @@ function ResourcesSection({ token }) {
               <div className="p-3">
                 <h3 className="text-sm font-semibold text-white mb-2 line-clamp-1">{r.title}</h3>
                 <div className="bg-white/5 rounded-lg p-2 mb-2 relative group">
-                  <span className="text-[9px] font-bold text-[#7C3AED] tracking-widest uppercase block mb-1">PROMPT</span>
+                  <span className="text-[9px] font-bold text-gray-500 tracking-widest uppercase block mb-1">PROMPT</span>
                   <p className="text-[11px] text-gray-400 line-clamp-3 pr-5">{r.content || r.description}</p>
                   <button onClick={() => copyText(r)} title="Copy prompt"
                     className="absolute top-2 right-2 p-1 rounded hover:bg-white/10 transition-all">
@@ -3007,43 +3070,67 @@ function ResourcesSection({ token }) {
           )}
         </>
       ) : tab === "tip" ? (
-        /* ── LEARNING TIPS ── */
-        <div className="space-y-3 max-w-2xl">
+        /* ── LEARNING TIPS ── 3-column thumbnail + Watch Now grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((r, i) => (
-            <div key={r._id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex gap-4 hover:border-[#7C3AED]/40 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-[#7C3AED]/20 flex items-center justify-center shrink-0 text-lg">💡</div>
-              <div>
-                <h3 className="text-sm font-semibold text-white mb-1">{r.title}</h3>
-                <p className="text-xs text-gray-400">{r.description}</p>
-                {r.content && <p className="text-xs text-gray-500 mt-2 italic border-l-2 border-[#7C3AED]/40 pl-2">"{r.content}"</p>}
+            <div key={r._id} className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
+              <div className="aspect-video overflow-hidden bg-white/5">
+                {r.thumbnail
+                  ? <img src={r.thumbnail} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                  : <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#111 0%,#1a1d2e 100%)"}}>
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                }
               </div>
+              {r.link
+                ? <a href={r.link} target="_blank" rel="noopener noreferrer"
+                    className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
+                    Watch Now! <span>→</span>
+                  </a>
+                : <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
+                    Watch Now! <span>→</span>
+                  </button>
+              }
             </div>
           ))}
         </div>
       ) : tab === "deal" ? (
         /* ── AI DEALS ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r, i) => (
-            <div key={r._id} className="bg-white rounded-xl p-4 flex flex-col gap-2 shadow-sm">
-              {r.logo
-                ? <img src={r.logo} alt={r.title} className="h-8 object-contain" />
-                : <div className="h-8 flex items-center"><span className="text-xs font-bold text-gray-800">{r.title}</span></div>
-              }
-              <h3 className="text-sm font-bold text-black">{r.title}</h3>
-              <p className="text-xs text-gray-600 flex-1">{r.description}</p>
-              {r.discount && (
-                <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full w-fit">{r.discount} OFF</span>
+          {filtered
+            .filter(r => dealCatFilter === "All Benefits" || (r.category || "").toLowerCase() === dealCatFilter.toLowerCase())
+            .map((r, i) => (
+            <div key={r._id} className="bg-white rounded-2xl overflow-hidden shadow-sm flex flex-col">
+              {/* Logo header */}
+              <div className="h-[100px] bg-white flex items-center justify-center px-6 border-b border-gray-100">
+                {r.logo && (r.logo.startsWith("http") || r.logo.startsWith("/"))
+                  ? <img src={r.logo} alt={r.title} className="max-h-[60px] max-w-[160px] object-contain"/>
+                  : <span className="text-base font-bold text-gray-800">{r.title}</span>
+                }
+              </div>
+              {/* Category badge */}
+              {r.category && (
+                <div className="px-4 pt-3">
+                  <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
+                </div>
               )}
-              {r.link ? (
-                <a href={r.link} target="_blank" rel="noopener noreferrer"
-                  className="text-xs bg-black text-white font-bold py-2 px-3 rounded-lg text-center hover:opacity-80 transition-all">
-                  Get Deal →
-                </a>
-              ) : (
-                <button onClick={() => alert("Deal link coming soon!")} className="text-xs bg-black text-white font-bold py-2 px-3 rounded-lg hover:opacity-80 transition-all">
-                  Get Deal →
-                </button>
-              )}
+              <div className="p-4 pt-2 flex flex-col flex-1">
+                <h3 className="text-base font-bold text-gray-900 mt-1">{r.title}</h3>
+                <p className="text-xs text-gray-500 mt-0.5 flex-1">{r.description}</p>
+                <p className="text-xl font-black text-gray-900 mt-3">{r.discount}</p>
+                <p className="text-[10px] text-[#C7E36B] font-semibold mt-0.5">VIA AIFA</p>
+                {r.link ? (
+                  <a href={r.link} target="_blank" rel="noopener noreferrer"
+                    className="w-full mt-3 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-lg text-center hover:bg-lime-300 transition-colors block">
+                    Get Deal
+                  </a>
+                ) : (
+                  <button className="w-full mt-3 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-lg hover:bg-lime-300 transition-colors">
+                    Get Deal
+                  </button>
+                )}
+                <p className="text-[10px] text-gray-400 text-center mt-1.5">Redirects to official site</p>
+              </div>
             </div>
           ))}
         </div>

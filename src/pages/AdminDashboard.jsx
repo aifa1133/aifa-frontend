@@ -233,7 +233,7 @@ export default function AdminDashboard() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {activePage === "dashboard"       && <AdminOverview token={token} onNavigate={setActivePage} />}
+          {activePage === "dashboard"       && <AdminOverview token={token} onNavigate={setPage} />}
           {activePage === "bootcamp"        && <BootcampAdmin token={token} />}
           {activePage === "workshops"       && <WorkshopsAdmin token={token} />}
           {activePage === "video-courses"   && <VideoCoursesAdmin token={token} />}
@@ -2457,11 +2457,11 @@ function VideoCoursesAdmin({ token }) {
 
 /* ── RESOURCES ADMIN ── */
 const RES_TABS = [
-  { key: "prompt",   label: "Prompt Library" },
-  { key: "workflow", label: "Workflows"       },
-  { key: "project",  label: "Projects"        },
-  { key: "tip",      label: "Learning Tips"   },
-  { key: "deal",     label: "AI Deals"        },
+  { key: "prompt",   label: "PROMPT LIBRARY" },
+  { key: "workflow", label: "WORK FLOW"       },
+  { key: "project",  label: "PROJECT"         },
+  { key: "tip",      label: "LEARNING TIPS"   },
+  { key: "deal",     label: "AI DEAL"         },
 ];
 
 function ResourcesAdmin({ token }) {
@@ -2472,12 +2472,15 @@ function ResourcesAdmin({ token }) {
   const [saving, setSaving]     = useState(false);
   const [msg, setMsg]           = useState("");
   const [resType, setResType]   = useState("prompt");
-  const [form, setForm]         = useState({ title:"", category:"", subCategory:"", description:"", thumbnail:"", content:"", allowCopy:true, isFeatured:false, discount:"", link:"", logo:"" });
+  const [form, setForm]         = useState({ title:"", category:"", subCategory:"", description:"", thumbnail:"", content:"", allowCopy:true, isFeatured:false, discount:"", link:"", logo:"", couponCode:"", expiry:"", ctaText:"", status:"Draft" });
   const [steps, setSteps]       = useState([{ title:"", description:"" }]);
   const [tools, setTools]       = useState([]);
   const [newTool, setNewTool]   = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [projectSearch, setProjectSearch] = useState("");
+  const [catFilter, setCatFilter]         = useState("All");
+  const [subCatFilter, setSubCatFilter]   = useState("All");
+  const [copiedId, setCopiedId]           = useState(null);
 
   const load = (type) => {
     setLoading(true); setResources([]);
@@ -2527,165 +2530,548 @@ function ResourcesAdmin({ token }) {
     { key:"deal",     icon:"🏷", label:"Deal"      },
   ];
 
-  /* ── Split-panel add form ── */
+  /* ── Split-panel add form (Figma redesign) ── */
   if (showForm) {
     const lt = resType;
+    const pageTitle = lt === "workflow" ? "Create Workflow" : lt === "prompt" ? "Create Prompt" : lt === "tip" ? "Add New Learning Tip" : lt === "project" ? "Create Project" : lt === "deal" ? "Add New AI Deal" : "Create Resource";
+    const uploadThumb = async (file) => {
+      if (!file) return;
+      const fd = new FormData(); fd.append("image", file);
+      try {
+        const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
+        const data = await res.json();
+        if (data.url) setForm(f => ({...f, thumbnail: data.url}));
+      } catch {}
+    };
     return (
-      <div className="flex h-full overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-white">Add Resource</h1>
-            <div className="flex gap-2">
-              <button onClick={()=>setShowForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="text-xs border border-[#C7E36B]/40 text-[#C7E36B] font-bold px-4 py-2 rounded-lg hover:bg-[#C7E36B]/10 disabled:opacity-60">Save as Draft</button>
-              <button onClick={handleSave} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Publish Resource"}</button>
-            </div>
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* ── Top bar ── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setShowForm(false)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              Back to Resources
+            </button>
+            <h1 className="text-base font-bold text-white">{pageTitle}</h1>
           </div>
-          {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
-
-          {/* Type selector */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Select Resource Type</p>
-            <div className="flex gap-2 flex-wrap">
-              {TYPE_OPTS.map(t => (
-                <button key={t.key} onClick={()=>setResType(t.key)}
-                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl border transition-all ${resType===t.key?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30 hover:text-white"}`}>
-                  <span className="text-xl">{t.icon}</span>
-                  <span className="text-[10px] font-semibold">{t.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Basic info */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Basic Information</p>
-            <Fld label="TITLE" value={form.title} onChange={v=>setForm({...form,title:v})} placeholder="Resource title..." />
-            <div className="grid grid-cols-2 gap-3">
-              <Fld label="CATEGORY" value={form.category} onChange={v=>setForm({...form,category:v})} placeholder="e.g. Photography" />
-              <Fld label="SUB-CATEGORY" value={form.subCategory} onChange={v=>setForm({...form,subCategory:v})} placeholder="e.g. Lighting" />
-            </div>
-            <Fld label="SHORT DESCRIPTION" value={form.description} onChange={v=>setForm({...form,description:v})} textarea placeholder="Brief description..." />
-            <Fld label="THUMBNAIL URL" value={form.thumbnail} onChange={v=>setForm({...form,thumbnail:v})} placeholder="https://..." />
-          </div>
-
-          {/* Prompt / Tip content */}
-          {(lt==="prompt"||lt==="tip") && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{lt==="prompt"?"Prompt Content":"Tip Content"}</p>
-              <Fld label="CONTENT" value={form.content} onChange={v=>setForm({...form,content:v})} textarea placeholder={lt==="prompt"?"Write the full prompt text...":"Write the learning tip..."} />
-              <div className="flex items-center gap-3"><span className="text-xs text-gray-400">Allow Copy</span><Tog value={form.allowCopy} onChange={v=>setForm({...form,allowCopy:v})}/></div>
-            </div>
-          )}
-
-          {/* Workflow Steps Builder */}
-          {lt==="workflow" && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Steps Builder</p>
-                <button onClick={()=>setSteps([...steps,{title:"",description:""}])} className="text-[10px] text-[#C7E36B] border border-dashed border-[#C7E36B]/40 px-2 py-1 rounded-lg hover:bg-[#C7E36B]/10 flex items-center gap-1">Add Step</button>
-              </div>
-              <div className="space-y-3">
-                {steps.map((s,i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-5 h-5 rounded-full bg-[#C7E36B] text-black text-[10px] font-black flex items-center justify-center shrink-0">{i+1}</span>
-                      <input value={s.title} onChange={e=>setSteps(ss=>ss.map((x,j)=>j===i?{...x,title:e.target.value}:x))}
-                        placeholder={`Step ${i+1} Title`}
-                        className="flex-1 bg-transparent border-0 text-sm text-white outline-none placeholder-gray-600"/>
-                      {steps.length>1 && <button onClick={()=>setSteps(ss=>ss.filter((_,j)=>j!==i))} className="text-gray-600 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>}
-                    </div>
-                    <textarea value={s.description} onChange={e=>setSteps(ss=>ss.map((x,j)=>j===i?{...x,description:e.target.value}:x))}
-                      placeholder="Step description..." rows={2}
-                      className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 outline-none focus:border-[#C7E36B]/40 resize-none placeholder-gray-600"/>
-                  </div>
-                ))}
-              </div>
-              <button onClick={()=>setSteps([...steps,{title:"",description:""}])} className="w-full border-2 border-dashed border-white/10 text-gray-500 hover:border-[#C7E36B]/30 hover:text-[#C7E36B] text-xs py-2.5 rounded-xl transition-all flex items-center justify-center gap-1">
-                Add Another Step
-              </button>
-            </div>
-          )}
-
-          {/* Project tools */}
-          {lt==="project" && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tools & Links</p>
-              <div className="flex flex-wrap gap-1.5">
-                {tools.map(t=>(
-                  <span key={t} className="flex items-center gap-1 text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded-full">
-                    {t}<button onClick={()=>setTools(ts=>ts.filter(x=>x!==t))} className="text-gray-600 hover:text-red-400">×</button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input value={newTool} onChange={e=>setNewTool(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&newTool.trim()){setTools(ts=>[...ts,newTool.trim()]);setNewTool("");}}}
-                  placeholder="Add tool (e.g. Midjourney)..." className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/50 min-w-0"/>
-                <button onClick={()=>{if(newTool.trim()){setTools(ts=>[...ts,newTool.trim()]);setNewTool("");}}}
-                  className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1.5 rounded-lg">+ Add</button>
-              </div>
-              <Fld label="INTERNAL LINK" value={form.link} onChange={v=>setForm({...form,link:v})} placeholder="/projects/my-project"/>
-            </div>
-          )}
-
-          {/* Deal fields */}
-          {lt==="deal" && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Deal Details</p>
-              <div className="grid grid-cols-3 gap-3">
-                <Fld label="LOGO/EMOJI" value={form.logo} onChange={v=>setForm({...form,logo:v})} placeholder="🤖"/>
-                <Fld label="DISCOUNT" value={form.discount} onChange={v=>setForm({...form,discount:v})} placeholder="20% OFF"/>
-                <Fld label="DEAL LINK" value={form.link} onChange={v=>setForm({...form,link:v})} placeholder="https://..."/>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">Featured Resource</span>
-            <Tog value={form.isFeatured} onChange={v=>setForm({...form,isFeatured:v})}/>
+          <div className="flex items-center gap-4">
+            {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
+            <button onClick={handleSave} disabled={saving} className="text-sm text-gray-300 hover:text-white disabled:opacity-50 transition-colors">
+              Save as Draft
+            </button>
+            <button onClick={handleSave} disabled={saving} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-60 transition-colors">
+              {saving ? "Publishing..." : "Publish Resource"}
+            </button>
           </div>
         </div>
 
-        {/* Live preview */}
-        <div className="w-[280px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-4">Live Preview</p>
-          {lt==="deal" ? (
-            <div className="bg-white rounded-xl overflow-hidden">
-              <div className="h-[70px] bg-gray-100 flex items-center justify-center text-4xl">{form.logo||"🔧"}</div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900">{form.title||"Deal Title"}</h3>
-                <p className="text-xs text-gray-500">{form.description||"Description"}</p>
-                <p className="text-xl font-black text-gray-900 mt-2">{form.discount||"XX% OFF"}</p>
-                <p className="text-[10px] text-[#C7E36B] font-semibold">VIA AIFA</p>
-                <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-2 rounded-lg mt-3">Get Deal</button>
+        {/* ── Body: 65/35 split ── */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left: form */}
+          <div className="flex-[65] overflow-y-auto p-6 space-y-5">
+
+            {/* 1. Select Resource Type */}
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">1. Select Resource Type</p>
+              <div className="flex gap-2">
+                {TYPE_OPTS.map(t => {
+                  const icons = {
+                    prompt: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+                    workflow: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+                    project: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
+                    tip: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+                    deal: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
+                  };
+                  return (
+                    <button key={t.key} onClick={() => setResType(t.key)}
+                      className={`flex flex-col items-center gap-2 px-6 py-4 rounded-2xl border transition-all ${resType===t.key?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/10 bg-white/5 text-gray-400 hover:border-white/20 hover:text-white"}`}>
+                      {icons[t.key]}
+                      <span className="text-[11px] font-bold uppercase tracking-wide">{t.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              {form.thumbnail ? <img src={form.thumbnail} alt="" className="w-full h-28 object-cover"/> : <div className="w-full h-28 bg-white/5 flex items-center justify-center text-gray-600 text-xs">Thumbnail Preview</div>}
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  {form.category && <span className="text-[9px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded-full">{form.category}</span>}
-                  {lt==="workflow" && <span className="text-[9px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full">SEO Optimized</span>}
-                  {lt==="workflow" && <span className="text-[9px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full">Mobile Responsive</span>}
-                  {lt==="project" && form.isFeatured && <span className="text-[9px] bg-green-500/20 text-green-400 font-bold px-2 py-0.5 rounded-full">PUBLISHED</span>}
+
+            {/* 2. Basic Information */}
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {lt === "project" ? "2. Project Information" : lt === "tip" ? "2. Content Details" : lt === "deal" ? "2. Deal Information" : "2. Basic Information"}
+              </p>
+
+              {/* ── Tip-specific fields ── */}
+              {lt === "tip" ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Video Title</p>
+                    <input value={form.title} onChange={e => setForm({...form, title: e.target.value})}
+                      placeholder="e.g., Mastering Midjourney v6.."
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Category</p>
+                    <input value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+                      placeholder="e.g., AI Tools"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Video URL (YouTube / Embed)</p>
+                    <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 gap-2 focus-within:border-[#C7E36B]/50">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      <input value={form.link} onChange={e => setForm({...form, link: e.target.value})}
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"/>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-sm font-bold text-white mb-1">{form.title||"Resource Title"}</h3>
-                <p className="text-[10px] text-gray-400 line-clamp-2">{form.description||"Description will appear here"}</p>
-                {lt==="workflow" && steps.length>0 && (
-                  <div className="mt-3 border-t border-white/5 pt-3">
-                    <p className="text-[9px] text-gray-500 font-semibold mb-1">{steps.length} STEP{steps.length!==1?"S":""}</p>
-                    {steps.slice(0,2).map((s,i)=><p key={i} className="text-[10px] text-gray-400 truncate">· {s.title||`Step ${i+1}`}</p>)}
+              ) : lt === "deal" ? (
+                /* ── Deal Information fields ── */
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Tool Name</p>
+                    <input value={form.title} onChange={e => setForm({...form, title: e.target.value})}
+                      placeholder="e.g., Midjourney, ChatGPT"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Category</p>
+                      <input value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+                        placeholder="Design AI"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Short Description</p>
+                      <input value={form.description} onChange={e => setForm({...form, description: e.target.value})}
+                        placeholder="e.g., Image Gen"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* ── Standard fields for prompt/workflow/project ── */
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">
+                      {lt === "workflow" ? "Workflow Title" : lt === "prompt" ? "Prompt Title" : lt === "project" ? "Project Title" : "Title"}
+                    </p>
+                    <input value={form.title} onChange={e => setForm({...form, title: e.target.value})}
+                      placeholder={lt === "workflow" ? "e.g., AI Cinematography..." : lt === "project" ? "e.g., Neo-Architecture AI..." : "Resource title..."}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </div>
+                  {lt !== "project" && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1.5">Sub-category</p>
+                      <input value={form.subCategory} onChange={e => setForm({...form, subCategory: e.target.value})}
+                        placeholder="e.g., Film Production"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">{lt === "project" ? "Short Description (2-3 lines)" : "Short Description"}</p>
+                    <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})}
+                      placeholder={lt === "project" ? "Briefly describe what makes this project unique..." : "Briefly explain what this..."} rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 resize-none"/>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnail / Brand Assets — Section 3 */}
+            {(lt === "project" || lt === "tip") ? (
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  3. Thumbnail {lt === "tip" ? "" : "Upload"}
+                </p>
+                {form.thumbnail ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                    <img src={form.thumbnail} alt="thumbnail" className="w-full h-44 object-cover"/>
+                    <button type="button" onClick={() => setForm({...form, thumbnail:""})}
+                      className="absolute top-2 right-2 bg-black/60 hover:bg-red-500/80 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all">
+                      <I name="trash" size={14}/>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-white/15 rounded-xl cursor-pointer hover:border-[#C7E36B]/40 hover:bg-[#C7E36B]/5 transition-all group">
+                    <input type="file" accept="image/*" className="hidden" onChange={e => uploadThumb(e.target.files?.[0])}/>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 group-hover:text-[#C7E36B] mb-3 transition-colors">
+                      <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                    </svg>
+                    <p className="text-sm text-gray-400 group-hover:text-gray-200 font-semibold transition-colors">Click to upload or drag and drop</p>
+                    <p className="text-xs text-gray-600 mt-1">{lt === "tip" ? "Recommended size: 1280×720 (16:9)" : "Recommended size: 1280×720px (PNG, JPG)"}</p>
+                  </label>
+                )}
+              </div>
+            ) : lt === "deal" ? (
+              /* ── Section 3: Brand Assets (logo upload + URL option) ── */
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  3. Brand Assets
+                </p>
+                {form.logo && (form.logo.startsWith("http") || form.logo.startsWith("/")) ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white group h-28 flex items-center justify-center">
+                    <img src={form.logo} alt="logo" className="max-h-20 max-w-[180px] object-contain"/>
+                    <button type="button" onClick={() => setForm({...form, logo:""})}
+                      className="absolute top-2 right-2 bg-black/60 hover:bg-red-500/80 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all">
+                      <I name="trash" size={14}/>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-white/15 rounded-xl cursor-pointer hover:border-[#C7E36B]/40 hover:bg-[#C7E36B]/5 transition-all group">
+                      <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const fd = new FormData(); fd.append("image", file);
+                        try {
+                          const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
+                          const data = await res.json();
+                          if (data.url) setForm(f => ({...f, logo: data.url}));
+                        } catch {}
+                      }}/>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 group-hover:text-[#C7E36B] mb-2 transition-colors">
+                        <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                      </svg>
+                      <p className="text-xs text-gray-400 group-hover:text-gray-200 font-semibold transition-colors">Upload a high-quality transparent PNG logo for the tool.</p>
+                      <p className="text-[11px] text-gray-600 mt-0.5">Recommended size: 512×512px.</p>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-white/10"/>
+                      <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">or enter image url</span>
+                      <div className="flex-1 h-px bg-white/10"/>
+                    </div>
+                    <input value={form.logo} onChange={e => setForm({...form, logo: e.target.value})}
+                      placeholder="https://logo.clearbit.com/openai.com"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
                   </div>
                 )}
-                <button className="text-[#C7E36B] text-xs mt-3 flex items-center gap-1">View Details →</button>
               </div>
+            ) : (
+              /* Thumbnail embedded for other types */
+              <div className="-mt-2">
+                <p className="text-xs text-gray-400 mb-1.5">Thumbnail Image</p>
+                {form.thumbnail ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                    <img src={form.thumbnail} alt="thumbnail" className="w-full h-44 object-cover"/>
+                    <button type="button" onClick={() => setForm({...form, thumbnail:""})}
+                      className="absolute top-2 right-2 bg-black/60 hover:bg-red-500/80 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all">
+                      <I name="trash" size={14}/>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-white/15 rounded-xl cursor-pointer hover:border-[#C7E36B]/40 hover:bg-[#C7E36B]/5 transition-all group">
+                    <input type="file" accept="image/*" className="hidden" onChange={e => uploadThumb(e.target.files?.[0])}/>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 group-hover:text-[#C7E36B] mb-2 transition-colors">
+                      <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                    </svg>
+                    <p className="text-xs text-gray-400 group-hover:text-gray-200 font-semibold transition-colors">Click to upload or drag &amp; drop</p>
+                    <p className="text-[11px] text-gray-600 mt-1">PNG, JPG or WEBP (Max 5MB)</p>
+                  </label>
+                )}
+              </div>
+            )}
+
+            {/* Prompt content (prompt type only) */}
+            {lt==="prompt" && (
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">3. Prompt Content</p>
+                <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})}
+                  placeholder="Write the full prompt text..." rows={5}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 resize-none font-mono"/>
+                <div className="flex items-center gap-2 mt-2">
+                  <Tog value={form.allowCopy} onChange={v=>setForm({...form,allowCopy:v})}/>
+                  <span className="text-xs text-gray-400">Allow users to copy prompt</span>
+                </div>
+              </div>
+            )}
+
+            {/* Section 4: Call to Action — tip type only */}
+            {lt==="tip" && (
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  4. Call to Action
+                </p>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 border border-[#C7E36B]/20 flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Watch Now</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Fixed action for learning tips</p>
+                  </div>
+                  <span className="ml-auto text-[10px] text-gray-600 border border-white/10 px-2 py-1 rounded-lg">Fixed</span>
+                </div>
+              </div>
+            )}
+
+            {/* Workflow Steps Builder — timeline design */}
+            {lt==="workflow" && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-widest flex items-center gap-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    Steps Builder
+                  </p>
+                  <button onClick={() => setSteps([...steps, {title:"", description:""}])}
+                    className="text-xs text-[#C7E36B] flex items-center gap-1 hover:opacity-80 transition-opacity">
+                    + Add Step
+                  </button>
+                </div>
+                {/* Timeline */}
+                <div className="relative">
+                  {/* Vertical connector line */}
+                  <div className="absolute left-[19px] top-5 bottom-5 w-[2px] bg-[#C7E36B] z-0"/>
+                  <div className="space-y-4">
+                    {steps.map((s, i) => (
+                      <div key={i} className="flex gap-4 relative z-10">
+                        {/* Step number badge */}
+                        <div className="w-10 h-10 rounded-full bg-[#C7E36B] text-black font-black text-sm flex items-center justify-center shrink-0 shadow-lg">
+                          {i + 1}
+                        </div>
+                        {/* Step content */}
+                        <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <input value={s.title} onChange={e => setSteps(ss => ss.map((x,j) => j===i?{...x,title:e.target.value}:x))}
+                              placeholder="Step Title"
+                              className="flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder-gray-600 mr-3"/>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {/* Step image upload icon */}
+                              <label className="cursor-pointer text-gray-500 hover:text-[#C7E36B] transition-colors" title="Upload step image">
+                                <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                                  const file = e.target.files?.[0]; if (!file) return;
+                                  const fd = new FormData(); fd.append("image", file);
+                                  try {
+                                    const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
+                                    const data = await res.json();
+                                    if (data.url) setSteps(ss => ss.map((x,j) => j===i?{...x,image:data.url}:x));
+                                  } catch {}
+                                }}/>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                              </label>
+                              {/* Delete step */}
+                              <button onClick={() => setSteps(ss => ss.filter((_,j) => j!==i))}
+                                className="text-gray-500 hover:text-red-400 transition-colors" title="Delete step">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                          {s.image && <img src={s.image} alt="" className="w-full h-24 object-cover rounded-lg mb-2"/>}
+                          <textarea value={s.description} onChange={e => setSteps(ss => ss.map((x,j) => j===i?{...x,description:e.target.value}:x))}
+                            placeholder="Step Description" rows={2}
+                            className="w-full bg-transparent text-xs text-gray-400 outline-none resize-none placeholder-gray-600"/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={() => setSteps([...steps, {title:"", description:""}])}
+                  className="w-full mt-4 border-2 border-dashed border-white/10 text-gray-500 hover:border-[#C7E36B]/30 hover:text-[#C7E36B] text-xs py-3 rounded-2xl transition-all flex items-center justify-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add Another Step
+                </button>
+              </div>
+            )}
+
+            {/* Section 4 & 5 — Project-specific: Tools & Status + Project Links */}
+            {lt==="project" && (
+              <>
+                {/* 4. Tools & Status */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    4. Tools &amp; Status
+                  </p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                    {/* Status + Tools Used in a 2-column row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Status dropdown */}
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">Status</p>
+                        <div className="relative">
+                          <select value={form.status || "Draft"} onChange={e => setForm({...form, status: e.target.value})}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none appearance-none cursor-pointer focus:border-[#C7E36B]/50 pr-8">
+                            {["Draft","Published"].map(s => <option key={s} value={s} className="bg-[#1a1e20]">{s}</option>)}
+                          </select>
+                          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                      </div>
+                      {/* Tools Used (Tags) */}
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">Tools Used (Tags)</p>
+                        <div className="flex flex-wrap items-center gap-1.5 min-h-[46px] bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                          {tools.map(t => (
+                            <span key={t} className="flex items-center gap-1 text-xs font-semibold text-[#C7E36B] border border-[#C7E36B]/40 bg-[#C7E36B]/10 px-2.5 py-0.5 rounded-full">
+                              {t}
+                              <button onClick={() => setTools(ts => ts.filter(x => x !== t))}
+                                className="text-[#C7E36B]/60 hover:text-red-400 leading-none ml-0.5 transition-colors">×</button>
+                            </span>
+                          ))}
+                          <input value={newTool} onChange={e => setNewTool(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter" && newTool.trim()) { setTools(ts => [...ts, newTool.trim()]); setNewTool(""); e.preventDefault(); }}}
+                            placeholder={tools.length === 0 ? "Add tool.." : ""}
+                            className="flex-1 min-w-[80px] bg-transparent text-xs text-white outline-none placeholder-gray-600"/>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Project Links */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    5. Project Links
+                  </p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <p className="text-xs text-gray-400 mb-2">Project Details Internal Link</p>
+                    <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      <input value={form.link} onChange={e => setForm({...form, link: e.target.value})}
+                        placeholder="aifa.io/projects/your-project-slug"
+                        className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"/>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Promotional Details — deal only */}
+            {lt==="deal" && (
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  4. Promotional Details
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Deal Headline</p>
+                    <input value={form.discount} onChange={e => setForm({...form, discount: e.target.value})}
+                      placeholder="e.g., 20% OFF Lifetime"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Coupon Code (Optional)</p>
+                      <input value={form.couponCode} onChange={e => setForm({...form, couponCode: e.target.value})}
+                        placeholder="AIFA-PROMO"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Expiry Date</p>
+                      <input type="date" value={form.expiry} onChange={e => setForm({...form, expiry: e.target.value})}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 [color-scheme:dark]"/>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">CTA Text</p>
+                      <input value={form.ctaText} onChange={e => setForm({...form, ctaText: e.target.value})}
+                        placeholder="Get Deal"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">External Link</p>
+                      <input value={form.link} onChange={e => setForm({...form, link: e.target.value})}
+                        placeholder="https://..."
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Featured toggle */}
+            <div className="flex items-center gap-3 pb-6">
+              <Tog value={form.isFeatured} onChange={v=>setForm({...form,isFeatured:v})}/>
+              <span className="text-sm text-gray-400">Mark as Featured Resource</span>
             </div>
-          )}
-          <div className="mt-4 bg-[#C7E36B]/5 border border-[#C7E36B]/20 rounded-xl p-3">
-            <p className="text-[9px] font-bold text-[#C7E36B] mb-1">EDITOR NOTE</p>
-            <p className="text-[10px] text-gray-400">Preview updates as you type. Publish when ready or save as draft to review later.</p>
+          </div>
+
+          {/* Right: Live preview (35%) */}
+          <div className="flex-[35] shrink-0 border-l border-white/10 bg-[#0A0C0D] p-5 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C7E36B] animate-pulse"/>
+                Live Preview
+              </p>
+              <span className="text-[9px] font-bold bg-[#C7E36B] text-black px-2 py-0.5 rounded-md tracking-wide">FRONTEND CARD</span>
+            </div>
+
+            {/* Preview card */}
+            {lt === "deal" ? (
+              <div className="bg-white rounded-2xl overflow-hidden shadow-xl">
+                {/* Logo header */}
+                <div className="h-[100px] bg-white border-b border-gray-100 flex items-center justify-center px-6">
+                  {form.logo && (form.logo.startsWith("http") || form.logo.startsWith("/"))
+                    ? <img src={form.logo} alt={form.title} className="max-h-[60px] max-w-[160px] object-contain"/>
+                    : <span className="text-5xl">{form.logo || "🔧"}</span>
+                  }
+                </div>
+                {/* Category badge */}
+                {form.category && (
+                  <div className="px-4 pt-3">
+                    <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded tracking-widest uppercase">{form.category}</span>
+                  </div>
+                )}
+                <div className="p-4 pt-2">
+                  <h3 className="font-bold text-gray-900 mt-1">{form.title||"Deal Title"}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">{form.description||"Short description"}</p>
+                  <p className="text-xl font-black text-gray-900 mt-3">{form.discount||"XX% OFF"}</p>
+                  <p className="text-[10px] text-[#C7E36B] font-semibold mt-0.5">VIA AIFA</p>
+                  <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-lg mt-3">{form.ctaText||"Get Deal"}</button>
+                  <p className="text-[10px] text-gray-400 text-center mt-1.5">Redirects to official site</p>
+                </div>
+              </div>
+            ) : lt === "tip" ? (
+              /* ── Tip preview: 16:9 thumbnail + Watch Now button ── */
+              <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+                <div className="aspect-video overflow-hidden bg-white/5">
+                  {form.thumbnail
+                    ? <img src={form.thumbnail} alt="" className="w-full h-full object-cover"/>
+                    : <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#111 0%,#1a1d2e 100%)"}}>
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      </div>
+                  }
+                </div>
+                <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2">
+                  Watch Now! <span>→</span>
+                </button>
+              </div>
+            ) : (
+              /* ── Standard preview: image + title + description + View Details ── */
+              <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+                <div className="aspect-[4/3] overflow-hidden bg-white/5">
+                  {form.thumbnail
+                    ? <img src={form.thumbnail} alt="" className="w-full h-full object-cover"/>
+                    : <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#1a1d2e 0%,#2d1f3d 40%,#1a2d2e 100%)"}}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </div>
+                  }
+                </div>
+                <div className="p-4">
+                  <h3 className="text-sm font-bold text-white leading-snug mb-2">
+                    {form.title || "Resource Title"}
+                  </h3>
+                  <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed mb-4">
+                    {form.description || "Description will appear here..."}
+                  </p>
+                  {lt==="prompt" && form.content && (
+                    <div className="bg-[#0F1112] border border-white/10 rounded-xl p-2.5 mb-3">
+                      <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-1">PROMPT</p>
+                      <p className="text-[10px] text-gray-500 line-clamp-2 font-mono">{form.content}</p>
+                    </div>
+                  )}
+                  <button className="text-xs font-semibold text-[#FBBF24] flex items-center gap-1">
+                    View Details <span>→</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <p className="text-[10px] text-gray-600 mt-4 text-center">Updates in real-time as you type</p>
           </div>
         </div>
       </div>
@@ -2693,103 +3079,233 @@ function ResourcesAdmin({ token }) {
   }
 
   /* ── Normal list view ── */
+  const activeTabLabel = tab === "project" ? "Projects Showcase" : tab === "deal" ? "AI Deals" : RES_TABS.find(t => t.key === tab)?.label || "Resources";
+  const activeTabSubtitle = tab === "project" ? "Manage and curate the portfolio of student projects featured on the platform."
+    : tab === "tip" ? "Manage and publish high-impact video learning content."
+    : tab === "deal" ? "Manage promotional cards and exclusive offers for AI tools."
+    : "Manage all learning resources by category";
+  const cats    = ["All", ...Array.from(new Set(resources.map(r => r.category).filter(Boolean)))];
+  const subCats = ["All", ...Array.from(new Set(resources.filter(r => catFilter === "All" || r.category === catFilter).map(r => r.subCategory).filter(Boolean)))];
+
+  const filteredResources = resources.filter(r => {
+    if (tab === "project") {
+      if (catFilter === "Published") return r.isFeatured || r.isPublished;
+      if (catFilter === "Draft")     return !r.isFeatured && !r.isPublished;
+      return true;
+    }
+    if (tab === "tip") return true;
+    const matchCat = catFilter    === "All" || r.category    === catFilter;
+    const matchSub = subCatFilter === "All" || r.subCategory === subCatFilter;
+    return matchCat && matchSub;
+  });
+  const visibleResources = tab === "tip" && catFilter === "Oldest First"
+    ? [...filteredResources].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    : tab === "tip"
+    ? [...filteredResources].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : filteredResources;
+
+  const copyPrompt = (r) => {
+    navigator.clipboard.writeText(r.content || r.description || "").then(() => {
+      setCopiedId(r._id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div><h1 className="text-xl font-bold text-white">Resources</h1><p className="text-xs text-gray-400">Manage all learning resources by category</p></div>
-        <button onClick={openAddForm} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-          {tab==="project"?"Add Project":"Add Resource"}
-        </button>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="text-xl font-bold text-white">{activeTabLabel}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{activeTabSubtitle}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Category filter — hidden on project and tip tabs */}
+          {tab !== "project" && tab !== "tip" && (
+            <div className="relative">
+              <select value={catFilter} onChange={e => { setCatFilter(e.target.value); setSubCatFilter("All"); }}
+                className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer min-w-[140px]">
+                {cats.map(c => <option key={c} value={c} className="bg-[#1a1e20]">{c === "All" && tab === "deal" ? "All Categories" : c}</option>)}
+              </select>
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          )}
+          {/* Sub-category filter — hidden on workflow, project, tip and deal tabs */}
+          {tab !== "workflow" && tab !== "project" && tab !== "tip" && tab !== "deal" && (
+            <div className="relative">
+              <select value={subCatFilter} onChange={e => setSubCatFilter(e.target.value)}
+                className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer min-w-[130px]">
+                {subCats.map(c => <option key={c} className="bg-[#1a1e20]">{c === "All" ? "Sub category" : c}</option>)}
+              </select>
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          )}
+          {/* STATUS filter — only on project tab */}
+          {tab === "project" && (
+            <div className="relative">
+              <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+                className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer min-w-[120px]">
+                {["All", "Published", "Draft"].map(c => <option key={c} value={c} className="bg-[#1a1e20]">{c === "All" ? "STATUS" : c}</option>)}
+              </select>
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          )}
+          {/* Newest First sort — only on tip tab */}
+          {tab === "tip" && (
+            <div className="relative">
+              <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+                className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer min-w-[140px]">
+                {["Newest First", "Oldest First"].map(c => <option key={c} value={c} className="bg-[#1a1e20]">{c}</option>)}
+              </select>
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          )}
+          <button onClick={openAddForm} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-xl hover:bg-lime-300 transition-colors flex items-center gap-1.5">
+            {tab === "workflow" ? "Create Workflow" : tab === "project" ? "Add Project" : tab === "tip" ? "Add Learning Tip" : tab === "deal" ? "Add New Deals" : "Add Resource"}
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-white/10">
+      {/* Tabs — uppercase pill style */}
+      <div className="flex gap-2 mb-6">
         {RES_TABS.map(t => (
-          <button key={t.key} onClick={()=>setTab(t.key)} className={`px-4 py-2 text-sm font-medium border-b-2 transition-all -mb-px ${tab===t.key?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-400 hover:text-white"}`}>{t.label}</button>
+          <button key={t.key} onClick={() => { setTab(t.key); setCatFilter("All"); setSubCatFilter("All"); }}
+            className={`px-4 py-2 text-xs font-bold rounded-full transition-all ${tab === t.key ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+            {t.label}
+          </button>
         ))}
       </div>
 
-      {/* Projects showcase */}
-      {tab==="project" && (
-        <div>
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-              {[["all","All Projects"],["published","Published"],["draft","Drafts"]].map(([k,l])=>(
-                <button key={k} onClick={()=>setProjectFilter(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${projectFilter===k?"bg-[#C7E36B] text-black":"text-gray-400 hover:text-white"}`}>{l}</button>
-              ))}
+      {loading ? <AdminLoader /> : visibleResources.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-gray-500 text-sm">No {activeTabLabel} resources yet</p>
+          <button onClick={openAddForm} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First</button>
+        </div>
+      ) : tab === "deal" ? (
+        /* ── Deal cards (white cards, Figma style) ── */
+        <div className="grid grid-cols-3 gap-4">
+          {visibleResources.map(r => (
+            <div key={r._id} className="bg-white rounded-2xl overflow-hidden shadow-sm relative group">
+              {/* Partner logo header */}
+              <div className="h-[100px] bg-white flex items-center justify-center px-6 border-b border-gray-100">
+                {r.logo && (r.logo.startsWith("http") || r.logo.startsWith("/"))
+                  ? <img src={r.logo} alt={r.title} className="max-h-[60px] max-w-[140px] object-contain"/>
+                  : <span className="text-4xl">{r.logo || "🔧"}</span>
+                }
+              </div>
+              {/* Category badge */}
+              {r.category && (
+                <div className="px-4 pt-3">
+                  <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
+                </div>
+              )}
+              <div className="p-4 pt-2">
+                <h3 className="text-base font-bold text-gray-900 mt-1">{r.title}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{r.description}</p>
+                <p className="text-xl font-black text-gray-900 mt-3">{r.discount}</p>
+                <p className="text-[10px] text-[#C7E36B] font-semibold mt-0.5">VIA AIFA</p>
+                <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-lg mt-3 hover:bg-lime-300 transition-colors">Get Deal</button>
+                <p className="text-[10px] text-gray-400 text-center mt-1.5">Redirects to official site</p>
+              </div>
+              <button onClick={() => handleDelete(r._id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all"><I name="trash" size={12}/></button>
             </div>
-            <input value={projectSearch} onChange={e=>setProjectSearch(e.target.value)} placeholder="Search projects..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none max-w-[240px]"/>
-          </div>
-          {loading ? <AdminLoader /> : (
-            resources.length===0 ? (
-              <div className="text-center py-12"><p className="text-gray-500 text-sm">No projects yet</p><button onClick={openAddForm} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First Project</button></div>
+          ))}
+        </div>
+      ) : (
+        /* ── Figma-style 3-column visual cards ── */
+        <div className="grid grid-cols-3 gap-5">
+          {visibleResources.map(r => (
+            tab === "tip" ? (
+              /* ── Learning Tip card: thumbnail only + lime Watch Now button ── */
+              <div key={r._id} className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
+                <div className="relative aspect-video overflow-hidden bg-white/5">
+                  {r.thumbnail
+                    ? <img src={r.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                    : <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#111 0%,#1a1d2e 100%)"}}>
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      </div>
+                  }
+                  <button onClick={() => handleDelete(r._id)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center transition-all">
+                    <I name="trash" size={13}/>
+                  </button>
+                </div>
+                <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
+                  Watch Now! <span>→</span>
+                </button>
+              </div>
+            ) : (tab === "workflow" || tab === "project") ? (
+              /* ── Workflow / Project card: image + title + description + View Details ── */
+              <div key={r._id} className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
+                {/* Banner image with gradient fallback */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  {r.thumbnail
+                    ? <img src={r.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                    : <div className="w-full h-full" style={{background:"linear-gradient(135deg,#1a1d2e 0%,#2d1f3d 40%,#1a2d2e 100%)"}}/>
+                  }
+                  <button onClick={() => handleDelete(r._id)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center transition-all">
+                    <I name="trash" size={13}/>
+                  </button>
+                  {r.isFeatured && (
+                    <span className="absolute top-2 left-2 text-[9px] font-bold bg-[#C7E36B] text-black px-2 py-0.5 rounded-full">FEATURED</span>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="text-base font-bold text-white leading-snug mb-2">{r.title}</h3>
+                  {r.description && (
+                    <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed mb-4">{r.description}</p>
+                  )}
+                  <button className="text-sm font-semibold text-[#FBBF24] flex items-center gap-1 hover:gap-2 transition-all">
+                    View Details <span>→</span>
+                  </button>
+                </div>
+              </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
-                {resources.filter(r=>projectSearch?r.title.toLowerCase().includes(projectSearch.toLowerCase()):true).map(r=>(
-                  <div key={r._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group hover:border-white/20 transition-all">
-                    <div className="relative h-36 overflow-hidden">
-                      {r.thumbnail ? <img src={r.thumbnail} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt=""/> : <div className="w-full h-full bg-white/5 flex items-center justify-center text-gray-600 text-sm">No Image</div>}
-                      <button onClick={()=>handleDelete(r._id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all"><I name="trash" size={12}/></button>
+              /* ── Prompt / Tip / Project card: image + [Category/Title] + prompt box ── */
+              <div key={r._id} className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
+                {/* Banner image */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-white/5">
+                  {r.thumbnail
+                    ? <img src={r.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                    : <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>
+                  }
+                  <button onClick={() => handleDelete(r._id)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center transition-all">
+                    <I name="trash" size={13}/>
+                  </button>
+                  {r.isFeatured && (
+                    <span className="absolute top-2 left-2 text-[9px] font-bold bg-[#C7E36B] text-black px-2 py-0.5 rounded-full">FEATURED</span>
+                  )}
+                </div>
+                {/* Card body */}
+                <div className="p-4 space-y-3">
+                  <h3 className="text-sm font-bold text-white leading-snug">
+                    [{[r.category, r.subCategory, r.title].filter(Boolean).join(" / ")}]
+                  </h3>
+                  {(r.content || r.description) && (
+                    <div className="bg-[#0F1112] border border-white/10 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[9px] font-bold text-gray-500 tracking-widest uppercase">
+                          {tab === "tip" ? "TIP" : "PROMPT"}
+                        </span>
+                        <button onClick={() => copyPrompt(r)} className="text-gray-500 hover:text-white transition-colors" title="Copy">
+                          {copiedId === r._id
+                            ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                          }
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-3 font-mono">
+                        {r.content || r.description}
+                      </p>
                     </div>
-                    <div className="p-3">
-                      <h3 className="text-sm font-semibold text-white mb-1">{r.title}</h3>
-                      <p className="text-[10px] text-gray-400 line-clamp-2 mb-2">{r.description}</p>
-                      <button className="text-[#C7E36B] text-xs">View Details →</button>
-                    </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
             )
-          )}
+          ))}
         </div>
-      )}
-
-      {/* Other tabs: list/deal view */}
-      {tab!=="project" && (
-        <>
-          {loading ? <AdminLoader /> : (
-            <>
-              {resources.length===0 && (
-                <div className="text-center py-12"><p className="text-gray-500 text-sm">No {RES_TABS.find(t=>t.key===tab)?.label} resources yet</p><button onClick={openAddForm} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Add First</button></div>
-              )}
-              {tab==="deal" ? (
-                <div className="grid grid-cols-3 gap-4">
-                  {resources.map((r) => (
-                    <div key={r._id} className="bg-white rounded-xl overflow-hidden shadow-sm relative group">
-                      <div className="h-[70px] bg-gray-50 flex items-center justify-center text-4xl">{r.logo || "🔧"}</div>
-                      <div className="p-4">
-                        <h3 className="text-base font-bold text-gray-900">{r.title}</h3>
-                        <p className="text-xs text-gray-500">{r.description}</p>
-                        <p className="text-xl font-black text-gray-900 mt-2">{r.discount}</p>
-                        <p className="text-[10px] text-[#C7E36B] font-semibold">VIA AIFA</p>
-                        <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-2 rounded-lg mt-3 hover:bg-lime-300">Get Deal</button>
-                      </div>
-                      <button onClick={()=>handleDelete(r._id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all"><I name="trash" size={12}/></button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {resources.map((r) => (
-                    <div key={r._id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-start justify-between hover:border-white/20 transition-all">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {r.isFeatured && <span className="text-[9px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-1.5 py-0.5 rounded">FEATURED</span>}
-                          {r.category && <span className="text-[9px] bg-white/10 text-gray-400 px-1.5 py-0.5 rounded">{r.category}</span>}
-                        </div>
-                        <h3 className="text-sm font-semibold text-white">{r.title}</h3>
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-1">{r.description}</p>
-                        {r.content && <p className="text-[10px] text-gray-600 mt-1 line-clamp-1 font-mono">{r.content}</p>}
-                      </div>
-                      <button onClick={()=>handleDelete(r._id)} className="text-gray-600 hover:text-red-400 ml-4 shrink-0 transition-all"><I name="trash" size={13}/></button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </>
       )}
     </div>
   );
@@ -2797,147 +3313,416 @@ function ResourcesAdmin({ token }) {
 
 /* ── USERS ADMIN ── */
 function UsersAdmin({ token }) {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [uSearch, setUSearch] = useState("");
-  const [uRole, setURole]     = useState("All");
-  const [uSort, setUSort]     = useState("Newest");
-  const [viewUser, setViewUser] = useState(null);
+  const [users, setUsers]       = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [uSearch, setUSearch]   = useState("");
+  const [uStatus, setUStatus]   = useState("All");
+  const [uRoleTab, setURoleTab] = useState("All");  // All | Student | Instructor | Admin
+  const [viewUser, setViewUser]       = useState(null);
+  const [showExport, setShowExport]   = useState(false);
+  const [exportFmt, setExportFmt]     = useState("xlsx");
+  const [togglingId, setTogglingId]   = useState(null);
+  const [uPage, setUPage]             = useState(1);
+  const U_PER_PAGE = 10;
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") setViewUser(null);
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
+    const h = e => { if (e.key === "Escape") { setViewUser(null); setShowExport(false); } };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, []);
-  const adminId = JSON.parse(localStorage.getItem("aifa_user")||"{}") ._id;
 
   useEffect(() => {
-    fetch("/api/users",{ headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setUsers(d); setLoading(false); }).catch(()=>setLoading(false));
-  },[token]);
+    fetch("/api/users", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setUsers(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [token]);
 
-  const toggleRole = async u => {
-    const newRole = u.role==="admin"?"student":"admin";
-    await fetch(`/api/users/${u._id}/role`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({role:newRole}) });
-    setUsers(us=>us.map(x=>x._id===u._id?{...x,role:newRole}:x));
+  const totalUsers    = users.length;
+  const activeUsers   = users.filter(u => u.isActive !== false).length;
+  const inactiveUsers = users.filter(u => u.isActive === false).length;
+
+  const filtered = users.filter(u => {
+    const q = uSearch.toLowerCase();
+    const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
+    const matchStatus = uStatus === "All" || (uStatus === "Active" ? u.isActive !== false : u.isActive === false);
+    const matchRole   = uRoleTab === "All" || u.role?.toLowerCase() === uRoleTab.toLowerCase();
+    return matchSearch && matchStatus && matchRole;
+  }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const uTotalPages = Math.max(1, Math.ceil(filtered.length / U_PER_PAGE));
+  const uPageSafe   = Math.min(uPage, uTotalPages);
+  const paginated   = filtered.slice((uPageSafe - 1) * U_PER_PAGE, uPageSafe * U_PER_PAGE);
+
+  /* reset to page 1 on filter change */
+  useEffect(() => { setUPage(1); }, [uSearch, uStatus, uRoleTab]);
+
+  const doExport = () => {
+    const rows = [["Name","Email","Phone","Role","Status","Joined"]];
+    filtered.forEach(u => rows.push([u.name||"", u.email||"", u.phone||"", u.role||"", u.isActive===false?"Inactive":"Active", new Date(u.createdAt||Date.now()).toLocaleDateString()]));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = exportFmt === "csv" ? "users.csv" : "users.csv"; // both CSV for now (XLSX needs a lib)
+    a.click();
+    setShowExport(false);
   };
 
-  const delUser = async id => {
-    if(String(id)===String(adminId)){ alert("You cannot delete your own admin account."); return; }
-    if(!window.confirm("Delete this user permanently?")) return;
-    await fetch(`/api/users/${id}`,{ method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
-    setUsers(us=>us.filter(x=>x._id!==id));
-    if(viewUser?._id===id) setViewUser(null);
+  const toggleStatus = async (u) => {
+    setTogglingId(u._id);
+    const newStatus = u.isActive === false;  // flip
+    try {
+      await fetch(`/api/users/${u._id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isActive: newStatus }),
+      });
+      const updated = { ...u, isActive: newStatus };
+      setUsers(us => us.map(x => x._id === u._id ? updated : x));
+      setViewUser(updated);
+    } catch {}
+    setTogglingId(null);
   };
 
-  const filtered = users
-    .filter(u => {
-      const q = uSearch.toLowerCase();
-      const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
-      const matchRole   = uRole==="All" || u.role===uRole.toLowerCase();
-      return matchSearch && matchRole;
-    })
-    .sort((a,b) => {
-      if(uSort==="Name A-Z") return (a.name||"").localeCompare(b.name||"");
-      if(uSort==="Oldest")   return new Date(a.createdAt)-new Date(b.createdAt);
-      return new Date(b.createdAt)-new Date(a.createdAt); // Newest
-    });
+  const roleBadge = role => {
+    if (role === "admin") return "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30";
+    if (role === "instructor") return "bg-purple-500/15 text-purple-300 border border-purple-500/30";
+    return "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30";
+  };
+
+  const ROLE_TABS = ["All", "Student", "Instructor", "Admin"];
 
   return (
     <div className="p-6">
-      {/* User Detail Modal */}
-      {viewUser && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setViewUser(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-[#C7E36B] text-black font-black text-lg flex items-center justify-center">{(viewUser.name||"U")[0].toUpperCase()}</div>
-              <div className="flex-1">
-                <p className="text-white font-bold">{viewUser.name}</p>
-                <p className="text-xs text-gray-400">{viewUser.email}</p>
+
+      {/* ── User Detail Modal ── */}
+      {viewUser && (() => {
+        const isActive = viewUser.isActive !== false;
+        const role = viewUser.role || "student";
+        const roleLabel = role === "admin" ? "Admin" : role === "instructor" ? "Instructor" : "Student";
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setViewUser(null)}>
+            <div className="bg-[#111416] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+
+              {/* Modal header bar */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <h2 className="text-base font-bold text-white">{roleLabel} Details</h2>
+                <button onClick={() => setViewUser(null)} className="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-lg leading-none">✕</button>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${viewUser.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{viewUser.role}</span>
-              <button onClick={()=>setViewUser(null)} className="text-gray-400 hover:text-white ml-2">✕</button>
+
+              {/* User info card */}
+              <div className="p-5">
+                <div className="bg-[#1a1e20] border border-white/10 rounded-xl p-4 mb-4">
+                  {/* Top row: avatar + info + status badge */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-[#C7E36B] text-black font-black text-lg flex items-center justify-center shrink-0 overflow-hidden">
+                      {viewUser.profilePicture
+                        ? <img src={viewUser.profilePicture} alt="" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display="none"; }}/>
+                        : (viewUser.name||"U")[0].toUpperCase()
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold leading-tight">{viewUser.name}</p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">{viewUser.email}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{viewUser.phone || "—"}</p>
+                    </div>
+                    {/* Active / Inactive status badge */}
+                    <span className={`text-xs font-bold px-3 py-1 rounded-lg border shrink-0 ${
+                      isActive
+                        ? "border-orange-500/60 text-orange-400 bg-orange-500/10"
+                        : "border-white/20 text-gray-400 bg-white/5"
+                    }`}>
+                      {isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  {/* Joined Date + Role row */}
+                  <div className="flex items-end gap-8">
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Joined Date</p>
+                      <p className="text-sm font-bold text-white">
+                        {new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase mb-1">Role</p>
+                      <span className={`text-xs font-bold px-3 py-1.5 rounded-lg capitalize ${roleBadge(role)}`}>{roleLabel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enrollments */}
+                <div className="space-y-2 text-xs max-h-48 overflow-y-auto">
+                  {[
+                    { label: "Enrolled Courses",   icon: "📹", items: viewUser.enrolledCourses   },
+                    { label: "Enrolled Workshops",  icon: "🎓", items: viewUser.enrolledWorkshops  },
+                    { label: "Enrolled Bootcamps",  icon: "🚀", items: viewUser.enrolledBootcamps  },
+                  ].map(s => (
+                    <div key={s.label} className="bg-white/5 rounded-xl p-3">
+                      <p className="text-gray-500 font-bold uppercase tracking-wider mb-1.5">{s.label} ({s.items?.length||0})</p>
+                      {s.items?.length > 0
+                        ? s.items.map((x,i) => <p key={i} className="text-gray-300 py-0.5">{s.icon} {x?.title||String(x).slice(-8)}</p>)
+                        : <p className="text-gray-600">None</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom action button */}
+              <div className="px-5 pb-5">
+                {isActive ? (
+                  <button
+                    onClick={() => toggleStatus(viewUser)}
+                    disabled={!!togglingId}
+                    className="w-full py-3.5 rounded-xl border border-red-600/60 text-red-500 font-black text-sm tracking-wide hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  >
+                    {togglingId === viewUser._id ? "UPDATING..." : "DEACTIVATE"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => toggleStatus(viewUser)}
+                    disabled={!!togglingId}
+                    className="w-full py-3.5 rounded-xl bg-[#C7E36B] text-black font-black text-sm tracking-wide hover:bg-[#d4ef7a] transition-colors disabled:opacity-50"
+                  >
+                    {togglingId === viewUser._id ? "UPDATING..." : `ACTIVATE ${roleLabel.toUpperCase()}`}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="space-y-3 text-xs">
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-1">JOINED</p>
-                <p className="text-white">{new Date(viewUser.createdAt||Date.now()).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</p>
+          </div>
+        );
+      })()}
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-white">Users</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Manage student, instructors, and admin accounts across the platform.</p>
+        </div>
+        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 bg-white text-[#0F1112] font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export
+        </button>
+      </div>
+
+      {/* ── Export Modal ── */}
+      {showExport && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowExport(false)}>
+          <div className="bg-[#111416] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+              <div>
+                <h2 className="text-base font-bold text-white">Export Users</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Choose the data you want to export and the format for your file.</p>
               </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-2">ENROLLED COURSES ({viewUser.enrolledCourses?.length||0})</p>
-                {viewUser.enrolledCourses?.length > 0
-                  ? viewUser.enrolledCourses.map((c,i)=><p key={i} className="text-white py-0.5">📹 {c?.title||String(c).slice(-8)}</p>)
-                  : <p className="text-gray-600">None</p>}
+              <button onClick={() => setShowExport(false)} className="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-lg leading-none shrink-0">✕</button>
+            </div>
+            {/* Format selection */}
+            <div className="p-6">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-3">File Format</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: "csv",  label: "CSV",          desc: "Export data in CSV (Comma separated values) format." },
+                  { id: "xlsx", label: "Excel (XLSX)",  desc: "Export data in Excel spreadsheet format." },
+                ].map(fmt => (
+                  <button key={fmt.id} onClick={() => setExportFmt(fmt.id)}
+                    className={`text-left p-4 rounded-xl border transition-all ${
+                      exportFmt === fmt.id
+                        ? "border-[#C7E36B] bg-[#C7E36B]/5"
+                        : "border-white/10 bg-white/5 hover:border-white/20"
+                    }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        exportFmt === fmt.id ? "border-[#C7E36B]" : "border-white/30"
+                      }`}>
+                        {exportFmt === fmt.id && <div className="w-2 h-2 rounded-full bg-[#C7E36B]"/>}
+                      </div>
+                      <p className={`text-sm font-bold ${exportFmt === fmt.id ? "text-white" : "text-gray-400"}`}>{fmt.label}</p>
+                    </div>
+                    <p className="text-[11px] text-gray-500 leading-snug">{fmt.desc}</p>
+                  </button>
+                ))}
               </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-2">ENROLLED WORKSHOPS ({viewUser.enrolledWorkshops?.length||0})</p>
-                {viewUser.enrolledWorkshops?.length > 0
-                  ? viewUser.enrolledWorkshops.map((w,i)=><p key={i} className="text-white py-0.5">🎓 {w?.title||String(w).slice(-8)}</p>)
-                  : <p className="text-gray-600">None</p>}
-              </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 font-semibold mb-2">ENROLLED BOOTCAMPS ({viewUser.enrolledBootcamps?.length||0})</p>
-                {viewUser.enrolledBootcamps?.length > 0
-                  ? viewUser.enrolledBootcamps.map((b,i)=><p key={i} className="text-white py-0.5">🚀 {b?.title||String(b).slice(-8)}</p>)
-                  : <p className="text-gray-600">None</p>}
-              </div>
+            </div>
+            {/* Footer */}
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setShowExport(false)}
+                className="flex-1 py-3 bg-white text-[#0F1112] font-bold text-sm rounded-xl hover:bg-gray-100 transition-colors">
+                Cancel
+              </button>
+              <button onClick={doExport}
+                className="flex-1 py-3 bg-[#C7E36B] text-black font-bold text-sm rounded-xl hover:bg-[#d4ef7a] transition-colors">
+                Export
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-5">
-        <div><h1 className="text-xl font-bold text-white">Users</h1><p className="text-xs text-gray-400">Manage platform users and roles · {users.length} total</p></div>
+      {/* ── Stats Cards ── */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label: "Total Users",    value: totalUsers,    icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          )},
+          { label: "Active Users",   value: activeUsers,   icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          )},
+          { label: "Inactive Users", value: inactiveUsers, icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          )},
+        ].map(s => (
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl px-5 py-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#FBBF24]/10 border border-[#FBBF24]/20 flex items-center justify-center shrink-0">
+              {s.icon}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-0.5">{s.label}</p>
+              <p className="text-2xl font-black text-white leading-none">{s.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <input value={uSearch} onChange={e=>setUSearch(e.target.value)} placeholder="Search by name or email..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
-          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+      {/* ── Search + Filters ── */}
+      <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <input value={uSearch} onChange={e => setUSearch(e.target.value)} placeholder="Search Users..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-white/20"/>
+          <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
         </div>
-        <select value={uRole} onChange={e=>setURole(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-          {["All","Student","Admin"].map(o=><option key={o}>{o}</option>)}
-        </select>
-        <select value={uSort} onChange={e=>setUSort(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-          {["Newest","Oldest","Name A-Z"].map(o=><option key={o}>{o}</option>)}
-        </select>
+        <div className="relative">
+          <select value={uStatus} onChange={e => setUStatus(e.target.value)}
+            className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer">
+            {["All","Active","Inactive"].map(o => <option key={o} className="bg-[#1a1e20]">{o}</option>)}
+          </select>
+          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        {/* Role tab pills */}
+        <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+          {ROLE_TABS.map(tab => (
+            <button key={tab} onClick={() => setURoleTab(tab)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                uRoleTab === tab ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"
+              }`}>
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* ── Table ── */}
       {loading ? <AdminLoader label="Loading Users" /> : (
         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           <table className="w-full">
-            <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-              {["Name","Email","Role","Enrolled","Joined","Actions"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
-            </tr></thead>
+            <thead>
+              <tr className="text-[10px] text-gray-500 font-bold uppercase tracking-wider bg-white/5">
+                <th className="text-left px-5 py-3">Users</th>
+                <th className="text-left px-5 py-3">Number</th>
+                <th className="text-left px-5 py-3">Role</th>
+                <th className="text-left px-5 py-3">Status</th>
+                <th className="text-right px-5 py-3">Actions</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.length===0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-sm">No users match your search</td></tr>}
-              {filtered.map(u=>(
-                <tr key={u._id} className="hover:bg-white/5 transition-all">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(u.name||"U")[0].toUpperCase()}</div>
-                      <span className="text-sm text-white font-semibold">{u.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{u.email}</td>
-                  <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.role==="admin"?"bg-[#C7E36B]/20 text-[#C7E36B]":"bg-blue-500/20 text-blue-400"}`}>{u.role}</span></td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{(u.enrolledCourses?.length||0)+(u.enrolledWorkshops?.length||0)+(u.enrolledBootcamps?.length||0)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-400">{new Date(u.createdAt||Date.now()).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button onClick={()=>setViewUser(u)} className="text-gray-400 hover:text-[#C7E36B]"><I name="eye" size={14}/></button>
-                      <button onClick={()=>toggleRole(u)} className="text-[10px] border border-white/20 text-gray-300 px-2 py-1 rounded hover:bg-white/10">→ {u.role==="admin"?"Student":"Admin"}</button>
-                      <button onClick={()=>delUser(u._id)} className={`text-[10px] border px-2 py-1 rounded ${String(u._id)===String(adminId)?"border-gray-700 text-gray-700 cursor-not-allowed":"border-red-500/30 text-red-400 hover:bg-red-500/10"}`} disabled={String(u._id)===String(adminId)}><I name="trash" size={11}/></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500 text-sm">No users match your search</td></tr>
+              )}
+              {paginated.map(u => {
+                const isActive = u.isActive !== false;
+                return (
+                  <tr key={u._id} className="hover:bg-white/5 transition-all">
+                    {/* User: avatar + name + email */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#C7E36B] text-black font-black text-sm flex items-center justify-center shrink-0 overflow-hidden">
+                          {u.profilePicture
+                            ? <img src={u.profilePicture} alt="" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display="none"; }}/>
+                            : (u.name||"U")[0].toUpperCase()
+                          }
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white leading-tight">{u.name}</p>
+                          <p className="text-[11px] text-gray-500 mt-0.5">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    {/* Phone */}
+                    <td className="px-5 py-3.5 text-sm text-gray-400">{u.phone || "—"}</td>
+                    {/* Role badge */}
+                    <td className="px-5 py-3.5">
+                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg capitalize ${roleBadge(u.role)}`}>
+                        {u.role === "admin" ? "Admin" : u.role === "instructor" ? "Instructor" : "Student"}
+                      </span>
+                    </td>
+                    {/* Status badge */}
+                    <td className="px-5 py-3.5">
+                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                        isActive
+                          ? "border-orange-500/50 text-orange-400"
+                          : "border-white/20 text-gray-500"
+                      }`}>
+                        {isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    {/* Actions */}
+                    <td className="px-5 py-3.5 text-right">
+                      <button onClick={() => setViewUser(u)}
+                        className="text-xs bg-white text-[#0F1112] font-bold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          {!loading&&<p className="text-xs text-gray-500 px-4 py-2">Showing {filtered.length} of {users.length} users</p>}
+          {/* Pagination footer */}
+          <div className="flex items-center justify-between px-5 py-3 border-t border-white/5">
+            <p className="text-xs text-gray-500">
+              Showing {filtered.length === 0 ? 0 : (uPageSafe - 1) * U_PER_PAGE + 1}–{Math.min(uPageSafe * U_PER_PAGE, filtered.length)} of {filtered.length} users
+            </p>
+            {uTotalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setUPage(p => Math.max(1, p - 1))}
+                  disabled={uPageSafe <= 1}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                {Array.from({ length: uTotalPages }, (_, i) => i + 1)
+                  .filter(n => n === 1 || n === uTotalPages || Math.abs(n - uPageSafe) <= 1)
+                  .reduce((acc, n, idx, arr) => {
+                    if (idx > 0 && n - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(n);
+                    return acc;
+                  }, [])
+                  .map((n, i) =>
+                    n === "..." ? (
+                      <span key={`e${i}`} className="w-7 h-7 flex items-center justify-center text-gray-500 text-xs">…</span>
+                    ) : (
+                      <button key={n} onClick={() => setUPage(n)}
+                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+                          n === uPageSafe ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/10"
+                        }`}>
+                        {n}
+                      </button>
+                    )
+                  )
+                }
+                <button
+                  onClick={() => setUPage(p => Math.min(uTotalPages, p + 1))}
+                  disabled={uPageSafe >= uTotalPages}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -3020,74 +3805,363 @@ function PaymentsAdmin({ token }) {
 
 function EnrolmentsAdmin({ token }) {
   const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("All");
+  const [loading, setLoading]         = useState(true);
+  const [search, setSearch]           = useState("");
+  const [typeFilter, setTypeFilter]   = useState("All");
+  const [ePage, setEPage]             = useState(1);
+  const [showExport, setShowExport]   = useState(false);
+  const [exportFmt, setExportFmt]     = useState("xlsx");
+  const [viewEnrollment, setViewEnrollment] = useState(null);
+  const E_PER_PAGE = 10;
 
   useEffect(() => {
-    fetch("/api/admin/enrollments", { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setEnrollments(d); setLoading(false); }).catch(()=>setLoading(false));
+    fetch("/api/admin/enrollments", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setEnrollments(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [token]);
 
+  useEffect(() => { setEPage(1); }, [search, typeFilter]);
+
   const filtered = enrollments.filter(e => {
-    const matchSearch = (e.user?.name||"").toLowerCase().includes(search.toLowerCase()) || (e.item||"").toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "All" || e.type === typeFilter;
+    const q = search.toLowerCase();
+    const matchSearch = !q || (e.user?.name||"").toLowerCase().includes(q) || (e.item||"").toLowerCase().includes(q);
+    const matchType = typeFilter === "All" || e.type === typeFilter.toLowerCase();
     return matchSearch && matchType;
   });
 
-  const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
+  const eTotalPages = Math.max(1, Math.ceil(filtered.length / E_PER_PAGE));
+  const ePageSafe   = Math.min(ePage, eTotalPages);
+  const paginated   = filtered.slice((ePageSafe - 1) * E_PER_PAGE, ePageSafe * E_PER_PAGE);
+
+  const totalAmount    = enrollments.reduce((s, e) => s + (e.price || 0), 0);
+  const bootcampCount  = enrollments.filter(e => e.type === "bootcamp").length;
+  const courseCount    = enrollments.filter(e => e.type === "course").length;
+  const workshopCount  = enrollments.filter(e => e.type === "workshop").length;
+
+  const typeBadge = t => {
+    if (t === "bootcamp")    return "border border-purple-500/60 text-purple-400";
+    if (t === "workshop")    return "border border-[#C7E36B]/60 text-[#C7E36B]";
+    return "border border-yellow-500/60 text-yellow-400";
+  };
+  const typeLabel = t => t === "course" ? "Video Course" : t ? t.charAt(0).toUpperCase() + t.slice(1) : "—";
+
+  const doExport = () => {
+    const rows = [["Student","Email","Program","Type","Amount","Date"]];
+    filtered.forEach(e => rows.push([
+      e.user?.name||"", e.user?.email||"", e.item||"", e.type||"",
+      e.price ? `₹${e.price}` : "—",
+      new Date(e.enrolledAt).toLocaleDateString(),
+    ]));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = "enrollments.csv"; a.click();
+    setShowExport(false);
+  };
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div><h1 className="text-xl font-bold text-white">Enrolments</h1><p className="text-xs text-gray-400">All student enrollments · {enrollments.length} total</p></div>
+
+      {/* ── Enrollment Detail Modal ── */}
+      {viewEnrollment && (() => {
+        const en = viewEnrollment;
+        const typeLabel = t => t === "course" ? "Video Course" : t ? t.charAt(0).toUpperCase() + t.slice(1) : "—";
+        const typeBg    = t => t === "bootcamp" ? "bg-purple-500 text-white" : t === "workshop" ? "bg-[#C7E36B] text-black" : "bg-yellow-400 text-black";
+        const payId     = `PAY-${new Date(en.enrolledAt).getFullYear()}-${String(en._id || "000000").slice(-6).toUpperCase()}`;
+        const invId     = `INV-${new Date(en.enrolledAt).getFullYear()}-${String(en._id || "000000").slice(-6).toUpperCase()}`;
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setViewEnrollment(null)}>
+            <div className="bg-[#111416] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden" onClick={ev => ev.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+                <h2 className="text-lg font-bold text-white">Enrollment Details</h2>
+                <button onClick={() => setViewEnrollment(null)} className="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-lg leading-none">✕</button>
+              </div>
+              <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                {/* Payment ID */}
+                <p className="text-xs text-gray-500">Payment ID: <span className="text-gray-300 font-medium">{payId}</span></p>
+
+                {/* Student Info */}
+                <div>
+                  <p className="text-sm font-bold text-white mb-3">Student Information</p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#C7E36B] text-black font-black text-lg flex items-center justify-center shrink-0">
+                      {(en.user?.name||"U")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{en.user?.name||"—"}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{en.user?.email||""}</p>
+                      {en.user?.phone && <p className="text-xs text-gray-500 mt-0.5">{en.user.phone}</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Purchase Details */}
+                <div>
+                  <p className="text-sm font-bold text-white mb-3">Purchase Details ({typeLabel(en.type)})</p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {en.type === "workshop" ? <><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></> : en.type === "bootcamp" ? <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/> : <polygon points="5 3 19 12 5 21 5 3"/>}
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{en.item||"—"}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Enrolled: {new Date(en.enrolledAt).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}</p>
+                    </div>
+                    <span className={`text-[11px] font-bold px-3 py-1 rounded-lg shrink-0 ${typeBg(en.type)}`}>{typeLabel(en.type)}</span>
+                  </div>
+                </div>
+
+                {/* Order Summary */}
+                <div>
+                  <p className="text-sm font-bold text-white mb-3">Order Summary</p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#C7E36B]/10 flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                      </div>
+                      <p className="text-sm text-gray-300">Total Amount</p>
+                    </div>
+                    <p className="text-base font-black text-white">
+                      {en.price ? `₹${Number(en.price).toLocaleString("en-IN")}` : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Invoice */}
+                <div>
+                  <p className="text-sm font-bold text-white mb-3">Invoice</p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white">Invoice #{invId}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        {new Date(en.enrolledAt).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}
+                        {en.price ? ` · ₹${Number(en.price).toLocaleString("en-IN")}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const content = `Invoice #${invId}\nStudent: ${en.user?.name||""}\nEmail: ${en.user?.email||""}\nProgram: ${en.item||""}\nType: ${typeLabel(en.type)}\nAmount: ${en.price ? `₹${en.price}` : "—"}\nDate: ${new Date(en.enrolledAt).toLocaleDateString()}`;
+                        const a = document.createElement("a");
+                        a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(content);
+                        a.download = `invoice-${invId}.txt`; a.click();
+                      }}
+                      className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors shrink-0 whitespace-nowrap">
+                      Download Invoice
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Export Modal ── */}
+      {showExport && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowExport(false)}>
+          <div className="bg-[#111416] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between px-6 py-5 border-b border-white/10">
+              <div>
+                <h2 className="text-base font-bold text-white">Export Enrollments</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Choose the data you want to export and the format for your file.</p>
+              </div>
+              <button onClick={() => setShowExport(false)} className="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-lg leading-none shrink-0">✕</button>
+            </div>
+            <div className="p-6">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-3">File Format</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: "csv",  label: "CSV",         desc: "Export data in CSV (Comma separated values) format." },
+                  { id: "xlsx", label: "Excel (XLSX)", desc: "Export data in Excel spreadsheet format." },
+                ].map(fmt => (
+                  <button key={fmt.id} onClick={() => setExportFmt(fmt.id)}
+                    className={`text-left p-4 rounded-xl border transition-all ${exportFmt === fmt.id ? "border-[#C7E36B] bg-[#C7E36B]/5" : "border-white/10 bg-white/5 hover:border-white/20"}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${exportFmt === fmt.id ? "border-[#C7E36B]" : "border-white/30"}`}>
+                        {exportFmt === fmt.id && <div className="w-2 h-2 rounded-full bg-[#C7E36B]"/>}
+                      </div>
+                      <p className={`text-sm font-bold ${exportFmt === fmt.id ? "text-white" : "text-gray-400"}`}>{fmt.label}</p>
+                    </div>
+                    <p className="text-[11px] text-gray-500 leading-snug">{fmt.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setShowExport(false)} className="flex-1 py-3 bg-white text-[#0F1112] font-bold text-sm rounded-xl hover:bg-gray-100 transition-colors">Cancel</button>
+              <button onClick={doExport} className="flex-1 py-3 bg-[#C7E36B] text-black font-bold text-sm rounded-xl hover:bg-[#d4ef7a] transition-colors">Export</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-white">Enrollments</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Total enrolments across Bootcamp, Video Courses &amp; Workshops</p>
+        </div>
+        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 bg-white text-[#0F1112] font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export
+        </button>
       </div>
-      <div className="grid grid-cols-3 gap-4 mb-5">
-        {[["Total Enrolments", enrollments.length, "enrolments"],["Course Enrolments", enrollments.filter(e=>e.type==="course").length,"video"],["Bootcamp Enrolments",enrollments.filter(e=>e.type==="bootcamp").length,"bootcamp"]].map(([l,v,ic])=>(
-          <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/10 flex items-center justify-center shrink-0"><I name={ic} size={20} className="text-[#C7E36B]"/></div>
-            <div><p className="text-2xl font-bold text-white">{v}</p><p className="text-xs text-gray-400">{l}</p></div>
+
+      {/* ── 5 Stats Cards ── */}
+      <div className="grid grid-cols-5 gap-3 mb-6">
+        {[
+          {
+            label: "Total Enrollments", value: enrollments.length,
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          },
+          {
+            label: "Bootcamp Enrollments", value: bootcampCount,
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          },
+          {
+            label: "Video Course Enrollments", value: courseCount,
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          },
+          {
+            label: "Workshop Enrollments", value: workshopCount,
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          },
+          {
+            label: "Total Amount", value: `₹${totalAmount.toLocaleString("en-IN")}`,
+            icon: <span style={{fontSize:"16px",fontWeight:"700",color:"#FBBF24",lineHeight:1}}>₹</span>
+          },
+        ].map(s => (
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#FBBF24]/10 border border-[#FBBF24]/20 flex items-center justify-center shrink-0">
+              {s.icon}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-400 leading-tight truncate">{s.label}</p>
+              <p className="text-lg font-black text-white leading-tight mt-0.5">{s.value}</p>
+            </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-xs">
-          <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by student or program..." className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
-          <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
+
+      {/* ── Search + Filter ── */}
+      <div className="flex gap-3 mb-5">
+        <div className="relative flex-1 max-w-sm">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-white/20"/>
+          <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
         </div>
-        <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-          <option value="All">All Types</option>
-          <option value="course">Course</option>
-          <option value="workshop">Workshop</option>
-          <option value="bootcamp">Bootcamp</option>
-        </select>
+        <div className="relative">
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+            className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer">
+            {["All","Course","Workshop","Bootcamp"].map(o => <option key={o} className="bg-[#1a1e20]">{o}</option>)}
+          </select>
+          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
       </div>
+
+      {/* ── Table ── */}
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-            {["Student","Program","Type","Enrolled On","Amount"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
-          </tr></thead>
+          <thead>
+            <tr className="text-[10px] text-gray-500 font-bold uppercase tracking-wider bg-white/5">
+              <th className="text-left px-5 py-3">Student</th>
+              <th className="text-left px-5 py-3">Program</th>
+              <th className="text-left px-5 py-3">Type</th>
+              <th className="text-left px-5 py-3">Amount</th>
+              <th className="text-left px-5 py-3">Date</th>
+              <th className="text-right px-5 py-3">Actions</th>
+            </tr>
+          </thead>
           <tbody className="divide-y divide-white/5">
-            {loading ? <tr><td colSpan={5}><AdminLoader /></td></tr>
-              : filtered.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No enrollments found</td></tr>
-              : filtered.map((e,i) => (
+            {loading ? (
+              <tr><td colSpan={6} className="py-8"><AdminLoader /></td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500 text-sm">No enrollments found</td></tr>
+            ) : paginated.map((e, i) => (
               <tr key={i} className="hover:bg-white/5 transition-all">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(e.user?.name||"U")[0]}</div>
-                    <div><p className="text-xs font-semibold text-white">{e.user?.name||"—"}</p><p className="text-[10px] text-gray-500">{e.user?.email||""}</p></div>
+                {/* Student */}
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[#C7E36B] text-black font-black text-sm flex items-center justify-center shrink-0">
+                      {(e.user?.name||"U")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white leading-tight">{e.user?.name||"—"}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">{e.user?.email||""}</p>
+                    </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-300 max-w-[200px] truncate">{e.item||"—"}</td>
-                <td className="px-4 py-3"><span className={`text-[10px] font-bold capitalize px-2 py-1 rounded-full ${typeBadge(e.type)}`}>{e.type}</span></td>
-                <td className="px-4 py-3 text-sm text-gray-400">{new Date(e.enrolledAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-sm font-bold text-white">{e.price ? `₹${e.price}` : "—"}</td>
+                {/* Program */}
+                <td className="px-5 py-3.5 text-sm text-gray-300 max-w-[180px]">
+                  <p className="truncate">{e.item||"—"}</p>
+                </td>
+                {/* Type badge */}
+                <td className="px-5 py-3.5">
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${typeBadge(e.type)}`}>
+                    {typeLabel(e.type)}
+                  </span>
+                </td>
+                {/* Amount */}
+                <td className="px-5 py-3.5 text-sm font-bold text-white">
+                  {e.price ? `₹${Number(e.price).toLocaleString("en-IN")}` : "—"}
+                </td>
+                {/* Date */}
+                <td className="px-5 py-3.5 text-sm text-gray-400">
+                  {new Date(e.enrolledAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                </td>
+                {/* Actions */}
+                <td className="px-5 py-3.5 text-right">
+                  <button onClick={() => setViewEnrollment(e)} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors">
+                    View
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Pagination footer */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/5">
+          <p className="text-xs text-gray-500">
+            Showing {filtered.length === 0 ? 0 : (ePageSafe - 1) * E_PER_PAGE + 1}–{Math.min(ePageSafe * E_PER_PAGE, filtered.length)} of {filtered.length} enrollments
+          </p>
+          {eTotalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button onClick={() => setEPage(p => Math.max(1, p - 1))} disabled={ePageSafe <= 1}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              {Array.from({ length: eTotalPages }, (_, i) => i + 1)
+                .filter(n => n === 1 || n === eTotalPages || Math.abs(n - ePageSafe) <= 1)
+                .reduce((acc, n, idx, arr) => {
+                  if (idx > 0 && n - arr[idx - 1] > 1) acc.push("...");
+                  acc.push(n); return acc;
+                }, [])
+                .map((n, i) => n === "..." ? (
+                  <span key={`e${i}`} className="w-7 h-7 flex items-center justify-center text-gray-500 text-xs">…</span>
+                ) : (
+                  <button key={n} onClick={() => setEPage(n)}
+                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${n === ePageSafe ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/10"}`}>
+                    {n}
+                  </button>
+                ))
+              }
+              <button onClick={() => setEPage(p => Math.min(eTotalPages, p + 1))} disabled={ePageSafe >= eTotalPages}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      <p className="text-xs text-gray-500 mt-3">Showing {filtered.length} of {enrollments.length} enrollments</p>
     </div>
   );
 }
@@ -3258,6 +4332,8 @@ function CommunityAdmin({ token }) {
   const [annSuccess, setAnnSuccess] = useState(false);
   const [threads, setThreads] = useState([]);
   const [threadsLoading, setThreadsLoading] = useState(true);
+  const [commTab, setCommTab]       = useState("forum");
+  const [userCount, setUserCount]   = useState(null);
 
   useEffect(() => {
     fetch("/api/community/threads")
@@ -3265,6 +4341,13 @@ function CommunityAdmin({ token }) {
       .then(d => { if (Array.isArray(d)) setThreads(d); setThreadsLoading(false); })
       .catch(() => setThreadsLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetch("/api/users", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setUserCount(d.length); })
+      .catch(() => {});
+  }, [token]);
 
   if (showEventForm) {
     const previewDate = event.date ? new Date(event.date + "T00:00:00") : null;
@@ -3354,136 +4437,239 @@ function CommunityAdmin({ token }) {
     );
   }
 
+  const reportedThreads = threads.filter(t => t.isReported || (t.reports && t.reports.length > 0));
+  const COMM_TABS = ["Forum","Events","Clubs","Chats","Awards"];
+
+  const fmtRelTime = (dateStr) => {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h/24)}d ago`;
+  };
+
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Main panel */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="text-xl font-bold text-white">Forum Management</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Monitor community discussions and moderate content.</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={()=>setShowEventForm(true)} className="bg-white/10 text-white font-bold text-sm px-4 py-2 rounded-xl hover:bg-white/20 flex items-center gap-2">
-              📅 Create Event
-            </button>
-            <button onClick={()=>setShowAnnForm(v=>!v)} className="bg-[#C7E36B] text-black font-bold text-sm px-4 py-2 rounded-xl hover:opacity-90 flex items-center gap-2">
-              <I name="plus" size={15} /> Post Announcement
-            </button>
-          </div>
-        </div>
-
-        {eventSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Event created successfully!</div>}
-        {annSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Announcement broadcast to all students!</div>}
-
-        {showAnnForm && (
-          <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-bold text-white uppercase tracking-wide">Broadcast Announcement</p>
-            <Fld label="Title" value={annTitle} onChange={setAnnTitle} placeholder="e.g. New Resource Available"/>
-            <div>
-              <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Message</p>
-              <textarea value={annMsg} onChange={e=>setAnnMsg(e.target.value)} rows={3} placeholder="Message to send to all students..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 resize-none placeholder-gray-600"/>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={async()=>{
-                if(!annTitle.trim()) return;
-                await fetch("/api/notifications/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({title:annTitle,message:annMsg,type:"announcement"})}).catch(()=>{});
-                setShowAnnForm(false);setAnnTitle("");setAnnMsg("");setAnnSuccess(true);setTimeout(()=>setAnnSuccess(false),3000);
-              }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Broadcast to All Students</button>
-              <button onClick={()=>setShowAnnForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
-            </div>
-          </div>
-        )}
-
-        {/* Filter bar */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
-          {["All Categories","All Flairs","Status: Active"].map(f => (
-            <button key={f} className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:border-white/30 hover:text-white transition-all">
-              {f}
-            </button>
-          ))}
-          <div className="ml-auto text-xs text-gray-500">
-            Sort: <span className="text-white font-semibold">Newest</span>
-          </div>
-        </div>
-
-        {/* Thread list */}
-        <div className="space-y-3">
-          {threadsLoading ? (
-            <AdminLoader label="Loading Threads" />
-          ) : threads.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-3xl mb-3">💬</p>
-              <p className="text-white font-semibold text-sm">No community threads yet</p>
-              <p className="text-gray-500 text-xs mt-1">Students can start discussions from their dashboard.</p>
-            </div>
-          ) : threads.map(t => (
-            <div key={t._id} className="border border-white/10 bg-white/5 hover:border-white/20 rounded-xl p-4 transition-all">
-              <div className="flex gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B]">{t.tag}</span>
-                    <h3 className="text-sm font-semibold text-white">{t.title}</h3>
-                  </div>
-                  <p className="text-xs mb-2 line-clamp-2 text-gray-400">{t.body}</p>
-                  <div className="flex items-center gap-3 text-[10px] text-gray-500 flex-wrap">
-                    <span className="font-semibold text-gray-400">{t.author}</span>
-                    <span>• {new Date(t.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</span>
-                    {t.replies?.length > 0 && <span>💬 {t.replies.length} replies</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={async()=>{ if(window.confirm("Delete this thread?")){ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}} title="Delete" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all"><I name="trash" size={13} /></button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Sub-navigation tabs */}
+      <div className="flex items-center gap-1 px-6 pt-4 pb-0 shrink-0">
+        {COMM_TABS.map(t => (
+          <button key={t} onClick={() => setCommTab(t.toLowerCase())}
+            className={`px-4 py-2 text-xs font-bold rounded-full transition-all ${commTab === t.toLowerCase() ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+            {t}
+          </button>
+        ))}
       </div>
 
-      {/* Moderation Hub sidebar */}
-      <div className="w-[260px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-4">
-        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">🛡 Moderation Hub</h3>
-
-        {/* Active Reports */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Active Reports</p>
-            <span className="text-[9px] bg-gray-500/20 text-gray-500 font-bold px-1.5 py-0.5 rounded">0</span>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Main panel */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h1 className="text-xl font-bold text-white">Forum Management</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Monitor community discussions and moderate content.</p>
+            </div>
+            <button onClick={() => setShowAnnForm(v => !v)}
+              className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2">
+              <I name="plus" size={15} /> Create Thread
+            </button>
           </div>
-          <div className="space-y-2">
-            <div className="text-center py-4">
-              <p className="text-xs text-gray-500">No active reports.</p>
-              <p className="text-[10px] text-gray-600 mt-1">Reports from students will appear here.</p>
+
+          {annSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Announcement broadcast to all students!</div>}
+
+          {showAnnForm && (
+            <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+              <p className="text-xs font-bold text-white uppercase tracking-wide">Broadcast Announcement</p>
+              <Fld label="Title" value={annTitle} onChange={setAnnTitle} placeholder="e.g. New Resource Available"/>
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Message</p>
+                <textarea value={annMsg} onChange={e=>setAnnMsg(e.target.value)} rows={3} placeholder="Message to send to all students..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 resize-none placeholder-gray-600"/>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={async()=>{
+                  if(!annTitle.trim()) return;
+                  await fetch("/api/notifications/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({title:annTitle,message:annMsg,type:"announcement"})}).catch(()=>{});
+                  setShowAnnForm(false);setAnnTitle("");setAnnMsg("");setAnnSuccess(true);setTimeout(()=>setAnnSuccess(false),3000);
+                }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Broadcast to All Students</button>
+                <button onClick={()=>setShowAnnForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Filter bar */}
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
+            {["All Categories","All Flairs","Status: Active"].map(f => (
+              <button key={f} className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:border-white/30 hover:text-white transition-all flex items-center gap-1.5">
+                {f === "All Categories" && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>}
+                {f === "All Flairs" && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>}
+                {f === "Status: Active" && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+                {f}
+              </button>
+            ))}
+            <div className="ml-auto text-xs text-gray-500">
+              Sort: <span className="text-white font-semibold">Newest</span>
             </div>
           </div>
+
+          {/* Thread list */}
+          <div className="space-y-3">
+            {threadsLoading ? (
+              <AdminLoader label="Loading Threads" />
+            ) : threads.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-3xl mb-3">💬</p>
+                <p className="text-white font-semibold text-sm">No community threads yet</p>
+                <p className="text-gray-500 text-xs mt-1">Students can start discussions from their dashboard.</p>
+              </div>
+            ) : threads.map(t => {
+              const isReported = t.isReported || (t.reports && t.reports.length > 0);
+              const voteCount = typeof t.votes === "number" ? t.votes : (t.upvotes?.length || 0) - (t.downvotes?.length || 0);
+              const initials = (t.author || "?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+              return (
+                <div key={t._id} className={`border rounded-xl p-4 transition-all ${isReported ? "border-red-500/50 bg-red-500/5" : "border-white/10 bg-white/5 hover:border-white/20"}`}>
+                  <div className="flex gap-3 items-start">
+                    {/* Vote column */}
+                    <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+                      <button className="text-gray-500 hover:text-[#C7E36B] transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                      </button>
+                      <span className="text-xs font-bold text-white">{voteCount}</span>
+                      <button className="text-gray-500 hover:text-red-400 transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {isReported
+                          ? <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">REPORTED</span>
+                          : <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B]">{t.tag}</span>
+                        }
+                        <h3 className="text-sm font-semibold text-white">{t.title}</h3>
+                      </div>
+                      {isReported
+                        ? <p className="text-xs mb-2 text-gray-500 italic">Content hidden pending moderator review...</p>
+                        : <p className="text-xs mb-2 line-clamp-2 text-gray-400">{t.body}</p>
+                      }
+                      {/* Author metadata */}
+                      <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                        <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center shrink-0">{initials}</div>
+                        <span className="font-semibold text-gray-400">{t.author}</span>
+                        <span>·</span>
+                        <span>{fmtRelTime(t.createdAt)}</span>
+                        {t.replies?.length > 0 && <><span>·</span><span>💬 {t.replies.length} replies</span></>}
+                        {isReported && t.reports?.length > 0 && <span className="text-red-400 flex items-center gap-1">⚠ Flagged by {t.reports.length} user{t.reports.length > 1 ? "s" : ""}</span>}
+                      </div>
+                    </div>
+
+                    {/* Right actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isReported ? (
+                        <button className="text-xs bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-red-600 transition-colors"
+                          onClick={async () => {
+                            await fetch(`/api/community/threads/${t._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+                            setThreads(prev => prev.filter(x => x._id !== t._id));
+                          }}>
+                          Resolve
+                        </button>
+                      ) : (
+                        <>
+                          <button title="Pin thread" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-[#C7E36B] transition-all">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          </button>
+                          <button onClick={async()=>{ if(window.confirm("Delete this thread?")){ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}} title="Delete"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all">
+                            <I name="trash" size={13} />
+                          </button>
+                          <button title="Approve" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-green-500/10 text-gray-500 hover:text-green-400 transition-all">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Flagged Keywords */}
-        <div className="mb-5">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flagged Keywords</p>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {keywords.map(k => (
-              <span key={k} className="flex items-center gap-1 text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded-full">
-                {k}
-                <button onClick={() => setKeywords(ks => ks.filter(x => x !== k))} className="text-gray-600 hover:text-red-400 leading-none">×</button>
+        {/* Moderation Hub sidebar */}
+        <div className="w-[270px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-4">
+          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Moderation Hub
+          </h3>
+
+          {/* Active Reports */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Active Reports</p>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${reportedThreads.length > 0 ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-500"}`}>
+                {reportedThreads.length > 0 ? `${reportedThreads.length} New` : "0"}
               </span>
-            ))}
+            </div>
+            {reportedThreads.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-xs text-gray-500">No active reports.</p>
+                <p className="text-[10px] text-gray-600 mt-1">Reports from students will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {reportedThreads.slice(0, 3).map(t => (
+                  <div key={t._id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase tracking-wide">{t.tag || "REPORTED"}</span>
+                      <span className="text-[9px] text-gray-600">{fmtRelTime(t.createdAt)}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 line-clamp-2">Reported on: "{t.title}"</p>
+                    <div className="flex gap-1.5">
+                      <button onClick={async()=>{ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}
+                        className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg hover:bg-red-600 transition-colors">Ban</button>
+                      <button onClick={()=>setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[]}:x))}
+                        className="flex-1 text-[10px] bg-white/10 text-white font-bold py-1.5 rounded-lg hover:bg-white/20 transition-colors">Dismiss</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex gap-1">
-            <input value={newKw} onChange={e => setNewKw(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && newKw.trim()) { setKeywords(ks => [...ks, newKw.trim()]); setNewKw(""); } }}
-              placeholder="Add keyword..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-[#C7E36B]/50 min-w-0" />
-            <button onClick={() => { if (newKw.trim()) { setKeywords(ks => [...ks, newKw.trim()]); setNewKw(""); } }}
-              className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1 rounded-lg hover:border-[#C7E36B]/80 transition-all">+ Add</button>
-          </div>
-        </div>
 
-        {/* Community Pulse */}
-        <div>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Community Pulse</p>
-          <div className="bg-white/5 rounded-xl p-3 text-center">
-            <p className="text-[10px] text-gray-500">Stats update as students post and join threads.</p>
+          {/* Flagged Keywords */}
+          <div className="mb-5">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flagged Keywords</p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {keywords.map(k => (
+                <span key={k} className="flex items-center gap-1 text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded-full">
+                  {k}
+                  <button onClick={() => setKeywords(ks => ks.filter(x => x !== k))} className="text-gray-600 hover:text-red-400 leading-none">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <input value={newKw} onChange={e => setNewKw(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && newKw.trim()) { setKeywords(ks => [...ks, newKw.trim()]); setNewKw(""); } }}
+                placeholder="Add keyword..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-[#C7E36B]/50 min-w-0" />
+              <button onClick={() => { if (newKw.trim()) { setKeywords(ks => [...ks, newKw.trim()]); setNewKw(""); } }}
+                className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1 rounded-lg hover:border-[#C7E36B]/80 transition-all">+ Add</button>
+            </div>
+          </div>
+
+          {/* Community Pulse */}
+          <div>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Community Pulse</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">New Users</p>
+                <p className="text-lg font-black text-white">+{userCount ?? "—"}</p>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Posts</p>
+                <p className="text-lg font-black text-white">{threads.length >= 1000 ? (threads.length/1000).toFixed(1)+"k" : threads.length || "—"}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
