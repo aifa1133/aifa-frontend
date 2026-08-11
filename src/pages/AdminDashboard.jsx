@@ -5566,194 +5566,332 @@ function HireTalentAdmin({ token }) {
 }
 
 /* ── MEMBERSHIP ADMIN ── */
-const DEFAULT_PLANS = [
-  { name:"Free",       price:0,    billingCycle:"monthly", color:"#6B7280", features:["5 Free Prompts","Community Access","Basic Resources"] },
-  { name:"Pro",        price:999,  billingCycle:"monthly", color:"#C7E36B", features:["Unlimited Prompts","All Resources","Priority Support","Certificate Downloads"] },
-  { name:"Enterprise", price:4999, billingCycle:"monthly", color:"#8B5CF6", features:["Everything in Pro","Custom Curriculum","Dedicated Manager","Team Dashboard","White-label Options"] },
-];
-
 function MembershipAdmin({ token }) {
-  const [plans, setPlans]       = useState([]);
-  const [members, setMembers]   = useState([]);
-  const [tab, setTab]           = useState("plans");
-  const [loading, setLoading]   = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editPlan, setEditPlan] = useState(null);
-  const [saving, setSaving]     = useState(false);
-  const [memberSearch, setMemberSearch] = useState("");
-  const [form, setForm] = useState({ name:"", price:0, billingCycle:"monthly", color:"#C7E36B", features:[], isActive:true });
-  const [newFeature, setNewFeature] = useState("");
+  const [members, setMembers]     = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [planFilter, setPlanFilter]     = useState("All");
+  const [viewMember, setViewMember]     = useState(null);
+  const [showExport, setShowExport]     = useState(false);
+  const [exportFmt, setExportFmt]       = useState("xlsx");
+  const [page, setPage]           = useState(1);
+  const PER_PAGE = 5;
 
-  const loadAll = async () => {
-    setLoading(true);
-    const [p, m] = await Promise.all([
-      fetch("/api/membership/plans").then(r=>r.json()).catch(()=>[]),
-      fetch("/api/membership/members", { headers:{ Authorization:`Bearer ${token}` } }).then(r=>r.json()).catch(()=>[]),
-    ]);
-    const planList = Array.isArray(p) ? p : [];
-    setPlans(planList);
-    if (Array.isArray(m)) setMembers(m);
-    if (planList.length===0) {
-      for (const def of DEFAULT_PLANS) {
-        await fetch("/api/membership/plans", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(def) });
-      }
-      fetch("/api/membership/plans").then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setPlans(d); });
+  useEffect(() => {
+    fetch("/api/membership/members", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setMembers(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [token]);
+
+  const fmtDate = (v) => {
+    if (!v) return "—";
+    const d = new Date(v);
+    return isNaN(d) ? v : d.toLocaleDateString("en",{ month:"short", day:"2-digit", year:"numeric" }).replace(",","");
+  };
+
+  const getPlan   = m => m.membership?.plan   || m.plan   || "Basic";
+  const getStatus = m => m.membership?.status || m.membershipStatus || "Active";
+  const getStart  = m => fmtDate(m.membership?.startDate  || m.startedOn  || m.createdAt);
+  const getRenewal= m => fmtDate(m.membership?.renewalDate || m.nextRenewal) ;
+  const getPhone  = m => m.phone || m.membership?.phone || "";
+
+  const filtered = members.filter(m => {
+    const q = search.toLowerCase();
+    const matchQ = !q || m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q);
+    const matchS = statusFilter === "All" || getStatus(m) === statusFilter;
+    const matchP = planFilter   === "All" || getPlan(m)   === planFilter;
+    return matchQ && matchS && matchP;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const pageItems  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+
+  const totalMembers  = members.length;
+  const activeCount   = members.filter(m => getStatus(m) === "Active").length;
+  const expiringCount = members.filter(m => {
+    const r = m.membership?.renewalDate || m.nextRenewal;
+    if (!r) return false;
+    const diff = new Date(r) - new Date();
+    return diff > 0 && diff < 30 * 864e5;
+  }).length;
+
+  const initials = name => (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+
+  const PLAN_BADGE = {
+    Basic:      "bg-[#2A2A2A] text-gray-300",
+    Pro:        "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30",
+    Enterprise: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+    Free:       "bg-white/10 text-gray-400",
+  };
+  const STATUS_BADGE = {
+    Active:  "bg-green-600 text-white",
+    Expired: "bg-red-500 text-white",
+    Pending: "bg-orange-500 text-white",
+    Paused:  "bg-gray-600 text-white",
+  };
+
+  const handleExport = () => {
+    if (exportFmt === "csv") {
+      const hdr = ["Name","Email","Phone","Plan","Status","Started On","Next Renewal"];
+      const body = filtered.map(m => [m.name,m.email,getPhone(m),getPlan(m),getStatus(m),getStart(m),getRenewal(m)].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
+      const blob = new Blob([[hdr.join(","), ...body].join("\n")], {type:"text/csv"});
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "members.csv"; a.click();
+    } else {
+      alert("XLSX export requires a server-side endpoint. Use CSV for client-side export.");
     }
-    setLoading(false);
+    setShowExport(false);
   };
-  useEffect(()=>{ loadAll(); }, [token]);
-
-  const openAdd = () => { setEditPlan(null); setForm({ name:"",price:0,billingCycle:"monthly",color:"#C7E36B",features:[],isActive:true }); setShowForm(true); };
-  const openEdit = (p) => { setEditPlan(p); setForm({ name:p.name,price:p.price,billingCycle:p.billingCycle,color:p.color,features:[...p.features],isActive:p.isActive }); setShowForm(true); };
-
-  const handleSavePlan = async () => {
-    setSaving(true);
-    const url = editPlan ? `/api/membership/plans/${editPlan._id}` : "/api/membership/plans";
-    const method = editPlan ? "PUT" : "POST";
-    await fetch(url, { method, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(form) });
-    setShowForm(false); loadAll(); setSaving(false);
-  };
-
-  const togglePlanActive = async (p) => {
-    await fetch(`/api/membership/plans/${p._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isActive:!p.isActive }) });
-    setPlans(ps=>ps.map(x=>x._id===p._id?{...x,isActive:!x.isActive}:x));
-  };
-
-  const deletePlan = async (id) => {
-    if (!window.confirm("Delete this plan?")) return;
-    await fetch(`/api/membership/plans/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
-    setPlans(ps=>ps.filter(p=>p._id!==id));
-  };
-
-  const filteredMembers = members.filter(m => !memberSearch || m.name?.toLowerCase().includes(memberSearch.toLowerCase()) || m.email?.toLowerCase().includes(memberSearch.toLowerCase()));
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-white">Membership</h1>
-        {tab==="plans" && !showForm && <button onClick={openAdd} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Create Plan</button>}
+    <div className="flex-1 overflow-y-auto p-6">
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Membership</h1>
+          <p className="text-sm text-gray-400 mt-1">Manage Membership plan and monitor member activity.</p>
+        </div>
+        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 mb-5 border-b border-white/10">
-        {["plans","members"].map(t=>(
-          <button key={t} onClick={()=>{setTab(t);setShowForm(false);}} className={`px-4 py-2 text-sm font-medium border-b-2 transition-all -mb-px capitalize ${tab===t?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-400 hover:text-white"}`}>{t}</button>
+      {/* Stat cards */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label:"Total Members",      value: totalMembers,  icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M12 15c-4.4 0-8 2.4-8 4v1h16v-1c0-1.6-3.6-4-8-4z"/><circle cx="12" cy="8" r="4"/></svg> },
+          { label:"Active Members",     value: activeCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> },
+          { label:"Expiring This Month",value: expiringCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+        ].map(s => (
+          <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+            <div className="shrink-0">{s.icon}</div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">{s.label}</p>
+              <p className="text-3xl font-black text-white">{s.value.toLocaleString()}</p>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* PLANS TAB */}
-      {tab==="plans" && (
-        showForm ? (
-          <div className="max-w-lg space-y-3">
-            <div className="flex items-center gap-3 mb-4">
-              <button onClick={()=>setShowForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
-              <h2 className="text-base font-bold text-white">{editPlan?"Edit Plan":"Create Plan"}</h2>
-            </div>
-            <Fld label="PLAN NAME" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="e.g. Pro"/>
-            <div className="grid grid-cols-2 gap-3">
-              <Fld label="PRICE (₹)" value={String(form.price)} onChange={v=>setForm({...form,price:Number(v)||0})} placeholder="999"/>
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">BILLING CYCLE</p>
-                <select value={form.billingCycle} onChange={e=>setForm({...form,billingCycle:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                  <option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="lifetime">Lifetime</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">COLOR</p>
-              <div className="flex items-center gap-2">
-                <input type="color" value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-10 h-9 rounded-lg border-0 cursor-pointer bg-transparent"/>
-                <input value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 font-mono"/>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-2">FEATURES</p>
-              <div className="space-y-1.5 mb-2">
-                {form.features.map((f,i)=>(
-                  <div key={i} className="flex items-center gap-2">
-                    <input value={f} onChange={e=>setForm({...form,features:form.features.map((x,j)=>j===i?e.target.value:x)})} className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/50"/>
-                    <button onClick={()=>setForm({...form,features:form.features.filter((_,j)=>j!==i)})} className="text-gray-600 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input value={newFeature} onChange={e=>setNewFeature(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newFeature.trim()){setForm({...form,features:[...form.features,newFeature.trim()]});setNewFeature("");}}} placeholder="Add feature..." className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/50 min-w-0"/>
-                <button onClick={()=>{if(newFeature.trim()){setForm({...form,features:[...form.features,newFeature.trim()]});setNewFeature("");}}} className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1.5 rounded-lg">+ Add</button>
-              </div>
-            </div>
-            <div className="flex items-center gap-3"><span className="text-xs text-gray-400">Active</span><Tog value={form.isActive} onChange={v=>setForm({...form,isActive:v})}/></div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={()=>setShowForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-              <button onClick={handleSavePlan} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Saving...":"Save Plan"}</button>
-            </div>
+      {/* Filters */}
+      <div className="bg-[#111315] border border-white/10 rounded-2xl p-4 mb-5 flex items-center gap-4 flex-wrap">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px]">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by name or email..."
+            className="w-full bg-transparent pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none"/>
+        </div>
+        {/* Status dropdown */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 whitespace-nowrap">All statuses</span>
+          <div className="relative">
+            <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+              className="appearance-none bg-[#1A1D1E] border border-white/10 rounded-xl pl-3 pr-8 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/40">
+              {["All","Active","Expired","Pending","Paused"].map(s => <option key={s}>{s}</option>)}
+            </select>
+            <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        {/* Plan filter pills */}
+        <div className="flex items-center gap-1 ml-auto">
+          {["All","Basic","Pro"].map(p => (
+            <button key={p} onClick={() => { setPlanFilter(p); setPage(1); }}
+              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${planFilter===p ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
+              {p !== "All" && <span className="mr-1">|</span>}{p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1.2fr_1.2fr_80px] px-5 py-3.5 border-b border-white/10">
+          {["MEMBER","PLAN","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
+            <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="py-16 flex justify-center"><AdminLoader label="Loading Members"/></div>
+        ) : pageItems.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-3xl mb-3">👥</p>
+            <p className="text-sm text-gray-400">No members found</p>
           </div>
         ) : (
-          loading ? <AdminLoader label="Loading Plans" /> : (
-            <div className="grid grid-cols-3 gap-4">
-              {plans.map(p=>(
-                <div key={p._id} className="bg-white/5 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-all">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-xl font-black" style={{color:p.color}}>{p.name}</p>
-                      <p className="text-2xl font-bold text-white">{p.price===0?"FREE":`₹${p.price}`}</p>
-                      <p className="text-[10px] text-gray-500 capitalize">/{p.billingCycle}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={()=>openEdit(p)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-all"><I name="edit" size={12}/></button>
-                      <button onClick={()=>deletePlan(p._id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all"><I name="trash" size={12}/></button>
-                    </div>
-                  </div>
-                  <ul className="space-y-1.5 mb-4">
-                    {p.features.map((f,i)=>(
-                      <li key={i} className="flex items-center gap-1.5 text-[11px] text-gray-300"><span style={{color:p.color}}>✓</span>{f}</li>
-                    ))}
-                  </ul>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400">{p.isActive?"Active":"Inactive"}</span>
-                    <Tog value={p.isActive} onChange={()=>togglePlanActive(p)}/>
+          <div className="divide-y divide-white/5">
+            {pageItems.map((m, i) => (
+              <div key={m._id||i} className="grid grid-cols-[2fr_1fr_1fr_1.2fr_1.2fr_80px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+                {/* Member */}
+                <div className="flex items-center gap-3">
+                  {m.avatar
+                    ? <img src={m.avatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0"/>
+                    : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-xs font-bold text-white shrink-0">{initials(m.name)}</div>
+                  }
+                  <div>
+                    <p className="text-sm font-semibold text-white">{m.name}</p>
+                    <p className="text-xs text-gray-500">{m.email}</p>
                   </div>
                 </div>
-              ))}
-              {plans.length===0 && <div className="col-span-3 text-center py-12"><p className="text-gray-500 text-sm">No plans yet</p></div>}
+                {/* Plan */}
+                <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${PLAN_BADGE[getPlan(m)] || "bg-white/10 text-gray-400"}`}>{getPlan(m)}</span>
+                {/* Status */}
+                <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${STATUS_BADGE[getStatus(m)] || "bg-white/10 text-gray-300"}`}>{getStatus(m)}</span>
+                {/* Started On */}
+                <span className="text-sm text-gray-300">{getStart(m)}</span>
+                {/* Next Renewal */}
+                <span className="text-sm text-gray-300">{getRenewal(m)}</span>
+                {/* Action */}
+                <button onClick={() => setViewMember(m)} className="border border-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all w-fit">View</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination footer */}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-5 py-4 border-t border-white/10">
+            <p className="text-xs text-gray-500">Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length}</p>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:border-white/30 disabled:opacity-30 transition-all">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              {Array.from({length: Math.min(totalPages, 5)}, (_, i) => {
+                const n = i+1;
+                return (
+                  <button key={n} onClick={() => setPage(n)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${page===n ? "bg-[#C7E36B] text-black" : "border border-white/10 text-gray-400 hover:border-white/30"}`}>
+                    {n}
+                  </button>
+                );
+              })}
+              {totalPages > 5 && <span className="text-gray-600 px-1">…</span>}
+              {totalPages > 5 && (
+                <button onClick={() => setPage(totalPages)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${page===totalPages ? "bg-[#C7E36B] text-black" : "border border-white/10 text-gray-400 hover:border-white/30"}`}>
+                  {totalPages}
+                </button>
+              )}
+              <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page===totalPages}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:border-white/30 disabled:opacity-30 transition-all">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
-          )
-        )
+          </div>
+        )}
+      </div>
+
+      {/* ── MEMBER DETAILS MODAL ── */}
+      {viewMember && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setViewMember(null)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4">
+              <h2 className="text-lg font-bold text-white">Member Details</h2>
+              <button onClick={() => setViewMember(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            {/* Avatar + identity */}
+            <div className="px-6 pb-4 flex items-start justify-between border-b border-white/10">
+              <div className="flex items-center gap-3">
+                {viewMember.avatar
+                  ? <img src={viewMember.avatar} alt="" className="w-12 h-12 rounded-full object-cover"/>
+                  : <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-sm font-bold text-white">{initials(viewMember.name)}</div>
+                }
+                <div>
+                  <p className="text-base font-bold text-white">{viewMember.name}</p>
+                  <p className="text-xs text-gray-400">{viewMember.email}</p>
+                  {getPhone(viewMember) && <p className="text-xs text-gray-400">{getPhone(viewMember)}</p>}
+                </div>
+              </div>
+              <span className={`text-xs font-bold px-3 py-1 rounded-lg shrink-0 ${STATUS_BADGE[getStatus(viewMember)] || "bg-white/10 text-gray-300"}`}>{getStatus(viewMember)}</span>
+            </div>
+            {/* Detail rows */}
+            <div className="px-4 py-2 space-y-1">
+              {[
+                {
+                  label:"Current Plan",
+                  value: getPlan(viewMember),
+                  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><path d="M12 15c-4.4 0-8 2.4-8 4v1h16v-1c0-1.6-3.6-4-8-4z"/><circle cx="12" cy="8" r="4"/></svg>,
+                  plain: true,
+                },
+                {
+                  label:"Membership Status",
+                  value: getStatus(viewMember),
+                  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                  badge: STATUS_BADGE[getStatus(viewMember)],
+                },
+                {
+                  label:"Start Date",
+                  value: getStart(viewMember),
+                  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+                  plain: true,
+                },
+                {
+                  label:"Renewal Date",
+                  value: getRenewal(viewMember),
+                  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+                  plain: true,
+                },
+              ].map(r => (
+                <div key={r.label} className="flex items-center justify-between bg-[#0F1112] border border-white/5 rounded-xl px-4 py-3.5">
+                  <div className="flex items-center gap-3">
+                    {r.icon}
+                    <span className="text-sm text-white">{r.label}</span>
+                  </div>
+                  {r.badge
+                    ? <span className={`text-xs font-bold px-3 py-1 rounded-lg ${r.badge}`}>{r.value}</span>
+                    : <span className="text-sm font-bold text-white">{r.value}</span>
+                  }
+                </div>
+              ))}
+            </div>
+            <div className="h-4"/>
+          </div>
+        </div>
       )}
 
-      {/* MEMBERS TAB */}
-      {tab==="members" && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-400">{members.length} members</p>
-            <input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="Search members..." className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none w-[220px]"/>
-          </div>
-          {loading ? <AdminLoader label="Loading Members" /> : (
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              <table className="w-full">
-                <thead><tr className="text-[11px] text-gray-500 font-semibold uppercase bg-white/5">
-                  {["Name","Email","Enrolled","Member Since","Plan"].map(h=><th key={h} className="text-left px-4 py-3">{h}</th>)}
-                </tr></thead>
-                <tbody className="divide-y divide-white/5">
-                  {filteredMembers.length===0 ? (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No members found</td></tr>
-                  ) : filteredMembers.map(m=>(
-                    <tr key={m._id} className="hover:bg-white/5 transition-all">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-[#C7E36B] text-black font-bold text-[11px] flex items-center justify-center">{(m.name||"U")[0]}</div>
-                          <span className="text-sm font-semibold text-white">{m.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">{m.email}</td>
-                      <td className="px-4 py-3 text-sm text-gray-400">{(m.enrolledCourses?.length||0)+(m.enrolledWorkshops?.length||0)+(m.enrolledBootcamps?.length||0)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-400">{new Date(m.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3"><span className="text-[10px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-semibold">Free</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* ── EXPORT MODAL ── */}
+      {showExport && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setShowExport(false)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+              <h2 className="text-lg font-bold text-white">Export Members</h2>
+              <button onClick={() => setShowExport(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-          )}
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-400 mb-6">Choose the data you want to export and the format for your file.</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">FILE FORMAT</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id:"csv",  label:"CSV",          desc:"Export data in CSV (Comma separated values) format." },
+                  { id:"xlsx", label:"Excel (XLSX)",  desc:"Export data in Excel spreadsheet format." },
+                ].map(f => (
+                  <button key={f.id} onClick={() => setExportFmt(f.id)}
+                    className={`border rounded-xl p-4 text-left transition-all ${exportFmt===f.id ? "border-[#C7E36B] bg-[#C7E36B]/5" : "border-white/10 hover:border-white/20"}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${exportFmt===f.id ? "border-[#C7E36B]" : "border-gray-500"}`}>
+                        {exportFmt===f.id && <div className="w-2 h-2 rounded-full bg-[#C7E36B]"/>}
+                      </div>
+                      <span className="text-sm font-semibold text-white">{f.label}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed">{f.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setShowExport(false)} className="flex-1 py-3.5 text-sm font-bold border border-white/20 text-white rounded-xl hover:bg-white/5 transition-all">Cancel</button>
+              <button onClick={handleExport} className="flex-1 py-3.5 text-sm font-bold bg-[#C7E36B] text-black rounded-xl hover:bg-lime-300 transition-all">Export</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
