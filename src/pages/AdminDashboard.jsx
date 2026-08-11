@@ -6021,7 +6021,7 @@ function CertificatesAdmin({ token }) {
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-400">{certs.length} certificates issued</p>
             <button onClick={()=>setShowForm(!showForm)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5">
-              <I name="plus" size={14}/>{showForm?"← Back":"+ Issue Certificate"}
+              {showForm?"← Back":"Issue Certificate"}
             </button>
           </div>
           {/* Search + Type filter */}
