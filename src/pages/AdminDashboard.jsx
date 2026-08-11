@@ -5821,18 +5821,48 @@ function CertificatesAdmin({ token }) {
   const [saving, setSaving]     = useState(false);
   const [msg, setMsg]           = useState("");
   const [form, setForm]         = useState({ userId:"", title:"Certificate of Achievement", courseTitle:"", itemType:"course" });
-  const [autoIssue, setAutoIssue]       = useState(true);
+  const [autoIssue, setAutoIssue]           = useState(false);
   const [manualApproval, setManualApproval] = useState(false);
-  const [idFormat, setIdFormat]         = useState("AIFA-[COURSE_CODE]-[YEAR]-[ID]");
-  const [editingFormat, setEditingFormat] = useState(false);
-  const [certSearch, setCertSearch]     = useState("");
+  const [idFormat, setIdFormat]             = useState("AIFA-[YEAR]-[ID]");
+  const [editingFormat, setEditingFormat]   = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [certSearch, setCertSearch]         = useState("");
   const [certTypeFilter, setCertTypeFilter] = useState("All");
 
+  const h = { Authorization: `Bearer ${token}` };
+
   useEffect(() => {
-    const h = { Authorization:`Bearer ${token}` };
-    fetch("/api/certificates", { headers:h }).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setCerts(d); setLoading(false); }).catch(()=>setLoading(false));
-    fetch("/api/users",        { headers:h }).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setUsers(d.filter(u=>u.role!=="admin")); }).catch(()=>{});
+    setLoading(true);
+    Promise.all([
+      fetch("/api/certificates", { headers: h }).then(r => r.json()),
+      fetch("/api/users",        { headers: h }).then(r => r.json()),
+      fetch("/api/cert-settings",{ headers: h }).then(r => r.json()),
+    ]).then(([cData, uData, sData]) => {
+      if (Array.isArray(cData)) setCerts(cData);
+      if (Array.isArray(uData)) setUsers(uData.filter(u => u.role !== "admin"));
+      if (sData && !sData.message) {
+        setAutoIssue(!!sData.autoIssue);
+        setManualApproval(!!sData.manualApproval);
+        if (sData.idFormat) setIdFormat(sData.idFormat);
+      }
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
+
+  const saveSettings = async (patch) => {
+    setSettingsSaving(true);
+    try {
+      await fetch("/api/cert-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...h },
+        body: JSON.stringify(patch),
+      });
+    } catch {}
+    setSettingsSaving(false);
+  };
+
+  const toggleAutoIssue = (val) => { setAutoIssue(val); saveSettings({ autoIssue: val }); };
+  const toggleManualApproval = (val) => { setManualApproval(val); saveSettings({ manualApproval: val }); };
+  const saveIdFormat = () => { setEditingFormat(false); saveSettings({ idFormat }); };
 
   const handleIssue = async () => {
     if (!form.userId || !form.courseTitle) { setMsg("Select student and enter course title."); return; }
@@ -5851,8 +5881,13 @@ function CertificatesAdmin({ token }) {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Revoke this certificate?")) return;
-    await fetch(`/api/certificates/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    await fetch(`/api/certificates/${id}`, { method:"DELETE", headers: h });
     setCerts(cs => cs.filter(c => c._id !== id));
+  };
+
+  const handleApprove = async (id) => {
+    const res = await fetch(`/api/certificates/${id}/approve`, { method:"PUT", headers: h });
+    if (res.ok) setCerts(cs => cs.map(c => c._id === id ? { ...c, status: "active" } : c));
   };
 
   const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
@@ -5924,9 +5959,10 @@ function CertificatesAdmin({ token }) {
                   <p className="text-sm font-semibold text-white">Auto-Issue</p>
                   <p className="text-[10px] text-gray-400 mt-0.5">Issue automatically on completion</p>
                 </div>
-                <Tog value={autoIssue} onChange={setAutoIssue}/>
+                <Tog value={autoIssue} onChange={toggleAutoIssue}/>
               </div>
-              {autoIssue && <p className="text-[10px] text-[#C7E36B]">✓ Active — auto-issuing on course completion</p>}
+              {autoIssue && <p className="text-[10px] text-[#C7E36B]">✓ Active — auto-issuing on payment</p>}
+              {!autoIssue && <p className="text-[10px] text-gray-500">— Off (issue manually)</p>}
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-start justify-between mb-2">
@@ -5934,8 +5970,9 @@ function CertificatesAdmin({ token }) {
                   <p className="text-sm font-semibold text-white">Manual Approval</p>
                   <p className="text-[10px] text-gray-400 mt-0.5">Admin must approve each issuance</p>
                 </div>
-                <Tog value={manualApproval} onChange={setManualApproval}/>
+                <Tog value={manualApproval} onChange={toggleManualApproval}/>
               </div>
+              {manualApproval  && <p className="text-[10px] text-yellow-400">⚠ Each cert needs admin approval</p>}
               {!manualApproval && <p className="text-[10px] text-gray-500">— Auto-approved (no review required)</p>}
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-4">
@@ -5944,7 +5981,7 @@ function CertificatesAdmin({ token }) {
                 <div className="flex gap-2">
                   <input value={idFormat} onChange={e=>setIdFormat(e.target.value)}
                     className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono outline-none focus:border-[#C7E36B]/50"/>
-                  <button onClick={()=>setEditingFormat(false)} className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-1 rounded-lg">Save</button>
+                  <button onClick={saveIdFormat} className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-1 rounded-lg">{settingsSaving ? "…" : "Save"}</button>
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
@@ -5954,6 +5991,27 @@ function CertificatesAdmin({ token }) {
               )}
             </div>
           </div>
+
+          {/* ── Pending Approvals ── */}
+          {certs.filter(c => c.status === "pending").length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-sm font-bold text-yellow-400 mb-3">⏳ Pending Approvals ({certs.filter(c=>c.status==="pending").length})</h2>
+              <div className="flex flex-col gap-2">
+                {certs.filter(c => c.status === "pending").map(c => (
+                  <div key={c._id} className="flex items-center justify-between bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{c.courseTitle}</p>
+                      <p className="text-[10px] text-gray-400">{c.user?.name || c.user} · <span className="capitalize">{c.itemType}</span></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleApprove(c._id)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300 transition">Approve</button>
+                      <button onClick={() => handleDelete(c._id)} className="text-xs border border-red-500/40 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition">Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
