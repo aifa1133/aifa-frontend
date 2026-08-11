@@ -144,6 +144,10 @@ import Events from "./pages/Events";
 import Clubs from "./pages/Clubs";
 import Challenges from "./pages/Challenges";
 import Awards from "./pages/Awards";
+import PrivacyPolicy from "./pages/Privacypolicy";
+import TermsAndConditions from "./pages/Termsandconditions";
+import EndUserLicenseAgreement from "./pages/Enduserlicenseagreement";
+import Copyright from "./pages/Copyright";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
@@ -250,6 +254,10 @@ function AppShell() {
           <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
           <Route path="/courses/:id/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-conditions" element={<TermsAndConditions />} />
+          <Route path="/end-user-license-agreement" element={<EndUserLicenseAgreement />} />
+          <Route path="/copyright-notice" element={<Copyright />} />
 
           {/* Admin — influencer module */}
           <Route path="/admin/influencers" element={<AdminInfluencers />} />
