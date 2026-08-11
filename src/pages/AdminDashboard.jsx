@@ -3438,8 +3438,8 @@ function UsersAdmin({ token }) {
           <h1 className="text-xl font-bold text-white">Users</h1>
           <p className="text-xs text-gray-400 mt-0.5">Manage student, instructors, and admin accounts across the platform.</p>
         </div>
-        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 bg-white text-[#0F1112] font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all shrink-0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
           Export
@@ -3779,9 +3779,9 @@ function EnrolmentsAdmin({ token }) {
   const workshopCount  = enrollments.filter(e => e.type === "workshop").length;
 
   const typeBadge = t => {
-    if (t === "bootcamp")    return "border border-purple-500/60 text-purple-400";
-    if (t === "workshop")    return "border border-[#C7E36B]/60 text-[#C7E36B]";
-    return "border border-yellow-500/60 text-yellow-400";
+    if (t === "bootcamp")  return "bg-purple-600 text-white";
+    if (t === "workshop")  return "bg-[#C7E36B] text-black";
+    return "bg-blue-600 text-white";
   };
   const typeLabel = t => t === "course" ? "Video Course" : t ? t.charAt(0).toUpperCase() + t.slice(1) : "—";
 
@@ -3946,8 +3946,8 @@ function EnrolmentsAdmin({ token }) {
           <h1 className="text-xl font-bold text-white">Enrollments</h1>
           <p className="text-xs text-gray-400 mt-0.5">Total enrolments across Bootcamp, Video Courses &amp; Workshops</p>
         </div>
-        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 bg-white text-[#0F1112] font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all shrink-0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
           Export
@@ -3959,118 +3959,103 @@ function EnrolmentsAdmin({ token }) {
         {[
           {
             label: "Total Enrollments", value: enrollments.length,
-            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><path d="M12 15c-4.4 0-8 2.4-8 4v1h16v-1c0-1.6-3.6-4-8-4z"/><circle cx="12" cy="8" r="4"/></svg>
           },
           {
-            label: "Bootcamp Enrollments", value: bootcampCount,
-            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            label: "Bootcamp Enrolments", value: bootcampCount,
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           },
           {
-            label: "Video Course Enrollments", value: courseCount,
-            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            label: "Video Course Enrolments", value: courseCount,
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           },
           {
-            label: "Workshop Enrollments", value: workshopCount,
-            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            label: "Workshop Enrolments", value: workshopCount,
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           },
           {
             label: "Total Amount", value: `₹${totalAmount.toLocaleString("en-IN")}`,
-            icon: <span style={{fontSize:"16px",fontWeight:"700",color:"#FBBF24",lineHeight:1}}>₹</span>
+            icon: <span className="text-xl font-black text-[#C7E36B] leading-none">₹</span>
           },
         ].map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#FBBF24]/10 border border-[#FBBF24]/20 flex items-center justify-center shrink-0">
-              {s.icon}
-            </div>
+          <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center gap-3">
+            <div className="shrink-0">{s.icon}</div>
             <div className="min-w-0">
-              <p className="text-[10px] text-gray-400 leading-tight truncate">{s.label}</p>
-              <p className="text-lg font-black text-white leading-tight mt-0.5">{s.value}</p>
+              <p className="text-xs text-gray-400 leading-tight">{s.label}</p>
+              <p className="text-2xl font-black text-white leading-tight mt-1">{typeof s.value === "number" ? s.value.toLocaleString() : s.value}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* ── Search + Filter ── */}
-      <div className="flex gap-3 mb-5">
-        <div className="relative flex-1 max-w-sm">
+      <div className="bg-[#111315] border border-white/10 rounded-2xl p-4 mb-5 flex items-end gap-4">
+        <div className="relative flex-1">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..."
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-white/20"/>
-          <I name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+            className="w-full bg-transparent pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none border border-white/10 rounded-xl focus:border-[#C7E36B]/40"/>
         </div>
-        <div className="relative">
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-xl px-4 py-2.5 outline-none appearance-none pr-8 cursor-pointer">
-            {["All","Course","Workshop","Bootcamp"].map(o => <option key={o} className="bg-[#1a1e20]">{o}</option>)}
-          </select>
-          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <div>
+          <p className="text-xs text-gray-400 mb-1.5 font-medium">Program Types</p>
+          <div className="relative">
+            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setEPage(1); }}
+              className="appearance-none bg-[#1A1D1E] border border-white/10 text-white text-sm rounded-xl pl-4 pr-9 py-2.5 outline-none focus:border-[#C7E36B]/40 min-w-[160px]">
+              {["All","Course","Workshop","Bootcamp"].map(o => <option key={o}>{o}</option>)}
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
         </div>
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="text-[10px] text-gray-500 font-bold uppercase tracking-wider bg-white/5">
-              <th className="text-left px-5 py-3">Student</th>
-              <th className="text-left px-5 py-3">Program</th>
-              <th className="text-left px-5 py-3">Type</th>
-              <th className="text-left px-5 py-3">Amount</th>
-              <th className="text-left px-5 py-3">Date</th>
-              <th className="text-right px-5 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {loading ? (
-              <tr><td colSpan={6} className="py-8"><AdminLoader /></td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500 text-sm">No enrollments found</td></tr>
-            ) : paginated.map((e, i) => (
-              <tr key={i} className="hover:bg-white/5 transition-all">
+      <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+        {/* Header row */}
+        <div className="grid grid-cols-[2fr_2fr_1.2fr_1fr_1.2fr_80px] px-5 py-3.5 border-b border-white/10">
+          {["STUDENT","PROGRAM","TYPE","AMOUNT","DATE","ACTIONS"].map(h => (
+            <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
+          ))}
+        </div>
+        {loading ? (
+          <div className="py-12 flex justify-center"><AdminLoader label="Loading Enrollments"/></div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-3xl mb-3">📋</p>
+            <p className="text-sm text-gray-400">No enrollments found</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {paginated.map((e, i) => (
+              <div key={i} className="grid grid-cols-[2fr_2fr_1.2fr_1fr_1.2fr_80px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
                 {/* Student */}
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-[#C7E36B] text-black font-black text-sm flex items-center justify-center shrink-0">
-                      {(e.user?.name||"U")[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white leading-tight">{e.user?.name||"—"}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">{e.user?.email||""}</p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  {e.user?.avatar
+                    ? <img src={e.user.avatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0"/>
+                    : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-xs font-bold text-white shrink-0">{(e.user?.name||"U")[0].toUpperCase()}</div>
+                  }
+                  <div>
+                    <p className="text-sm font-semibold text-white">{e.user?.name||"—"}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{e.user?.email||""}</p>
                   </div>
-                </td>
+                </div>
                 {/* Program */}
-                <td className="px-5 py-3.5 text-sm text-gray-300 max-w-[180px]">
-                  <p className="truncate">{e.item||"—"}</p>
-                </td>
+                <span className="text-sm text-gray-300 pr-4 line-clamp-2">{e.item||"—"}</span>
                 {/* Type badge */}
-                <td className="px-5 py-3.5">
-                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${typeBadge(e.type)}`}>
-                    {typeLabel(e.type)}
-                  </span>
-                </td>
+                <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-lg w-fit ${typeBadge(e.type)}`}>{typeLabel(e.type)}</span>
                 {/* Amount */}
-                <td className="px-5 py-3.5 text-sm font-bold text-white">
-                  {e.price ? `₹${Number(e.price).toLocaleString("en-IN")}` : "—"}
-                </td>
+                <span className="text-sm text-gray-200">{e.price ? `₹${Number(e.price).toLocaleString("en-IN")}` : "—"}</span>
                 {/* Date */}
-                <td className="px-5 py-3.5 text-sm text-gray-400">
-                  {new Date(e.enrolledAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                </td>
-                {/* Actions */}
-                <td className="px-5 py-3.5 text-right">
-                  <button onClick={() => setViewEnrollment(e)} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors">
-                    View
-                  </button>
-                </td>
-              </tr>
+                <span className="text-sm text-gray-300">{new Date(e.enrolledAt).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}</span>
+                {/* Action */}
+                <button onClick={() => setViewEnrollment(e)} className="border border-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all w-fit">View</button>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
 
         {/* Pagination footer */}
         <div className="flex items-center justify-between px-5 py-3 border-t border-white/5">
           <p className="text-xs text-gray-500">
-            Showing {filtered.length === 0 ? 0 : (ePageSafe - 1) * E_PER_PAGE + 1}–{Math.min(ePageSafe * E_PER_PAGE, filtered.length)} of {filtered.length} enrollments
+            Showing {filtered.length === 0 ? 0 : (ePageSafe - 1) * E_PER_PAGE + 1} to {Math.min(ePageSafe * E_PER_PAGE, filtered.length)} of {filtered.length}
           </p>
           {eTotalPages > 1 && (
             <div className="flex items-center gap-1">
