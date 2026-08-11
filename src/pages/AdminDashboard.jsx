@@ -4285,6 +4285,8 @@ function CommunityAdmin({ token }) {
 
   /* ── Nav ── */
   const [commTab, setCommTab] = useState("forum");
+  const [pinnedIds, setPinnedIds] = useState(new Set());
+  const [openThreadMenu, setOpenThreadMenu] = useState(null);
 
   useEffect(() => {
     fetch("/api/community/threads")
@@ -4311,6 +4313,14 @@ function CommunityAdmin({ token }) {
 
   /* ── helpers ── */
   const reportedThreads = threads.filter(t => t.isReported || (t.reports && t.reports.length > 0));
+  const REPORT_BADGE = { "HATE SPEECH":"bg-orange-500/20 text-orange-400","SPAM":"bg-yellow-500/20 text-yellow-400","HARASSMENT":"bg-red-500/20 text-red-400","MISINFORMATION":"bg-purple-500/20 text-purple-400" };
+  const getReportType = t => t.reportType || t.reports?.[0]?.type || "SPAM";
+  useEffect(() => {
+    if (!openThreadMenu) return;
+    const close = () => setOpenThreadMenu(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [openThreadMenu]);
   const COMM_TABS = ["Forum","Events","Clubs","Chats","Awards"];
   const fmtRelTime = (dateStr) => {
     if (!dateStr) return "";
@@ -4481,7 +4491,7 @@ function CommunityAdmin({ token }) {
             )}
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               {["All Categories","All Flairs","Status: Active"].map(f => (
-                <button key={f} className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:border-white/30 hover:text-white transition-all">
+                <button key={f} className="text-xs bg-white/5 text-gray-300 px-4 py-1.5 rounded-full hover:bg-white/10 transition-all font-medium">
                   {f}
                 </button>
               ))}
@@ -4518,19 +4528,49 @@ function CommunityAdmin({ token }) {
                           <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center shrink-0">{initials}</div>
                           <span className="font-semibold text-gray-400">{t.author}</span>
                           <span>·</span><span>{fmtRelTime(t.createdAt)}</span>
-                          {t.replies?.length>0 && <><span>·</span><span>💬 {t.replies.length}</span></>}
+                          <span>·</span>
+                          <span className="flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            {t.replyCount ?? t.replies?.length ?? 0} {(t.replyCount ?? t.replies?.length ?? 0) === 1 ? "reply" : "replies"}
+                          </span>
                         </div>
+                        {isReported && (
+                          <div className="flex items-center gap-1 mt-1 text-[10px] text-red-400">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Flagged by {t.reportCount || t.reports?.length || 1} {(t.reportCount || t.reports?.length || 1) === 1 ? "user" : "users"}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {isReported ? (
-                          <button className="text-xs bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-red-600"
-                            onClick={async()=>{ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}>
+                          <button className="text-xs bg-red-500 text-white font-bold px-4 py-1.5 rounded-full hover:bg-red-600"
+                            onClick={async()=>{
+                              try { await fetch(`/api/community/threads/${t._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isReported:false,reports:[],reportCount:0})}); } catch {}
+                              setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[],reportCount:0}:x));
+                            }}>
                             Resolve
                           </button>
                         ) : (
                           <>
+                            <button
+                              onClick={() => setPinnedIds(prev => { const n=new Set(prev); n.has(t._id)?n.delete(t._id):n.add(t._id); return n; })}
+                              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all ${pinnedIds.has(t._id)?"text-[#C7E36B] bg-[#C7E36B]/10":"text-gray-500 hover:text-[#C7E36B] hover:bg-[#C7E36B]/5"}`}
+                              title={pinnedIds.has(t._id)?"Unpin":"Pin thread"}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill={pinnedIds.has(t._id)?"currentColor":"none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </button>
                             <button onClick={async()=>{ if(window.confirm("Delete this thread?")){ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
-                            <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-green-500/10 text-gray-500 hover:text-green-400"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+                            <div className="relative">
+                              <button onClick={e=>{e.stopPropagation();setOpenThreadMenu(openThreadMenu===t._id?null:t._id);}} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                              </button>
+                              {openThreadMenu===t._id && (
+                                <div className="absolute right-0 top-8 z-50 bg-[#1A1D1E] border border-white/10 rounded-xl shadow-2xl w-44 py-1 overflow-hidden" onClick={e=>e.stopPropagation()}>
+                                  {["Hide Thread","Lock Thread","Move to Category"].map(action => (
+                                    <button key={action} onClick={()=>setOpenThreadMenu(null)} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-white/10 hover:text-white transition-all">{action}</button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </>
                         )}
                       </div>
@@ -4553,15 +4593,28 @@ function CommunityAdmin({ token }) {
               </div>
               {reportedThreads.length===0 ? <p className="text-xs text-gray-500 text-center py-4">No active reports.</p> : (
                 <div className="space-y-2">
-                  {reportedThreads.slice(0,3).map(t=>(
-                    <div key={t._id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
-                      <p className="text-[10px] text-gray-400 line-clamp-2">"{t.title}"</p>
-                      <div className="flex gap-1.5">
-                        <button onClick={async()=>{ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }} className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg">Remove</button>
-                        <button onClick={()=>setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[]}:x))} className="flex-1 text-[10px] bg-white/10 text-white font-bold py-1.5 rounded-lg">Dismiss</button>
+                  {reportedThreads.slice(0,4).map(t=>{
+                    const rType = getReportType(t);
+                    const rBadge = REPORT_BADGE[rType] || "bg-yellow-500/20 text-yellow-400";
+                    const isSpam = rType === "SPAM";
+                    return (
+                      <div key={t._id} className="bg-[#0F1112] border border-white/10 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded ${rBadge}`}>{rType}</span>
+                          <span className="text-[9px] text-gray-600">{fmtRelTime(t.createdAt)}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 line-clamp-2">Reported on: "{(t.title||"").slice(0,35)}{t.title?.length>35?"...":""}"</p>
+                        <div className="flex gap-1.5">
+                          {isSpam ? (
+                            <button onClick={async()=>{ try{await fetch(`/api/users/${t.authorId}/warn`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});}catch{}  setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[]}:x)); }} className="flex-1 text-[10px] bg-orange-500 text-white font-bold py-1.5 rounded-lg hover:bg-orange-600">Warn</button>
+                          ) : (
+                            <button onClick={async()=>{ try{await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});}catch{} setThreads(prev=>prev.filter(x=>x._id!==t._id)); }} className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg hover:bg-red-600">Ban</button>
+                          )}
+                          <button onClick={()=>setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[],reportCount:0}:x))} className="flex-1 text-[10px] bg-[#1A1D1E] text-gray-300 font-bold py-1.5 rounded-lg hover:bg-white/10">Dismiss</button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -4583,11 +4636,11 @@ function CommunityAdmin({ token }) {
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Community Pulse</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                  <p className="text-[9px] font-bold text-gray-500 uppercase mb-1">Users</p>
+                  <p className="text-[9px] font-bold text-gray-500 uppercase mb-1">New Users</p>
                   <p className="text-lg font-black text-white">+{userCount??"—"}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                  <p className="text-[9px] font-bold text-gray-500 uppercase mb-1">Posts</p>
+                  <p className="text-[9px] font-bold text-gray-500 uppercase mb-1">Total Posts</p>
                   <p className="text-lg font-black text-white">{threads.length||"—"}</p>
                 </div>
               </div>
