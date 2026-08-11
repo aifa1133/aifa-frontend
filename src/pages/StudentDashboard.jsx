@@ -44,6 +44,9 @@ const ICONS = {
   copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z",
   link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
   trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+  help: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z",
+  receipt: "M18 17H6v-2h12v2zm0-4H6v-2h12v2zm0-4H6V7h12v2zM3 22l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20z",
+  camera: "M12 15.2c-1.77 0-3.2-1.43-3.2-3.2 0-1.77 1.43-3.2 3.2-3.2 1.77 0 3.2 1.43 3.2 3.2 0 1.77-1.43 3.2-3.2 3.2zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z",
 };
 
 const Ic = ({ name, size = 18, className = "" }) => (
@@ -86,6 +89,7 @@ export default function StudentDashboard() {
   const [notifCount, setNotifCount] = useState(0);
   const [notifs, setNotifs] = useState([]);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [invoiceItem, setInvoiceItem] = useState(null);
   const [liveClass, setLiveClass] = useState(null);
   const [emailVerified, setEmailVerified] = useState(() => {
@@ -337,7 +341,7 @@ export default function StudentDashboard() {
                   onProfile={() => { navigateTo("profile"); setShowUserMenu(false); }}
                   onSettings={() => { navigateTo("settings"); setShowUserMenu(false); }}
                   onBilling={() => { navigateTo("billing"); setShowUserMenu(false); }}
-                  onLogout={handleLogout}
+                  onLogout={() => { setShowUserMenu(false); setShowLogoutModal(true); }}
                 />
               )}
             </div>
@@ -345,7 +349,7 @@ export default function StudentDashboard() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-[#0B0F10]">
           {/* Email verification banner — shown on all pages until verified */}
           {!emailVerified && !invoiceItem && <EmailVerifyBanner email={profile?.email} token={token} onVerified={() => {
             setEmailVerified(true);
@@ -376,6 +380,29 @@ export default function StudentDashboard() {
           )}
         </main>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-4">
+              <Ic name="logout" size={22} className="text-red-400" />
+            </div>
+            <h2 className="text-base font-bold text-white mb-1">Log out of AIFA?</h2>
+            <p className="text-xs text-gray-400 mb-6">You'll need to sign in again to access your dashboard.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 text-sm font-semibold border border-white/15 text-gray-300 rounded-xl hover:bg-white/5 transition-all">
+                Cancel
+              </button>
+              <button onClick={handleLogout}
+                className="flex-1 py-2.5 text-sm font-bold bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all">
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -555,8 +582,8 @@ function UserMenuDropdown({ name, email, avatar, isGuest, onProfile, onSettings,
       {[
         { icon: "person", label: "View Profile", action: onProfile },
         { icon: "settings", label: "Account Settings", action: onSettings },
-        { icon: "resources", label: "Help & Support", action: null },
-        { icon: "wallet", label: "Billing & Payments", action: onBilling },
+        { icon: "help", label: "Help & Support", action: null },
+        { icon: "receipt", label: "Billing & Payments", action: onBilling },
       ].map(item => (
         <button key={item.label} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all">
           <Ic name={item.icon} size={16} className="text-gray-400" />
@@ -2550,8 +2577,11 @@ function ProfileSection({ profile, token, onUpdated }) {
 
       {/* Personal Info Card */}
       <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-white">Personal Information</h2>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-white">Personal Information</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Manage your basic profile details.</p>
+          </div>
           {!editing && (
             <button onClick={() => { setName(profile?.name||""); setPhone(profile?.phone||""); setLinkedin(profile?.socialLinks?.linkedin||""); setInstagram(profile?.socialLinks?.instagram||""); setPortfolio(profile?.socialLinks?.portfolio||""); setEditing(true); }}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-all">
@@ -2564,16 +2594,21 @@ function ProfileSection({ profile, token, onUpdated }) {
           <div>
             {/* Avatar picker */}
             <div className="flex flex-col items-center mb-6">
-              <div className="relative w-20 h-20 mb-3">
+              <div className="relative w-20 h-20 mb-3 cursor-pointer" onClick={() => fileRef.current?.click()}>
                 {showAvatar
                   ? <img src={avatarSrc} alt="avatar" onError={() => setAvatarErr(true)} className="w-20 h-20 rounded-full object-cover ring-2 ring-white/25" />
                   : <div className="w-20 h-20 rounded-full bg-[#C7E36B] ring-2 ring-white/25 flex items-center justify-center text-black text-2xl font-bold">{initial}</div>
                 }
-                {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
+                {uploading
+                  ? <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>
+                  : <span className="absolute bottom-0.5 right-0.5 w-6 h-6 rounded-full bg-[#111315] border border-white/20 flex items-center justify-center shadow-md">
+                      <Ic name="camera" size={12} className="text-gray-300" />
+                    </span>
+                }
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-              <button onClick={() => fileRef.current?.click()} disabled={uploading} className="text-xs bg-[#C7E36B] text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-lime-300 disabled:opacity-60">
-                {uploading ? "Uploading..." : "Change Photo"}
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} className="text-xs bg-[#C7E36B] text-black font-semibold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-60">
+                {uploading ? "Uploading..." : "Change Picture"}
               </button>
             </div>
 
@@ -2629,10 +2664,15 @@ function ProfileSection({ profile, token, onUpdated }) {
           </div>
         ) : (
           <div className="flex items-start gap-6">
-            {showAvatar
-              ? <img src={avatarSrc} alt="avatar" onError={() => setAvatarErr(true)} className="w-16 h-16 rounded-full object-cover shrink-0 ring-2 ring-white/25" />
-              : <div className="w-16 h-16 rounded-full bg-[#C7E36B] ring-2 ring-white/25 flex items-center justify-center text-black text-xl font-bold shrink-0">{initial}</div>
-            }
+            <div className="relative shrink-0 group cursor-pointer" onClick={() => { setEditing(true); setTimeout(() => fileRef.current?.click(), 50); }}>
+              {showAvatar
+                ? <img src={avatarSrc} alt="avatar" onError={() => setAvatarErr(true)} className="w-16 h-16 rounded-full object-cover ring-2 ring-white/25" />
+                : <div className="w-16 h-16 rounded-full bg-[#C7E36B] ring-2 ring-white/25 flex items-center justify-center text-black text-xl font-bold">{initial}</div>
+              }
+              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#111315] border border-white/20 flex items-center justify-center shadow-md">
+                <Ic name="camera" size={12} className="text-gray-300" />
+              </span>
+            </div>
             <div className="grid grid-cols-2 gap-6 flex-1">
               <div>
                 <p className="text-xs text-gray-500 mb-1 font-semibold">Full Name</p>
@@ -2662,7 +2702,7 @@ function ProfileSection({ profile, token, onUpdated }) {
       </div>
 
       {/* Account Info */}
-      <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
+      <div className="mt-8">
         <h2 className="text-base font-bold text-white mb-5">Account Information</h2>
         <div className="grid grid-cols-3 gap-6">
           <div>
@@ -2699,7 +2739,7 @@ function SettingsSection({ token, profile }) {
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const DEFAULT_PREFS = { newCourses: true, workshopAlerts: true, progressEmails: false, promotions: true };
+  const DEFAULT_PREFS = { emailNotifications: true, inAppNotifications: false, newCourses: true, workshopAlerts: true, progressEmails: false, promotions: true };
   const [prefs, setPrefs] = useState(() => ({ ...DEFAULT_PREFS, ...(profile?.notificationPrefs || {}) }));
   const [prefMsg, setPrefMsg] = useState("");
   const [prefSaving, setPrefSaving] = useState(false);
@@ -2807,25 +2847,55 @@ function SettingsSection({ token, profile }) {
             <h2 className="text-sm font-bold text-white mb-1">Notifications</h2>
             <p className="text-xs text-gray-400 mb-6">Manage how you receive updates and alerts.</p>
             <div className="max-w-lg">
-              {[
-                { key: "newCourses",     label: "New Course Alerts",   desc: "Get notified when new courses are published" },
-                { key: "workshopAlerts", label: "Workshop Alerts",     desc: "Reminders before your registered workshops" },
-                { key: "progressEmails", label: "Progress Emails",     desc: "Weekly progress summary emails" },
-                { key: "promotions",     label: "Promotions & Offers", desc: "Discounts and special offers" },
-              ].map(n => (
-                <div key={n.key} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-300">{n.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
+              {/* Primary notification toggles */}
+              <div className="mb-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Ic name="bell" size={12} /> Notifications
+                </p>
+                {[
+                  { key: "emailNotifications", label: "Email notifications",   desc: "Receive course and account updates via email" },
+                  { key: "inAppNotifications",  label: "In-app notifications",  desc: "Push alerts inside the dashboard" },
+                ].map(n => (
+                  <div key={n.key} className="flex items-center justify-between py-3.5 border-b border-white/5 last:border-0">
+                    <div>
+                      <p className="text-sm font-medium text-gray-300">{n.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
+                    </div>
+                    <button
+                      onClick={() => setPrefs(p => ({ ...p, [n.key]: !p[n.key] }))}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${prefs[n.key] ? "bg-[#C7E36B]" : "bg-white/15"}`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${prefs[n.key] ? "left-[calc(100%-22px)]" : "left-0.5"}`} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setPrefs(p => ({ ...p, [n.key]: !p[n.key] }))}
-                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${prefs[n.key] ? "bg-[#C7E36B]" : "bg-white/15"}`}
-                  >
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${prefs[n.key] ? "left-[calc(100%-22px)]" : "left-0.5"}`} />
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* Specific alert types */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Ic name="settings" size={12} /> Alert Types
+                </p>
+                {[
+                  { key: "newCourses",     label: "New Course Alerts",   desc: "Get notified when new courses are published" },
+                  { key: "workshopAlerts", label: "Workshop Alerts",     desc: "Reminders before your registered workshops" },
+                  { key: "progressEmails", label: "Progress Emails",     desc: "Weekly progress summary emails" },
+                  { key: "promotions",     label: "Promotions & Offers", desc: "Discounts and special offers" },
+                ].map(n => (
+                  <div key={n.key} className="flex items-center justify-between py-3.5 border-b border-white/5 last:border-0">
+                    <div>
+                      <p className="text-sm font-medium text-gray-300">{n.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
+                    </div>
+                    <button
+                      onClick={() => setPrefs(p => ({ ...p, [n.key]: !p[n.key] }))}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${prefs[n.key] ? "bg-[#C7E36B]" : "bg-white/15"}`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${prefs[n.key] ? "left-[calc(100%-22px)]" : "left-0.5"}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
               {prefMsg && <p className={`text-xs mt-3 ${prefMsg.includes("saved") ? "text-green-400" : "text-red-400"}`}>{prefMsg}</p>}
               <button onClick={async () => {
                 setPrefSaving(true); setPrefMsg("");
