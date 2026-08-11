@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminInfluencers from "./admin/AdminInfluencers";
 
 /* ─── INLINE SVG ICON ─── */
 const Ic = ({ d, size = 16, className = "" }) => (
@@ -47,24 +48,22 @@ const ICONS = {
 const I = ({ name, size = 16, className = "" }) => <Ic d={ICONS[name] || ICONS.dashboard} size={size} className={className} />;
 
 const NAV_ITEMS = [
-  { id: "dashboard",          label: "Dashboard",      icon: "dashboard" },
-  { id: "bootcamp",           label: "Bootcamp",       icon: "bootcamp"  },
-  { id: "workshops",          label: "Workshops",      icon: "workshop"  },
-  { id: "video-courses",      label: "Video Courses",  icon: "video"     },
-  { id: "resources",          label: "Resources",      icon: "resources" },
-  { id: "certificates",       label: "Certificates",   icon: "cert"     },
-  { id: "jobs",               label: "Jobs",           icon: "jobs"     },
-  { id: "community",          label: "Community",      icon: "community" },
-  { id: "service-request",    label: "Service Request",icon: "service"   },
-  { id: "sales-consultation", label: "Sales Consult.", icon: "sales"     },
-  { id: "hire-talent",        label: "Hire Talent",    icon: "hire"      },
-  { id: "platform-settings", label: "Settings",       icon: "settings"  },
+  { id: "dashboard",          label: "Dashboard",         icon: "dashboard" },
+  { id: "bootcamp",           label: "Bootcamp",          icon: "bootcamp"  },
+  { id: "workshops",          label: "Workshops",         icon: "workshop"  },
+  { id: "video-courses",      label: "Video Courses",     icon: "video"     },
+  { id: "certificates",       label: "Certificates",      icon: "cert"      },
+  { id: "resources",          label: "Resources",         icon: "resources" },
+  { id: "community",          label: "Community",         icon: "community" },
+  { id: "service-request",    label: "Service Request",   icon: "service"   },
+  { id: "sales-consultation", label: "Sales Consultation",icon: "sales"     },
+  { id: "hire-talent",        label: "Hire Requests",     icon: "hire"      },
 ];
 const MGMT_ITEMS = [
-  { id: "users",      label: "Users",      icon: "users"      },
-  { id: "payments",   label: "Payments",   icon: "payments"   },
-  { id: "enrolments", label: "Enrolments", icon: "enrolments" },
-  { id: "membership", label: "Membership", icon: "membership" },
+  { id: "users",       label: "Users",       icon: "users"      },
+  { id: "membership",  label: "Membership",  icon: "membership" },
+  { id: "enrolments",  label: "Enrolments",  icon: "enrolments" },
+  { id: "influencers", label: "Influencers", icon: "community"  },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -160,8 +159,6 @@ export default function AdminDashboard() {
             <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           </div>
           <div className="flex items-center gap-3 relative">
-            <span className="text-sm text-gray-400">Welcome back, <span className="text-white font-semibold">{name}</span></span>
-
             {/* Bell icon with dropdown */}
             <div className="relative">
               <button onClick={()=>{ setShowNotifPanel(v=>!v); setShowProfileMenu(false);
@@ -249,6 +246,7 @@ export default function AdminDashboard() {
           {activePage === "sales-consultation" && <SalesConsultAdmin token={token} />}
           {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
           {activePage === "membership"         && <MembershipAdmin token={token} />}
+          {activePage === "influencers"        && <AdminInfluencers token={token} />}
           {activePage === "platform-settings"  && <PlatformSettings token={token} />}
         </main>
       </div>
@@ -258,188 +256,129 @@ export default function AdminDashboard() {
 
 /* ── ADMIN OVERVIEW ── */
 function AdminOverview({ token, onNavigate }) {
-  const [stats, setStats]       = useState({});
-  const [analytics, setAnalytics] = useState(null);
+  const [stats, setStats]     = useState({});
   const [recentTxs, setRecentTxs] = useState([]);
-  const [chartRange, setChartRange] = useState("30d");
 
   useEffect(() => {
     const h = { Authorization:`Bearer ${token}` };
     fetch("/api/admin/stats",              { headers:h }).then(r=>r.json()).then(d=>{ if(!d.message) setStats(d); }).catch(()=>{});
-    fetch("/api/admin/analytics",          { headers:h }).then(r=>r.json()).then(d=>{ if(!d.message) setAnalytics(d); }).catch(()=>{});
     fetch("/api/admin/enrollments/recent", { headers:h }).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setRecentTxs(d); }).catch(()=>{});
   }, [token]);
 
-  const fmtRev = v => v >= 100000 ? `₹${(v/100000).toFixed(1)}L` : v >= 1000 ? `₹${(v/1000).toFixed(1)}K` : `₹${v}`;
-  const fmtPct = (n, total) => total ? ((n/total)*100).toFixed(1)+"%" : "0%";
+  /* Format revenue with commas */
+  const fmtRev = v => `₹${Number(v||0).toLocaleString("en-IN")}`;
+  const pad2   = n => String(n||0).padStart(2,"0");
 
   const topCards = [
-    { label:"Total Revenue",     value: fmtRev(stats.revenue??0),     icon:"payments",   color:"text-[#C7E36B]", bg:"bg-[#C7E36B]/10", trend:"+12.5%", up:true  },
-    { label:"Total Enrollments", value: stats.enrollments??0,          icon:"enrolments", color:"text-blue-400",  bg:"bg-blue-500/10",  trend:"+8.2%",  up:true  },
-    { label:"Active Users",      value: stats.users??0,                icon:"users",      color:"text-green-400", bg:"bg-green-500/10", trend:"+4.1%",  up:true  },
-    { label:"Courses",           value: (stats.courses??0)+(stats.workshops??0)+(stats.bootcamps??0), icon:"video", color:"text-purple-400", bg:"bg-purple-500/10", trend:"-2.4%", up:false },
+    {
+      label: "TOTAL REVENUE",
+      value: fmtRev(stats.revenue ?? 0),
+      icon: "payments",
+      iconBg: "bg-[#6B21A8]",
+      iconColor: "text-white",
+    },
+    {
+      label: "TOTAL ENROLLMENTS",
+      value: Number(stats.enrollments ?? 0).toLocaleString("en-IN"),
+      icon: "users",
+      iconBg: "bg-[#1D4ED8]",
+      iconColor: "text-white",
+    },
+    {
+      label: "ACTIVE BOOTCAMPS",
+      value: pad2(stats.bootcamps ?? 0),
+      icon: "bootcamp",
+      iconBg: "bg-[#4338CA]",
+      iconColor: "text-white",
+    },
+    {
+      label: "ACTIVE WORKSHOPS",
+      value: pad2(stats.workshops ?? 0),
+      icon: "workshop",
+      iconBg: "bg-[#B45309]",
+      iconColor: "text-white",
+    },
   ];
-
-  /* Build chart data from analytics.monthlyData (last 6 points) */
-  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const chartData = analytics?.monthlyData?.slice(-6).map(m => ({
-    label: MONTHS[m._id.month-1],
-    count: m.count,
-    rev:   m.revenue,
-  })) ?? [];
-  const maxCount = Math.max(...chartData.map(d=>d.count), 1);
-  const maxRev   = Math.max(...chartData.map(d=>d.rev), 1);
-
-  const topCourses = analytics?.topCourses ?? [];
 
   const quickActions = [
-    { label:"Add Bootcamp",    icon:"bootcamp", bg:"bg-white/5 hover:bg-white/10", page:"bootcamp"      },
-    { label:"Create Workshop", icon:"workshop", bg:"bg-white/5 hover:bg-white/10", page:"workshops"     },
-    { label:"Upload Course",   icon:"upload",   bg:"bg-white/5 hover:bg-white/10", page:"video-courses" },
-    { label:"View Users",      icon:"users",    bg:"bg-white/5 hover:bg-white/10", page:"users"         },
+    { label: "Add Bootcamp",    sub: "Setup a new cohort",    icon: "plus",    page: "bootcamp"      },
+    { label: "Upload Course",   sub: "Add video lessons",     icon: "upload",  page: "video-courses" },
+    { label: "Create Workshop", sub: "Schedule live session", icon: "videocam",page: "workshops"     },
   ];
 
-  /* Build activity feed from recent txs + static items */
-  const activity = recentTxs.slice(0,4).map((tx,i) => ({
-    icon: i%3===0?"users": i%3===1?"payments":"cert",
-    color: i%3===0?"bg-[#C7E36B] text-black": i%3===1?"bg-blue-500 text-white":"bg-purple-500 text-white",
-    text: i%3===0 ? `${tx.user?.name||"A student"} enrolled in ${tx.itemTitle||"a course"}`
-                  : i%3===1 ? `Payment received from ${tx.user?.name||"a student"}`
-                            : `Certificate issued for ${tx.itemTitle||"a course"}`,
-    amount: i%3===1 ? `+₹${tx.amount||0}` : null,
-    time: tx.createdAt ? new Date(tx.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : "—",
-  }));
+  /* Build activity feed */
+  const activity = recentTxs.slice(0, 5).map((tx, i) => {
+    const kind = i % 3;
+    return {
+      icon:  kind === 0 ? "users" : kind === 1 ? "payments" : "cert",
+      color: kind === 0 ? "bg-[#C7E36B] text-black" : kind === 1 ? "bg-blue-500 text-white" : "bg-purple-500 text-white",
+      text:  kind === 0 ? `${tx.user?.name || "A student"} enrolled in ${tx.itemTitle || "a course"}`
+           : kind === 1 ? `Payment received from ${tx.user?.name || "a student"}`
+                        : `Certificate issued to ${tx.user?.name || "a student"}`,
+      amount: kind === 1 ? `+₹${tx.amount || 0}` : null,
+      time: tx.createdAt ? new Date(tx.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—",
+    };
+  });
   if (activity.length === 0) {
-    activity.push({ icon:"users", color:"bg-[#C7E36B] text-black", text:"No recent activity yet", amount:null, time:"—" });
+    activity.push(
+      { icon: "users",    color: "bg-[#C7E36B] text-black",      text: "No recent activity yet", amount: null, time: "—" },
+    );
   }
 
   return (
     <div className="p-6 space-y-5">
-      {/* 4 top stat cards */}
+      {/* 4 stat cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {topCards.map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center`}>
-                <I name={s.icon} size={18} className={s.color} />
-              </div>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${s.up ? "text-green-400 bg-green-500/10":"text-red-400 bg-red-500/10"}`}>
-                {s.up?"↑":"↓"} {s.trend}
-              </span>
+          <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5">
+            <div className={`w-10 h-10 rounded-xl ${s.iconBg} flex items-center justify-center mb-4`}>
+              <I name={s.icon} size={20} className={s.iconColor} />
             </div>
-            <p className="text-xs text-gray-400 mb-0.5">{s.label}</p>
-            <p className="text-2xl font-black text-white">{s.value}</p>
+            <p className="text-[10px] font-bold text-gray-500 tracking-widest mb-1.5">{s.label}</p>
+            <p className="text-3xl font-black text-white">{s.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Revenue chart + Recent Activity */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
-        {/* Revenue Overview */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <h3 className="text-sm font-bold text-white">Revenue Overview</h3>
-              <p className="text-[10px] text-gray-500">Detailed financial growth metrics</p>
-            </div>
-            <div className="flex gap-1">
-              {["7d","30d","3m"].map(r => (
-                <button key={r} onClick={() => setChartRange(r)}
-                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${chartRange===r?"bg-[#C7E36B] text-black":"bg-white/10 text-gray-400 hover:bg-white/20"}`}>
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-          {chartData.length === 0 ? (
-            <div className="h-[140px] flex items-center justify-center text-xs text-gray-600">No data yet — make some sales!</div>
-          ) : (
-            <div className="mt-4">
-              {/* CSS bar chart for enrollments */}
-              <div className="flex items-end gap-2 h-[120px]">
-                {chartData.map((d,i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full flex flex-col justify-end" style={{height:"100px"}}>
-                      <div className="w-full bg-[#C7E36B]/80 rounded-t transition-all hover:bg-[#C7E36B]"
-                        style={{height:`${Math.max(4,(d.count/maxCount)*100)}px`}}
-                        title={`${d.count} enrollments`} />
-                    </div>
-                    <span className="text-[9px] text-gray-500">{d.label}</span>
-                  </div>
-                ))}
+      {/* Quick Actions (left) + Recent Activity (right) */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-4">
+        {/* Quick Actions — stacked vertically */}
+        <div className="space-y-4">
+          {quickActions.map(({ label, sub, icon, page }) => (
+            <button key={label} onClick={() => onNavigate(page)}
+              className="w-full bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center gap-5 hover:border-white/25 transition-all group text-left">
+              <div className="w-14 h-14 rounded-full bg-white/8 flex items-center justify-center shrink-0 group-hover:bg-white/12 transition-colors">
+                <I name={icon} size={24} className="text-[#C7E36B]" />
               </div>
-              {/* Revenue sparkline — simple dots */}
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/5 text-[10px] text-gray-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#C7E36B] inline-block" /> Enrollments</span>
-                <span className="ml-auto text-gray-400">Total: {analytics?.totalEnrollments??0} paid enrollments</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-bold text-white">{label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{sub}</p>
               </div>
-            </div>
-          )}
+              <span className="text-gray-500 group-hover:text-[#C7E36B] transition-colors text-lg shrink-0">→</span>
+            </button>
+          ))}
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-white">Recent Activity</h3>
-            <button onClick={() => onNavigate("enrolments")} className="text-[10px] text-[#C7E36B] hover:underline">View All</button>
+            <button onClick={() => onNavigate("enrolments")} className="text-xs text-[#C7E36B] hover:underline">View All</button>
           </div>
-          <div className="space-y-3">
-            {activity.map((a,i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <div className={`w-7 h-7 rounded-full ${a.color} flex items-center justify-center shrink-0`}>
-                  <I name={a.icon} size={13} />
+          <div className="flex-1 space-y-4">
+            {activity.map((a, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className={`w-8 h-8 rounded-full ${a.color} flex items-center justify-center shrink-0 mt-0.5`}>
+                  <I name={a.icon} size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-white leading-snug line-clamp-2">{a.text}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{a.time}</p>
+                  <p className="text-[12px] text-white leading-snug line-clamp-2">{a.text}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{a.time}</p>
                 </div>
                 {a.amount && <span className="text-[10px] font-bold text-green-400 shrink-0">{a.amount}</span>}
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Top Performing Courses + Quick Actions */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4">
-        {/* Top courses */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-white">Top Performing Courses</h3>
-            <button className="text-[10px] text-gray-500 hover:text-white">• • •</button>
-          </div>
-          {topCourses.length === 0 ? (
-            <p className="text-xs text-gray-500 text-center py-6">No course enrollments yet</p>
-          ) : topCourses.map((c,i) => (
-            <div key={i} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                  <I name="video" size={15} className="text-gray-400" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-white line-clamp-1">{c._id}</p>
-                  <p className="text-[10px] text-gray-500">Course · {c.count} students</p>
-                </div>
-              </div>
-              <div className="text-right shrink-0 ml-3">
-                <p className="text-xs font-bold text-white">{fmtRev(c.revenue)}</p>
-                <p className="text-[10px] text-green-400">+ growth</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions grid (2×2) */}
-        <div className="grid grid-cols-2 gap-3 content-start" style={{minWidth:"260px"}}>
-          {quickActions.map(({label,icon,bg,page}) => (
-            <button key={label} onClick={() => onNavigate(page)}
-              className={`${bg} border border-white/10 rounded-xl p-4 flex flex-col items-center gap-2 text-xs font-semibold text-white hover:border-white/20 transition-all`}>
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                <I name={icon} size={18} className="text-gray-300" />
-              </div>
-              <span className="text-center leading-tight">{label}</span>
-            </button>
-          ))}
         </div>
       </div>
     </div>
