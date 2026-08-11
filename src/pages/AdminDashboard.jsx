@@ -5890,112 +5890,390 @@ function CertificatesAdmin({ token }) {
     if (res.ok) setCerts(cs => cs.map(c => c._id === id ? { ...c, status: "active" } : c));
   };
 
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [certPage, setCertPage]         = useState(1);
+  const [viewCert, setViewCert]         = useState(null);
+  const PAGE_SIZE = 6;
+
   const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
 
+  const fmtDate = d => d ? new Date(d).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : "—";
+
   return (
-    <div className="p-6">
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-white">Certificates</h1>
-        <p className="text-xs text-gray-400">Manage templates, issue, and automate certificates</p>
+    <div className={`flex h-full min-h-0 ${viewCert ? "overflow-hidden" : ""}`}>
+    {/* Main content */}
+    <div className={`flex-1 p-6 overflow-y-auto transition-all ${viewCert ? "mr-[380px]" : ""}`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h1 className="text-xl font-bold text-white">{certTab === "template" ? "Certificate Templates" : "Certificates"}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{certTab === "template" ? "Manage the templates used for automatically generated certificates." : "View and manage certificates issued for Bootcamp and Video Courses."}</p>
+        </div>
+        {certTab === "users" && !showForm && (
+          <button onClick={() => setShowForm(true)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 transition">
+            Issue Certificate
+          </button>
+        )}
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-0.5 mb-6 border-b border-white/10 overflow-x-auto">
-        {CERT_NAV.map(t => (
-          <button key={t.key} onClick={()=>{ setCertTab(t.key); setShowForm(false); }}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap -mb-px ${certTab===t.key?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-400 hover:text-white"}`}>
+      {/* Tabs */}
+      <div className="flex gap-0 mb-6 border-b border-white/10">
+        {[{key:"users",label:"Users"},{key:"template",label:"Certificate Template"}].map(t => (
+          <button key={t.key} onClick={() => { setCertTab(t.key); setShowForm(false); setCertPage(1); setViewCert(null); }}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px ${certTab===t.key?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-400 hover:text-white"}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* ── TEMPLATES ── */}
-      {certTab === "templates" && (
+      {/* ── USERS TAB ── */}
+      {certTab === "users" && (
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {certs.length === 0 && !loading && (
-              <div className="col-span-3 text-center py-10">
-                <p className="text-gray-500 text-sm">No certificate templates yet.</p>
-                <p className="text-gray-600 text-xs mt-1">Issue a certificate to a student and a template will be created automatically.</p>
+          {/* Issue form */}
+          {showForm && (
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-6 max-w-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Issue New Certificate</h3>
+                <button onClick={() => { setShowForm(false); setMsg(""); }} className="text-gray-500 hover:text-white text-xs">← Back</button>
               </div>
-            )}
-            {[...new Map(certs.map(c => [c.itemType, c])).values()].map(c => (
-              <div key={c._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden group hover:border-white/20 transition-all">
-                <div className={`h-32 bg-gradient-to-br ${c.itemType==="bootcamp"?"from-blue-900/60 to-blue-950":c.itemType==="workshop"?"from-purple-900/60 to-purple-950":"from-[#1a1a2e] to-[#16213e]"} flex items-center justify-center`}>
-                  <div className="text-center px-4">
-                    <div className="w-8 h-8 bg-[#C7E36B] rounded-lg flex items-center justify-center mx-auto mb-2"><span className="text-black font-black text-sm">A</span></div>
-                    <p className="text-[9px] text-gray-400 uppercase font-semibold">AIFA</p>
-                    <p className="text-xs text-white font-semibold mt-0.5">{c.title}</p>
+              {msg && <p className="text-xs text-red-400">{msg}</p>}
+              <div>
+                <p className="text-[10px] text-gray-400 mb-1 font-semibold uppercase">Student</p>
+                <select value={form.userId} onChange={e=>setForm({...form,userId:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                  <option value="">Select student...</option>
+                  {users.map(u=><option key={u._id} value={u._id}>{u.name} ({u.email})</option>)}
+                </select>
+              </div>
+              <Fld label="Certificate Title" value={form.title} onChange={v=>setForm({...form,title:v})} />
+              <Fld label="Course / Program Title" value={form.courseTitle} onChange={v=>setForm({...form,courseTitle:v})} placeholder="e.g. AI Filmmaking Bootcamp" />
+              <div>
+                <p className="text-[10px] text-gray-400 mb-1 font-semibold uppercase">Type</p>
+                <select value={form.itemType} onChange={e=>setForm({...form,itemType:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                  <option value="course">Course</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="bootcamp">Bootcamp</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => { setShowForm(false); setMsg(""); }} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+                <button onClick={handleIssue} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg disabled:opacity-60">{saving?"Issuing...":"Issue Certificate"}</button>
+              </div>
+            </div>
+          )}
+
+          {!showForm && (
+            <>
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3 mb-5 items-end">
+                <div className="flex-1 min-w-[220px]">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Search</p>
+                  <div className="relative">
+                    <I name="search" size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+                    <input value={certSearch} onChange={e=>{setCertSearch(e.target.value);setCertPage(1);}} placeholder="Search by student name, phone, email or certificate ID"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-white/20"/>
                   </div>
                 </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-semibold text-white capitalize">{c.itemType} Certificate</h3>
-                    <span className="text-[9px] bg-green-500/20 text-green-400 font-bold px-2 py-0.5 rounded-full">ACTIVE</span>
+                <div className="min-w-[160px]">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Workshop</p>
+                  <select value={certTypeFilter} onChange={e=>{setCertTypeFilter(e.target.value);setCertPage(1);}} className="w-full bg-white/5 border border-white/10 text-gray-300 text-sm rounded-lg px-3 py-2.5 outline-none">
+                    <option value="All">All Workshops</option>
+                    <option value="course">Video Course</option>
+                    <option value="workshop">Workshop</option>
+                    <option value="bootcamp">Bootcamp</option>
+                  </select>
+                </div>
+                <div className="min-w-[140px]">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Certificate Type</p>
+                  <select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setCertPage(1);}} className="w-full bg-white/5 border border-white/10 text-gray-300 text-sm rounded-lg px-3 py-2.5 outline-none">
+                    <option value="All">Workshop Type</option>
+                    <option value="active">Generated</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Table */}
+              {loading ? <AdminLoader /> : (() => {
+                const filtered = certs.filter(c => {
+                  const q = certSearch.toLowerCase();
+                  const matchQ = !q || (c.user?.name||"").toLowerCase().includes(q) || (c.courseTitle||"").toLowerCase().includes(q);
+                  const matchT = certTypeFilter==="All" || c.itemType===certTypeFilter;
+                  const matchS = statusFilter==="All" || c.status===statusFilter;
+                  return matchQ && matchT && matchS;
+                });
+                const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+                const page = Math.min(certPage, totalPages);
+                const pageData = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+                const start = filtered.length===0 ? 0 : (page-1)*PAGE_SIZE+1;
+                const end   = Math.min(page*PAGE_SIZE, filtered.length);
+                return (
+                  <>
+                    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-[10px] text-gray-500 font-bold uppercase tracking-wider bg-white/5">
+                            {["Student","Workshop","Certificate Type","Certificate ID","Issued On","Status","Action"].map(col=>(
+                              <th key={col} className="text-left px-4 py-3 whitespace-nowrap">{col}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {pageData.length === 0 ? (
+                            <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500 text-sm">{certs.length===0?"No certificates issued yet":"No certificates match your filters"}</td></tr>
+                          ) : pageData.map(c => {
+                            const isGenerated = c.status === "active";
+                            const isPending   = c.status === "pending";
+                            return (
+                              <tr key={c._id} className="hover:bg-white/5 transition-all">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] font-bold text-xs flex items-center justify-center shrink-0">{(c.user?.name||"?")[0].toUpperCase()}</div>
+                                    <div>
+                                      <p className="text-xs font-semibold text-white leading-tight">{c.user?.name||"—"}</p>
+                                      <p className="text-[10px] text-gray-500 leading-tight">{c.user?.email||""}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-300 max-w-[180px] truncate">{c.courseTitle}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`text-[10px] font-bold capitalize px-2.5 py-1 rounded-full ${typeBadge(c.itemType)}`}>{c.itemType}</span>
+                                </td>
+                                <td className="px-4 py-3 text-[11px] text-gray-400 font-mono whitespace-nowrap">{c.certificateId || "—"}</td>
+                                <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{fmtDate(c.createdAt)}</td>
+                                <td className="px-4 py-3">
+                                  {isGenerated && <span className="text-[10px] font-bold bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full">Generated</span>}
+                                  {isPending   && <span className="text-[10px] font-bold bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-full">Pending</span>}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    {isPending && (
+                                      <button onClick={() => handleApprove(c._id)} className="text-[11px] font-bold bg-[#C7E36B] text-black px-3 py-1.5 rounded-lg hover:bg-lime-300 transition whitespace-nowrap">Approve</button>
+                                    )}
+                                    {isGenerated && (
+                                      <button onClick={() => setViewCert(c)} className="text-[11px] font-semibold border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5 transition whitespace-nowrap">View Details</button>
+                                    )}
+                                    <button onClick={() => handleDelete(c._id)} className="text-gray-600 hover:text-red-400 transition-all p-1" title="Revoke"><I name="trash" size={13}/></button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-4">
+                      <p className="text-xs text-gray-500">Showing {start} to {end} of {filtered.length} results</p>
+                      <div className="flex items-center gap-1">
+                        <button onClick={()=>setCertPage(p=>Math.max(1,p-1))} disabled={page===1} className="w-7 h-7 rounded-lg border border-white/10 text-gray-400 hover:border-white/30 disabled:opacity-30 flex items-center justify-center">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        {Array.from({length: totalPages}, (_,i)=>i+1).filter(n => n===1||n===totalPages||Math.abs(n-page)<=1).reduce((acc,n,i,arr)=>{
+                          if(i>0&&n-arr[i-1]>1) acc.push("…");
+                          acc.push(n);
+                          return acc;
+                        },[]).map((n,i) => (
+                          typeof n==="string"
+                            ? <span key={i} className="text-gray-500 text-xs px-1">…</span>
+                            : <button key={n} onClick={()=>setCertPage(n)} className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${page===n?"bg-[#C7E36B] text-black":"border border-white/10 text-gray-400 hover:border-white/30"}`}>{n}</button>
+                        ))}
+                        <button onClick={()=>setCertPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} className="w-7 h-7 rounded-lg border border-white/10 text-gray-400 hover:border-white/30 disabled:opacity-30 flex items-center justify-center">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── CERTIFICATE TEMPLATE TAB ── */}
+      {certTab === "template" && (
+        <div className="space-y-6">
+          {/* Template Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Bootcamp Certificate Card */}
+            <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
+              {/* Certificate Preview */}
+              <div className="bg-white p-5 relative">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">AIFA ACADEMY</p>
+                    <p className="text-[11px] font-black text-gray-800 mt-0.5">Certificate of Completion</p>
                   </div>
-                  <p className="text-[10px] text-gray-500">{c.itemType} Completion</p>
-                  <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-600">
-                    <span>{certs.filter(x=>x.itemType===c.itemType).length} issued</span>
+                  <div className="w-8 h-8 bg-[#C7E36B] rounded-lg flex items-center justify-center shrink-0">
+                    <span className="text-black font-black text-sm">A</span>
+                  </div>
+                </div>
+                <div className="border-t border-gray-100 pt-2.5 mb-2.5">
+                  <p className="text-[7px] text-gray-400 uppercase tracking-widest font-semibold">AWARDED TO</p>
+                  <p className="text-base font-black text-gray-900 mt-0.5">Student Name</p>
+                  <p className="text-[8px] text-gray-400 mt-0.5">For successful completion of Bootcamp program</p>
+                </div>
+                <div className="flex items-end justify-between pt-2 border-t border-gray-100">
+                  <div>
+                    <p className="text-[7px] text-gray-400 uppercase tracking-widest">CERTIFICATE ID</p>
+                    <p className="text-[9px] text-gray-600 font-mono mt-0.5">AIFA-2026-00001</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[7px] text-gray-400 uppercase tracking-widest">DATE</p>
+                    <p className="text-[9px] text-gray-600 mt-0.5">Aug 2026</p>
                   </div>
                 </div>
               </div>
-            ))}
-            {/* Create New Template */}
-            <button className="border-2 border-dashed border-white/15 rounded-xl h-[200px] flex flex-col items-center justify-center gap-2 hover:border-[#C7E36B]/40 transition-all text-gray-500 hover:text-[#C7E36B]">
-              <div className="w-10 h-10 rounded-full border-2 border-dashed border-current flex items-center justify-center">
-                <I name="plus" size={18}/>
+              {/* Card Footer */}
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-sm font-semibold text-white">Bootcamp Certificate</h3>
+                  <span className="text-[9px] bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full">Default</span>
+                </div>
+                <p className="text-[10px] text-gray-500 mb-3">Issued upon completion of bootcamp programs. White background, AIFA branding.</p>
+                <div className="flex gap-2">
+                  <button className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
+                  <button className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
+                </div>
               </div>
-              <p className="text-sm font-semibold">Create New Template</p>
-              <p className="text-xs">Design a custom certificate</p>
-            </button>
+            </div>
+
+            {/* Video Course Certificate Card */}
+            <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
+              {/* Certificate Preview — green variant */}
+              <div className="bg-gradient-to-br from-[#1B4332] to-[#0A2618] p-5 relative">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[8px] text-[#C7E36B]/70 font-bold uppercase tracking-widest">AIFA ACADEMY</p>
+                    <p className="text-[11px] font-black text-white mt-0.5">Certificate of Completion</p>
+                  </div>
+                  <div className="w-8 h-8 bg-[#C7E36B] rounded-lg flex items-center justify-center shrink-0">
+                    <span className="text-black font-black text-sm">A</span>
+                  </div>
+                </div>
+                <div className="border-t border-white/10 pt-2.5 mb-2.5">
+                  <p className="text-[7px] text-[#C7E36B]/60 uppercase tracking-widest font-semibold">AWARDED TO</p>
+                  <p className="text-base font-black text-white mt-0.5">Student Name</p>
+                  <p className="text-[8px] text-white/40 mt-0.5">For successful completion of Video Course</p>
+                </div>
+                <div className="flex items-end justify-between pt-2 border-t border-white/10">
+                  <div>
+                    <p className="text-[7px] text-white/40 uppercase tracking-widest">CERTIFICATE ID</p>
+                    <p className="text-[9px] text-white/60 font-mono mt-0.5">AIFA-2026-00002</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[7px] text-white/40 uppercase tracking-widest">DATE</p>
+                    <p className="text-[9px] text-white/60 mt-0.5">Aug 2026</p>
+                  </div>
+                </div>
+              </div>
+              {/* Card Footer */}
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-sm font-semibold text-white">Video Course Certificate</h3>
+                  <span className="text-[9px] bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full">Default</span>
+                </div>
+                <p className="text-[10px] text-gray-500 mb-3">Issued upon completion of video courses. Dark green background, premium look.</p>
+                <div className="flex gap-2">
+                  <button className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
+                  <button className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Workshop Certificate Card */}
+            <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
+              {/* Certificate Preview — purple variant */}
+              <div className="bg-gradient-to-br from-[#2D1B69] to-[#1A0F3C] p-5 relative">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[8px] text-purple-300/70 font-bold uppercase tracking-widest">AIFA ACADEMY</p>
+                    <p className="text-[11px] font-black text-white mt-0.5">Workshop Certificate</p>
+                  </div>
+                  <div className="w-8 h-8 bg-[#C7E36B] rounded-lg flex items-center justify-center shrink-0">
+                    <span className="text-black font-black text-sm">A</span>
+                  </div>
+                </div>
+                <div className="border-t border-white/10 pt-2.5 mb-2.5">
+                  <p className="text-[7px] text-purple-300/60 uppercase tracking-widest font-semibold">AWARDED TO</p>
+                  <p className="text-base font-black text-white mt-0.5">Student Name</p>
+                  <p className="text-[8px] text-white/40 mt-0.5">For participation in Workshop</p>
+                </div>
+                <div className="flex items-end justify-between pt-2 border-t border-white/10">
+                  <div>
+                    <p className="text-[7px] text-white/40 uppercase tracking-widest">CERTIFICATE ID</p>
+                    <p className="text-[9px] text-white/60 font-mono mt-0.5">AIFA-2026-00003</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[7px] text-white/40 uppercase tracking-widest">DATE</p>
+                    <p className="text-[9px] text-white/60 mt-0.5">Aug 2026</p>
+                  </div>
+                </div>
+              </div>
+              {/* Card Footer */}
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-sm font-semibold text-white">Workshop Certificate</h3>
+                  <span className="text-[9px] bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full">Default</span>
+                </div>
+                <p className="text-[10px] text-gray-500 mb-3">Issued for workshop participation. Deep purple background, elegant styling.</p>
+                <div className="flex gap-2">
+                  <button className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
+                  <button className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Issuance Automation */}
-          <h2 className="text-sm font-bold text-white mb-3">⚡ Issuance Automation</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="text-sm font-semibold text-white">Auto-Issue</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Issue automatically on completion</p>
+          <div>
+            <h2 className="text-sm font-bold text-white mb-3">Issuance Automation</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Auto-Issue</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Issue automatically on completion</p>
+                  </div>
+                  <Tog value={autoIssue} onChange={toggleAutoIssue}/>
                 </div>
-                <Tog value={autoIssue} onChange={toggleAutoIssue}/>
+                {autoIssue && <p className="text-[10px] text-[#C7E36B]">✓ Active — auto-issuing on payment</p>}
+                {!autoIssue && <p className="text-[10px] text-gray-500">— Off (issue manually)</p>}
               </div>
-              {autoIssue && <p className="text-[10px] text-[#C7E36B]">✓ Active — auto-issuing on payment</p>}
-              {!autoIssue && <p className="text-[10px] text-gray-500">— Off (issue manually)</p>}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="text-sm font-semibold text-white">Manual Approval</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Admin must approve each issuance</p>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Manual Approval</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Admin must approve each issuance</p>
+                  </div>
+                  <Tog value={manualApproval} onChange={toggleManualApproval}/>
                 </div>
-                <Tog value={manualApproval} onChange={toggleManualApproval}/>
+                {manualApproval  && <p className="text-[10px] text-yellow-400">⚠ Each cert needs admin approval</p>}
+                {!manualApproval && <p className="text-[10px] text-gray-500">— Auto-approved (no review required)</p>}
               </div>
-              {manualApproval  && <p className="text-[10px] text-yellow-400">⚠ Each cert needs admin approval</p>}
-              {!manualApproval && <p className="text-[10px] text-gray-500">— Auto-approved (no review required)</p>}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm font-semibold text-white mb-2">Custom ID Format</p>
-              {editingFormat ? (
-                <div className="flex gap-2">
-                  <input value={idFormat} onChange={e=>setIdFormat(e.target.value)}
-                    className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono outline-none focus:border-[#C7E36B]/50"/>
-                  <button onClick={saveIdFormat} className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-1 rounded-lg">{settingsSaving ? "…" : "Save"}</button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <code className="text-[10px] text-[#C7E36B] font-mono bg-[#C7E36B]/10 px-2 py-1 rounded">{idFormat}</code>
-                  <button onClick={()=>setEditingFormat(true)} className="text-[10px] text-gray-500 hover:text-white underline ml-2">Edit</button>
-                </div>
-              )}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-sm font-semibold text-white mb-2">Custom ID Format</p>
+                {editingFormat ? (
+                  <div className="flex gap-2">
+                    <input value={idFormat} onChange={e=>setIdFormat(e.target.value)}
+                      className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono outline-none focus:border-[#C7E36B]/50"/>
+                    <button onClick={saveIdFormat} className="text-[10px] bg-[#C7E36B] text-black font-bold px-2 py-1 rounded-lg">{settingsSaving ? "…" : "Save"}</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <code className="text-[10px] text-[#C7E36B] font-mono bg-[#C7E36B]/10 px-2 py-1 rounded">{idFormat}</code>
+                    <button onClick={()=>setEditingFormat(true)} className="text-[10px] text-gray-500 hover:text-white underline ml-2">Edit</button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* ── Pending Approvals ── */}
+          {/* Pending Approvals */}
           {certs.filter(c => c.status === "pending").length > 0 && (
-            <div className="mt-6">
-              <h2 className="text-sm font-bold text-yellow-400 mb-3">⏳ Pending Approvals ({certs.filter(c=>c.status==="pending").length})</h2>
+            <div>
+              <h2 className="text-sm font-bold text-yellow-400 mb-3">Pending Approvals ({certs.filter(c=>c.status==="pending").length})</h2>
               <div className="flex flex-col gap-2">
                 {certs.filter(c => c.status === "pending").map(c => (
                   <div key={c._id} className="flex items-center justify-between bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3">
@@ -6015,8 +6293,8 @@ function CertificatesAdmin({ token }) {
         </div>
       )}
 
-      {/* ── ISSUED CERTIFICATES ── */}
-      {certTab === "issued" && (
+      {/* ── ISSUED CERTIFICATES (legacy, unused) ── */}
+      {certTab === "issued_DISABLED" && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-400">{certs.length} certificates issued</p>
@@ -6101,14 +6379,95 @@ function CertificatesAdmin({ token }) {
         </div>
       )}
 
-      {/* ── OTHER TABS ── */}
-      {!["templates","issued"].includes(certTab) && (
-        <div className="text-center py-16">
-          <p className="text-3xl mb-3">🏗</p>
-          <p className="text-white font-semibold text-sm capitalize">{CERT_NAV.find(t=>t.key===certTab)?.label} — Coming Soon</p>
-          <p className="text-gray-500 text-xs mt-1">This section is under construction.</p>
+    </div>{/* end main content */}
+
+    {/* Slide-in Detail Panel */}
+    {viewCert && (
+      <div className="fixed top-0 right-0 h-full w-[380px] bg-[#111315] border-l border-white/10 z-40 flex flex-col shadow-2xl overflow-y-auto">
+        {/* Panel header */}
+        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-white/10 shrink-0">
+          <div>
+            <h3 className="text-sm font-bold text-white">Certificate Details</h3>
+            <p className="text-[10px] text-gray-400 mt-0.5">View and manage this certificate.</p>
+          </div>
+          <button onClick={()=>setViewCert(null)} className="text-gray-500 hover:text-white mt-0.5">✕</button>
         </div>
-      )}
+
+        <div className="flex-1 px-5 py-4 space-y-4">
+          {/* Certificate preview card */}
+          <div className="bg-[#1A1D1E] border border-white/10 rounded-xl p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">AIFA ACADEMY</p>
+                <p className="text-sm font-bold text-white mt-0.5">{viewCert.title || "Certificate of Completion"}</p>
+              </div>
+              <span className="text-[9px] font-bold bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full shrink-0">Generated</span>
+            </div>
+            <div className="border-t border-white/10 pt-3">
+              <p className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">AWARDED TO</p>
+              <p className="text-lg font-black text-white mt-1">{viewCert.user?.name || "—"}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">For successful completion of {viewCert.courseTitle}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3 border-t border-white/10 pt-3">
+              <div>
+                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">CERTIFICATE ID</p>
+                <p className="text-xs text-white font-mono mt-0.5">{viewCert.certificateId || "—"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">ISSUED ON</p>
+                <p className="text-xs text-white mt-0.5">{fmtDate(viewCert.createdAt)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Student Information */}
+          <div>
+            <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-2">STUDENT INFORMATION</p>
+            <div className="bg-[#1A1D1E] border border-white/10 rounded-xl p-4 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide">Student Name</p>
+                <p className="text-xs text-white font-semibold mt-0.5">{viewCert.user?.name || "—"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide">Email</p>
+                <p className="text-xs text-white font-semibold mt-0.5 break-all">{viewCert.user?.email || "—"}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide">Phone</p>
+                <p className="text-xs text-white font-semibold mt-0.5">{viewCert.user?.phone || "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Certificate Information */}
+          <div>
+            <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-2">CERTIFICATE INFORMATION</p>
+            <div className="bg-[#1A1D1E] border border-white/10 rounded-xl p-4 space-y-3">
+              <div>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide">Workshop</p>
+                <p className="text-xs text-white font-semibold mt-0.5">{viewCert.courseTitle}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wide">Certificate Type</p>
+                  <p className="text-xs text-white font-semibold mt-0.5 capitalize">{viewCert.itemType}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wide">Certificate ID</p>
+                  <p className="text-xs text-white font-mono font-semibold mt-0.5">{viewCert.certificateId || "—"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel footer */}
+        <div className="px-5 py-4 border-t border-white/10 shrink-0">
+          <button onClick={() => { handleDelete(viewCert._id); setViewCert(null); }} className="w-full text-xs border border-red-500/30 text-red-400 py-2.5 rounded-lg hover:bg-red-500/10 transition mb-2">Revoke Certificate</button>
+          <button onClick={() => setViewCert(null)} className="w-full text-xs bg-white/5 border border-white/10 text-gray-300 py-2.5 rounded-lg hover:bg-white/10 transition">Close</button>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
