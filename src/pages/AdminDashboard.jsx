@@ -241,7 +241,7 @@ export default function AdminDashboard() {
           {activePage === "certificates"    && <CertificatesAdmin token={token} />}
           {activePage === "jobs"            && <JobsAdmin token={token} />}
           {activePage === "profile"         && <AdminProfile token={token} profile={profile} onUpdated={setProfile} />}
-          {activePage === "community"         && <CommunityAdmin token={token} />}
+          {activePage === "community"         && <CommunityAdmin token={token} adminName={name} />}
           {activePage === "service-request"    && <ServiceRequestAdmin token={token} />}
           {activePage === "sales-consultation" && <SalesConsultAdmin token={token} />}
           {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
@@ -4256,7 +4256,11 @@ const DEMO_CHALLENGES = [
   { _id:"c3", title:"Mastering Motion Blur",           desc:"A technical challenge focused on realistic motion blur\nin AI video.",    status:"completed",  type:"VIDEO", ended:"Oct 15, 2024",    submissions:312,  awardsAssigned:true, bg:"from-indigo-900 to-purple-900" },
 ];
 
-function CommunityAdmin({ token }) {
+const THREAD_CATEGORIES = ["Prompts","General","Discussion","Announcements","Q&A","Resources","Technical"];
+const THREAD_FLAIRS     = ["Fix My Prompt","Discussion","Question","Showcase","Tutorial","News","Update"];
+const BLANK_THREAD_FORM = { title:"", category:"", flair:"", summary:"", content:"", visibility:"Public", allowReplies:true, pinThread:false, schedulePublish:false, publishDate:"", publishTime:"", status:"Draft" };
+
+function CommunityAdmin({ token, adminName }) {
   /* ── Forum state ── */
   const [keywords, setKeywords]   = useState(["crypto","nft","discount"]);
   const [newKw, setNewKw]         = useState("");
@@ -4267,6 +4271,14 @@ function CommunityAdmin({ token }) {
   const [threads, setThreads]     = useState([]);
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [userCount, setUserCount] = useState(null);
+
+  /* ── Create Thread state ── */
+  const [showCreateThread, setShowCreateThread] = useState(false);
+  const [tf, setTf]           = useState(BLANK_THREAD_FORM);
+  const [coverFile, setCoverFile] = useState(null);
+  const [extLink, setExtLink] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const [createSuccess, setCreateSuccess] = useState(false);
 
   /* ── Events state ── */
   const [events, setEvents]           = useState([]);
@@ -4331,6 +4343,323 @@ function CommunityAdmin({ token }) {
     if (h < 24) return `${h}h ago`;
     return `${Math.floor(h/24)}d ago`;
   };
+
+  /* ══════════════════════════════════════════
+     CREATE THREAD FORM (full-page)
+  ══════════════════════════════════════════ */
+  if (showCreateThread) {
+    const today = new Date().toISOString().split("T")[0];
+    const canPublish = !tf.schedulePublish || (tf.publishDate && tf.publishTime);
+    const wordCount = tf.content.trim().split(/\s+/).filter(Boolean).length;
+    const authorInitials = (adminName||"A").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+
+    const handlePublish = async () => {
+      if (!tf.title.trim() || !tf.content.trim()) return;
+      setPublishing(true);
+      const payload = { title: tf.title, body: tf.content, tag: tf.flair || tf.category || "General", author: adminName, summary: tf.summary, status: tf.status };
+      try {
+        const res = await fetch("/api/community/threads", { method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(payload) });
+        if (res.ok) {
+          const created = await res.json();
+          setThreads(prev => [created, ...prev]);
+          setShowCreateThread(false); setTf(BLANK_THREAD_FORM); setCoverFile(null); setExtLink("");
+          setCreateSuccess(true); setTimeout(() => setCreateSuccess(false), 3000);
+        }
+      } catch {}
+      setPublishing(false);
+    };
+
+    return (
+      <div className="flex h-full overflow-hidden">
+        {/* Left: form */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-8 py-5 border-b border-white/10">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <span>Community</span><span>/</span><span>Forum</span><span>/</span><span className="text-white">Create Thread</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white">Create Thread</h1>
+              <p className="text-sm text-gray-400 mt-0.5">Create a new community discussion and publish it to the forum.</p>
+            </div>
+            <div className="flex gap-3 shrink-0">
+              <button onClick={() => { setShowCreateThread(false); setTf(BLANK_THREAD_FORM); }} className="border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
+              <button onClick={() => setTf(f => ({...f, status:"Draft"}))} className="border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/5">Save Draft</button>
+              <button onClick={handlePublish} disabled={publishing || !tf.title.trim() || !tf.content.trim() || !canPublish}
+                className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-50 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                {publishing ? "Publishing..." : "Publish Thread"}
+              </button>
+            </div>
+          </div>
+
+          <div className="px-8 py-6 space-y-5">
+            {/* Section 1 — Thread Details */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-6">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-5">
+                <span className="w-6 h-6 rounded-full bg-[#C7E36B] text-black text-xs font-black flex items-center justify-center">1</span>
+                Thread Details
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Thread Title <span className="text-red-400">*</span></label>
+                  <input value={tf.title} onChange={e => setTf(f=>({...f,title:e.target.value}))} placeholder="Enter an engaging title for your thread"
+                    className="w-full bg-[#0F1112] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"/>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Category <span className="text-red-400">*</span></label>
+                    <div className="relative">
+                      <select value={tf.category} onChange={e => setTf(f=>({...f,category:e.target.value}))} className="appearance-none w-full bg-[#0F1112] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#C7E36B]/40 pr-9">
+                        <option value="">Select category</option>
+                        {THREAD_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Flair</label>
+                    <div className="relative">
+                      <select value={tf.flair} onChange={e => setTf(f=>({...f,flair:e.target.value}))} className="appearance-none w-full bg-[#0F1112] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#C7E36B]/40 pr-9">
+                        <option value="">Select flair (optional)</option>
+                        {THREAD_FLAIRS.map(f => <option key={f}>{f}</option>)}
+                      </select>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Short Description / Summary <span className="text-red-400">*</span></label>
+                    <div className="relative">
+                      <textarea value={tf.summary} onChange={e => setTf(f=>({...f,summary:e.target.value.slice(0,180)}))} rows={1}
+                        placeholder="Briefly summarize what this thread is about..."
+                        className="w-full bg-[#0F1112] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 resize-none"/>
+                      <span className="absolute bottom-2 right-3 text-[10px] text-gray-600">{tf.summary.length}/180</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Thread Content */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Thread Content <span className="text-red-400">*</span></label>
+                  {/* Toolbar */}
+                  <div className="bg-[#0F1112] border border-white/10 rounded-t-xl px-3 py-2 flex items-center gap-1 flex-wrap border-b-0">
+                    {[
+                      { label:"B", title:"Bold", style:"font-bold" },
+                      { label:"I", title:"Italic", style:"italic" },
+                      { label:"U", title:"Underline", style:"underline" },
+                      { label:"S", title:"Strikethrough", style:"line-through" },
+                    ].map(btn => (
+                      <button key={btn.title} title={btn.title} className="w-7 h-7 flex items-center justify-center text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded font-mono">
+                        <span className={btn.style}>{btn.label}</span>
+                      </button>
+                    ))}
+                    <div className="w-px h-4 bg-white/10 mx-1"/>
+                    {[
+                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>, title:"Link" },
+                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>, title:"Quote" },
+                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>, title:"Code" },
+                    ].map(btn => (
+                      <button key={btn.title} title={btn.title} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded">{btn.icon}</button>
+                    ))}
+                    <div className="w-px h-4 bg-white/10 mx-1"/>
+                    <div className="relative">
+                      <select defaultValue="Paragraph" className="appearance-none bg-transparent text-xs text-gray-400 pr-4 outline-none cursor-pointer">
+                        <option>Paragraph</option><option>Heading 1</option><option>Heading 2</option>
+                      </select>
+                      <svg className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <textarea value={tf.content} onChange={e => setTf(f=>({...f,content:e.target.value}))} rows={8}
+                      placeholder="Write your thread content here. You can add details, context, examples, and any relevant information..."
+                      className="w-full bg-[#0F1112] border border-white/10 rounded-b-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 resize-none"/>
+                    <span className="absolute bottom-3 right-4 text-[10px] text-gray-600">{wordCount} words</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2 — Media & Links */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-6">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-5">
+                <span className="w-6 h-6 rounded-full bg-[#C7E36B] text-black text-xs font-black flex items-center justify-center">2</span>
+                Media &amp; Links
+              </h2>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Cover Image / Attachment</label>
+                  <label className="border border-dashed border-white/15 rounded-xl py-8 flex flex-col items-center justify-center cursor-pointer hover:border-white/30 transition-all">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round" className="mb-2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <p className="text-sm text-gray-300">Drag &amp; drop an image here</p>
+                    <p className="text-xs text-gray-500">or <span className="text-[#C7E36B]">click to browse</span></p>
+                    <p className="text-[10px] text-gray-600 mt-1.5">Recommended: 1280×720px (16:9), Max 5MB</p>
+                    <input type="file" className="hidden" accept="image/*" onChange={e => setCoverFile(e.target.files?.[0]||null)}/>
+                  </label>
+                  {coverFile && <p className="mt-2 text-xs text-[#C7E36B] flex items-center gap-1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>{coverFile.name}</p>}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Optional External Link</label>
+                  <div className="relative">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <input value={extLink} onChange={e => setExtLink(e.target.value)} placeholder="https://example.com"
+                      className="w-full bg-[#0F1112] border border-white/10 rounded-xl pl-9 pr-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"/>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1.5">Add a relevant external link (optional)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3 — Publishing Options */}
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-6">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2 mb-5">
+                <span className="w-6 h-6 rounded-full bg-[#C7E36B] text-black text-xs font-black flex items-center justify-center">3</span>
+                Publishing Options
+              </h2>
+              <div className="grid grid-cols-4 gap-5">
+                {/* Visibility */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-2 block">Visibility</label>
+                  <div className="relative">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <select value={tf.visibility} onChange={e => setTf(f=>({...f,visibility:e.target.value}))} className="appearance-none w-full bg-[#0F1112] border border-white/10 rounded-xl pl-8 pr-8 py-3 text-sm text-white outline-none focus:border-[#C7E36B]/40">
+                      <option>Public</option><option>Members Only</option><option>Admins Only</option>
+                    </select>
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">Visible to everyone</p>
+                </div>
+                {/* Allow Replies */}
+                <div className="bg-[#0F1112] border border-white/5 rounded-xl p-4">
+                  <label className="text-xs font-semibold text-gray-300 block mb-1">Allow Replies</label>
+                  <p className="text-[10px] text-gray-500 mb-3">Members can reply to this thread</p>
+                  <Tog value={tf.allowReplies} onChange={v => setTf(f=>({...f,allowReplies:v}))} />
+                </div>
+                {/* Pin Thread */}
+                <div className="bg-[#0F1112] border border-white/5 rounded-xl p-4">
+                  <label className="text-xs font-semibold text-gray-300 block mb-1">Pin Thread</label>
+                  <p className="text-[10px] text-gray-500 mb-3">Pin to top of category</p>
+                  <Tog value={tf.pinThread} onChange={v => setTf(f=>({...f,pinThread:v}))} />
+                </div>
+                {/* Schedule Publish */}
+                <div className="bg-[#0F1112] border border-white/5 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-gray-300">Schedule Publish</label>
+                    <Tog value={tf.schedulePublish} onChange={v => setTf(f=>({...f,schedulePublish:v,publishDate:"",publishTime:""}))} />
+                  </div>
+                  <p className="text-[10px] text-gray-500 mb-3">Set future date and time</p>
+                  <div className={`space-y-2 transition-opacity ${tf.schedulePublish?"opacity-100":"opacity-30 pointer-events-none"}`}>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">Publish Date</label>
+                      <input type="date" min={today} value={tf.publishDate} disabled={!tf.schedulePublish} onChange={e => setTf(f=>({...f,publishDate:e.target.value}))}
+                        className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/40 disabled:cursor-not-allowed"/>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">Publish Time</label>
+                      <input type="time" value={tf.publishTime} disabled={!tf.schedulePublish} onChange={e => setTf(f=>({...f,publishTime:e.target.value}))}
+                        className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]/40 disabled:cursor-not-allowed"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom action bar */}
+            <div className="flex items-center gap-3 pb-4">
+              <button onClick={() => { setShowCreateThread(false); setTf(BLANK_THREAD_FORM); }} className="border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5">Save Draft</button>
+              <button className="flex items-center gap-2 border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Preview
+              </button>
+              <button onClick={handlePublish} disabled={publishing || !tf.title.trim() || !tf.content.trim() || !canPublish}
+                className="ml-auto bg-[#C7E36B] text-black font-bold text-sm px-8 py-3 rounded-xl hover:bg-lime-300 disabled:opacity-50 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                {publishing ? "Publishing..." : "Publish Thread"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Live Preview + Guidelines + Quick Settings */}
+        <div className="w-[300px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-5">
+          {/* Live Preview */}
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Live Preview
+            </h3>
+            <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${tf.flair ? "bg-[#C7E36B]/20 text-[#C7E36B]" : "bg-blue-500/20 text-blue-400"}`}>
+                {tf.flair || tf.category || "DISCUSSION"}
+              </span>
+              <h4 className="text-sm font-bold text-white mt-2 mb-1 line-clamp-2">{tf.title || "Your Thread Title Will Appear Here"}</h4>
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center">{authorInitials}</div>
+                <span className="text-[10px] text-gray-400 font-semibold">{adminName || "Admin"}</span>
+                <span className="text-[10px] text-gray-600">· Just now</span>
+              </div>
+              <p className="text-[10px] text-gray-500 line-clamp-2 mb-3">{tf.summary || "This is a short summary of your thread that gives members a quick overview of what the discussion is about..."}</p>
+              <div className="flex items-center gap-3 text-[10px] text-gray-600 border-t border-white/5 pt-2">
+                <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>0</span>
+                <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>0</span>
+                <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>0</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Posting Guidelines */}
+          <div className="mb-5">
+            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Posting Guidelines / Admin Tips
+            </h3>
+            <div className="space-y-2.5">
+              {["Write a clear and descriptive title.","Choose the most relevant category and flair.","Provide a helpful summary for better discoverability.","Ensure your content follows community guidelines.","Use visuals or links to add more value."].map(g => (
+                <div key={g} className="flex items-start gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                  <p className="text-xs text-gray-400 leading-relaxed">{g}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Settings */}
+          <div>
+            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49"/></svg>
+              Quick Settings
+            </h3>
+            <div className="space-y-4">
+              {/* Status — Fix 1: only Draft / Active */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Status</p>
+                <div className="flex gap-1 bg-[#111315] border border-white/10 rounded-xl p-1">
+                  {["Draft","Active"].map(s => (
+                    <button key={s} onClick={() => setTf(f=>({...f,status:s}))}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${tf.status===s
+                        ? s==="Draft" ? "bg-white/10 text-white" : "bg-[#C7E36B] text-black"
+                        : "text-gray-500 hover:text-gray-300"}`}>
+                      {s === "Draft" && <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block"/>}
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-600 mt-1">{tf.status === "Draft" ? "Thread will be saved as a draft until published." : "Thread will be visible to all members."}</p>
+              </div>
+              {/* Category */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Category</p>
+                <p className="text-sm text-white font-medium">{tf.category || "Not selected"}</p>
+              </div>
+              {/* Flair */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Flair</p>
+                <p className="text-sm text-white font-medium">{tf.flair || "Not selected"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ══════════════════════════════════════════
      EVENT CREATE FORM (full-page overlay)
@@ -4465,11 +4794,19 @@ function CommunityAdmin({ token }) {
                 <h1 className="text-xl font-bold text-white">Forum Management</h1>
                 <p className="text-xs text-gray-400 mt-0.5">Monitor community discussions and moderate content.</p>
               </div>
-              <button onClick={() => setShowAnnForm(v => !v)}
-                className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2">
-                <I name="plus" size={15}/> Create Thread
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowAnnForm(v => !v)}
+                  className={`border text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all ${showAnnForm ? "border-[#C7E36B]/50 bg-[#C7E36B]/10 text-[#C7E36B]" : "border-white/20 text-gray-300 hover:border-white/40 hover:text-white"}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+                  Broadcast
+                </button>
+                <button onClick={() => setShowCreateThread(true)}
+                  className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2">
+                  <I name="plus" size={15}/> Create Thread
+                </button>
+              </div>
             </div>
+            {createSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Thread published to the community!</div>}
             {annSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Announcement broadcast to all students!</div>}
             {showAnnForm && (
               <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
@@ -4491,7 +4828,7 @@ function CommunityAdmin({ token }) {
             )}
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               {["All Categories","All Flairs","Status: Active"].map(f => (
-                <button key={f} className="text-xs bg-white/5 text-gray-300 px-4 py-1.5 rounded-full hover:bg-white/10 transition-all font-medium">
+                <button key={f} className="bg-white/5 text-white text-sm px-4 py-2 rounded-full hover:bg-white/10 transition-colors font-medium">
                   {f}
                 </button>
               ))}
