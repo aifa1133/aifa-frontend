@@ -212,31 +212,33 @@ export default function BookingModal({ onClose }) {
             <div className="w-[200px] shrink-0 p-6 overflow-y-auto">
               <p className="text-sm font-bold text-gray-900 mb-4">{fmtFull()}</p>
               <div className="flex flex-col gap-2">
-                {TIME_SLOTS.map(t => {
-                  const isSel = selTime===t;
-                  return (
-                    <div key={t} className="flex gap-2 items-center">
-                      <button
-                        onClick={() => pickTime(t)}
-                        className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-bold border-2 transition-all text-center
-                          ${isSel
-                            ? "border-[#4f7df3] bg-[#4f7df3]/10 text-[#4f7df3]"
-                            : "border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 bg-white"}
-                        `}
-                      >
-                        {t}
-                      </button>
-                      {isSel && (
-                        <button
-                          onClick={handleConfirm}
-                          className="py-2.5 px-3 bg-[#4f7df3] text-white text-sm font-bold rounded-lg hover:bg-[#3d6ee0] transition-colors whitespace-nowrap"
-                        >
-                          Confirm
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                {selTime ? (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-xs text-gray-500">{selTime}</p>
+                    <button
+                      onClick={handleConfirm}
+                      className="w-full py-2.5 px-3 bg-[#4f7df3] text-white text-sm font-bold rounded-lg hover:bg-[#3d6ee0] transition-colors"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => { setTime(null); setConfirming(false); }}
+                      className="w-full py-2 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+                    >
+                      ← Change time
+                    </button>
+                  </div>
+                ) : (
+                  TIME_SLOTS.map(t => (
+                    <button
+                      key={t}
+                      onClick={() => pickTime(t)}
+                      className="w-full py-2.5 px-3 rounded-lg text-sm font-bold border-2 border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 bg-white transition-all text-center"
+                    >
+                      {t}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}
