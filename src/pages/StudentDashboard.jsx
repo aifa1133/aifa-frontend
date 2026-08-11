@@ -2866,6 +2866,7 @@ const PLACEHOLDER_IMGS = [
 ];
 
 function ResourcesSection({ token }) {
+  const navigate = useNavigate();
   const [tab, setTab]               = useState("prompt");
   const [resources, setRes]         = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -2901,11 +2902,11 @@ function ResourcesSection({ token }) {
 
   const activeTabLabel = tab === "project" ? "Projects Showcase" : tab === "tip" ? "Learning Tips" : tab === "deal" ? "AI Deals" : RES_TABS.find(t => t.key === tab)?.label || "Resources";
   const activeTabSubtitle = tab === "project"
-    ? "Manage and curate the portfolio of student projects featured on the platform."
+    ? "Explore student projects and creative showcases from the AIFA community."
     : tab === "tip"
-    ? "Manage and publish high-impact video learning content."
+    ? "Watch curated video tips to sharpen your AI filmmaking skills."
     : tab === "deal"
-    ? "Manage promotional cards and exclusive offers for AI tools."
+    ? "Exclusive discounts and credits on top AI tools — only for AIFA members."
     : "Tools, prompts and workflows to supercharge your AI filmmaking";
   const cats    = ["All", ...Array.from(new Set(resources.map(r => r.category).filter(Boolean)))];
   const subCats = ["All", ...Array.from(new Set(resources.filter(r => catFilter === "All" || r.category === catFilter).map(r => r.subCategory).filter(Boolean)))];
@@ -2921,8 +2922,8 @@ function ResourcesSection({ token }) {
       {/* Header row: dynamic title + dropdown filters */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-white">{activeTabLabel}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{activeTabSubtitle}</p>
+          <h1 className="text-2xl font-black text-white">{activeTabLabel}</h1>
+          <p className="text-xs text-gray-400 mt-1">{activeTabSubtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -2952,14 +2953,17 @@ function ResourcesSection({ token }) {
         ))}
       </div>
 
-      {/* Deal category pill filters */}
+      {/* Deal category filters — Figma style: lime pill for active, pipe-separated text links */}
       {tab === "deal" && (
-        <div className="flex items-center gap-2 flex-wrap mb-6">
-          {["All Benefits", "video", "design", "marketing", "voice", "Automation"].map(c => (
-            <button key={c} onClick={() => setDealCatFilter(c)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${dealCatFilter === c ? "bg-[#C7E36B] text-black border-[#C7E36B]" : "border-white/15 text-gray-400 hover:text-white hover:border-white/30"}`}>
-              {c}
-            </button>
+        <div className="flex items-center gap-0 flex-wrap mb-6">
+          {["All Benefits", "video", "design", "marketing", "voice", "Automation"].map((c, i, arr) => (
+            <span key={c} className="flex items-center">
+              <button onClick={() => setDealCatFilter(c)}
+                className={`text-sm font-semibold whitespace-nowrap transition-all px-3 py-1 rounded-lg ${dealCatFilter === c ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
+                {c}
+              </button>
+              {i < arr.length - 1 && <span className="text-gray-600 mx-1 select-none">|</span>}
+            </span>
           ))}
         </div>
       )}
@@ -3006,89 +3010,51 @@ function ResourcesSection({ token }) {
         </div>
       ) : tab === "workflow" || tab === "project" ? (
         /* ── WORKFLOWS / PROJECTS ── */
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((r, i) => (
-              <div key={r._id} onClick={() => setDetail(r)}
-                className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#7C3AED]/40 transition-all cursor-pointer group">
-                <div className="h-[160px] overflow-hidden relative">
-                  <img src={img(r, i)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  {r.category && (
-                    <span className="absolute top-2 left-2 text-[9px] font-bold bg-black/70 text-[#C7E36B] px-2 py-0.5 rounded uppercase tracking-wider">{r.category}</span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-semibold text-white mb-1">{r.title}</h3>
-                  <p className="text-[11px] text-gray-400 line-clamp-2 mb-2">{r.description}</p>
-                  <span className="flex items-center gap-1 text-xs text-[#C7E36B] font-semibold">
-                    View Details <Ic name="chevron" size={12} />
-                  </span>
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((r, i) => (
+            <div key={r._id}
+              onClick={() => tab === "workflow" ? navigate(`/workflow/${r._id}`) : setDetail(r)}
+              className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 transition-all cursor-pointer group">
+              <div className="h-[180px] overflow-hidden relative">
+                <img src={img(r, i)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                {r.category && (
+                  <span className="absolute top-3 left-3 text-[9px] font-bold bg-black/70 text-[#C7E36B] px-2 py-1 rounded uppercase tracking-wider">{r.category}</span>
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* Detail Modal */}
-          {detail && (
-            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-              <div className="bg-[#0F1112] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="h-[200px] overflow-hidden rounded-t-2xl relative">
-                  <img src={img(detail, 0)} alt={detail.title} className="w-full h-full object-cover" />
-                  <button onClick={() => setDetail(null)}
-                    className="absolute top-3 right-3 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-all">
-                    <Ic name="close" size={14} className="text-white" />
-                  </button>
-                </div>
-                <div className="p-6">
-                  {detail.category && <span className="text-[10px] font-bold text-[#C7E36B] tracking-wider uppercase">{detail.category}</span>}
-                  <h2 className="text-xl font-bold text-white mt-1 mb-2">{detail.title}</h2>
-                  <p className="text-sm text-gray-400 mb-4">{detail.description}</p>
-                  {detail.content && (
-                    <div className="bg-white/5 rounded-xl p-4 mb-4">
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">
-                        {tab === "workflow" ? "Steps / Process" : "Content"}
-                      </h4>
-                      <p className="text-sm text-gray-300 whitespace-pre-wrap">{detail.content}</p>
-                    </div>
-                  )}
-                  {detail.tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {detail.tags.map(t => (
-                        <span key={t} className="text-xs bg-[#7C3AED]/20 text-[#7C3AED] px-2 py-1 rounded-lg">{t}</span>
-                      ))}
-                    </div>
-                  )}
-                  {detail.link && (
-                    <a href={detail.link} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all">
-                      Open Resource <Ic name="link" size={14} />
-                    </a>
-                  )}
-                </div>
+              <div className="p-4">
+                <h3 className="text-base font-bold text-white mb-1.5">{r.title}</h3>
+                <p className="text-xs text-gray-400 line-clamp-2 mb-3">{r.description}</p>
+                <span className="flex items-center gap-1.5 text-sm text-[#C7E36B] font-semibold">
+                  View Details <span>→</span>
+                </span>
               </div>
             </div>
-          )}
-        </>
+          ))}
+        </div>
       ) : tab === "tip" ? (
         /* ── LEARNING TIPS ── 3-column thumbnail + Watch Now grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((r, i) => (
             <div key={r._id} className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
-              <div className="aspect-video overflow-hidden bg-white/5">
+              <div className="aspect-video overflow-hidden bg-white/5 relative">
                 {r.thumbnail
                   ? <img src={r.thumbnail} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
                   : <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#111 0%,#1a1d2e 100%)"}}>
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </div>
                 }
+                {r.category && (
+                  <span className="absolute top-2 left-2 text-[9px] font-bold bg-black/70 text-[#C7E36B] px-2 py-0.5 rounded uppercase tracking-wider">{r.category}</span>
+                )}
               </div>
+              {r.title && <p className="px-4 pt-3 pb-1 text-sm font-semibold text-white line-clamp-2">{r.title}</p>}
               {r.link
                 ? <a href={r.link} target="_blank" rel="noopener noreferrer"
-                    className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
-                    Watch Now! <span>→</span>
+                    className="mx-4 mb-4 mt-2 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
+                    Watch Now <span>→</span>
                   </a>
-                : <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
-                    Watch Now! <span>→</span>
+                : <button className="mx-4 mb-4 mt-2 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors w-[calc(100%-2rem)]">
+                    Watch Now <span>→</span>
                   </button>
               }
             </div>
@@ -3111,13 +3077,13 @@ function ResourcesSection({ token }) {
               {/* Category badge */}
               {r.category && (
                 <div className="px-4 pt-3">
-                  <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
+                  <span className="text-[9px] font-bold bg-gray-800 text-white px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
                 </div>
               )}
               <div className="p-4 pt-2 flex flex-col flex-1">
                 <h3 className="text-base font-bold text-gray-900 mt-1">{r.title}</h3>
                 <p className="text-xs text-gray-500 mt-0.5 flex-1">{r.description}</p>
-                <p className="text-xl font-black text-gray-900 mt-3">{r.discount}</p>
+                <p className="text-2xl font-black text-gray-900 mt-3">{r.discount}</p>
                 <p className="text-[10px] text-[#C7E36B] font-semibold mt-0.5">VIA AIFA</p>
                 {r.link ? (
                   <a href={r.link} target="_blank" rel="noopener noreferrer"
@@ -3135,6 +3101,35 @@ function ResourcesSection({ token }) {
           ))}
         </div>
       ) : null}
+
+      {/* Projects detail modal */}
+      {detail && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="h-[200px] overflow-hidden rounded-t-2xl relative">
+              <img src={img(detail, 0)} alt={detail.title} className="w-full h-full object-cover" />
+              <button onClick={() => setDetail(null)}
+                className="absolute top-3 right-3 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-all text-white text-lg">✕</button>
+            </div>
+            <div className="p-6">
+              {detail.category && <span className="text-[10px] font-bold text-[#C7E36B] tracking-wider uppercase">{detail.category}</span>}
+              <h2 className="text-xl font-bold text-white mt-1 mb-2">{detail.title}</h2>
+              <p className="text-sm text-gray-400 mb-4">{detail.description}</p>
+              {detail.content && (
+                <div className="bg-white/5 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-gray-300 whitespace-pre-wrap">{detail.content}</p>
+                </div>
+              )}
+              {detail.link && (
+                <a href={detail.link} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all">
+                  View Project →
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
