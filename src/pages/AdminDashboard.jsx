@@ -4373,24 +4373,13 @@ function CommunityAdmin({ token, adminName }) {
       <div className="flex h-full overflow-hidden">
         {/* Left: form */}
         <div className="flex-1 overflow-y-auto">
-          {/* Top bar */}
-          <div className="flex items-center justify-between px-8 py-5 border-b border-white/10">
-            <div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                <span>Community</span><span>/</span><span>Forum</span><span>/</span><span className="text-white">Create Thread</span>
-              </div>
-              <h1 className="text-2xl font-bold text-white">Create Thread</h1>
-              <p className="text-sm text-gray-400 mt-0.5">Create a new community discussion and publish it to the forum.</p>
+          {/* Top bar — title only, no action buttons */}
+          <div className="px-8 py-5 border-b border-white/10">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+              <span>Community</span><span>/</span><span>Forum</span><span>/</span><span className="text-white">Create Thread</span>
             </div>
-            <div className="flex gap-3 shrink-0">
-              <button onClick={() => { setShowCreateThread(false); setTf(BLANK_THREAD_FORM); }} className="border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
-              <button onClick={() => setTf(f => ({...f, status:"Draft"}))} className="border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/5">Save Draft</button>
-              <button onClick={handlePublish} disabled={publishing || !tf.title.trim() || !tf.content.trim() || !canPublish}
-                className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-50 flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                {publishing ? "Publishing..." : "Publish Thread"}
-              </button>
-            </div>
+            <h1 className="text-2xl font-bold text-white">Create Thread</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Create a new community discussion and publish it to the forum.</p>
           </div>
 
           <div className="px-8 py-6 space-y-5">
@@ -4455,8 +4444,8 @@ function CommunityAdmin({ token, adminName }) {
                     <div className="w-px h-4 bg-white/10 mx-1"/>
                     {[
                       { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>, title:"Link" },
-                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>, title:"Quote" },
-                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>, title:"Code" },
+                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>, title:"Blockquote" },
+                      { icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, title:"Code" },
                     ].map(btn => (
                       <button key={btn.title} title={btn.title} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded">{btn.icon}</button>
                     ))}
@@ -4562,15 +4551,23 @@ function CommunityAdmin({ token, adminName }) {
               </div>
             </div>
 
-            {/* Bottom action bar */}
+            {/* Bottom action bar — single source of truth */}
             <div className="flex items-center gap-3 pb-4">
-              <button onClick={() => { setShowCreateThread(false); setTf(BLANK_THREAD_FORM); }} className="border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5">Save Draft</button>
-              <button className="flex items-center gap-2 border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5">
+              <button onClick={() => { setShowCreateThread(false); setTf(BLANK_THREAD_FORM); setCoverFile(null); setExtLink(""); }}
+                className="border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => setTf(f => ({...f, status:"Draft"}))}
+                className="border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                Save Draft
+              </button>
+              <button className="flex items-center gap-2 border border-white/20 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-white/5 transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 Preview
               </button>
-              <button onClick={handlePublish} disabled={publishing || !tf.title.trim() || !tf.content.trim() || !canPublish}
-                className="ml-auto bg-[#C7E36B] text-black font-bold text-sm px-8 py-3 rounded-xl hover:bg-lime-300 disabled:opacity-50 flex items-center gap-2">
+              <button onClick={handlePublish}
+                disabled={publishing || !tf.title.trim() || !tf.content.trim() || !canPublish}
+                className="ml-auto bg-[#C7E36B] text-black font-semibold text-sm px-6 py-3 rounded-xl hover:bg-[#b8d44f] transition-colors flex items-center gap-2 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 {publishing ? "Publishing..." : "Publish Thread"}
               </button>
@@ -4587,7 +4584,9 @@ function CommunityAdmin({ token, adminName }) {
               Live Preview
             </h3>
             <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
-              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${tf.flair ? "bg-[#C7E36B]/20 text-[#C7E36B]" : "bg-blue-500/20 text-blue-400"}`}>
+              <span key={tf.flair||tf.category}
+                className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                style={(tf.flair||tf.category) ? { background:"rgba(199,227,107,0.15)", color:"#C7E36B" } : { background:"rgba(59,130,246,0.15)", color:"#93c5fd" }}>
                 {tf.flair || tf.category || "DISCUSSION"}
               </span>
               <h4 className="text-sm font-bold text-white mt-2 mb-1 line-clamp-2">{tf.title || "Your Thread Title Will Appear Here"}</h4>
