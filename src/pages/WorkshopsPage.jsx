@@ -283,14 +283,22 @@ export default function WorkshopsPage() {
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleReserve(item); }}
-                      disabled={isFull}
-                      className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
-                        ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
-                    >
-                      {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-[22px]">→</span></>}
-                    </button>
+                    <div className="flex flex-col">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/workshops/${item._id}`); }}
+                        className="flex justify-center items-center px-[30px] py-[12px] w-full font-[Montserrat] text-[18px] leading-[28px] font-bold bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleReserve(item); }}
+                        disabled={isFull}
+                        className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
+                          ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
+                      >
+                        {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-[22px]">→</span></>}
+                      </button>
+                    </div>
                   )}
                 </div>
               );
