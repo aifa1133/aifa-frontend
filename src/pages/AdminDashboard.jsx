@@ -5893,6 +5893,7 @@ function CertificatesAdmin({ token }) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [certPage, setCertPage]         = useState(1);
   const [viewCert, setViewCert]         = useState(null);
+  const [previewTpl, setPreviewTpl]     = useState(null); // "bootcamp" | "course" | "workshop"
   const PAGE_SIZE = 6;
 
   const typeBadge = t => t==="bootcamp"?"bg-blue-500/20 text-blue-400":t==="workshop"?"bg-purple-500/20 text-purple-400":"bg-green-500/20 text-green-400";
@@ -6133,8 +6134,8 @@ function CertificatesAdmin({ token }) {
                 </div>
                 <p className="text-[10px] text-gray-500 mb-3">Issued upon completion of bootcamp programs. White background, AIFA branding.</p>
                 <div className="flex gap-2">
-                  <button className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
-                  <button className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
+                  <button onClick={() => setPreviewTpl("bootcamp")} className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
+                  <button onClick={() => setPreviewTpl("bootcamp-edit")} className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
                 </div>
               </div>
             </div>
@@ -6176,8 +6177,8 @@ function CertificatesAdmin({ token }) {
                 </div>
                 <p className="text-[10px] text-gray-500 mb-3">Issued upon completion of video courses. Dark green background, premium look.</p>
                 <div className="flex gap-2">
-                  <button className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
-                  <button className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
+                  <button onClick={() => setPreviewTpl("course")} className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
+                  <button onClick={() => setPreviewTpl("course-edit")} className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
                 </div>
               </div>
             </div>
@@ -6219,8 +6220,8 @@ function CertificatesAdmin({ token }) {
                 </div>
                 <p className="text-[10px] text-gray-500 mb-3">Issued for workshop participation. Deep purple background, elegant styling.</p>
                 <div className="flex gap-2">
-                  <button className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
-                  <button className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
+                  <button onClick={() => setPreviewTpl("workshop")} className="flex-1 text-[11px] font-semibold border border-white/15 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 transition">Preview</button>
+                  <button onClick={() => setPreviewTpl("workshop-edit")} className="flex-1 text-[11px] font-semibold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 py-1.5 rounded-lg hover:bg-[#C7E36B]/20 transition">Edit Template</button>
                 </div>
               </div>
             </div>
@@ -6380,6 +6381,114 @@ function CertificatesAdmin({ token }) {
       )}
 
     </div>{/* end main content */}
+
+    {/* Certificate Template Preview Modal */}
+    {previewTpl && (() => {
+      const isEdit = previewTpl.endsWith("-edit");
+      const type   = isEdit ? previewTpl.replace("-edit","") : previewTpl;
+      const configs = {
+        bootcamp: {
+          bg: "bg-white",
+          header: "text-gray-400",
+          title: "text-gray-800",
+          divider: "border-gray-200",
+          name: "text-gray-900",
+          sub: "text-gray-500",
+          idColor: "text-gray-600",
+          label: "Bootcamp Certificate",
+          cert: "Certificate of Completion",
+          desc: "For successful completion of the Bootcamp program",
+        },
+        course: {
+          bg: "bg-gradient-to-br from-[#1B4332] to-[#0A2618]",
+          header: "text-[#C7E36B]/70",
+          title: "text-white",
+          divider: "border-white/15",
+          name: "text-white",
+          sub: "text-white/50",
+          idColor: "text-white/60",
+          label: "Video Course Certificate",
+          cert: "Certificate of Completion",
+          desc: "For successful completion of the Video Course",
+        },
+        workshop: {
+          bg: "bg-gradient-to-br from-[#2D1B69] to-[#1A0F3C]",
+          header: "text-purple-300/70",
+          title: "text-white",
+          divider: "border-white/15",
+          name: "text-white",
+          sub: "text-white/50",
+          idColor: "text-white/60",
+          label: "Workshop Certificate",
+          cert: "Workshop Certificate",
+          desc: "For participation in the Workshop program",
+        },
+      };
+      const c = configs[type] || configs.bootcamp;
+      return (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6" onClick={() => setPreviewTpl(null)}>
+          <div className="w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+            {isEdit ? (
+              /* Edit Template — coming soon card */
+              <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl p-8 text-center">
+                <div className="w-14 h-14 bg-[#C7E36B]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Template Editor</h3>
+                <p className="text-sm text-gray-400 mb-1">Editing: <span className="text-[#C7E36B] font-semibold">{c.label}</span></p>
+                <p className="text-xs text-gray-500 max-w-xs mx-auto mt-3">Full template customisation (colours, fonts, logo, layout) is coming in a future update. The default template is automatically applied when certificates are issued.</p>
+                <button onClick={() => setPreviewTpl(null)} className="mt-6 text-sm font-semibold border border-white/15 text-gray-300 px-6 py-2 rounded-xl hover:bg-white/5 transition">Close</button>
+              </div>
+            ) : (
+              /* Full-size certificate preview */
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-bold text-white">{c.label} — Preview</p>
+                    <p className="text-xs text-gray-500 mt-0.5">This is how the certificate will look when issued.</p>
+                  </div>
+                  <button onClick={() => setPreviewTpl(null)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
+                </div>
+                <div className={`${c.bg} rounded-2xl p-10 shadow-2xl`}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-widest ${c.header}`}>AIFA ACADEMY</p>
+                      <p className={`text-2xl font-black mt-1 ${c.title}`}>{c.cert}</p>
+                    </div>
+                    <div className="w-14 h-14 bg-[#C7E36B] rounded-xl flex items-center justify-center shrink-0">
+                      <span className="text-black font-black text-2xl">A</span>
+                    </div>
+                  </div>
+                  {/* Divider + Awarded */}
+                  <div className={`border-t ${c.divider} pt-8 mb-8`}>
+                    <p className={`text-xs font-bold uppercase tracking-widest ${c.header} mb-2`}>AWARDED TO</p>
+                    <p className={`text-4xl font-black ${c.name}`}>Student Name</p>
+                    <p className={`text-sm mt-2 ${c.sub}`}>{c.desc}</p>
+                  </div>
+                  {/* Footer */}
+                  <div className={`border-t ${c.divider} pt-6 flex items-end justify-between`}>
+                    <div>
+                      <p className={`text-[10px] uppercase tracking-widest font-bold ${c.header}`}>CERTIFICATE ID</p>
+                      <p className={`text-sm font-mono mt-1 ${c.idColor}`}>AIFA-2026-00001</p>
+                    </div>
+                    <div className="text-center">
+                      <div className={`w-24 border-t ${c.divider} mb-1`}></div>
+                      <p className={`text-[10px] uppercase tracking-widest ${c.header}`}>Authorised Signature</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-[10px] uppercase tracking-widest font-bold ${c.header}`}>DATE ISSUED</p>
+                      <p className={`text-sm mt-1 ${c.idColor}`}>August 2026</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-center text-xs text-gray-600 mt-3">Click outside to close</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    })()}
 
     {/* Slide-in Detail Panel */}
     {viewCert && (
