@@ -4259,20 +4259,47 @@ function Tog({ value, onChange }) {
 
 /* ── COMMUNITY ADMIN ── */
 
+/* ── DEMO DATA ── */
+const DEMO_EVENTS = [
+  { _id:"e1", title:"AI Prompt Engineering Masterclass", startTime:"18:00 - 20:00 (GMT+2)", location:"Online · Zoom",       month:"NOV", day:"12", rsvps:142, capacity:200, featured:false, limitedSeats:false, bg:"from-blue-900 via-indigo-900 to-purple-900" },
+  { _id:"e2", title:"AIFA Community Mixer: London",       startTime:"14:00 - 17:00",          location:"The Shard, London",   month:"NOV", day:"15", rsvps:45,  capacity:50,  featured:true,  limitedSeats:false, bg:"from-emerald-900 via-teal-900 to-cyan-900" },
+  { _id:"e3", title:'"The AI Revolution" Documentary Screening', startTime:"19:30 - 21:00",   location:"Digital Hub, Paris",  month:"NOV", day:"20", rsvps:28,  capacity:30,  featured:false, limitedSeats:true,  bg:"from-orange-900 via-red-900 to-rose-900" },
+];
+const DEMO_CHALLENGES = [
+  { _id:"c1", title:"AI Cinematic Trailer Challenge",  desc:"Create a 60-second cinematic trailer using Midjourney and Runway Gen-2.", status:"live",      type:"VIDEO", deadline:"Oct 24, 2024", participants:428, avatarCount:3, bg:"from-purple-900 to-purple-700" },
+  { _id:"c2", title:"Neural Network Visualizer",       desc:"Design a creative visualization of a neural network processing data.",     status:"new",       type:"IMAGE", deadline:"Oct 30, 2024", participants:156, avatarCount:2, bg:"from-teal-900 to-teal-700" },
+  { _id:"c3", title:"Mastering Motion Blur",           desc:"A technical challenge focused on realistic motion blur\nin AI video.",    status:"completed",  type:"VIDEO", ended:"Oct 15, 2024",    submissions:312,  awardsAssigned:true, bg:"from-indigo-900 to-purple-900" },
+];
+
 function CommunityAdmin({ token }) {
-  const [keywords, setKeywords]     = useState(["crypto","nft","discount"]);
-  const [newKw, setNewKw]           = useState("");
+  /* ── Forum state ── */
+  const [keywords, setKeywords]   = useState(["crypto","nft","discount"]);
+  const [newKw, setNewKw]         = useState("");
+  const [showAnnForm, setShowAnnForm] = useState(false);
+  const [annTitle, setAnnTitle]   = useState("");
+  const [annMsg, setAnnMsg]       = useState("");
+  const [annSuccess, setAnnSuccess] = useState(false);
+  const [threads, setThreads]     = useState([]);
+  const [threadsLoading, setThreadsLoading] = useState(true);
+  const [userCount, setUserCount] = useState(null);
+
+  /* ── Events state ── */
+  const [events, setEvents]           = useState([]);
+  const [eventsLoading, setEvLoading] = useState(false);
+  const [eventSearch, setEventSearch] = useState("");
+  const [eventTypeFilter, setEventTypeFilter] = useState("All Types");
   const [showEventForm, setShowEventForm] = useState(false);
   const [event, setEvent] = useState({ title:"", type:"Workshop", mode:"ONLINE", date:"", startTime:"", duration:"2", capacity:"50", link:"", openRSVP:true, featured:false });
   const [eventSuccess, setEventSuccess] = useState(false);
-  const [showAnnForm, setShowAnnForm] = useState(false);
-  const [annTitle, setAnnTitle] = useState("");
-  const [annMsg, setAnnMsg] = useState("");
-  const [annSuccess, setAnnSuccess] = useState(false);
-  const [threads, setThreads] = useState([]);
-  const [threadsLoading, setThreadsLoading] = useState(true);
-  const [commTab, setCommTab]       = useState("forum");
-  const [userCount, setUserCount]   = useState(null);
+
+  /* ── Awards/Challenges state ── */
+  const [challengeFilter, setChallengeFilter] = useState("Active");
+  const [showChallengeForm, setShowChallengeForm] = useState(false);
+  const [challenge, setChallenge] = useState({ title:"", desc:"", type:"VIDEO", deadline:"", prizes:"" });
+  const [challenges, setChallenges] = useState(DEMO_CHALLENGES);
+
+  /* ── Nav ── */
+  const [commTab, setCommTab] = useState("forum");
 
   useEffect(() => {
     fetch("/api/community/threads")
@@ -4282,103 +4309,24 @@ function CommunityAdmin({ token }) {
   }, []);
 
   useEffect(() => {
+    if (commTab !== "events") return;
+    setEvLoading(true);
+    fetch("/api/community/events", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { setEvents(Array.isArray(d) && d.length ? d : DEMO_EVENTS); setEvLoading(false); })
+      .catch(() => { setEvents(DEMO_EVENTS); setEvLoading(false); });
+  }, [commTab, token]);
+
+  useEffect(() => {
     fetch("/api/users", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setUserCount(d.length); })
       .catch(() => {});
   }, [token]);
 
-  if (showEventForm) {
-    const previewDate = event.date ? new Date(event.date + "T00:00:00") : null;
-    return (
-      <div className="flex h-full overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <div className="flex items-center gap-3 mb-2">
-            <button onClick={()=>setShowEventForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
-            <h1 className="text-xl font-bold text-white">Create New Event</h1>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Basic Info</p>
-            <Fld label="EVENT TITLE" value={event.title} onChange={v=>setEvent({...event,title:v})} placeholder="e.g. AI Filmmaking Masterclass" />
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">EVENT TYPE</p>
-              <select value={event.type} onChange={e=>setEvent({...event,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                {["Workshop","Webinar","Masterclass","AMA","Hackathon"].map(t=><option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-2">MODE</p>
-              <div className="flex gap-2">
-                {["ONLINE","OFFLINE"].map(m=>(
-                  <button key={m} onClick={()=>setEvent({...event,mode:m})}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${event.mode===m?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30"}`}>
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Fld label="DATE" value={event.date} onChange={v=>setEvent({...event,date:v})} placeholder="YYYY-MM-DD" />
-              <Fld label="START TIME" value={event.startTime} onChange={v=>setEvent({...event,startTime:v})} placeholder="e.g. 7:00 PM IST" />
-              <Fld label="DURATION (hrs)" value={event.duration} onChange={v=>setEvent({...event,duration:v})} placeholder="2" />
-              <Fld label="CAPACITY" value={event.capacity} onChange={v=>setEvent({...event,capacity:v})} placeholder="50" />
-            </div>
-            {event.mode==="ONLINE" && <Fld label="MEETING LINK" value={event.link} onChange={v=>setEvent({...event,link:v})} placeholder="https://meet.google.com/..." />}
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Event Controls</p>
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-white">Open RSVP</p><p className="text-[10px] text-gray-400">Allow students to register</p></div>
-              <Tog value={event.openRSVP} onChange={v=>setEvent({...event,openRSVP:v})}/>
-            </div>
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-white">Featured Event</p><p className="text-[10px] text-gray-400">Show prominently on homepage</p></div>
-              <Tog value={event.featured} onChange={v=>setEvent({...event,featured:v})}/>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={()=>setShowEventForm(false)} className="text-xs border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
-            <button onClick={async()=>{
-              try {
-                const h={"Content-Type":"application/json",Authorization:`Bearer ${token}`};
-                const res=await fetch("/api/community/events",{method:"POST",headers:h,body:JSON.stringify({...event,date:event.date?new Date(event.date):null,capacity:Number(event.capacity)})});
-                if(res.ok){setShowEventForm(false);setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",duration:"2",capacity:"50",link:"",openRSVP:true,featured:false});setEventSuccess(true);setTimeout(()=>setEventSuccess(false),3000);}
-                else alert("Failed to create event. Please try again.");
-              } catch { alert("Network error."); }
-            }} className="text-xs bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-lime-300 flex items-center gap-2"><I name="plus" size={14}/> Create Event</button>
-          </div>
-        </div>
-        {/* Live preview */}
-        <div className="w-[280px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">Live Preview</p>
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="bg-[#C7E36B] text-black px-4 pt-4 pb-3">
-              <p className="text-3xl font-black leading-none">{previewDate ? previewDate.getDate() : "—"}</p>
-              <p className="text-xs font-bold uppercase">{previewDate ? previewDate.toLocaleDateString("en",{month:"long",year:"numeric"}) : "Date TBD"}</p>
-            </div>
-            <div className="p-4 space-y-2">
-              {event.featured && <span className="text-[9px] bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded-full">FEATURED</span>}
-              <h3 className="text-sm font-bold text-white">{event.title || "Event Title"}</h3>
-              <div className="text-[10px] text-gray-400 space-y-1">
-                <p>🕐 {event.startTime || "Time TBD"} · {event.duration}h</p>
-                <p>📍 {event.mode}</p>
-                <p>👥 {event.capacity} spots</p>
-              </div>
-              {event.openRSVP && <button className="w-full mt-2 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg">RSVP Now →</button>}
-            </div>
-          </div>
-          <p className="text-[9px] text-gray-600 mt-4 text-center">Preview updates in real-time</p>
-        </div>
-      </div>
-    );
-  }
-
+  /* ── helpers ── */
   const reportedThreads = threads.filter(t => t.isReported || (t.reports && t.reports.length > 0));
   const COMM_TABS = ["Forum","Events","Clubs","Chats","Awards"];
-
   const fmtRelTime = (dateStr) => {
     if (!dateStr) return "";
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -4389,229 +4337,552 @@ function CommunityAdmin({ token }) {
     return `${Math.floor(h/24)}d ago`;
   };
 
+  /* ══════════════════════════════════════════
+     EVENT CREATE FORM (full-page overlay)
+  ══════════════════════════════════════════ */
+  if (showEventForm) {
+    const previewDate = event.date ? new Date(event.date + "T00:00:00") : null;
+    return (
+      <div className="flex h-full overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <button onClick={() => setShowEventForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
+            <h1 className="text-xl font-bold text-white">Create New Event</h1>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Basic Info</p>
+            <Fld label="EVENT TITLE" value={event.title} onChange={v => setEvent({...event,title:v})} placeholder="e.g. AI Filmmaking Masterclass" />
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">EVENT TYPE</p>
+              <select value={event.type} onChange={e => setEvent({...event,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                {["Workshop","Webinar","Masterclass","AMA","Hackathon"].map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-2">MODE</p>
+              <div className="flex gap-2">
+                {["ONLINE","OFFLINE"].map(m => (
+                  <button key={m} onClick={() => setEvent({...event,mode:m})}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${event.mode===m?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30"}`}>
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="DATE" value={event.date} onChange={v => setEvent({...event,date:v})} placeholder="YYYY-MM-DD" />
+              <Fld label="START TIME" value={event.startTime} onChange={v => setEvent({...event,startTime:v})} placeholder="e.g. 18:00 - 20:00 (GMT+2)" />
+              <Fld label="DURATION (hrs)" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="2" />
+              <Fld label="CAPACITY" value={event.capacity} onChange={v => setEvent({...event,capacity:v})} placeholder="50" />
+              <div className="col-span-2"><Fld label="LOCATION / VENUE" value={event.location||""} onChange={v => setEvent({...event,location:v})} placeholder="e.g. The Shard, London" /></div>
+            </div>
+            {event.mode==="ONLINE" && <Fld label="MEETING LINK" value={event.link} onChange={v => setEvent({...event,link:v})} placeholder="https://zoom.us/..." />}
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Event Controls</p>
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm text-white">Open RSVP</p><p className="text-[10px] text-gray-400">Allow students to register</p></div>
+              <Tog value={event.openRSVP} onChange={v => setEvent({...event,openRSVP:v})} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm text-white">Featured Event</p><p className="text-[10px] text-gray-400">Show FEATURED badge on the card</p></div>
+              <Tog value={event.featured} onChange={v => setEvent({...event,featured:v})} />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setShowEventForm(false)} className="text-xs border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
+            <button onClick={async () => {
+              try {
+                const h = {"Content-Type":"application/json", Authorization:`Bearer ${token}`};
+                const res = await fetch("/api/community/events",{method:"POST",headers:h,body:JSON.stringify({...event,date:event.date?new Date(event.date):null,capacity:Number(event.capacity)})});
+                if (res.ok) {
+                  const created = await res.json();
+                  setEvents(prev => [created, ...prev]);
+                  setShowEventForm(false);
+                  setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",duration:"2",capacity:"50",link:"",location:"",openRSVP:true,featured:false});
+                  setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
+                } else alert("Failed to create event.");
+              } catch { alert("Network error."); }
+            }} className="text-xs bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-lime-300 flex items-center gap-2"><I name="plus" size={14}/> Create Event</button>
+          </div>
+        </div>
+        {/* Live preview panel */}
+        <div className="w-[280px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">Live Preview</p>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+            <div className={`h-[130px] bg-gradient-to-br from-blue-900 to-purple-900 relative`}>
+              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center">
+                <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider">{previewDate ? previewDate.toLocaleDateString("en",{month:"short"}) : "MON"}</p>
+                <p className="text-xl font-black text-white leading-none">{previewDate ? previewDate.getDate() : "—"}</p>
+              </div>
+              {event.featured && <span className="absolute top-3 right-3 text-[9px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded">FEATURED</span>}
+            </div>
+            <div className="p-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {event.startTime || "Time TBD"}
+              </div>
+              <h3 className="text-sm font-bold text-white">{event.title || "Event Title"}</h3>
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {event.location || event.mode}
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[10px] text-[#C7E36B] font-semibold">0 / {event.capacity} RSVPs</span>
+                <div className="flex gap-1.5">
+                  <button className="text-[10px] border border-white/15 text-gray-300 px-2.5 py-1.5 rounded-lg">✎</button>
+                  <button className="text-[10px] bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg">Manage</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="text-[9px] text-gray-600 mt-4 text-center">Preview updates in real-time</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══════════════════════════════════════════
+     MAIN COMMUNITY PANEL
+  ══════════════════════════════════════════ */
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Sub-navigation tabs */}
-      <div className="flex items-center gap-1 px-6 pt-4 pb-0 shrink-0">
+
+      {/* ── Tab bar ── */}
+      <div className="flex items-center gap-0.5 px-6 pt-4 pb-0 shrink-0 border-b border-white/5">
         {COMM_TABS.map(t => (
           <button key={t} onClick={() => setCommTab(t.toLowerCase())}
-            className={`px-4 py-2 text-xs font-bold rounded-full transition-all ${commTab === t.toLowerCase() ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+            className={`px-5 py-2 text-sm font-semibold rounded-t-lg transition-all ${commTab === t.toLowerCase() ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
             {t}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main panel */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h1 className="text-xl font-bold text-white">Forum Management</h1>
-              <p className="text-xs text-gray-400 mt-0.5">Monitor community discussions and moderate content.</p>
+      {/* ════ FORUM TAB ════ */}
+      {commTab === "forum" && (
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h1 className="text-xl font-bold text-white">Forum Management</h1>
+                <p className="text-xs text-gray-400 mt-0.5">Monitor community discussions and moderate content.</p>
+              </div>
+              <button onClick={() => setShowAnnForm(v => !v)}
+                className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2">
+                <I name="plus" size={15}/> Create Thread
+              </button>
             </div>
-            <button onClick={() => setShowAnnForm(v => !v)}
-              className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2">
-              <I name="plus" size={15} /> Create Thread
+            {annSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Announcement broadcast to all students!</div>}
+            {showAnnForm && (
+              <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-bold text-white uppercase tracking-wide">Broadcast Announcement</p>
+                <Fld label="Title" value={annTitle} onChange={setAnnTitle} placeholder="e.g. New Resource Available"/>
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Message</p>
+                  <textarea value={annMsg} onChange={e => setAnnMsg(e.target.value)} rows={3} placeholder="Message to send to all students..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 resize-none placeholder-gray-600"/>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={async () => {
+                    if (!annTitle.trim()) return;
+                    await fetch("/api/notifications/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({title:annTitle,message:annMsg,type:"announcement"})}).catch(()=>{});
+                    setShowAnnForm(false); setAnnTitle(""); setAnnMsg(""); setAnnSuccess(true); setTimeout(() => setAnnSuccess(false), 3000);
+                  }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Broadcast to All Students</button>
+                  <button onClick={() => setShowAnnForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-3 mb-5 flex-wrap">
+              {["All Categories","All Flairs","Status: Active"].map(f => (
+                <button key={f} className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:border-white/30 hover:text-white transition-all">
+                  {f}
+                </button>
+              ))}
+              <div className="ml-auto text-xs text-gray-500">Sort: <span className="text-white font-semibold">Newest</span></div>
+            </div>
+            <div className="space-y-3">
+              {threadsLoading ? <AdminLoader label="Loading Threads" /> : threads.length === 0 ? (
+                <div className="text-center py-16">
+                  <p className="text-3xl mb-3">💬</p>
+                  <p className="text-white font-semibold text-sm">No community threads yet</p>
+                  <p className="text-gray-500 text-xs mt-1">Students can start discussions from their dashboard.</p>
+                </div>
+              ) : threads.map(t => {
+                const isReported = t.isReported || (t.reports && t.reports.length > 0);
+                const voteCount = typeof t.votes === "number" ? t.votes : (t.upvotes?.length||0)-(t.downvotes?.length||0);
+                const initials = (t.author||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+                return (
+                  <div key={t._id} className={`border rounded-xl p-4 transition-all ${isReported?"border-red-500/50 bg-red-500/5":"border-white/10 bg-white/5 hover:border-white/20"}`}>
+                    <div className="flex gap-3 items-start">
+                      <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+                        <button className="text-gray-500 hover:text-[#C7E36B]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+                        <span className="text-xs font-bold text-white">{voteCount}</span>
+                        <button className="text-gray-500 hover:text-red-400"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {isReported ? <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">REPORTED</span>
+                                      : <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B]">{t.tag}</span>}
+                          <h3 className="text-sm font-semibold text-white">{t.title}</h3>
+                        </div>
+                        {isReported ? <p className="text-xs mb-2 text-gray-500 italic">Content hidden pending moderator review...</p>
+                                    : <p className="text-xs mb-2 line-clamp-2 text-gray-400">{t.body}</p>}
+                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                          <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center shrink-0">{initials}</div>
+                          <span className="font-semibold text-gray-400">{t.author}</span>
+                          <span>·</span><span>{fmtRelTime(t.createdAt)}</span>
+                          {t.replies?.length>0 && <><span>·</span><span>💬 {t.replies.length}</span></>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isReported ? (
+                          <button className="text-xs bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-red-600"
+                            onClick={async()=>{ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}>
+                            Resolve
+                          </button>
+                        ) : (
+                          <>
+                            <button onClick={async()=>{ if(window.confirm("Delete this thread?")){ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400"><I name="trash" size={13}/></button>
+                            <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-green-500/10 text-gray-500 hover:text-green-400"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Moderation Sidebar */}
+          <div className="w-[260px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-4">
+            <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Moderation Hub
+            </h3>
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Active Reports</p>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${reportedThreads.length>0?"bg-red-500/20 text-red-400":"bg-gray-500/20 text-gray-500"}`}>{reportedThreads.length>0?`${reportedThreads.length} New`:"0"}</span>
+              </div>
+              {reportedThreads.length===0 ? <p className="text-xs text-gray-500 text-center py-4">No active reports.</p> : (
+                <div className="space-y-2">
+                  {reportedThreads.slice(0,3).map(t=>(
+                    <div key={t._id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
+                      <p className="text-[10px] text-gray-400 line-clamp-2">"{t.title}"</p>
+                      <div className="flex gap-1.5">
+                        <button onClick={async()=>{ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }} className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg">Remove</button>
+                        <button onClick={()=>setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[]}:x))} className="flex-1 text-[10px] bg-white/10 text-white font-bold py-1.5 rounded-lg">Dismiss</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="mb-5">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flagged Keywords</p>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {keywords.map(k=>(
+                  <span key={k} className="flex items-center gap-1 text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded-full">
+                    {k}<button onClick={()=>setKeywords(ks=>ks.filter(x=>x!==k))} className="text-gray-600 hover:text-red-400 leading-none">×</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-1">
+                <input value={newKw} onChange={e=>setNewKw(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newKw.trim()){setKeywords(ks=>[...ks,newKw.trim()]);setNewKw("");}}} placeholder="Add keyword..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-[#C7E36B]/50 min-w-0"/>
+                <button onClick={()=>{if(newKw.trim()){setKeywords(ks=>[...ks,newKw.trim()]);setNewKw("");}}} className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1 rounded-lg">+ Add</button>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Community Pulse</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                  <p className="text-[9px] font-bold text-gray-500 uppercase mb-1">Users</p>
+                  <p className="text-lg font-black text-white">+{userCount??"—"}</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                  <p className="text-[9px] font-bold text-gray-500 uppercase mb-1">Posts</p>
+                  <p className="text-lg font-black text-white">{threads.length||"—"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ EVENTS TAB ════ */}
+      {commTab === "events" && (
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Events Management</h1>
+              <p className="text-sm text-gray-400 mt-1">Create and moderate community gatherings and workshops.</p>
+            </div>
+            <button onClick={() => setShowEventForm(true)}
+              className="border border-[#C7E36B] text-[#C7E36B] font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-[#C7E36B]/10 flex items-center gap-2 transition-all shrink-0">
+              Create Event →
+            </button>
+          </div>
+          {eventSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 text-green-400 text-xs font-semibold">✓ Event created successfully!</div>}
+          {/* Search + filters */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input value={eventSearch} onChange={e => setEventSearch(e.target.value)} placeholder="Search events..."
+                className="w-full bg-[#111315] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/>
+            </div>
+            {["All Types","Status: All"].map(f => (
+              <button key={f} className="border border-white/15 text-gray-300 text-sm font-medium px-4 py-2.5 rounded-xl hover:border-white/30 transition-all whitespace-nowrap">{f}</button>
+            ))}
+          </div>
+          {/* Event cards grid */}
+          {eventsLoading ? <AdminLoader label="Loading Events"/> : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {(events.filter(e => !eventSearch || e.title?.toLowerCase().includes(eventSearch.toLowerCase()))).map((ev, i) => {
+                const bg = ev.bg || ["from-blue-900 to-purple-900","from-emerald-900 to-teal-900","from-orange-900 to-red-900"][i%3];
+                const month = ev.month || (ev.date ? new Date(ev.date).toLocaleDateString("en",{month:"short"}).toUpperCase() : "");
+                const day   = ev.day   || (ev.date ? new Date(ev.date).getDate() : "");
+                const rsvps = ev.rsvps ?? 0;
+                const cap   = ev.capacity ?? 50;
+                return (
+                  <div key={ev._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
+                    {/* Image area */}
+                    <div className={`relative h-[180px] bg-gradient-to-br ${bg} overflow-hidden`}>
+                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[44px]">
+                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider leading-none mb-0.5">{month}</p>
+                        <p className="text-2xl font-black text-white leading-none">{day}</p>
+                      </div>
+                      {ev.featured && (
+                        <span className="absolute top-3 right-3 text-[9px] font-black bg-orange-500 text-white px-2 py-1 rounded-lg tracking-wider">FEATURED</span>
+                      )}
+                      {ev.limitedSeats && (
+                        <span className="absolute top-3 right-3 text-[9px] font-black bg-red-600 text-white px-2 py-1 rounded-lg tracking-wider">LIMITED SEATS</span>
+                      )}
+                      {/* subtle gradient overlay at bottom */}
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#111315] to-transparent"/>
+                    </div>
+                    {/* Card body */}
+                    <div className="p-4">
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-2">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>{ev.startTime || ev.time || "TBD"}</span>
+                      </div>
+                      <h3 className="text-base font-bold text-white mb-2 line-clamp-2 leading-snug">{ev.title}</h3>
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-4">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span>{ev.location || ev.mode || "Online"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">RSVPS</p>
+                          <p className="text-sm font-black text-[#C7E36B]">{rsvps} / {cap}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:border-white/30 hover:text-white transition-all">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button className="bg-[#C7E36B] text-black text-sm font-bold px-4 py-1.5 rounded-lg hover:bg-lime-300 transition-all">Manage</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════ CLUBS TAB ════ */}
+      {commTab === "clubs" && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-5xl mb-4">🏛️</p>
+            <h2 className="text-lg font-bold text-white mb-1">Clubs Management</h2>
+            <p className="text-sm text-gray-500">Coming soon — manage student clubs and groups.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ════ CHATS TAB ════ */}
+      {commTab === "chats" && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-5xl mb-4">💬</p>
+            <h2 className="text-lg font-bold text-white mb-1">Chats Moderation</h2>
+            <p className="text-sm text-gray-500">Coming soon — monitor and moderate live chats.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ════ AWARDS TAB ════ */}
+      {commTab === "awards" && (
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Challenges &amp; Awards</h1>
+              <p className="text-sm text-gray-400 mt-1">Create, manage, and reward community excellence.</p>
+            </div>
+            <button onClick={() => setShowChallengeForm(v => !v)}
+              className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2 shrink-0">
+              <I name="plus" size={15}/> Create Challenge
             </button>
           </div>
 
-          {annSuccess && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 text-green-400 text-xs font-semibold">✓ Announcement broadcast to all students!</div>}
-
-          {showAnnForm && (
-            <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-              <p className="text-xs font-bold text-white uppercase tracking-wide">Broadcast Announcement</p>
-              <Fld label="Title" value={annTitle} onChange={setAnnTitle} placeholder="e.g. New Resource Available"/>
+          {/* Create Challenge form (inline) */}
+          {showChallengeForm && (
+            <div className="mb-6 bg-[#111315] border border-white/10 rounded-2xl p-5 space-y-3">
+              <p className="text-sm font-bold text-white">New Challenge</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Fld label="TITLE" value={challenge.title} onChange={v => setChallenge({...challenge,title:v})} placeholder="Challenge name"/>
+                <div>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-1">TYPE</p>
+                  <select value={challenge.type} onChange={e => setChallenge({...challenge,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                    {["VIDEO","IMAGE","AUDIO","TEXT"].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <Fld label="DEADLINE" value={challenge.deadline} onChange={v => setChallenge({...challenge,deadline:v})} placeholder="e.g. Oct 30, 2024"/>
+                <Fld label="PRIZES" value={challenge.prizes} onChange={v => setChallenge({...challenge,prizes:v})} placeholder="e.g. ₹5,000 + Certificate"/>
+              </div>
               <div>
-                <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Message</p>
-                <textarea value={annMsg} onChange={e=>setAnnMsg(e.target.value)} rows={3} placeholder="Message to send to all students..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 resize-none placeholder-gray-600"/>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
+                <textarea value={challenge.desc} onChange={e => setChallenge({...challenge,desc:e.target.value})} rows={2} placeholder="What participants need to create..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 resize-none placeholder-gray-600"/>
               </div>
               <div className="flex gap-2">
-                <button onClick={async()=>{
-                  if(!annTitle.trim()) return;
-                  await fetch("/api/notifications/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({title:annTitle,message:annMsg,type:"announcement"})}).catch(()=>{});
-                  setShowAnnForm(false);setAnnTitle("");setAnnMsg("");setAnnSuccess(true);setTimeout(()=>setAnnSuccess(false),3000);
-                }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Broadcast to All Students</button>
-                <button onClick={()=>setShowAnnForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
+                <button onClick={() => {
+                  if (!challenge.title.trim()) return;
+                  const newC = { _id:`c${Date.now()}`, ...challenge, status:"new", participants:0, avatarCount:0, bg:"from-violet-900 to-purple-900" };
+                  setChallenges(prev => [newC, ...prev]);
+                  setChallenge({title:"",desc:"",type:"VIDEO",deadline:"",prizes:""});
+                  setShowChallengeForm(false);
+                }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">+ Add Challenge</button>
+                <button onClick={() => setShowChallengeForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
               </div>
             </div>
           )}
 
-          {/* Filter bar */}
-          <div className="flex items-center gap-3 mb-5 flex-wrap">
-            {["All Categories","All Flairs","Status: Active"].map(f => (
-              <button key={f} className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:border-white/30 hover:text-white transition-all flex items-center gap-1.5">
-                {f === "All Categories" && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>}
-                {f === "All Flairs" && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>}
-                {f === "Status: Active" && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
-                {f}
-              </button>
+          {/* Stat cards */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
+            {[
+              { label:"ACTIVE CHALLENGES", value: challenges.filter(c=>c.status==="live"||c.status==="new").length || 12, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5 0.67z"/></svg>, color:"text-orange-400" },
+              { label:"TOTAL SUBMISSIONS", value:"1,284", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#C7E36B"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>, color:"text-[#C7E36B]" },
+              { label:"AWARDS ISSUED",     value: challenges.filter(c=>c.awardsAssigned).length || 45, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#a855f7"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>, color:"text-purple-400" },
+              { label:"PENDING REVIEW",    value: 89, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#6366f1"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm1-8h4v2h-6V7h2v5z"/></svg>, color:"text-indigo-400" },
+            ].map(s => (
+              <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 tracking-widest mb-1.5">{s.label}</p>
+                  <p className="text-3xl font-black text-white">{s.value}</p>
+                </div>
+                <div className="opacity-80">{s.icon}</div>
+              </div>
             ))}
-            <div className="ml-auto text-xs text-gray-500">
-              Sort: <span className="text-white font-semibold">Newest</span>
+          </div>
+
+          {/* Recent Challenges */}
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-bold text-white">Recent Challenges</h2>
+            <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+              {["Active","Completed"].map(f => (
+                <button key={f} onClick={() => setChallengeFilter(f)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${challengeFilter===f?"bg-white text-[#0F1112]":"text-gray-400 hover:text-white"}`}>
+                  {f}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Thread list */}
-          <div className="space-y-3">
-            {threadsLoading ? (
-              <AdminLoader label="Loading Threads" />
-            ) : threads.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-3xl mb-3">💬</p>
-                <p className="text-white font-semibold text-sm">No community threads yet</p>
-                <p className="text-gray-500 text-xs mt-1">Students can start discussions from their dashboard.</p>
-              </div>
-            ) : threads.map(t => {
-              const isReported = t.isReported || (t.reports && t.reports.length > 0);
-              const voteCount = typeof t.votes === "number" ? t.votes : (t.upvotes?.length || 0) - (t.downvotes?.length || 0);
-              const initials = (t.author || "?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-              return (
-                <div key={t._id} className={`border rounded-xl p-4 transition-all ${isReported ? "border-red-500/50 bg-red-500/5" : "border-white/10 bg-white/5 hover:border-white/20"}`}>
-                  <div className="flex gap-3 items-start">
-                    {/* Vote column */}
-                    <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
-                      <button className="text-gray-500 hover:text-[#C7E36B] transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                      </button>
-                      <span className="text-xs font-bold text-white">{voteCount}</span>
-                      <button className="text-gray-500 hover:text-red-400 transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                      </button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        {isReported
-                          ? <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">REPORTED</span>
-                          : <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B]">{t.tag}</span>
-                        }
-                        <h3 className="text-sm font-semibold text-white">{t.title}</h3>
+          {/* Challenge cards grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {challenges
+              .filter(c => challengeFilter === "Active" ? c.status !== "completed" : c.status === "completed")
+              .map((c, i) => {
+                const bg = c.bg || "from-purple-900 to-purple-700";
+                const statusBadge = c.status === "live"
+                  ? { label:"LIVE NOW", cls:"bg-[#C7E36B] text-black" }
+                  : c.status === "new"
+                  ? { label:"NEW",      cls:"bg-blue-500 text-white" }
+                  : { label:"COMPLETED",cls:"bg-gray-700 text-gray-300" };
+                return (
+                  <div key={c._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
+                    {/* Card image area */}
+                    <div className={`relative h-[200px] bg-gradient-to-br ${bg} overflow-hidden`}>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                        <svg width="100" height="100" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                       </div>
-                      {isReported
-                        ? <p className="text-xs mb-2 text-gray-500 italic">Content hidden pending moderator review...</p>
-                        : <p className="text-xs mb-2 line-clamp-2 text-gray-400">{t.body}</p>
-                      }
-                      {/* Author metadata */}
-                      <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center shrink-0">{initials}</div>
-                        <span className="font-semibold text-gray-400">{t.author}</span>
-                        <span>·</span>
-                        <span>{fmtRelTime(t.createdAt)}</span>
-                        {t.replies?.length > 0 && <><span>·</span><span>💬 {t.replies.length} replies</span></>}
-                        {isReported && t.reports?.length > 0 && <span className="text-red-400 flex items-center gap-1">⚠ Flagged by {t.reports.length} user{t.reports.length > 1 ? "s" : ""}</span>}
+                      <div className="absolute top-3 left-3 flex gap-1.5">
+                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg tracking-wider ${statusBadge.cls}`}>{statusBadge.label}</span>
+                        {c.type && <span className="text-[9px] font-bold bg-black/50 text-gray-300 px-2.5 py-1 rounded-lg tracking-wider">{c.type}</span>}
                       </div>
                     </div>
+                    {/* Card body */}
+                    <div className="p-5">
+                      <h3 className="text-base font-bold text-white mb-1.5 line-clamp-1">{c.title}</h3>
+                      <p className="text-xs text-gray-400 line-clamp-2 mb-4 leading-relaxed">{c.desc}</p>
 
-                    {/* Right actions */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      {isReported ? (
-                        <button className="text-xs bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                          onClick={async () => {
-                            await fetch(`/api/community/threads/${t._id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
-                            setThreads(prev => prev.filter(x => x._id !== t._id));
-                          }}>
-                          Resolve
-                        </button>
+                      {c.status !== "completed" ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">DEADLINE</p>
+                              <p className="text-sm font-semibold text-white">{c.deadline}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">PARTICIPANTS</p>
+                              <p className="text-sm font-semibold text-white">{c.participants?.toLocaleString()} Joined</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex -space-x-2">
+                              {Array.from({length: Math.min(c.avatarCount||2, 3)}).map((_,j) => (
+                                <div key={j} className="w-7 h-7 rounded-full border-2 border-[#111315] flex items-center justify-center text-[9px] font-bold" style={{background: ["#6366f1","#10b981","#f59e0b"][j]}}>
+                                  {["JD","AK","RV"][j]}
+                                </div>
+                              ))}
+                              {c.participants > 3 && (
+                                <div className="w-7 h-7 rounded-full bg-white/10 border-2 border-[#111315] flex items-center justify-center text-[9px] font-bold text-gray-300">
+                                  +{c.participants - 3}
+                                </div>
+                              )}
+                            </div>
+                            <button className="text-sm text-[#C7E36B] font-bold hover:underline flex items-center gap-1">Manage →</button>
+                          </div>
+                        </>
                       ) : (
                         <>
-                          <button title="Pin thread" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-[#C7E36B] transition-all">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                          </button>
-                          <button onClick={async()=>{ if(window.confirm("Delete this thread?")){ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}} title="Delete"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all">
-                            <I name="trash" size={13} />
-                          </button>
-                          <button title="Approve" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-green-500/10 text-gray-500 hover:text-green-400 transition-all">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          </button>
+                          <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">ENDED</p>
+                              <p className="text-sm font-semibold text-white">{c.ended}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">FINAL SUBMISSIONS</p>
+                              <p className="text-sm font-semibold text-white">{c.submissions?.toLocaleString()} Total</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            {c.awardsAssigned ? (
+                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#C7E36B]">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                AWARDS ASSIGNED
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-gray-500">Pending awards</span>
+                            )}
+                            <button className="text-sm text-gray-300 font-bold hover:text-white flex items-center gap-1">View Results →</button>
+                          </div>
                         </>
                       )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
-
-        {/* Moderation Hub sidebar */}
-        <div className="w-[270px] shrink-0 border-l border-white/5 bg-[#0F1112] overflow-y-auto p-4">
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Moderation Hub
-          </h3>
-
-          {/* Active Reports */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Active Reports</p>
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${reportedThreads.length > 0 ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-500"}`}>
-                {reportedThreads.length > 0 ? `${reportedThreads.length} New` : "0"}
-              </span>
-            </div>
-            {reportedThreads.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-xs text-gray-500">No active reports.</p>
-                <p className="text-[10px] text-gray-600 mt-1">Reports from students will appear here.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {reportedThreads.slice(0, 3).map(t => (
-                  <div key={t._id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase tracking-wide">{t.tag || "REPORTED"}</span>
-                      <span className="text-[9px] text-gray-600">{fmtRelTime(t.createdAt)}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400 line-clamp-2">Reported on: "{t.title}"</p>
-                    <div className="flex gap-1.5">
-                      <button onClick={async()=>{ await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}}); setThreads(prev=>prev.filter(x=>x._id!==t._id)); }}
-                        className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg hover:bg-red-600 transition-colors">Ban</button>
-                      <button onClick={()=>setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[]}:x))}
-                        className="flex-1 text-[10px] bg-white/10 text-white font-bold py-1.5 rounded-lg hover:bg-white/20 transition-colors">Dismiss</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Flagged Keywords */}
-          <div className="mb-5">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flagged Keywords</p>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {keywords.map(k => (
-                <span key={k} className="flex items-center gap-1 text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded-full">
-                  {k}
-                  <button onClick={() => setKeywords(ks => ks.filter(x => x !== k))} className="text-gray-600 hover:text-red-400 leading-none">×</button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-1">
-              <input value={newKw} onChange={e => setNewKw(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && newKw.trim()) { setKeywords(ks => [...ks, newKw.trim()]); setNewKw(""); } }}
-                placeholder="Add keyword..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-[#C7E36B]/50 min-w-0" />
-              <button onClick={() => { if (newKw.trim()) { setKeywords(ks => [...ks, newKw.trim()]); setNewKw(""); } }}
-                className="text-[10px] border border-dashed border-[#C7E36B]/40 text-[#C7E36B] px-2 py-1 rounded-lg hover:border-[#C7E36B]/80 transition-all">+ Add</button>
-            </div>
-          </div>
-
-          {/* Community Pulse */}
-          <div>
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Community Pulse</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">New Users</p>
-                <p className="text-lg font-black text-white">+{userCount ?? "—"}</p>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Posts</p>
-                <p className="text-lg font-black text-white">{threads.length >= 1000 ? (threads.length/1000).toFixed(1)+"k" : threads.length || "—"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
