@@ -4566,9 +4566,8 @@ function CommunityAdmin({ token, adminName }) {
                 Preview
               </button>
               <button onClick={handlePublish}
-                disabled={publishing || !tf.title.trim() || !tf.content.trim() || !canPublish}
-                className="ml-auto bg-[#C7E36B] text-black font-semibold text-sm px-6 py-3 rounded-xl hover:bg-[#b8d44f] transition-colors flex items-center gap-2 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                className="ml-auto bg-[#C7E36B] text-black font-semibold px-6 py-2.5 rounded-lg hover:bg-[#b8d44f] transition-colors flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 {publishing ? "Publishing..." : "Publish Thread"}
               </button>
             </div>
@@ -4583,25 +4582,45 @@ function CommunityAdmin({ token, adminName }) {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               Live Preview
             </h3>
-            <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
-              <span key={tf.flair||tf.category}
-                className="text-[9px] font-black px-2 py-0.5 rounded-full"
-                style={(tf.flair||tf.category) ? { background:"rgba(199,227,107,0.15)", color:"#C7E36B" } : { background:"rgba(59,130,246,0.15)", color:"#93c5fd" }}>
-                {tf.flair || tf.category || "DISCUSSION"}
-              </span>
-              <h4 className="text-sm font-bold text-white mt-2 mb-1 line-clamp-2">{tf.title || "Your Thread Title Will Appear Here"}</h4>
-              <div className="flex items-center gap-1.5 mb-2">
-                <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center">{authorInitials}</div>
-                <span className="text-[10px] text-gray-400 font-semibold">{adminName || "Admin"}</span>
-                <span className="text-[10px] text-gray-600">· Just now</span>
-              </div>
-              <p className="text-[10px] text-gray-500 line-clamp-2 mb-3">{tf.summary || "This is a short summary of your thread that gives members a quick overview of what the discussion is about..."}</p>
-              <div className="flex items-center gap-3 text-[10px] text-gray-600 border-t border-white/5 pt-2">
-                <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>0</span>
-                <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>0</span>
-                <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>0</span>
-              </div>
-            </div>
+            {(() => {
+              const previewFlair = tf.flair || tf.category || "DISCUSSION";
+              const flairColors = {
+                "Prompts":       { bg:"rgba(199,227,107,0.15)", color:"#C7E36B" },
+                "General":       { bg:"rgba(107,114,128,0.2)",  color:"#9CA3AF" },
+                "Discussion":    { bg:"rgba(59,130,246,0.15)",  color:"#93c5fd" },
+                "Announcements": { bg:"rgba(245,158,11,0.15)",  color:"#FCD34D" },
+                "Q&A":           { bg:"rgba(168,85,247,0.15)",  color:"#C084FC" },
+                "Resources":     { bg:"rgba(16,185,129,0.15)",  color:"#6EE7B7" },
+                "Technical":     { bg:"rgba(239,68,68,0.15)",   color:"#FCA5A5" },
+                "Fix My Prompt": { bg:"rgba(199,227,107,0.15)", color:"#C7E36B" },
+                "Showcase":      { bg:"rgba(236,72,153,0.15)",  color:"#F9A8D4" },
+                "Tutorial":      { bg:"rgba(6,182,212,0.15)",   color:"#67E8F9" },
+                "News":          { bg:"rgba(251,146,60,0.15)",  color:"#FD974E" },
+                "Update":        { bg:"rgba(99,102,241,0.15)",  color:"#A5B4FC" },
+              };
+              const fc = flairColors[tf.flair] || flairColors[tf.category] || { bg:"rgba(59,130,246,0.15)", color:"#93c5fd" };
+              return (
+                <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: fc.bg, color: fc.color }}>
+                    {previewFlair}
+                  </span>
+                  <p className="text-sm font-bold text-white mt-2 mb-1 leading-snug" style={{ minHeight:"1.25rem" }}>
+                    {tf.title || "Your Thread Title Will Appear Here"}
+                  </p>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black shrink-0" style={{ background:"rgba(199,227,107,0.2)", color:"#C7E36B" }}>{authorInitials}</div>
+                    <span className="text-[10px] text-gray-400 font-semibold">{adminName || "Admin"}</span>
+                    <span className="text-[10px] text-gray-600">· Just now</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 line-clamp-2 mb-3">{tf.summary || "This is a short summary of your thread that gives members a quick overview of what the discussion is about..."}</p>
+                  <div className="flex items-center gap-3 text-[10px] text-gray-600 border-t border-white/5 pt-2">
+                    <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>0</span>
+                    <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>0</span>
+                    <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>0</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Posting Guidelines */}
