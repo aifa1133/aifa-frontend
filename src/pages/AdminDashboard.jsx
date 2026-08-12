@@ -4250,11 +4250,6 @@ const DEMO_EVENTS = [
   { _id:"e2", title:"AIFA Community Mixer: London",       startTime:"14:00 - 17:00",          location:"The Shard, London",   month:"NOV", day:"15", rsvps:45,  capacity:50,  featured:true,  limitedSeats:false, bg:"from-emerald-900 via-teal-900 to-cyan-900" },
   { _id:"e3", title:'"The AI Revolution" Documentary Screening', startTime:"19:30 - 21:00",   location:"Digital Hub, Paris",  month:"NOV", day:"20", rsvps:28,  capacity:30,  featured:false, limitedSeats:true,  bg:"from-orange-900 via-red-900 to-rose-900" },
 ];
-const DEMO_CHALLENGES = [
-  { _id:"c1", title:"AI Cinematic Trailer Challenge",  desc:"Create a 60-second cinematic trailer using Midjourney and Runway Gen-2.", status:"live",      type:"VIDEO", deadline:"Oct 24, 2024", participants:428, avatarCount:3, bg:"from-purple-900 to-purple-700" },
-  { _id:"c2", title:"Neural Network Visualizer",       desc:"Design a creative visualization of a neural network processing data.",     status:"new",       type:"IMAGE", deadline:"Oct 30, 2024", participants:156, avatarCount:2, bg:"from-teal-900 to-teal-700" },
-  { _id:"c3", title:"Mastering Motion Blur",           desc:"A technical challenge focused on realistic motion blur\nin AI video.",    status:"completed",  type:"VIDEO", ended:"Oct 15, 2024",    submissions:312,  awardsAssigned:true, bg:"from-indigo-900 to-purple-900" },
-];
 
 const THREAD_CATEGORIES = ["Prompts","General","Discussion","Announcements","Q&A","Resources","Technical"];
 const THREAD_FLAIRS     = ["Fix My Prompt","Discussion","Question","Showcase","Tutorial","News","Update"];
@@ -4290,10 +4285,15 @@ function CommunityAdmin({ token, adminName }) {
   const [eventSuccess, setEventSuccess] = useState(false);
 
   /* ── Awards/Challenges state ── */
-  const [challengeFilter, setChallengeFilter] = useState("Active");
+  const [challengeFilter, setChallengeFilter]   = useState("Active");
   const [showChallengeForm, setShowChallengeForm] = useState(false);
-  const [challenge, setChallenge] = useState({ title:"", desc:"", type:"VIDEO", deadline:"", prizes:"" });
-  const [challenges, setChallenges] = useState(DEMO_CHALLENGES);
+  const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [challengePublishedOk, setChallengePublishedOk] = useState(false);
+  const [challenge, setChallenge] = useState({ title:"", desc:"", startDate:"", endDate:"", visibility:"Public" });
+  const [challengeThumb, setChallengeThumb] = useState(null);
+  const [challengeSubTypes, setChallengeSubTypes] = useState(["Video"]);
+  const [challengeAwards, setChallengeAwards] = useState([{ type:"Cash Reward", description:"" }]);
+  const [challenges, setChallenges] = useState([]);
 
   /* ── Clubs state ── */
   const [clubs, setClubs]               = useState([]);
@@ -5691,171 +5691,464 @@ function CommunityAdmin({ token, adminName }) {
       })()}
 
       {/* ════ AWARDS TAB ════ */}
-      {commTab === "awards" && (
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Challenges &amp; Awards</h1>
-              <p className="text-sm text-gray-400 mt-1">Create, manage, and reward community excellence.</p>
-            </div>
-            <button onClick={() => setShowChallengeForm(v => !v)}
-              className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-lime-300 flex items-center gap-2 shrink-0">
-              <I name="plus" size={15}/> Create Challenge
-            </button>
-          </div>
+      {commTab === "awards" && (() => {
+        const resetChallengeForm = () => {
+          setChallenge({ title:"", desc:"", startDate:"", endDate:"", visibility:"Public" });
+          setChallengeThumb(null);
+          setChallengeSubTypes(["Video"]);
+          setChallengeAwards([{ type:"Cash Reward", description:"" }]);
+        };
 
-          {/* Create Challenge form (inline) */}
-          {showChallengeForm && (
-            <div className="mb-6 bg-[#111315] border border-white/10 rounded-2xl p-5 space-y-3">
-              <p className="text-sm font-bold text-white">New Challenge</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Fld label="TITLE" value={challenge.title} onChange={v => setChallenge({...challenge,title:v})} placeholder="Challenge name"/>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-semibold mb-1">TYPE</p>
-                  <select value={challenge.type} onChange={e => setChallenge({...challenge,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                    {["VIDEO","IMAGE","AUDIO","TEXT"].map(t => <option key={t}>{t}</option>)}
-                  </select>
+        /* ── Published Challenge Detail View ── */
+        if (selectedChallenge) {
+          const topAward = selectedChallenge.awards?.[0];
+          return (
+            <div className="flex flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* Breadcrumb + header */}
+                <p className="text-[11px] text-gray-500 mb-3">Community &rsaquo; Challenges &rsaquo; {selectedChallenge.title}</p>
+                <div className="flex items-start justify-between mb-5">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <button onClick={() => { setSelectedChallenge(null); setChallengePublishedOk(false); }} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
+                      <h1 className="text-2xl font-bold text-white">Published Challenge</h1>
+                    </div>
+                    <p className="text-sm text-gray-400">Manage and monitor your live challenge.</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button className="text-sm border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      View Live Page
+                    </button>
+                    <button className="text-sm bg-[#C7E36B] text-black font-semibold px-4 py-2 rounded-lg hover:bg-[#b8d44f] flex items-center gap-1.5">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                      Share Challenge Link
+                    </button>
+                  </div>
                 </div>
-                <Fld label="DEADLINE" value={challenge.deadline} onChange={v => setChallenge({...challenge,deadline:v})} placeholder="e.g. Oct 30, 2024"/>
-                <Fld label="PRIZES" value={challenge.prizes} onChange={v => setChallenge({...challenge,prizes:v})} placeholder="e.g. ₹5,000 + Certificate"/>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
-                <textarea value={challenge.desc} onChange={e => setChallenge({...challenge,desc:e.target.value})} rows={2} placeholder="What participants need to create..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 resize-none placeholder-gray-600"/>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => {
-                  if (!challenge.title.trim()) return;
-                  const newC = { _id:`c${Date.now()}`, ...challenge, status:"new", participants:0, avatarCount:0, bg:"from-violet-900 to-purple-900" };
-                  setChallenges(prev => [newC, ...prev]);
-                  setChallenge({title:"",desc:"",type:"VIDEO",deadline:"",prizes:""});
-                  setShowChallengeForm(false);
-                }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">+ Add Challenge</button>
-                <button onClick={() => setShowChallengeForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Cancel</button>
-              </div>
-            </div>
-          )}
 
-          {/* Stat cards */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
-            {[
-              { label:"ACTIVE CHALLENGES", value: challenges.filter(c=>c.status==="live"||c.status==="new").length || 12, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5 0.67z"/></svg>, color:"text-orange-400" },
-              { label:"TOTAL SUBMISSIONS", value:"1,284", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#C7E36B"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>, color:"text-[#C7E36B]" },
-              { label:"AWARDS ISSUED",     value: challenges.filter(c=>c.awardsAssigned).length || 45, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#a855f7"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>, color:"text-purple-400" },
-              { label:"PENDING REVIEW",    value: 89, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#6366f1"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm1-8h4v2h-6V7h2v5z"/></svg>, color:"text-indigo-400" },
-            ].map(s => (
-              <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-500 tracking-widest mb-1.5">{s.label}</p>
-                  <p className="text-3xl font-black text-white">{s.value}</p>
-                </div>
-                <div className="opacity-80">{s.icon}</div>
-              </div>
-            ))}
-          </div>
+                {/* Success banner */}
+                {challengePublishedOk && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 flex items-start gap-3 mb-5">
+                    <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-white">Challenge Published Successfully</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Your challenge is now live and visible to all members.</p>
+                    </div>
+                    <button onClick={() => setChallengePublishedOk(false)} className="text-gray-500 hover:text-white">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                )}
 
-          {/* Recent Challenges */}
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-bold text-white">Recent Challenges</h2>
-            <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-              {["Active","Completed"].map(f => (
-                <button key={f} onClick={() => setChallengeFilter(f)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${challengeFilter===f?"bg-white text-[#0F1112]":"text-gray-400 hover:text-white"}`}>
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Challenge cards grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {challenges
-              .filter(c => challengeFilter === "Active" ? c.status !== "completed" : c.status === "completed")
-              .map((c, i) => {
-                const bg = c.bg || "from-purple-900 to-purple-700";
-                const statusBadge = c.status === "live"
-                  ? { label:"LIVE NOW", cls:"bg-[#C7E36B] text-black" }
-                  : c.status === "new"
-                  ? { label:"NEW",      cls:"bg-blue-500 text-white" }
-                  : { label:"COMPLETED",cls:"bg-gray-700 text-gray-300" };
-                return (
-                  <div key={c._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
-                    {/* Card image area */}
-                    <div className={`relative h-[200px] bg-gradient-to-br ${bg} overflow-hidden`}>
-                      <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                        <svg width="100" height="100" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                {/* Challenge card */}
+                <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden mb-5">
+                  <div className="flex gap-0 flex-col md:flex-row">
+                    <div className="w-full md:w-[220px] h-[160px] shrink-0 bg-gradient-to-br from-purple-900 to-indigo-900 overflow-hidden">
+                      {selectedChallenge.thumb
+                        ? <img src={selectedChallenge.thumb} alt="" className="w-full h-full object-cover"/>
+                        : <div className="w-full h-full flex items-center justify-center opacity-20"><svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>}
+                    </div>
+                    <div className="flex-1 p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2.5 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400"/>Published</span>
+                        <span className="text-[10px] font-black bg-[#C7E36B]/10 text-[#C7E36B] px-2.5 py-0.5 rounded-full">Live</span>
                       </div>
-                      <div className="absolute top-3 left-3 flex gap-1.5">
-                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg tracking-wider ${statusBadge.cls}`}>{statusBadge.label}</span>
-                        {c.type && <span className="text-[9px] font-bold bg-black/50 text-gray-300 px-2.5 py-1 rounded-lg tracking-wider">{c.type}</span>}
+                      <h2 className="text-lg font-bold text-white mb-1">{selectedChallenge.title}</h2>
+                      <p className="text-sm text-gray-400 line-clamp-2">{selectedChallenge.desc}</p>
+                      <div className="grid grid-cols-4 gap-3 mt-4">
+                        {[
+                          { label:"SUBMISSION TYPE", value: selectedChallenge.submissionTypes?.[0]||"Video", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg> },
+                          { label:"DEADLINE",        value: selectedChallenge.endDate||"—", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+                          { label:"PARTICIPANTS",    value: "0 Joined", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> },
+                          { label:"TOP PRIZE",       value: topAward?.description||"—", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> },
+                        ].map(s => (
+                          <div key={s.label} className="bg-[#0B0F10] rounded-xl p-3 flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5 text-gray-500">{s.icon}<p className="text-[9px] font-bold uppercase tracking-wider">{s.label}</p></div>
+                            <p className="text-sm font-bold text-white">{s.value}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    {/* Card body */}
+                  </div>
+                </div>
+
+                {/* Submissions */}
+                <div className="bg-[#111315] border border-white/10 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-white">Submissions <span className="text-gray-500 font-normal">0</span></h3>
+                    <button className="text-xs text-[#C7E36B] hover:underline font-semibold">View All Submissions →</button>
+                  </div>
+                  <div className="flex flex-col items-center py-10 text-center">
+                    <svg className="w-10 h-10 text-gray-700 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    <p className="text-gray-500 text-sm">No submissions yet</p>
+                    <p className="text-gray-600 text-xs mt-1">Submissions will appear here once members start participating.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right sidebar */}
+              <div className="w-[260px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto space-y-4">
+                {/* Manage Challenge */}
+                <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider p-4 pb-2">Manage Challenge</p>
+                  {[
+                    { label:"Edit Challenge",      icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, danger:false },
+                    { label:"Preview Live Page",   icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>, danger:false },
+                    { label:"Copy Challenge Link", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>, danger:false },
+                    { label:"Pause Challenge",     icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>, danger:false },
+                    { label:"Close Challenge",     icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>, danger:true },
+                  ].map(a => (
+                    <button key={a.label} className={`w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm ${a.danger?"text-red-400":"text-gray-300"}`}>
+                      <span className="flex items-center gap-2">{a.icon}{a.label}</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  ))}
+                </div>
+                {/* Challenge Summary */}
+                <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Challenge Summary</p>
+                  {[
+                    { label:"Deadline",        value: selectedChallenge.endDate||"—", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/></svg> },
+                    { label:"Submission Type", value: selectedChallenge.submissionTypes?.join(", ")||"—", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="15" rx="2"/></svg> },
+                    { label:"Visibility",      value: selectedChallenge.visibility||"Public", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> },
+                  ].map(r => (
+                    <div key={r.label} className="flex items-start gap-2 py-2 border-b border-white/5 last:border-0">
+                      <span className="text-gray-500 mt-0.5">{r.icon}</span>
+                      <div className="flex-1 flex justify-between items-start gap-2">
+                        <span className="text-xs text-gray-400">{r.label}</span>
+                        <span className="text-xs font-semibold text-white text-right">{r.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Reward Summary */}
+                {selectedChallenge.awards?.length > 0 && (
+                  <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reward Summary</p>
+                    </div>
+                    {selectedChallenge.awards.map((aw, i) => (
+                      <div key={i} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                        <span className="text-xs text-gray-400">{i===0?"1st":i===1?"2nd":"3rd"} Place Winner</span>
+                        <span className="text-xs font-bold text-white text-right">{aw.description||"—"}</span>
+                      </div>
+                    ))}
+                    <button className="w-full mt-3 border border-white/15 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">View All Details</button>
+                  </div>
+                )}
+                {/* Need help */}
+                <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Need help?</p>
+                  </div>
+                  <p className="text-xs text-gray-400">Check our guides or contact the AIFA support team for assistance.</p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        /* ── Create Challenge Form ── */
+        if (showChallengeForm) {
+          const subTypeIcons = {
+            Video: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,
+            Image: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+            Text:  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>,
+          };
+          const isSelected = t => challengeSubTypes.includes(t);
+          const toggleSubType = t => setChallengeSubTypes(prev => prev.includes(t) ? prev.filter(x=>x!==t) : [...prev, t]);
+          const previewDeadline = challenge.endDate || "--/--/----";
+          const previewTitle = challenge.title || "AI Cinematic Trailer Challenge";
+          const previewDesc = challenge.desc || "Briefly explain what this challenge is about...";
+
+          return (
+            <div className="flex flex-1 overflow-hidden">
+              {/* Left form */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setShowChallengeForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg shrink-0">← Back to Challenges</button>
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Create</p>
+                    <p className="text-[10px] text-gray-600">Setup rules</p>
+                  </div>
+                </div>
+
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-[#C7E36B] flex items-center justify-center shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="black"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    </div>
+                    <p className="text-sm font-bold text-white">Basic Information</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-semibold mb-1">CHALLENGE TITLE</p>
+                    <input value={challenge.title} onChange={e => setChallenge({...challenge,title:e.target.value})} placeholder="e.g. AI Cinematic Trailer Challenge" className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-semibold mb-1">THUMBNAIL UPLOAD</p>
+                    <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer transition-colors h-40 overflow-hidden ${challengeThumb?"border-[#C7E36B]/40":"border-white/15 hover:border-[#C7E36B]/40"}`}>
+                      {challengeThumb ? (
+                        <img src={challengeThumb} alt="" className="w-full h-full object-cover"/>
+                      ) : (
+                        <div className="text-center p-4">
+                          <svg className="w-8 h-8 text-gray-600 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/><line x1="12" y1="5" x2="12" y2="8"/><line x1="10.5" y1="6.5" x2="13.5" y2="6.5"/></svg>
+                          <p className="text-sm text-gray-400">Drop your image here or <span className="text-[#C7E36B] underline">browse</span></p>
+                          <p className="text-[10px] text-gray-600 mt-1">RECOMMENDED: 1280 X 720 (16:9)</p>
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) { const r = new FileReader(); r.onload = ev => setChallengeThumb(ev.target.result); r.readAsDataURL(f); }
+                      }}/>
+                    </label>
+                    {challengeThumb && <button onClick={() => setChallengeThumb(null)} className="mt-1 text-[10px] text-red-400 hover:text-red-300">✕ Remove image</button>}
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
+                    <textarea value={challenge.desc} onChange={e => setChallenge({...challenge,desc:e.target.value})} rows={3} placeholder="Briefly explain what this challenge is about..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 resize-none"/>
+                  </div>
+                </div>
+
+                {/* Timeline & Submission */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+                    </div>
+                    <p className="text-sm font-bold text-white">Timeline &amp; Submission</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Fld label="START DATE" value={challenge.startDate} onChange={v => setChallenge({...challenge,startDate:v})} placeholder="mm/dd/yyyy"/>
+                    <Fld label="END DATE (DEADLINE)" value={challenge.endDate} onChange={v => setChallenge({...challenge,endDate:v})} placeholder="mm/dd/yyyy"/>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-semibold mb-2">ALLOWED SUBMISSION TYPES</p>
+                    <div className="flex gap-2">
+                      {["Video","Image","Text"].map(t => (
+                        <button key={t} onClick={() => toggleSubType(t)}
+                          className={`flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${isSelected(t)?"bg-[#C7E36B]/10 border-[#C7E36B] text-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30"}`}>
+                          <span className="flex items-center gap-2">{subTypeIcons[t]}{t}</span>
+                          {isSelected(t) && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Awards & Prizes */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <p className="text-sm font-bold text-white">Awards &amp; Prizes</p>
+                  </div>
+                  {challengeAwards.map((aw, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-[10px] font-black shrink-0">{i+1}</div>
+                        <p className="text-xs font-semibold text-white">{i===0?"First":i===1?"Second":"Third"} Place Winner</p>
+                        <button onClick={() => setChallengeAwards(prev => prev.filter((_,j)=>j!==i))} className="ml-auto text-[10px] text-red-400 hover:text-red-300 font-semibold">REMOVE</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 ml-8">
+                        <div>
+                          <select value={aw.type} onChange={e => setChallengeAwards(prev => prev.map((a,j) => j===i ? {...a,type:e.target.value} : a))}
+                            className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                            {["Cash Reward","Amazon Voucher","Certificate","Merchandise","Mentorship","Other"].map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <input value={aw.description} onChange={e => setChallengeAwards(prev => prev.map((a,j) => j===i ? {...a,description:e.target.value} : a))}
+                          placeholder="e.g. $500 Amazon Voucher" className="bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                      </div>
+                    </div>
+                  ))}
+                  {challengeAwards.length < 3 && (
+                    <button onClick={() => setChallengeAwards(prev => [...prev, { type:"Cash Reward", description:"" }])} className="w-full py-2.5 border border-dashed border-white/15 rounded-xl text-sm text-gray-500 hover:border-[#C7E36B]/40 hover:text-[#C7E36B] transition-colors">
+                      + Add Ranking Award
+                    </button>
+                  )}
+                </div>
+
+                <div className="pb-4"/>
+              </div>
+
+              {/* Right preview */}
+              <div className="w-[320px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Live Card Preview</p>
+                  <span className="flex items-center gap-1 text-[9px] font-bold text-green-400"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/>SYNCING</span>
+                </div>
+                {/* Preview card */}
+                <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden mb-4">
+                  <div className="relative h-[160px] bg-gradient-to-br from-purple-900 to-indigo-900 overflow-hidden">
+                    {challengeThumb ? (
+                      <img src={challengeThumb} alt="" className="w-full h-full object-cover"/>
+                    ) : (
+                      <div className="flex items-center justify-center h-full opacity-20">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 flex gap-1.5">
+                      <span className="text-[8px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded tracking-wider">LIVE NOW</span>
+                      {challengeSubTypes[0] && <span className="text-[8px] font-bold bg-black/60 text-gray-200 px-2 py-0.5 rounded tracking-wider">{challengeSubTypes[0].toUpperCase()}</span>}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-2">{previewTitle}</h3>
+                    <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">{previewDesc}</p>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div>
+                        <p className="text-[8px] text-gray-500 uppercase mb-0.5">DEADLINE</p>
+                        <p className="text-xs font-semibold text-white">{previewDeadline}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-gray-500 uppercase mb-0.5">PARTICIPANTS</p>
+                        <p className="text-xs font-semibold text-white">0 Joined</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex -space-x-1.5">
+                        {[["#6366f1"],["#10b981"],["#f59e0b"]].map(([bg],j) => (
+                          <div key={j} className="w-6 h-6 rounded-full border-2 border-[#111315]" style={{background:bg}}/>
+                        ))}
+                      </div>
+                      <span className="text-xs text-[#C7E36B] font-bold">Manage →</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Pro tip */}
+                <div className="bg-[#C7E36B]/5 border border-[#C7E36B]/20 rounded-xl p-4 mb-4">
+                  <p className="flex items-center gap-1.5 text-[10px] font-black text-[#C7E36B] mb-1.5">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#C7E36B"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    PRO TIP
+                  </p>
+                  <p className="text-[11px] text-gray-300">Featured challenges get 3.5x more engagement. Toggle the "Featured" flag in the settings tab.</p>
+                </div>
+                {/* Action buttons */}
+                <div className="flex gap-2 mt-auto">
+                  <button onClick={() => {
+                    if (!challenge.title.trim()) return;
+                    const newC = { _id:`c${Date.now()}`, ...challenge, status:"draft", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
+                    setChallenges(prev => [newC, ...prev]);
+                    resetChallengeForm(); setShowChallengeForm(false);
+                  }} className="flex-1 text-sm border border-white/20 text-gray-300 py-2.5 rounded-lg hover:bg-white/5 font-medium">Save Draft</button>
+                  <button onClick={() => {
+                    if (!challenge.title.trim()) return;
+                    const newC = { _id:`c${Date.now()}`, ...challenge, status:"live", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
+                    setChallenges(prev => [newC, ...prev]);
+                    resetChallengeForm(); setShowChallengeForm(false);
+                    setSelectedChallenge(newC); setChallengePublishedOk(true);
+                  }} className="flex-1 text-sm bg-[#C7E36B] text-black font-bold py-2.5 rounded-lg hover:bg-[#b8d44f]">Publish Challenge</button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        /* ── Challenge List View ── */
+        const activeChallenges = challenges.filter(c => c.status !== "completed" && c.status !== "draft");
+        const completedChallenges = challenges.filter(c => c.status === "completed");
+        const filteredList = challengeFilter === "Active" ? challenges.filter(c => c.status !== "completed") : completedChallenges;
+
+        return (
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white">Challenges &amp; Awards</h1>
+                <p className="text-sm text-gray-400 mt-1">Create, manage, and reward community excellence.</p>
+              </div>
+              <button onClick={() => setShowChallengeForm(true)} className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-[#b8d44f] flex items-center gap-2 shrink-0">
+                <I name="plus" size={15}/> Create Challenge
+              </button>
+            </div>
+            {/* Stats */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
+              {[
+                { label:"ACTIVE CHALLENGES", value: activeChallenges.length, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#f97316"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5 0.67z"/></svg> },
+                { label:"TOTAL SUBMISSIONS", value: challenges.reduce((s,c)=>s+(c.submissions||0),0), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#C7E36B"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> },
+                { label:"AWARDS ISSUED",    value: challenges.filter(c=>c.awardsAssigned).length, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#a855f7"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> },
+                { label:"PENDING REVIEW",   value: challenges.reduce((s,c)=>s+(c.pendingReview||0),0), icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#6366f1"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm1-8h4v2h-6V7h2v5z"/></svg> },
+              ].map(s => (
+                <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 tracking-widest mb-1.5">{s.label}</p>
+                    <p className="text-3xl font-black text-white">{s.value}</p>
+                  </div>
+                  <div className="opacity-80">{s.icon}</div>
+                </div>
+              ))}
+            </div>
+            {/* Filter + list */}
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-bold text-white">Recent Challenges</h2>
+              <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+                {["Active","Completed"].map(f => (
+                  <button key={f} onClick={() => setChallengeFilter(f)}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${challengeFilter===f?"bg-white text-[#0F1112]":"text-gray-400 hover:text-white"}`}>{f}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {filteredList.map((c, i) => {
+                const bgs = ["from-purple-900 to-indigo-900","from-teal-900 to-cyan-900","from-orange-900 to-red-900"];
+                const bg = c.bg || bgs[i%3];
+                const statusBadge = c.status==="live" ? { label:"LIVE NOW", cls:"bg-[#C7E36B] text-black" } : c.status==="draft" ? { label:"DRAFT", cls:"bg-gray-600 text-gray-300" } : { label:"COMPLETED", cls:"bg-gray-700 text-gray-300" };
+                return (
+                  <div key={c._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all cursor-pointer" onClick={() => setSelectedChallenge(c)}>
+                    <div className={`relative h-[180px] bg-gradient-to-br ${bg} overflow-hidden`}>
+                      {c.thumb ? (
+                        <img src={c.thumb} alt="" className="w-full h-full object-cover"/>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                          <svg width="80" height="80" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3 flex gap-1.5">
+                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg tracking-wider ${statusBadge.cls}`}>{statusBadge.label}</span>
+                        {c.submissionTypes?.[0] && <span className="text-[9px] font-bold bg-black/50 text-gray-300 px-2.5 py-1 rounded-lg tracking-wider">{c.submissionTypes[0].toUpperCase()}</span>}
+                      </div>
+                    </div>
                     <div className="p-5">
                       <h3 className="text-base font-bold text-white mb-1.5 line-clamp-1">{c.title}</h3>
                       <p className="text-xs text-gray-400 line-clamp-2 mb-4 leading-relaxed">{c.desc}</p>
-
-                      {c.status !== "completed" ? (
-                        <>
-                          <div className="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">DEADLINE</p>
-                              <p className="text-sm font-semibold text-white">{c.deadline}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">PARTICIPANTS</p>
-                              <p className="text-sm font-semibold text-white">{c.participants?.toLocaleString()} Joined</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex -space-x-2">
-                              {Array.from({length: Math.min(c.avatarCount||2, 3)}).map((_,j) => (
-                                <div key={j} className="w-7 h-7 rounded-full border-2 border-[#111315] flex items-center justify-center text-[9px] font-bold" style={{background: ["#6366f1","#10b981","#f59e0b"][j]}}>
-                                  {["JD","AK","RV"][j]}
-                                </div>
-                              ))}
-                              {c.participants > 3 && (
-                                <div className="w-7 h-7 rounded-full bg-white/10 border-2 border-[#111315] flex items-center justify-center text-[9px] font-bold text-gray-300">
-                                  +{c.participants - 3}
-                                </div>
-                              )}
-                            </div>
-                            <button className="text-sm text-[#C7E36B] font-bold hover:underline flex items-center gap-1">Manage →</button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">ENDED</p>
-                              <p className="text-sm font-semibold text-white">{c.ended}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">FINAL SUBMISSIONS</p>
-                              <p className="text-sm font-semibold text-white">{c.submissions?.toLocaleString()} Total</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            {c.awardsAssigned ? (
-                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#C7E36B]">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                AWARDS ASSIGNED
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-gray-500">Pending awards</span>
-                            )}
-                            <button className="text-sm text-gray-300 font-bold hover:text-white flex items-center gap-1">View Results →</button>
-                          </div>
-                        </>
-                      )}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">{c.status==="completed"?"ENDED":"DEADLINE"}</p>
+                          <p className="text-sm font-semibold text-white">{c.endDate||c.ended||"—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">PARTICIPANTS</p>
+                          <p className="text-sm font-semibold text-white">{(c.participants||0).toLocaleString()} Joined</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          {c.awards?.[0]?.description ? `🏆 ${c.awards[0].description}` : "No prize set"}
+                        </span>
+                        <button onClick={e=>{e.stopPropagation();setSelectedChallenge(c);}} className="text-sm text-[#C7E36B] font-bold hover:underline">Manage →</button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
+              {filteredList.length === 0 && (
+                <div className="col-span-3 flex flex-col items-center justify-center py-20 text-center">
+                  <svg className="w-12 h-12 text-gray-700 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <p className="text-gray-500 text-sm font-medium">No challenges yet</p>
+                  <p className="text-gray-600 text-xs mt-1">Click "Create Challenge" to launch your first community challenge.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
