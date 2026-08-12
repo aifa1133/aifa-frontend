@@ -5042,7 +5042,8 @@ function CommunityAdmin({ token, adminName }) {
                 const rsvps = ev.rsvps ?? 0;
                 const cap   = ev.capacity ?? 50;
                 const limitedSeats = !ev.featured && (cap - rsvps) <= Math.ceil(cap * 0.1);
-                const timeStr = [ev.startTime, ev.endTime].filter(Boolean).join(" - ") + (ev.timezone ? ` [${ev.timezone}]` : "");
+                const fmt24 = t => { if (!t) return ""; const iso = new Date(`1970-01-01T${t}`); if (!isNaN(iso)) return iso.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:false}); const m = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i); if (m) { let h=parseInt(m[1]); const ampm=m[3].toUpperCase(); if(ampm==="PM"&&h!==12)h+=12; if(ampm==="AM"&&h===12)h=0; return `${String(h).padStart(2,"0")}:${m[2]}`; } return t; };
+                const timeStr = [fmt24(ev.startTime), fmt24(ev.endTime)].filter(Boolean).join(" - ") + (ev.timezone ? ` [${ev.timezone}]` : "");
                 return (
                   <div key={ev._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
                     {/* Image area */}
