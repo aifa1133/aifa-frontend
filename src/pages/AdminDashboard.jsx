@@ -4286,7 +4286,7 @@ function CommunityAdmin({ token, adminName }) {
   const [eventSearch, setEventSearch] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState("All Types");
   const [showEventForm, setShowEventForm] = useState(false);
-  const [event, setEvent] = useState({ title:"", type:"Workshop", mode:"ONLINE", date:"", startTime:"", duration:"2", capacity:"50", link:"", openRSVP:true, featured:false });
+  const [event, setEvent] = useState({ title:"", type:"Workshop", mode:"ONLINE", date:"", startTime:"", endTime:"", timezone:"", duration:"2", capacity:"50", link:"", location:"", openRSVP:true, featured:false });
   const [eventSuccess, setEventSuccess] = useState(false);
 
   /* ── Awards/Challenges state ── */
@@ -4312,8 +4312,8 @@ function CommunityAdmin({ token, adminName }) {
     setEvLoading(true);
     fetch("/api/community/events", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.ok ? r.json() : [])
-      .then(d => { setEvents(Array.isArray(d) && d.length ? d : DEMO_EVENTS); setEvLoading(false); })
-      .catch(() => { setEvents(DEMO_EVENTS); setEvLoading(false); });
+      .then(d => { setEvents(Array.isArray(d) ? d : []); setEvLoading(false); })
+      .catch(() => { setEvents([]); setEvLoading(false); });
   }, [commTab, token]);
 
   useEffect(() => {
@@ -4716,9 +4716,11 @@ function CommunityAdmin({ token, adminName }) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
             <div className="grid grid-cols-2 gap-3">
               <Fld label="DATE" value={event.date} onChange={v => setEvent({...event,date:v})} placeholder="YYYY-MM-DD" />
-              <Fld label="START TIME" value={event.startTime} onChange={v => setEvent({...event,startTime:v})} placeholder="e.g. 18:00 - 20:00 (GMT+2)" />
-              <Fld label="DURATION (hrs)" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="2" />
               <Fld label="CAPACITY" value={event.capacity} onChange={v => setEvent({...event,capacity:v})} placeholder="50" />
+              <Fld label="START TIME (24h)" value={event.startTime} onChange={v => setEvent({...event,startTime:v})} placeholder="e.g. 18:00" />
+              <Fld label="END TIME (24h)" value={event.endTime} onChange={v => setEvent({...event,endTime:v})} placeholder="e.g. 20:00" />
+              <Fld label="TIMEZONE" value={event.timezone} onChange={v => setEvent({...event,timezone:v})} placeholder="e.g. GMT+5:30" />
+              <Fld label="DURATION (hrs)" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="2" />
               <div className="col-span-2"><Fld label="LOCATION / VENUE" value={event.location||""} onChange={v => setEvent({...event,location:v})} placeholder="e.g. The Shard, London" /></div>
             </div>
             {event.mode==="ONLINE" && <Fld label="MEETING LINK" value={event.link} onChange={v => setEvent({...event,link:v})} placeholder="https://zoom.us/..." />}
@@ -4744,7 +4746,7 @@ function CommunityAdmin({ token, adminName }) {
                   const created = await res.json();
                   setEvents(prev => [created, ...prev]);
                   setShowEventForm(false);
-                  setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",duration:"2",capacity:"50",link:"",location:"",openRSVP:true,featured:false});
+                  setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"50",link:"",location:"",openRSVP:true,featured:false});
                   setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
                 } else alert("Failed to create event.");
               } catch { alert("Network error."); }
@@ -5014,7 +5016,7 @@ function CommunityAdmin({ token, adminName }) {
               <p className="text-sm text-gray-400 mt-1">Create and moderate community gatherings and workshops.</p>
             </div>
             <button onClick={() => setShowEventForm(true)}
-              className="border border-[#C7E36B] text-[#C7E36B] font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-[#C7E36B]/10 flex items-center gap-2 transition-all shrink-0">
+              className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-[#b8d44f] flex items-center gap-2 transition-all shrink-0">
               Create Event →
             </button>
           </div>
@@ -5027,7 +5029,7 @@ function CommunityAdmin({ token, adminName }) {
                 className="w-full bg-[#111315] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/>
             </div>
             {["All Types","Status: All"].map(f => (
-              <button key={f} className="border border-white/15 text-gray-300 text-sm font-medium px-4 py-2.5 rounded-xl hover:border-white/30 transition-all whitespace-nowrap">{f}</button>
+              <button key={f} className="bg-white/5 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">{f}</button>
             ))}
           </div>
           {/* Event cards grid */}
@@ -5039,6 +5041,8 @@ function CommunityAdmin({ token, adminName }) {
                 const day   = ev.day   || (ev.date ? new Date(ev.date).getDate() : "");
                 const rsvps = ev.rsvps ?? 0;
                 const cap   = ev.capacity ?? 50;
+                const limitedSeats = !ev.featured && (cap - rsvps) <= Math.ceil(cap * 0.1);
+                const timeStr = [ev.startTime, ev.endTime].filter(Boolean).join(" - ") + (ev.timezone ? ` [${ev.timezone}]` : "");
                 return (
                   <div key={ev._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
                     {/* Image area */}
@@ -5048,9 +5052,9 @@ function CommunityAdmin({ token, adminName }) {
                         <p className="text-2xl font-black text-white leading-none">{day}</p>
                       </div>
                       {ev.featured && (
-                        <span className="absolute top-3 right-3 text-[9px] font-black bg-orange-500 text-white px-2 py-1 rounded-lg tracking-wider">FEATURED</span>
+                        <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded-lg tracking-wider">FEATURED</span>
                       )}
-                      {ev.limitedSeats && (
+                      {!ev.featured && limitedSeats && (
                         <span className="absolute top-3 right-3 text-[9px] font-black bg-red-600 text-white px-2 py-1 rounded-lg tracking-wider">LIMITED SEATS</span>
                       )}
                       {/* subtle gradient overlay at bottom */}
@@ -5059,18 +5063,18 @@ function CommunityAdmin({ token, adminName }) {
                     {/* Card body */}
                     <div className="p-4">
                       <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-2">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span>{ev.startTime || ev.time || "TBD"}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>{timeStr || ev.time || "TBD"}</span>
                       </div>
                       <h3 className="text-base font-bold text-white mb-2 line-clamp-2 leading-snug">{ev.title}</h3>
                       <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-4">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span>{ev.location || ev.mode || "Online"}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">RSVPS</p>
-                          <p className="text-sm font-black text-[#C7E36B]">{rsvps} / {cap}</p>
+                          <p className="text-sm font-black"><span className="text-[#C7E36B]">{rsvps}</span><span className="text-gray-400"> / {cap}</span></p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:border-white/30 hover:text-white transition-all">
@@ -5083,6 +5087,13 @@ function CommunityAdmin({ token, adminName }) {
                   </div>
                 );
               })}
+              {events.filter(e => !eventSearch || e.title?.toLowerCase().includes(eventSearch.toLowerCase())).length === 0 && !eventsLoading && (
+                <div className="col-span-3 flex flex-col items-center justify-center py-20 text-center">
+                  <svg className="w-12 h-12 text-gray-700 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <p className="text-gray-500 text-sm font-medium">No events yet</p>
+                  <p className="text-gray-600 text-xs mt-1">Click "Create Event" to add your first event.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
