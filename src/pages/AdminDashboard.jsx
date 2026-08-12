@@ -63,6 +63,7 @@ const MGMT_ITEMS = [
   { id: "users",       label: "Users",       icon: "users"      },
   { id: "membership",  label: "Membership",  icon: "membership" },
   { id: "enrolments",  label: "Enrolments",  icon: "enrolments" },
+  { id: "analytics",   label: "Analytics",   icon: "analytics"  },
   { id: "influencers", label: "Influencers", icon: "community"  },
 ];
 
@@ -247,6 +248,7 @@ export default function AdminDashboard() {
           {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
           {activePage === "membership"         && <MembershipAdmin token={token} />}
           {activePage === "influencers"        && <AdminInfluencers token={token} />}
+          {activePage === "analytics"          && <AnalyticsAdmin token={token} />}
           {activePage === "platform-settings"  && <PlatformSettings token={token} />}
         </main>
       </div>
@@ -1801,6 +1803,547 @@ function WorkshopsAdmin({ token }) {
   );
 }
 
+/* ── COURSE EDITOR (3 tabs: Overview / Curriculum / Enrollments) ── */
+function CourseEditor({ course, token, onBack, onSaved }) {
+  const [tab, setTab]       = useState("overview");
+  const [info, setInfo]     = useState({});
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg]       = useState("");
+
+  // Curriculum state — group lessons into modules
+  const groupLessons = (lessons) => {
+    const map = {};
+    (lessons || []).forEach(l => {
+      const mod = l.module || "Module 1";
+      if (!map[mod]) map[mod] = [];
+      map[mod].push({ ...l });
+    });
+    if (Object.keys(map).length === 0) map["Module 1"] = [];
+    return Object.entries(map).map(([title, lessons]) => ({ title, lessons, _collapsed: false }));
+  };
+  const [modules, setModules] = useState(() => groupLessons(course.lessons));
+  const [addLessonModal, setAddLessonModal] = useState(null); // { moduleIdx }
+  const [newLesson, setNewLesson] = useState({ title: "", videoUrl: "", duration: "", isFree: false });
+  const [renamingMod, setRenamingMod] = useState(null); // index
+
+  // Enrollments state
+  const [enrollments, setEnrollments]     = useState([]);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollSearch, setEnrollSearch]   = useState("");
+  const [enrollStatus, setEnrollStatus]   = useState("All");
+  const [detailStudent, setDetailStudent] = useState(null);
+
+  const loadEnrollments = () => {
+    setEnrollLoading(true);
+    fetch(`/api/courses/${course._id}/enrollments`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setEnrollments(d); setEnrollLoading(false); })
+      .catch(() => setEnrollLoading(false));
+  };
+
+  const flattenModules = () => modules.flatMap((m, mi) =>
+    m.lessons.map((l, li) => ({ ...l, module: m.title, order: mi * 100 + li }))
+  );
+
+  const saveAll = async () => {
+    setSaving(true); setMsg("");
+    const payload = { ...info, lessons: flattenModules() };
+    const res = await fetch(`/api/courses/${course._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) { const d = await res.json(); onSaved(d); setInfo({}); setMsg("Saved!"); }
+    else setMsg("Save failed.");
+    setSaving(false);
+    setTimeout(() => setMsg(""), 3000);
+  };
+
+  const isLive = info.isPublished ?? course.isPublished ?? false;
+
+  const totalLessons = modules.reduce((s, m) => s + m.lessons.length, 0);
+  const filledLessons = modules.reduce((s, m) => s + m.lessons.filter(l => l.videoUrl).length, 0);
+
+  const TABS = ["overview", "curriculum", "enrollments"];
+  const TAB_LABELS = { overview: "Overview", curriculum: "Curriculum", enrollments: "Enrollments" };
+
+  // ── Overview tab ─────────────────────────────────────────────────
+  const OverviewTab = () => {
+    const c = { ...course, ...info };
+    return (
+      <div className="p-6 space-y-6 max-w-3xl">
+        <p className="text-[10px] text-gray-500 border border-white/10 bg-white/5 rounded-lg px-3 py-2 inline-block">This is how your course appears to students.</p>
+
+        {/* Settings (editable) */}
+        <Sect icon="resources" title="Course Settings">
+          <div className="grid grid-cols-2 gap-3">
+            <Fld label="Title" value={info.title ?? course.title ?? ""} onChange={v=>setInfo(i=>({...i,title:v}))} />
+            <Fld label="Price (₹)" value={String(info.price ?? course.price ?? "")} onChange={v=>setInfo(i=>({...i,price:parseFloat(v)||0}))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Fld label="Original Price (₹)" value={String(info.originalPrice ?? course.originalPrice ?? "")} onChange={v=>setInfo(i=>({...i,originalPrice:parseFloat(v)||0}))} />
+            <Fld label="Duration" value={info.duration ?? course.duration ?? ""} onChange={v=>setInfo(i=>({...i,duration:v}))} placeholder="e.g. 12 hours" />
+          </div>
+          <Fld label="Short Description" value={info.shortDesc ?? course.shortDesc ?? ""} onChange={v=>setInfo(i=>({...i,shortDesc:v}))} />
+          <Fld label="Full Description" value={info.description ?? course.description ?? ""} onChange={v=>setInfo(i=>({...i,description:v}))} textarea />
+
+          {/* Thumbnail */}
+          <div>
+            <p className="text-[10px] text-gray-400 font-semibold uppercase mb-2">Thumbnail (16:9)</p>
+            <input type="file" accept="image/*" id="editThumbUpload" className="hidden" onChange={async e => {
+              const file = e.target.files?.[0]; if (!file) return;
+              const fd = new FormData(); fd.append("image", file);
+              try {
+                const r = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
+                const d = await r.json();
+                if (d.url) setInfo(i => ({...i, image: d.url}));
+              } catch {}
+              e.target.value = "";
+            }}/>
+            {(info.image ?? course.image) ? (
+              <div className="relative rounded-xl overflow-hidden border border-white/10 w-full mb-2" style={{aspectRatio:"16/9"}}>
+                <img src={info.image ?? course.image} alt="Thumbnail" className="w-full h-full object-cover"/>
+                <button onClick={()=>setInfo(i=>({...i,image:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80">✕ Remove</button>
+              </div>
+            ) : (
+              <label htmlFor="editThumbUpload" className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[100px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
+                <I name="upload" size={20} className="text-gray-500 mb-1"/>
+                <p className="text-xs text-gray-400">Click to upload thumbnail</p>
+              </label>
+            )}
+            <div className="flex items-center gap-2 my-2"><div className="flex-1 h-px bg-white/10"/><span className="text-[10px] text-gray-500">or paste URL</span><div className="flex-1 h-px bg-white/10"/></div>
+            <input
+              value={(info.image ?? course.image ?? "").startsWith("data:") ? "" : (info.image ?? course.image ?? "")}
+              onChange={e => setInfo(i=>({...i,image:e.target.value}))}
+              placeholder="https://..."
+              className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"
+            />
+          </div>
+
+          {/* Live toggle */}
+          <div className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5">
+            <div className="flex items-center gap-3">
+              <Tog value={isLive} onChange={v=>setInfo(i=>({...i,isPublished:v}))} />
+              <div>
+                <p className="text-xs font-semibold text-white">{isLive ? "● Live — visible to students" : "○ Draft — hidden from students"}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{isLive ? "Toggle off to unpublish" : "Save changes to publish"}</p>
+              </div>
+            </div>
+            <button onClick={async()=>{
+              const newVal = !isLive;
+              setInfo(i=>({...i,isPublished:newVal}));
+              const res = await fetch(`/api/courses/${course._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:newVal})});
+              if(res.ok){const d=await res.json();onSaved(d);}
+            }} className={`text-xs font-bold px-4 py-2 rounded-lg transition-all ${isLive?"border border-red-400/50 text-red-400 hover:bg-red-500/10":"bg-[#C7E36B] text-black hover:bg-lime-300"}`}>
+              {isLive ? "Unpublish" : "Publish Now"}
+            </button>
+          </div>
+        </Sect>
+
+        {/* Student preview */}
+        <div className="border border-white/10 rounded-2xl overflow-hidden">
+          <div className="bg-white/5 px-4 py-2 border-b border-white/10">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Student Preview</p>
+          </div>
+          <div className="p-5 space-y-4">
+            <span className="text-[10px] font-bold bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/30 px-3 py-1 rounded-full">INCLUDED IN ALL-ACCESS</span>
+            {(info.image ?? course.image) && <img src={info.image ?? course.image} alt="" className="w-full rounded-xl aspect-video object-cover"/>}
+            <h2 className="text-xl font-black text-white">{info.title ?? course.title}</h2>
+            {(info.shortDesc ?? course.shortDesc) && <p className="text-sm text-gray-400">{info.shortDesc ?? course.shortDesc}</p>}
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              {(info.duration ?? course.duration) && <span>⏱ {info.duration ?? course.duration}</span>}
+              {(info.level ?? course.level) && <span>📊 {info.level ?? course.level}</span>}
+              {(info.instructor ?? course.instructor) && <span>👤 {info.instructor ?? course.instructor}</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-black text-white">₹{info.price ?? course.price}</span>
+              {(info.originalPrice ?? course.originalPrice) > 0 && <span className="text-sm text-gray-500 line-through">₹{info.originalPrice ?? course.originalPrice}</span>}
+              <button className="ml-auto bg-gray-600 text-gray-400 text-xs font-bold px-5 py-2.5 rounded-xl cursor-not-allowed opacity-60">PURCHASE NOW (preview)</button>
+            </div>
+            {(info.description ?? course.description) && (
+              <div>
+                <p className="text-xs font-bold text-white uppercase mb-1">Course Overview</p>
+                <p className="text-xs text-gray-400 leading-relaxed line-clamp-5">{info.description ?? course.description}</p>
+              </div>
+            )}
+            {modules.some(m => m.lessons.length > 0) && (
+              <div>
+                <p className="text-xs font-bold text-white uppercase mb-2">Course Syllabus</p>
+                {modules.filter(m=>m.lessons.length>0).map((m,i)=>(
+                  <div key={i} className="mb-2">
+                    <p className="text-[11px] text-gray-300 font-semibold mb-1">{m.title}</p>
+                    {m.lessons.map((l,j)=><p key={j} className="text-[10px] text-gray-500 ml-3 mb-0.5">• {l.title}{l.duration ? ` — ${l.duration}` : ""}</p>)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Curriculum tab ────────────────────────────────────────────────
+  const CurriculumTab = () => {
+    const updMod = (mi, key, val) => setModules(ms => ms.map((m,i) => i===mi ? {...m,[key]:val} : m));
+    const updLesson = (mi, li, key, val) => setModules(ms => ms.map((m,i) => i===mi ? {...m, lessons: m.lessons.map((l,j) => j===li ? {...l,[key]:val} : l)} : m));
+    const delLesson = (mi, li) => setModules(ms => ms.map((m,i) => i===mi ? {...m, lessons: m.lessons.filter((_,j) => j!==li)} : m));
+    const delMod = (mi) => setModules(ms => ms.filter((_,i) => i!==mi));
+    const addMod = () => setModules(ms => [...ms, { title: `Module ${ms.length+1}`, lessons: [], _collapsed: false }]);
+
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-sm font-bold text-white">Curriculum</p>
+            <p className="text-xs text-gray-500">{totalLessons} lessons · {filledLessons} with video</p>
+          </div>
+          <button onClick={addMod} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"><I name="plus" size={12}/> Add Module</button>
+        </div>
+
+        <div className="space-y-4">
+          {modules.map((m, mi) => {
+            const filled = m.lessons.filter(l=>l.videoUrl).length;
+            const pct = m.lessons.length > 0 ? filled / m.lessons.length : 0;
+            return (
+              <div key={mi} className="bg-[#111315] border border-white/8 rounded-xl overflow-hidden">
+                {/* Module header */}
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8">
+                  {renamingMod === mi ? (
+                    <input
+                      autoFocus
+                      value={m.title}
+                      onChange={e => updMod(mi, "title", e.target.value)}
+                      onBlur={() => setRenamingMod(null)}
+                      onKeyDown={e => { if (e.key === "Enter") setRenamingMod(null); }}
+                      className="flex-1 bg-[#1A1D1E] border border-[#C7E36B]/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
+                    />
+                  ) : (
+                    <p className="flex-1 text-sm font-bold text-white">{m.title}</p>
+                  )}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pct === 1 ? "bg-[#C7E36B]/20 text-[#C7E36B]" : m.lessons.length > 0 ? "bg-yellow-500/20 text-yellow-400" : "bg-white/10 text-gray-500"}`}>
+                    {filled}/{m.lessons.length}
+                  </span>
+                  <button onClick={() => setRenamingMod(renamingMod === mi ? null : mi)} className="text-gray-500 hover:text-white transition-all" title="Rename">
+                    <I name="edit" size={12}/>
+                  </button>
+                  {modules.length > 1 && (
+                    <button onClick={() => delMod(mi)} className="text-gray-600 hover:text-red-400 transition-all" title="Delete module">
+                      <I name="trash" size={12}/>
+                    </button>
+                  )}
+                  <button onClick={() => updMod(mi, "_collapsed", !m._collapsed)} className="text-gray-500 hover:text-white transition-all">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{transform: m._collapsed ? "rotate(-90deg)" : "none", transition: "transform 0.2s"}}><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                </div>
+
+                {/* Lessons */}
+                {!m._collapsed && (
+                  <div className="divide-y divide-white/5">
+                    {m.lessons.length === 0 && (
+                      <p className="text-xs text-gray-600 px-5 py-3">No lessons yet — add one below.</p>
+                    )}
+                    {m.lessons.map((l, li) => (
+                      <div key={li} className="flex items-center gap-3 px-5 py-3 hover:bg-white/3 transition-all group">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${l.videoUrl ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-400"}`}>{l.videoUrl ? "✓" : li+1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-white truncate">{l.title || "Untitled lesson"}</p>
+                          {l.videoUrl ? (
+                            <p className="text-[10px] text-[#C7E36B] truncate">{l.videoUrl}</p>
+                          ) : (
+                            <p className="text-[10px] text-gray-600">No video URL yet</p>
+                          )}
+                        </div>
+                        {l.duration && <span className="text-[10px] text-gray-500 shrink-0">{l.duration}</span>}
+                        {l.isFree && <span className="text-[10px] text-[#C7E36B] border border-[#C7E36B]/30 px-1.5 py-0.5 rounded shrink-0">FREE</span>}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                          <button onClick={() => {
+                            setNewLesson({ ...l });
+                            setAddLessonModal({ moduleIdx: mi, editIdx: li });
+                          }} className="text-gray-500 hover:text-white p-1 rounded hover:bg-white/10 transition-all"><I name="edit" size={11}/></button>
+                          <button onClick={() => delLesson(mi, li)} className="text-gray-600 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition-all"><I name="trash" size={11}/></button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="px-5 py-2.5">
+                      <button onClick={() => { setNewLesson({ title:"", videoUrl:"", duration:"", isFree:false }); setAddLessonModal({ moduleIdx: mi, editIdx: null }); }}
+                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#C7E36B] transition-all">
+                        <I name="plus" size={11}/> Add Lesson
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add/Edit lesson modal */}
+        {addLessonModal !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setAddLessonModal(null)}>
+            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-white">{addLessonModal.editIdx !== null ? "Edit Lesson" : "Add Lesson"}</p>
+                <button onClick={() => setAddLessonModal(null)} className="text-gray-500 hover:text-white">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Video URL (Vimeo or YouTube embed)</p>
+                <input value={newLesson.videoUrl||""} onChange={e=>setNewLesson(l=>({...l,videoUrl:e.target.value}))}
+                  onBlur={async e => {
+                    const url = e.target.value;
+                    if (!url) return;
+                    const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+                    if (vm) {
+                      try {
+                        const r = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vm[1]}`);
+                        const d = await r.json();
+                        if (d.duration && !newLesson.duration) {
+                          const m = Math.floor(d.duration/60), s = String(d.duration%60).padStart(2,"0");
+                          setNewLesson(l=>({...l,duration:`${m}:${s}`}));
+                        }
+                      } catch {}
+                    }
+                  }}
+                  placeholder="https://player.vimeo.com/video/...  or  https://www.youtube.com/embed/..."
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"/>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Fld label="Duration (e.g. 12:30)" value={newLesson.duration||""} onChange={v=>setNewLesson(l=>({...l,duration:v}))} placeholder="mm:ss"/>
+                <div className="flex items-center gap-3 pt-5">
+                  <Tog value={newLesson.isFree||false} onChange={v=>setNewLesson(l=>({...l,isFree:v}))}/>
+                  <span className="text-xs text-gray-400">Free Preview</span>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setAddLessonModal(null)} className="flex-1 border border-white/15 text-gray-400 text-sm py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
+                <button onClick={() => {
+                  const { moduleIdx, editIdx } = addLessonModal;
+                  setModules(ms => ms.map((m,i) => i!==moduleIdx ? m : {
+                    ...m,
+                    lessons: editIdx !== null
+                      ? m.lessons.map((l,j) => j===editIdx ? {...newLesson} : l)
+                      : [...m.lessons, {...newLesson}]
+                  }));
+                  setAddLessonModal(null);
+                }} className="flex-1 bg-[#C7E36B] text-black font-bold text-sm py-2.5 rounded-xl hover:brightness-105">
+                  {addLessonModal.editIdx !== null ? "Save Changes" : "Add Lesson"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ── Enrollments tab ───────────────────────────────────────────────
+  const EnrollmentsTab = () => {
+    useEffect(() => { if (enrollments.length === 0) loadEnrollments(); }, []);
+    const filtered = enrollments.filter(s => {
+      if (enrollStatus !== "All" && s.status !== enrollStatus) return false;
+      if (enrollSearch && !s.name.toLowerCase().includes(enrollSearch.toLowerCase()) && !s.email.toLowerCase().includes(enrollSearch.toLowerCase())) return false;
+      return true;
+    });
+    const total     = enrollments.length;
+    const active    = enrollments.filter(s => s.status === "Active").length;
+    const completed = enrollments.filter(s => s.status === "Completed").length;
+    const compRate  = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const exportCSV = () => {
+      const rows = [["Name","Email","Phone","Enrolled On","Progress","Status"],...enrollments.map(s=>[s.name,s.email,s.phone,s.enrolledOn?new Date(s.enrolledOn).toLocaleDateString():"",s.percentComplete+"%",s.status])];
+      const csv = rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+      const a = document.createElement("a"); a.href = "data:text/csv," + encodeURIComponent(csv);
+      a.download = `enrollments-${course.title}.csv`; a.click();
+    };
+
+    const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : "—";
+    const fmtTime = iso => {
+      if (!iso) return "—";
+      const diff = Math.floor((Date.now()-new Date(iso))/1000);
+      if (diff<86400) return "Today";
+      if (diff<604800) return `${Math.floor(diff/86400)}d ago`;
+      return fmtDate(iso);
+    };
+
+    return (
+      <div className="p-6">
+        {/* Stats row */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          {[["Total Enrollments",total,"text-white"],["Active Students",active,"text-blue-400"],["Completed",completed,"text-[#C7E36B]"],["Completion Rate",compRate+"%","text-green-400"]].map(([k,v,c])=>(
+            <div key={k} className="bg-[#111315] border border-white/8 rounded-xl p-4 text-center">
+              <p className={`text-2xl font-black ${c}`}>{enrollLoading?"—":v}</p>
+              <p className="text-[10px] text-gray-500 mt-1">{k}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex gap-3 mb-5 flex-wrap">
+          <div className="relative flex-1 min-w-[180px]">
+            <I name="search" size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
+            <input value={enrollSearch} onChange={e=>setEnrollSearch(e.target.value)} placeholder="Search by name or email..." className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-white/20"/>
+          </div>
+          <select value={enrollStatus} onChange={e=>setEnrollStatus(e.target.value)} className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-3 py-2 outline-none">
+            {["All","Active","Inactive","Completed"].map(s=><option key={s}>{s}</option>)}
+          </select>
+          <button onClick={exportCSV} className="border border-white/15 text-gray-300 text-xs font-semibold px-4 py-2 rounded-xl hover:bg-white/5 flex items-center gap-1.5">
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+
+        {enrollLoading ? (
+          <AdminLoader label="Loading Enrollments" />
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            <p className="text-sm">{total === 0 ? "No students enrolled yet." : "No results match your filter."}</p>
+          </div>
+        ) : (
+          <div className="bg-[#111315] border border-white/8 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/8 text-[10px] text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-4 py-3">Student</th>
+                  <th className="text-left px-4 py-3">Enrolled On</th>
+                  <th className="text-left px-4 py-3">Progress</th>
+                  <th className="text-left px-4 py-3">Last Activity</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filtered.map(s => (
+                  <tr key={s._id} className="hover:bg-white/3 transition-all">
+                    <td className="px-4 py-3">
+                      <p className="text-xs font-semibold text-white">{s.name}</p>
+                      <p className="text-[10px] text-gray-500">{s.email}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(s.enrolledOn)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white/10 rounded-full h-1.5 min-w-[60px]">
+                          <div className={`h-full rounded-full ${s.percentComplete===100?"bg-[#C7E36B]":s.percentComplete>50?"bg-blue-400":"bg-white/40"}`} style={{width:`${s.percentComplete}%`}}/>
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0">{s.percentComplete}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400">{fmtTime(s.lastActivity)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.status==="Completed"?"bg-[#C7E36B]/20 text-[#C7E36B]":s.status==="Active"?"bg-green-500/20 text-green-400":"bg-white/10 text-gray-400"}`}>{s.status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button onClick={() => setDetailStudent(s)} className="text-[10px] text-[#C7E36B] hover:underline font-semibold">View Details</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Student detail modal */}
+        {detailStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setDetailStudent(null)}>
+            <div className="bg-[#111315] border border-white/10 rounded-2xl w-full max-w-md p-6"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-base font-bold text-white">{detailStudent.name}</p>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${detailStudent.status==="Completed"?"bg-[#C7E36B]/20 text-[#C7E36B]":detailStudent.status==="Active"?"bg-green-500/20 text-green-400":"bg-white/10 text-gray-400"}`}>{detailStudent.status}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{detailStudent.email}</p>
+                  {detailStudent.phone && <p className="text-xs text-gray-500">{detailStudent.phone}</p>}
+                </div>
+                <button onClick={() => setDetailStudent(null)} className="text-gray-500 hover:text-white">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <div className="border-t border-white/10 pt-4 mb-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-3">Enrollment Information</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><p className="text-[10px] text-gray-600 mb-0.5">Enrolled On</p><p className="text-xs text-white">{fmtDate(detailStudent.enrolledOn)}</p></div>
+                  <div><p className="text-[10px] text-gray-600 mb-0.5">Certificate Status</p><p className={`text-xs font-semibold ${detailStudent.status==="Completed"?"text-[#C7E36B]":"text-gray-400"}`}>{detailStudent.status==="Completed"?"Issued":"Not Issued"}</p></div>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 pt-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-3">Progress Summary</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-gray-400">Course progress</span>
+                      <span className="font-bold text-white">{detailStudent.percentComplete}%</span>
+                    </div>
+                    <div className="bg-white/10 rounded-full h-2">
+                      <div className={`h-full rounded-full transition-all ${detailStudent.percentComplete===100?"bg-[#C7E36B]":"bg-blue-400"}`} style={{width:`${detailStudent.percentComplete}%`}}/>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="bg-white/5 rounded-xl p-3 text-center">
+                    <p className="text-white font-bold">{detailStudent.completedLessons}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5">Lessons Completed</p>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-3 text-center">
+                    <p className="text-[#C7E36B] font-bold">{detailStudent.status}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5">Status</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-6 pt-5 pb-3 border-b border-white/5 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="text-gray-400 hover:text-white text-xs flex items-center gap-1"><I name="back" size={14}/> Back</button>
+          <div>
+            <h1 className="text-base font-bold text-white">{course.title}</h1>
+            <p className="text-[11px] text-gray-500">{isLive ? "● Live" : "○ Draft"} · {totalLessons} lessons</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {msg && <p className={`text-xs ${msg==="Saved!"?"text-green-400":"text-red-400"}`}>{msg}</p>}
+          <button onClick={saveAll} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-5 py-2 rounded-lg disabled:opacity-60">
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-white/5 px-6 shrink-0">
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`text-xs font-semibold px-4 py-3 -mb-px border-b-2 transition-all ${tab===t?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-500 hover:text-white"}`}>
+            {TAB_LABELS[t]}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-y-auto">
+        {tab === "overview"    && <OverviewTab />}
+        {tab === "curriculum"  && <CurriculumTab />}
+        {tab === "enrollments" && <EnrollmentsTab />}
+      </div>
+    </div>
+  );
+}
+
 /* ── VIDEO COURSES ADMIN ── */
 function VideoCoursesAdmin({ token }) {
   const [view, setView] = useState("list");
@@ -1819,11 +2362,10 @@ function VideoCoursesAdmin({ token }) {
   const [scheduleDate, setScheduleDate] = useState("");
   const [sections, setSections] = useState([{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }]);
   const [activeL, setActiveL] = useState({ s:0, l:0 });
-  const [saving, setSaving]       = useState(false);
+  const [saving, setSaving]         = useState(false);
   const [editCourse, setEditCourse] = useState(null);
-  const [editLessons, setEditLessons] = useState([]);
-  const [editSaving, setEditSaving] = useState(false);
-  const [editMsg, setEditMsg]     = useState("");
+  const [sortBy, setSortBy]         = useState("newest");
+  const [searchQ, setSearchQ]       = useState("");
   const STEPS = ["Basic Info","Curriculum","Pricing","Publish"];
 
   const buildPayload = (isPublished, scheduledAt=null) => ({
@@ -1904,164 +2446,13 @@ function VideoCoursesAdmin({ token }) {
     } catch {}
   };
 
-  const [editInfo, setEditInfo] = useState({});
-  const saveEditInfo = async () => {
-    setEditSaving(true); setEditMsg("");
-    const res = await fetch(`/api/courses/${editCourse._id}`, {
-      method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`},
-      body: JSON.stringify(editInfo),
-    });
-    if(res.ok) { const d=await res.json(); setEditCourse(d); setEditMsg("Saved!"); loadCourses(); }
-    else setEditMsg("Save failed.");
-    setEditSaving(false); setTimeout(()=>setEditMsg(""),3000);
-  };
-
   if (view === "edit" && editCourse) return (
-    <div className="flex flex-col h-full">
-      <div className="px-6 pt-5 pb-3 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => { setView("list"); setEditCourse(null); }} className="text-gray-400 hover:text-white text-xs flex items-center gap-1"><I name="back" size={14}/> Back</button>
-          <div>
-            <h1 className="text-lg font-bold text-white">{editCourse.title}</h1>
-            <p className="text-xs text-gray-400">Edit course details and manage lesson videos</p>
-          </div>
-        </div>
-        <div className="flex gap-2 items-center">
-          {editMsg && <p className={`text-xs ${editMsg === "Saved!" ? "text-green-400" : "text-red-400"}`}>{editMsg}</p>}
-          <button onClick={async () => {
-            setEditSaving(true); setEditMsg("");
-            const payload = { ...editInfo, lessons: editLessons.map((l, i) => ({ ...l, order: i })) };
-            const res = await fetch(`/api/courses/${editCourse._id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify(payload),
-            });
-            if (res.ok) { const d = await res.json(); setEditCourse(d); setEditInfo({}); setEditMsg("Saved!"); loadCourses(); }
-            else setEditMsg("Save failed.");
-            setEditSaving(false);
-            setTimeout(() => setEditMsg(""), 3000);
-          }} disabled={editSaving} className="text-xs bg-[#C7E36B] text-black font-bold px-5 py-2 rounded-lg disabled:opacity-60">
-            {editSaving ? "Saving…" : "Save Changes"}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Course basic info edit */}
-        <Sect icon="resources" title="Course Details">
-          <div className="grid grid-cols-2 gap-3">
-            <Fld label="Title" value={editInfo.title ?? editCourse.title ?? ""} onChange={v=>setEditInfo(i=>({...i,title:v}))} />
-            <Fld label="Price (₹)" value={String(editInfo.price ?? editCourse.price ?? "")} onChange={v=>setEditInfo(i=>({...i,price:parseFloat(v)||0}))} />
-          </div>
-          <Fld label="Description" value={editInfo.description ?? editCourse.description ?? ""} onChange={v=>setEditInfo(i=>({...i,description:v}))} textarea />
-          <Fld label="Thumbnail URL" value={editInfo.image ?? editCourse.image ?? ""} onChange={v=>setEditInfo(i=>({...i,image:v}))} placeholder="https://..." />
-          {(() => {
-            const isLive = editInfo.isPublished ?? editCourse.isPublished ?? false;
-            return (
-              <div className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5">
-                <div className="flex items-center gap-3">
-                  <Tog value={isLive} onChange={v=>setEditInfo(i=>({...i,isPublished:v}))} />
-                  <div>
-                    <p className="text-xs font-semibold text-white">{isLive ? "● Live — visible to students" : "○ Draft — hidden from students"}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">{isLive ? "Toggle off to unpublish" : "Toggle on then Save Changes to publish"}</p>
-                  </div>
-                </div>
-                <button onClick={async()=>{
-                  const newVal = !isLive;
-                  setEditInfo(i=>({...i,isPublished:newVal}));
-                  const res = await fetch(`/api/courses/${editCourse._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:newVal})});
-                  if(res.ok){const d=await res.json();setEditCourse(d);setEditMsg(newVal?"Published!":"Unpublished");loadCourses();setTimeout(()=>setEditMsg(""),3000);}
-                }} className={`text-xs font-bold px-4 py-2 rounded-lg transition-all ${isLive?"border border-red-400/50 text-red-400 hover:bg-red-500/10":"bg-[#C7E36B] text-black hover:bg-lime-300"}`}>
-                  {isLive ? "Unpublish" : "Publish Now"}
-                </button>
-              </div>
-            );
-          })()}
-        </Sect>
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold text-white">Lesson Videos</h2>
-              <p className="text-xs text-gray-400">{editLessons.length} lessons · Add Vimeo embed URLs</p>
-            </div>
-            <button onClick={() => setEditLessons([...editLessons, { title: "", videoUrl: "", duration: "", isFree: false }])} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><I name="plus" size={12}/> Add Lesson</button>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-xs text-gray-400">
-            <p className="font-semibold text-gray-300 mb-1">Supported embed URL formats:</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] text-gray-500 mb-0.5">Vimeo:</p>
-                <code className="text-[10px] text-[#C7E36B]">https://player.vimeo.com/video/VIDEO_ID</code>
-                <p className="mt-0.5 text-[10px] text-gray-500">Open your video → Share → Embed → copy the <strong className="text-gray-400">src</strong> value.</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 mb-0.5">YouTube:</p>
-                <code className="text-[10px] text-[#C7E36B]">https://www.youtube.com/embed/VIDEO_ID</code>
-                <p className="mt-0.5 text-[10px] text-gray-500">Open your video → Share → Embed → copy the <strong className="text-gray-400">src</strong> value.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {editLessons.map((lesson, idx) => (
-              <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
-                  <input value={lesson.title} onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, title: e.target.value } : l))} placeholder="Lesson title e.g. Introduction to AI Cinematography" className="flex-1 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
-                  <button onClick={() => setEditLessons(ls => ls.filter((_, i) => i !== idx))} className="text-gray-600 hover:text-red-400 shrink-0 transition-colors" title="Remove lesson"><I name="trash" size={14}/></button>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2">
-                    <p className="text-[10px] text-gray-500 font-semibold mb-1">VIDEO URL</p>
-                    <input
-                      value={lesson.videoUrl || ""}
-                      onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, videoUrl: e.target.value } : l))}
-                      onBlur={async e => {
-                        const url = e.target.value;
-                        if (!url) return;
-                        const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-                        if (vimeoMatch) {
-                          try {
-                            const r = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vimeoMatch[1]}`);
-                            const d = await r.json();
-                            if (d.duration) {
-                              const m = Math.floor(d.duration / 60);
-                              const s = String(d.duration % 60).padStart(2, "0");
-                              setEditLessons(ls => ls.map((l, i) => i === idx && !l.duration ? { ...l, duration: `${m}:${s}` } : l));
-                            }
-                          } catch {}
-                        }
-                      }}
-                      placeholder="https://player.vimeo.com/video/...  or  https://www.youtube.com/embed/..."
-                      className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 font-semibold mb-1">DURATION</p>
-                    <input value={lesson.duration || ""} onChange={e => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, duration: e.target.value } : l))} placeholder="e.g. 12:30" className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {lesson.videoUrl && <a href={lesson.videoUrl} target="_blank" rel="noreferrer" className="text-[10px] text-[#C7E36B] hover:underline flex items-center gap-1"><I name="video" size={11}/> Preview URL</a>}
-                  <div className="flex items-center gap-2 ml-auto">
-                    <span className="text-xs text-gray-400">Free Preview</span>
-                    <Tog value={lesson.isFree || false} onChange={v => setEditLessons(ls => ls.map((l, i) => i === idx ? { ...l, isFree: v } : l))}/>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {editLessons.length > 0 && (
-            <button onClick={() => setEditLessons([...editLessons, { title: "", videoUrl: "", duration: "", isFree: false }])} className="w-full mt-3 border-2 border-dashed border-white/10 text-gray-500 hover:border-[#C7E36B]/30 hover:text-[#C7E36B] text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-1">
-              <I name="plus" size={12}/> Add Another Lesson
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <CourseEditor
+      course={editCourse}
+      token={token}
+      onBack={() => { setView("list"); setEditCourse(null); }}
+      onSaved={(updated) => { setEditCourse(updated); loadCourses(); }}
+    />
   );
 
   if(view==="create") return (
@@ -2340,26 +2731,41 @@ function VideoCoursesAdmin({ token }) {
     </div>
   );
 
+  const sortedCourses = [...courses]
+    .filter(c => !searchQ || c.title.toLowerCase().includes(searchQ.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === "price_asc")  return (a.price || 0) - (b.price || 0);
+      if (sortBy === "duration")   return (a.duration || "").localeCompare(b.duration || "");
+      return new Date(b.createdAt) - new Date(a.createdAt); // newest
+    });
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-white">Video Courses</h1>
-        <button onClick={()=>{setView("create");setStep(1);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 ">Create New Course</button>
+        <button onClick={()=>{setView("create");setStep(1);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Create New Course</button>
       </div>
-      <div className="flex gap-3 mb-4">
+      <div className="flex gap-3 mb-4 flex-wrap">
         <div className="relative">
-          <input type="text" placeholder="Search courses..." className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none w-[200px]"/>
+          <input type="text" value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Search courses..." className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 outline-none w-[200px]"/>
           <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
         </div>
-        {["Sort By ▼","Level ▼","Category ▼"].map(f=><select key={f} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none"><option>{f}</option></select>)}
+        <div className="relative">
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="appearance-none bg-white/5 border border-white/10 text-gray-300 text-sm rounded-lg pl-3 pr-8 py-2 outline-none cursor-pointer hover:border-white/20">
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="duration">Duration</option>
+          </select>
+          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
       </div>
       {coursesLoading
         ? <AdminLoader label="Loading Courses" />
-        : courses.length === 0
-        ? <div className="text-center py-12"><p className="text-gray-400 text-sm">No courses yet.</p><button onClick={()=>{setView("create");setStep(1);}} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Create First Course</button></div>
+        : sortedCourses.length === 0
+        ? <div className="text-center py-12"><p className="text-gray-400 text-sm">{searchQ ? "No courses match your search." : "No courses yet."}</p>{!searchQ && <button onClick={()=>{setView("create");setStep(1);}} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Create First Course</button>}</div>
         : (
         <div className="grid grid-cols-3 gap-4">
-          {courses.map((c,idx)=>(
+          {sortedCourses.map((c,idx)=>(
             <div key={c._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all">
               <div className="relative h-[140px]">
                 <img src={c.image||`/courses/v${(idx%6)+1}.png`} alt={c.title} className="w-full h-full object-cover"/>
@@ -2382,7 +2788,7 @@ function VideoCoursesAdmin({ token }) {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={()=>window.open(`/courses/${c._id}/watch`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
-                  <button onClick={()=>{ setEditCourse(c); setEditInfo({}); setEditLessons(c.lessons&&c.lessons.length>0?c.lessons.map(l=>({...l})):[{title:"",videoUrl:"",duration:"",isFree:false}]); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
+                  <button onClick={()=>{ setEditCourse(c); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
                   <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={11}/></button>
                 </div>
               </div>
