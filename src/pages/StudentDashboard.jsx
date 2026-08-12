@@ -410,11 +410,15 @@ export default function StudentDashboard() {
 /* ════════════════════════════════════════════
    NOTIFICATION DROPDOWN
 ════════════════════════════════════════════ */
-const TYPE_ICON = { session:"🎬", announcement:"📢", resource:"📚", payment:"💳", general:"🔔" };
-
-const STATIC_NOTIFS = [
-  { _id:"s1", type:"general", title:"Welcome to AIFA!", message:"Your account is set up. Explore your courses and bootcamp.", createdAt: new Date().toISOString(), isRead:false },
-];
+const NOTIF_STYLE = {
+  announcement: { bg:"bg-red-500/20",    icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
+  security:     { bg:"bg-yellow-500/20", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> },
+  session:      { bg:"bg-blue-500/20",   icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+  payment:      { bg:"bg-purple-500/20", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> },
+  resource:     { bg:"bg-green-500/20",  icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
+  update:       { bg:"bg-green-500/20",  icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
+  general:      { bg:"bg-white/10",      icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
+};
 
 function timeAgoNotif(dateStr) {
   const d = new Date(dateStr); const now = new Date();
@@ -427,40 +431,57 @@ function timeAgoNotif(dateStr) {
 }
 
 function NotificationDropdown({ notifs, onClose, onMarkRead }) {
-  const list = notifs && notifs.length > 0 ? notifs : STATIC_NOTIFS;
-  // Use empty state when API returns empty after loading (not initial state)
+  const list = notifs || [];
+  const style = t => NOTIF_STYLE[t] || NOTIF_STYLE.general;
   return (
-    <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-gray-100">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <span className="font-bold text-gray-900 text-sm">Notifications</span>
+    <div className="absolute right-0 top-full mt-2 w-[360px] bg-[#111315] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+        <span className="font-bold text-white text-sm">Notifications</span>
         <div className="flex items-center gap-3">
-          <button onClick={onMarkRead} className="text-orange-500 text-xs font-medium hover:underline">Mark all as read</button>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+          {list.some(n => !n.isRead) && (
+            <button onClick={onMarkRead} className="text-[#C7E36B] text-xs font-semibold hover:underline">Mark all as read</button>
+          )}
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
-      <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
-        {list.map((n, i) => (
-          <div key={n._id || i} className={`px-4 py-3 hover:bg-gray-50 transition-all cursor-pointer ${!n.isRead ? "bg-orange-50/40" : ""}`}>
-            <div className="flex gap-3">
-              <span className="text-lg shrink-0 mt-0.5">{TYPE_ICON[n.type] || "🔔"}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`text-xs leading-snug ${!n.isRead ? "font-bold text-gray-900" : "font-medium text-gray-700"}`}>{n.title}</p>
-                  <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{timeAgoNotif(n.createdAt)}</span>
+      {/* List */}
+      <div className="divide-y divide-white/5 max-h-[420px] overflow-y-auto">
+        {list.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <svg className="w-10 h-10 text-gray-700 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <p className="text-gray-500 text-sm font-medium">No notifications yet</p>
+            <p className="text-gray-600 text-xs mt-1">You're all caught up!</p>
+          </div>
+        ) : list.map((n, i) => {
+          const s = style(n.type);
+          return (
+            <div key={n._id || i} className={`px-5 py-4 hover:bg-white/5 transition-all cursor-pointer ${!n.isRead ? "bg-[#C7E36B]/3" : ""}`}>
+              <div className="flex gap-3">
+                <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                  {s.icon}
                 </div>
-                <p className="text-[11px] text-gray-500 mt-1 leading-snug">{n.message}</p>
-                {!n.isRead && <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5"/>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-0.5">
+                    <p className={`text-sm leading-snug ${!n.isRead ? "font-bold text-white" : "font-medium text-gray-200"}`}>{n.title}</p>
+                    <span className="text-[10px] text-gray-500 shrink-0 mt-0.5 whitespace-nowrap">{timeAgoNotif(n.createdAt)}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-snug">{n.message}</p>
+                  {!n.isRead && <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C7E36B] mt-1.5"/>}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {list.length === 0 && (
-          <div className="px-4 py-8 text-center text-gray-400 text-sm">No notifications yet</div>
-        )}
+          );
+        })}
       </div>
-      <div className="px-4 py-2.5 text-center border-t border-gray-100">
-        <button className="text-xs text-orange-500 font-semibold hover:underline">View all notifications →</button>
-      </div>
+      {/* Footer */}
+      {list.length > 0 && (
+        <div className="px-5 py-3 border-t border-white/5 text-center">
+          <button className="text-xs text-[#C7E36B] font-semibold hover:underline">View all notifications →</button>
+        </div>
+      )}
     </div>
   );
 }
