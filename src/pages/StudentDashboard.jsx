@@ -3226,67 +3226,66 @@ function ResourcesSection({ token }) {
 }
 
 /* ─── COMMUNITY SECTION ─── */
-const MOCK_THREADS = [
-  { id: 1, title: "Best AI tools for video editing in 2024?", author: "Kiran M", avatar: "", replies: 14, views: 328, tag: "Tools", time: "2h ago", body: "Looking for recommendations on AI-powered video editing tools that integrate well with Adobe Premiere. What has your experience been with RunwayML vs Topaz?" },
-  { id: 2, title: "How to write effective AI prompts for creative briefs", author: "Sarah J", avatar: "", replies: 9, views: 201, tag: "Prompts", time: "5h ago", body: "I've been experimenting with structured prompts for creative brief generation. Here's my template that's been working well across different client types..." },
-  { id: 3, title: "My workflow for automating client deliverables", author: "Rajiv K", avatar: "", replies: 22, views: 512, tag: "Workflow", time: "1d ago", body: "After 3 months of iteration I've built a solid automation stack using Zapier + GPT-4 + Notion. Happy to share the full breakdown here." },
-  { id: 4, title: "Certificate of AI Proficiency — what courses count?", author: "Priya S", avatar: "", replies: 6, views: 133, tag: "Certificates", time: "2d ago", body: "I completed both Bootcamp and Video Courses but the certificate still shows pending. Does the Workflow module need to be done first?" },
-  { id: 5, title: "Resources for learning Motion Graphics AI?", author: "Alex T", avatar: "", replies: 11, views: 276, tag: "Resources", time: "3d ago", body: "Just joined and looking for the best starting point for AI motion graphics. Is the Bootcamp the right place or should I start with video courses?" },
+const COMM_TABS = [
+  { id: "discussions", label: "Discussions", icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+  { id: "events",      label: "Events",      icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+  { id: "clubs",       label: "Clubs",       icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { id: "chats",       label: "Chats",       icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> },
+  { id: "awards",      label: "Awards",      icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg> },
 ];
-const THREAD_TAG_COLORS = { Tools:"bg-blue-500/20 text-blue-400", Prompts:"bg-purple-500/20 text-purple-400", Workflow:"bg-orange-500/20 text-orange-400", Certificates:"bg-[#7C3AED]/20 text-[#7C3AED]", Resources:"bg-green-500/20 text-green-400", General:"bg-gray-500/20 text-gray-400" };
 
 function CommunitySection({ token, profile }) {
-  const [threads, setThreads] = useState(null); // null = loading; [] = empty from API
-  const [selected, setSelected] = useState(null);
-  const [filterTag, setFilterTag] = useState("All");
-  const [search, setSearch] = useState("");
-  const [reply, setReply] = useState("");
-  const [repliesMap, setRepliesMap] = useState({});
+  const [activeTab, setActiveTab]     = useState("discussions");
+  const [search, setSearch]           = useState("");
   const [showNewThread, setShowNewThread] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newBody, setNewBody] = useState("");
-  const [newTag, setNewTag] = useState("General");
-  const [posting, setPosting] = useState(false);
+
+  /* threads */
+  const [threads, setThreads]         = useState([]);
+  const [threadsLoading, setThreadsLoading] = useState(true);
+  const [selectedThread, setSelectedThread] = useState(null);
+  const [reply, setReply]             = useState("");
+  const [repliesMap, setRepliesMap]   = useState({});
+  const [newTitle, setNewTitle]       = useState("");
+  const [newBody, setNewBody]         = useState("");
+  const [newTag, setNewTag]           = useState("General");
+  const [posting, setPosting]         = useState(false);
+
+  /* events + clubs for sidebar + tabs */
+  const [events, setEvents] = useState([]);
+  const [clubs, setClubs]   = useState([]);
 
   useEffect(() => {
     fetch("/api/community/threads")
       .then(r => r.ok ? r.json() : [])
-      .then(d => { setThreads(Array.isArray(d) ? d : []); })
-      .catch(() => { setThreads([]); });
+      .then(d => { setThreads(Array.isArray(d) ? d : []); setThreadsLoading(false); })
+      .catch(() => { setThreads([]); setThreadsLoading(false); });
+
+    fetch("/api/community/events")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setEvents(Array.isArray(d) ? d : []))
+      .catch(() => setEvents([]));
   }, []);
 
-  /* Merge DB replies (from selected.replies array) with locally-added replies from repliesMap */
-  const dbReplies = Array.isArray(selected?.replies) ? selected.replies : [];
-  const localReplies = repliesMap[selected?._id || selected?.id] || [];
-  const currentReplies = [
-    ...dbReplies.map(r => ({ id: r._id || r.createdAt, text: r.text, author: r.author, time: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "" })),
-    ...localReplies,
-  ];
-  const displayThreads = threads ?? MOCK_THREADS; // null=loading → show mock; []= empty from API
-  const tags = ["All", ...new Set(displayThreads.map(t => t.tag))];
-  const filtered = displayThreads.filter(t => (filterTag === "All" || t.tag === filterTag) && (!search || t.title.toLowerCase().includes(search.toLowerCase())));
+  const filteredThreads = threads.filter(t =>
+    !search || t.title?.toLowerCase().includes(search.toLowerCase()) || t.author?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const submitReply = async () => {
-    if (!reply.trim()) return;
-    const id = selected?._id || selected?.id;
-    const newReply = { id: Date.now(), text: reply.trim(), time: "Just now", author: profile?.name || "You", createdAt: new Date().toISOString() };
-    setRepliesMap(r => ({ ...r, [id]: [...(r[id] || []), newReply] }));
-    setReply("");
-    if (selected?._id) {
-      try {
-        await fetch(`/api/community/threads/${selected._id}/reply`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ text: newReply.text, author: profile?.name || "You" }),
-        });
-      } catch { /* local state already updated */ }
-    }
+  const threadReplyCount = (t) => Array.isArray(t.replies) ? t.replies.length : (t.replies || 0);
+
+  const timeAgo = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso), now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)}d ago`;
   };
 
   const submitThread = async () => {
     if (!newTitle.trim() || !newBody.trim()) return;
     setPosting(true);
-    const optimistic = { id: Date.now(), _id: null, title: newTitle.trim(), body: newBody.trim(), tag: newTag, author: profile?.name || "You", replies: 0, views: 0, time: "Just now", createdAt: new Date().toISOString() };
+    const optimistic = { id: Date.now(), _id: null, title: newTitle.trim(), body: newBody.trim(), tag: newTag, author: profile?.name || "You", replies: 0, views: 0, createdAt: new Date().toISOString() };
     try {
       const res = await fetch("/api/community/threads", {
         method: "POST",
@@ -3299,119 +3298,337 @@ function CommunitySection({ token, profile }) {
     setShowNewThread(false); setNewTitle(""); setNewBody(""); setPosting(false);
   };
 
-  return (
-    <div className="flex h-full overflow-hidden">
-      {/* Left thread list */}
-      <div className="w-[340px] shrink-0 border-r border-white/5 overflow-y-auto">
-        <div className="p-4 border-b border-white/5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-white">Community Forum</h1>
-              {threads !== null && <span className="text-[10px] bg-[#7C3AED]/20 text-[#7C3AED] font-bold px-2 py-0.5 rounded-full">{displayThreads.length} Threads</span>}
-            </div>
-            <button onClick={() => setShowNewThread(v => !v)} className="text-xs bg-[#7C3AED] text-white font-bold px-3 py-1.5 rounded-lg hover:bg-purple-600">+ New Thread</button>
+  const submitReply = async () => {
+    if (!reply.trim() || !selectedThread) return;
+    const id = selectedThread._id || selectedThread.id;
+    const newReply = { id: Date.now(), text: reply.trim(), time: "Just now", author: profile?.name || "You" };
+    setRepliesMap(r => ({ ...r, [id]: [...(r[id] || []), newReply] }));
+    setReply("");
+    if (selectedThread._id) {
+      try {
+        await fetch(`/api/community/threads/${selectedThread._id}/reply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ text: newReply.text, author: newReply.author }),
+        });
+      } catch { /* local state already updated */ }
+    }
+  };
+
+  const dbReplies   = Array.isArray(selectedThread?.replies) ? selectedThread.replies : [];
+  const localReplies = repliesMap[selectedThread?._id || selectedThread?.id] || [];
+  const currentReplies = [
+    ...dbReplies.map(r => ({ id: r._id || r.createdAt, text: r.text, author: r.author, time: r.createdAt ? timeAgo(r.createdAt) : "" })),
+    ...localReplies,
+  ];
+
+  /* ── Tab: Discussions ── */
+  const DiscussionsTab = () => (
+    <div className="flex gap-6 min-h-0">
+      {/* Main column */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-white">Latest Discussions</h2>
+          <span className="text-xs text-[#C7E36B] cursor-pointer hover:underline">View all</span>
+        </div>
+        {threadsLoading ? (
+          <p className="text-gray-500 text-sm animate-pulse">Loading discussions...</p>
+        ) : filteredThreads.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            <svg className="mx-auto mb-3 opacity-40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <p className="text-sm">No discussions yet. Start one!</p>
           </div>
-          {showNewThread && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-3 space-y-2">
-              <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Thread title..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none"/>
-              <textarea value={newBody} onChange={e => setNewBody(e.target.value)} rows={3} placeholder="What's on your mind?" className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none resize-none"/>
-              <div className="flex gap-2 items-center">
-                <select value={newTag} onChange={e => setNewTag(e.target.value)} className="text-xs bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-1.5 text-white outline-none">
-                  {["General","Tools","Prompts","Workflow","Resources","Certificates"].map(t => <option key={t}>{t}</option>)}
-                </select>
-                <button onClick={submitThread} disabled={posting || !newTitle.trim() || !newBody.trim()} className="text-xs bg-[#7C3AED] text-white font-bold px-3 py-1.5 rounded-lg disabled:opacity-40">Post</button>
-                <button onClick={() => setShowNewThread(false)} className="text-xs text-gray-400 hover:text-white">Cancel</button>
+        ) : (
+          <div className="space-y-3">
+            {filteredThreads.map(t => (
+              <div key={t._id || t.id} className="bg-[#111315] border border-white/8 rounded-2xl p-4 hover:border-white/15 transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] font-black shrink-0">
+                    {(t.author || "?")[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white leading-snug mb-0.5">{t.title}</p>
+                    <p className="text-xs text-gray-500">{t.author} &middot; {t.time || timeAgo(t.createdAt)}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        {threadReplyCount(t)} replies
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setSelectedThread(t); setReply(""); }}
+                    className="shrink-0 text-xs border border-[#C7E36B]/40 text-[#C7E36B] font-semibold px-4 py-1.5 rounded-lg hover:bg-[#C7E36B]/10 transition-all"
+                  >Reply</button>
+                </div>
               </div>
-            </div>
-          )}
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search threads..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 outline-none mb-3"/>
-          <div className="flex gap-1 flex-wrap">
-            {tags.map(t => (
-              <button key={t} onClick={() => setFilterTag(t)} className={`text-[10px] px-2 py-1 rounded-full font-semibold transition-all ${filterTag === t ? "bg-[#7C3AED] text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}>{t}</button>
             ))}
           </div>
-        </div>
-        <div className="divide-y divide-white/5">
-          {threads !== null && threads.length === 0 && filtered.length === 0 && (
-            <div className="p-6 text-center text-gray-500 text-sm">No threads yet. Be the first to post!</div>
+        )}
+      </div>
+
+      {/* Sidebar */}
+      <div className="w-72 shrink-0 space-y-6">
+        {/* Upcoming Events */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-white">Upcoming Events</h3>
+            <button onClick={() => setActiveTab("events")} className="text-xs text-[#C7E36B] hover:underline">View all</button>
+          </div>
+          {events.length === 0 ? (
+            <p className="text-xs text-gray-600">No upcoming events</p>
+          ) : (
+            <div className="space-y-3">
+              {events.slice(0, 2).map(ev => (
+                <div key={ev._id} className="bg-[#111315] border border-white/8 rounded-xl overflow-hidden">
+                  {ev.thumbnail && <img src={ev.thumbnail} className="w-full h-20 object-cover" alt=""/>}
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-white leading-snug mb-1">{ev.title}</p>
+                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2">
+                      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      {ev.date ? new Date(ev.date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "TBD"}
+                      {ev.startTime && <><svg className="ml-1" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{ev.startTime}{ev.timezone ? ` ${ev.timezone}` : ""}</>}
+                    </div>
+                    <button className="w-full text-[10px] bg-[#C7E36B] text-black font-bold py-1.5 rounded-lg hover:brightness-105 transition-all">View Event</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-          {filtered.map(t => (
-            <button key={t._id || t.id} onClick={() => setSelected(t)}
-              className={`w-full text-left p-4 hover:bg-white/5 transition-all ${(selected?._id && selected._id === t._id) || (!selected?._id && selected?.id && selected.id === t.id) ? "border-l-2 border-[#7C3AED] bg-white/5" : ""}`}>
-              <div className="flex items-start gap-2 mb-1">
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${THREAD_TAG_COLORS[t.tag] || THREAD_TAG_COLORS.General}`}>{t.tag}</span>
-                <p className="text-sm font-semibold text-white line-clamp-2 leading-snug">{t.title}</p>
+        </div>
+
+        {/* Popular Clubs */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-white">Popular Clubs</h3>
+            <button onClick={() => setActiveTab("clubs")} className="text-xs text-[#C7E36B] hover:underline">View all</button>
+          </div>
+          {clubs.length === 0 ? (
+            <p className="text-xs text-gray-600">No clubs yet</p>
+          ) : (
+            <div className="space-y-2">
+              {clubs.slice(0, 3).map(cl => (
+                <div key={cl._id} className="flex items-center gap-3 bg-[#111315] border border-white/8 rounded-xl p-3">
+                  <div className="w-9 h-9 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] font-black text-sm shrink-0">
+                    {cl.name?.[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{cl.name}</p>
+                    <p className="text-[10px] text-gray-500">{cl.memberCount || cl.members?.length || 0} members</p>
+                  </div>
+                  <button className="text-[10px] border border-[#C7E36B]/40 text-[#C7E36B] font-semibold px-3 py-1 rounded-lg hover:bg-[#C7E36B]/10 transition-all shrink-0">Join</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── Tab: Events ── */
+  const EventsTab = () => (
+    <div>
+      <h2 className="text-base font-bold text-white mb-4">Upcoming Events</h2>
+      {events.length === 0 ? (
+        <div className="text-center py-20 text-gray-500">
+          <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <p className="text-sm">No events scheduled yet</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          {events.map(ev => (
+            <div key={ev._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-all">
+              {ev.thumbnail && <img src={ev.thumbnail} className="w-full h-36 object-cover" alt=""/>}
+              <div className="p-4">
+                <p className="text-sm font-bold text-white mb-2">{ev.title}</p>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  {ev.date ? new Date(ev.date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "TBD"}
+                </div>
+                {ev.startTime && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    {ev.startTime}{ev.endTime ? ` - ${ev.endTime}` : ""} {ev.timezone || ""}
+                  </div>
+                )}
+                <button className="w-full text-xs bg-[#C7E36B] text-black font-bold py-2 rounded-xl hover:brightness-105 transition-all">View Event</button>
               </div>
-              <div className="flex items-center gap-3 mt-1.5">
-                <span className="text-[10px] text-gray-500">{t.author}</span>
-                <span className="text-[10px] text-gray-600">·</span>
-                <span className="text-[10px] text-gray-500">💬 {Array.isArray(t.replies) ? t.replies.length : (t.replies || 0)}</span>
-                <span className="text-[10px] text-gray-500">👁 {t.views || 0}</span>
-                <span className="text-[10px] text-gray-600 ml-auto">{t.time || (t.createdAt ? new Date(t.createdAt).toLocaleDateString() : "")}</span>
-              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  /* ── Tab: Clubs ── */
+  const ClubsTab = () => (
+    <div className="text-center py-20 text-gray-500">
+      <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <p className="text-sm font-semibold text-white mb-1">Clubs Coming Soon</p>
+      <p className="text-xs">Student clubs will be available here</p>
+    </div>
+  );
+
+  /* ── Tab: Chats ── */
+  const ChatsTab = () => (
+    <div className="text-center py-20 text-gray-500">
+      <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <p className="text-sm font-semibold text-white mb-1">Chats Coming Soon</p>
+      <p className="text-xs">Community channels will be available here</p>
+    </div>
+  );
+
+  /* ── Tab: Awards ── */
+  const AwardsTab = () => (
+    <div className="text-center py-20 text-gray-500">
+      <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+      <p className="text-sm font-semibold text-white mb-1">Awards & Challenges</p>
+      <p className="text-xs">Challenges and leaderboards will be available here</p>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 shrink-0">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
+          <div>
+            <h1 className="text-2xl font-black text-white">Community</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Connect, learn, and grow together with fellow students.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search discussions, events, clubs..."
+                className="bg-[#111315] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/30 w-72"
+              />
+            </div>
+            <button
+              onClick={() => setShowNewThread(true)}
+              className="flex items-center gap-2 bg-[#C7E36B] text-black text-sm font-bold px-5 py-2.5 rounded-xl hover:brightness-105 transition-all shrink-0"
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Start Discussion
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-white/8">
+          {COMM_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all border-b-2 -mb-px ${activeTab === tab.id ? "border-[#C7E36B] text-[#C7E36B]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+            >
+              {tab.icon}
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Right detail + reply view */}
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col">
-        {!selected ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="text-center"><p className="text-3xl mb-2">💬</p><p className="text-sm">Select a thread to read and reply</p></div>
-          </div>
-        ) : (
-          <div className="max-w-2xl flex flex-col gap-5 w-full">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${THREAD_TAG_COLORS[selected.tag] || THREAD_TAG_COLORS.General}`}>{selected.tag}</span>
-                <span className="text-[10px] text-gray-500">{selected.time}</span>
-              </div>
-              <h2 className="text-lg font-bold text-white mb-1">{selected.title}</h2>
-              <p className="text-xs text-gray-400 mb-3">Posted by <span className="text-white font-semibold">{selected.author}</span></p>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-sm text-gray-300 leading-relaxed">{selected.body}</p>
-              </div>
-              <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                <span>💬 {currentReplies.length} {currentReplies.length === 1 ? "reply" : "replies"}</span>
-                <span>👁 {selected.views || 0} views</span>
-                <button
-                  onClick={() => {
-                    const url = `${window.location.origin}/dashboard#community`;
-                    if (navigator.share) navigator.share({ title: selected.title, url });
-                    else { navigator.clipboard.writeText(url); alert("Thread link copied to clipboard!"); }
-                  }}
-                  className="ml-auto text-[#7C3AED] hover:underline"
-                >Share</button>
-              </div>
-            </div>
-
-            {/* Existing replies */}
-            {currentReplies.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase">Replies</p>
-                {currentReplies.map(r => (
-                  <div key={r.id} className="bg-white/5 border border-white/10 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-6 h-6 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">{(r.author || "?")[0].toUpperCase()}</div>
-                      <span className="text-xs font-semibold text-white">{r.author}</span>
-                      <span className="text-[10px] text-gray-500 ml-auto">{r.time}</span>
-                    </div>
-                    <p className="text-sm text-gray-300 pl-8">{r.text}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Reply box */}
-            <div className="border-t border-white/10 pt-4">
-              <p className="text-[10px] text-gray-400 font-semibold mb-2">YOUR REPLY</p>
-              <textarea value={reply} onChange={e => setReply(e.target.value)} rows={3} className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#7C3AED]/50 resize-none mb-2" placeholder="Write a thoughtful reply..."/>
-              <button onClick={submitReply} disabled={!reply.trim()} className="text-xs bg-[#7C3AED] text-white font-bold px-4 py-2 rounded-lg disabled:opacity-40 hover:bg-violet-500">Post Reply</button>
-            </div>
-          </div>
-        )}
+      {/* Tab body */}
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
+        {activeTab === "discussions" && <DiscussionsTab />}
+        {activeTab === "events"      && <EventsTab />}
+        {activeTab === "clubs"       && <ClubsTab />}
+        {activeTab === "chats"       && <ChatsTab />}
+        {activeTab === "awards"      && <AwardsTab />}
       </div>
+
+      {/* New Thread Modal */}
+      {showNewThread && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && setShowNewThread(false)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl p-6 w-full max-w-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-white">Start a Discussion</h3>
+              <button onClick={() => setShowNewThread(false)} className="text-gray-500 hover:text-white">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <input
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              placeholder="Write an engaging title..."
+              className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 mb-3"
+            />
+            <textarea
+              value={newBody}
+              onChange={e => setNewBody(e.target.value)}
+              rows={5}
+              placeholder="Share your thoughts, questions, or ideas..."
+              className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 resize-none mb-3"
+            />
+            <div className="flex items-center gap-3">
+              <select value={newTag} onChange={e => setNewTag(e.target.value)} className="text-xs bg-[#0B0F10] border border-white/10 rounded-lg px-3 py-2 text-white outline-none">
+                {["General","Tools","Prompts","Workflow","Resources","Certificates"].map(t => <option key={t}>{t}</option>)}
+              </select>
+              <div className="flex gap-2 ml-auto">
+                <button onClick={() => setShowNewThread(false)} className="text-sm border border-white/10 text-gray-400 px-4 py-2 rounded-xl hover:bg-white/5">Cancel</button>
+                <button onClick={submitThread} disabled={posting || !newTitle.trim() || !newBody.trim()} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2 rounded-xl disabled:opacity-40 hover:brightness-105 transition-all">Post</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thread Reply Modal */}
+      {selectedThread && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && setSelectedThread(null)}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-white/8 shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-base font-bold text-white mb-1">{selectedThread.title}</p>
+                  <p className="text-xs text-gray-500">by {selectedThread.author} &middot; {selectedThread.time || timeAgo(selectedThread.createdAt)}</p>
+                </div>
+                <button onClick={() => setSelectedThread(null)} className="text-gray-500 hover:text-white shrink-0">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              {selectedThread.body && (
+                <div className="bg-white/5 rounded-xl p-3 mt-3">
+                  <p className="text-sm text-gray-300 leading-relaxed">{selectedThread.body}</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {currentReplies.length === 0 ? (
+                <p className="text-xs text-gray-600 text-center py-4">No replies yet — be the first!</p>
+              ) : currentReplies.map(r => (
+                <div key={r.id} className="flex gap-3">
+                  <div className="w-7 h-7 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] text-[10px] font-black shrink-0">{(r.author || "?")[0].toUpperCase()}</div>
+                  <div className="flex-1 bg-white/5 rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-white">{r.author}</span>
+                      <span className="text-[10px] text-gray-600">{r.time}</span>
+                    </div>
+                    <p className="text-sm text-gray-300">{r.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-white/8 shrink-0">
+              <div className="flex gap-2">
+                <textarea
+                  value={reply}
+                  onChange={e => setReply(e.target.value)}
+                  rows={2}
+                  placeholder="Write a reply..."
+                  className="flex-1 bg-[#0B0F10] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40 resize-none"
+                  onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submitReply(); }}
+                />
+                <button onClick={submitReply} disabled={!reply.trim()} className="self-end text-sm bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-xl disabled:opacity-40 hover:brightness-105 transition-all">Post</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
