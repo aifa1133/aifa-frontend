@@ -2735,8 +2735,9 @@ function VideoCoursesAdmin({ token }) {
     .filter(c => !searchQ || c.title.toLowerCase().includes(searchQ.toLowerCase()))
     .sort((a, b) => {
       if (sortBy === "price_asc")  return (a.price || 0) - (b.price || 0);
+      if (sortBy === "price_desc") return (b.price || 0) - (a.price || 0);
       if (sortBy === "duration")   return (a.duration || "").localeCompare(b.duration || "");
-      return new Date(b.createdAt) - new Date(a.createdAt); // newest
+      return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
   return (
@@ -2753,7 +2754,8 @@ function VideoCoursesAdmin({ token }) {
         <div className="relative">
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="appearance-none bg-white/5 border border-white/10 text-gray-300 text-sm rounded-lg pl-3 pr-8 py-2 outline-none cursor-pointer hover:border-white/20">
             <option value="newest">Newest</option>
-            <option value="price_asc">Price: Low to High</option>
+            <option value="price_asc">Price (Low to High)</option>
+            <option value="price_desc">Price (High to Low)</option>
             <option value="duration">Duration</option>
           </select>
           <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -2767,18 +2769,31 @@ function VideoCoursesAdmin({ token }) {
         <div className="grid grid-cols-3 gap-4">
           {sortedCourses.map((c,idx)=>(
             <div key={c._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all">
-              <div className="relative h-[140px]">
-                <img src={c.image||`/courses/v${(idx%6)+1}.png`} alt={c.title} className="w-full h-full object-cover"/>
+              <div className="relative h-[140px] bg-[#111315]">
+                {c.image ? (
+                  <img
+                    src={c.image}
+                    alt={c.title}
+                    className="w-full h-full object-cover"
+                    onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}
+                  />
+                ) : null}
+                <div className={`w-full h-full absolute inset-0 bg-gradient-to-br from-[#1a1f20] to-[#0B0F10] flex items-center justify-center ${c.image ? "hidden" : "flex"}`}>
+                  <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8Z"/><path d="M7 21h10"/><path d="M12 17v4"/></svg>
+                </div>
                 <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${c.isPublished?"bg-green-500/80 text-white":"bg-yellow-500/80 text-black"}`}>{c.isPublished?"published":"draft"}</span>
               </div>
               <div className="p-3">
-                <h3 className="text-sm font-semibold text-white mb-1">{c.title}</h3>
+                <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2 leading-snug">{c.title}</h3>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-[#C7E36B] font-bold">₹{c.price}</span>
-                  <span className="text-[10px] text-gray-400">{c.level||"Beginner"}</span>
+                  <div className="flex items-center gap-2">
+                    {c.duration && <span className="text-[10px] text-gray-500">⏱ {c.duration}</span>}
+                    <span className="text-[10px] text-gray-400">{c.level||"Beginner"}</span>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] text-gray-500">👥 {c.enrolledCourses?.length ?? c.enrollmentCount ?? 0} enrolled</span>
+                  <span className="text-[10px] text-gray-500">👥 {c.enrollmentCount ?? 0} enrolled</span>
                   <button onClick={async()=>{
                     const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
                     if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
