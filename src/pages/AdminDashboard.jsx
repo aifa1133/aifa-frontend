@@ -6182,7 +6182,8 @@ function ServiceRequestAdmin({ token }) {
   const [statusFilterV, setStatusFilterV]   = useState("All");
   const [search, setSearch]       = useState("");
   const [page, setPage]           = useState(1);
-  const [contextMenu, setContextMenu] = useState(null); // { id, x, y }
+  const [contextMenu, setContextMenu] = useState(null);
+  const [selectedReq, setSelectedReq] = useState(null);
   const [showCreate, setShowCreate]   = useState(false);
   const [ticketCreated, setTicketCreated] = useState(null); // the created ticket
   const [form, setForm]           = useState(BLANK_FORM);
@@ -6253,19 +6254,36 @@ function ServiceRequestAdmin({ token }) {
   const priorityQueue   = requests.filter(r => getPriority(r) === "Urgent" || getPriority(r) === "High").slice(0, 3);
 
   const patchRequest = async (id, patch) => {
+    const applyPatch = d => {
+      setRequests(rs => rs.map(r => r._id===id ? {...r,...d} : r));
+      setSelectedReq(prev => prev?._id===id ? {...prev,...d} : prev);
+    };
     try {
       const res = await fetch(`/api/service-requests/${id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(patch) });
-      if (res.ok) { const data = await res.json(); setRequests(rs => rs.map(r => r._id===id ? {...r,...data} : r)); }
-      else { setRequests(rs => rs.map(r => r._id===id ? {...r,...patch} : r)); }
-    } catch { setRequests(rs => rs.map(r => r._id===id ? {...r,...patch} : r)); }
+      applyPatch(res.ok ? await res.json() : patch);
+    } catch { applyPatch(patch); }
   };
 
   const handleContextAction = (action, req) => {
     setContextMenu(null);
-    if (action === "assign")    patchRequest(req._id, { assignedTo: "Ravi" });
+    if (action === "assign")    patchRequest(req._id, { assignedTo: adminName || "Admin" });
     if (action === "follow")    patchRequest(req._id, { status: "In Progress" });
     if (action === "converted") patchRequest(req._id, { status: "Resolved" });
     if (action === "lost")      patchRequest(req._id, { status: "Closed" });
+    if (action === "whatsapp") {
+      const phone = req.phone?.replace(/\D/g, "") || "";
+      const msg = encodeURIComponent(`Hi ${req.name || "there"}, this is regarding your support request: "${req.subject || req.requestType || ""}". How can we help?`);
+      window.open(phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
+    }
+    if (action === "email") {
+      const sub = encodeURIComponent(`Re: ${req.subject || req.requestType || "Your Support Request"}`);
+      const body = encodeURIComponent(`Hi ${req.name || "there"},\n\nWe are following up on your support request.\n\nBest regards,\nAIFA Support Team`);
+      window.open(`mailto:${req.email || ""}?subject=${sub}&body=${body}`);
+    }
+    if (action === "call") {
+      if (req.phone) window.open(`tel:${req.phone}`);
+      else alert(`No phone number on record for ${req.name || "this user"}. Check the user profile to add one.`);
+    }
   };
 
   const handleCreate = async () => {
@@ -6695,7 +6713,7 @@ function ServiceRequestAdmin({ token }) {
                     <span className="text-xs text-gray-400">{fmtCreated(r)}</span>
                     {/* Actions */}
                     <div className="flex items-center gap-1">
-                      <button className="border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">View</button>
+                      <button onClick={() => setSelectedReq(r)} className="border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">View</button>
                       <div className="relative">
                         <button onClick={e => { e.stopPropagation(); setContextMenu(contextMenu?.id===r._id ? null : { id:r._id, req:r }); }}
                           className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
@@ -6828,7 +6846,98 @@ function ServiceRequestAdmin({ token }) {
           ))}
         </div>
       </div>
-    </div>
+
+    {/* ── Ticket Detail Slide-Over ── */}
+    {selectedReq && (
+      <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedReq(null)}>
+        <div className="absolute inset-0 bg-black/60"/>
+        <div className="relative w-[480px] h-full bg-[#0F1112] border-l border-white/10 overflow-y-auto shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+          {/* Header */}
+          <div className="flex items-start justify-between p-5 border-b border-white/5">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Ticket #{selectedReq.ticketId || String(selectedReq._id||"").slice(-6)}</p>
+              <h2 className="text-base font-bold text-white">{selectedReq.subject || selectedReq.requestType || "Support Request"}</h2>
+            </div>
+            <button onClick={() => setSelectedReq(null)} className="text-gray-500 hover:text-white mt-1">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          {/* User info */}
+          <div className="p-5 border-b border-white/5 flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+              {selectedReq.name?.[0]?.toUpperCase() || "?"}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white">{selectedReq.name || "Unknown"}</p>
+              <p className="text-xs text-gray-400">{selectedReq.email || "—"}</p>
+              {selectedReq.phone && <p className="text-xs text-gray-400">{selectedReq.phone}</p>}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              {selectedReq.email && (
+                <button onClick={() => { const s=encodeURIComponent(`Re: ${selectedReq.subject||selectedReq.requestType||""}`); window.open(`mailto:${selectedReq.email}?subject=${s}`); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:text-white hover:border-white/30 transition-colors" title="Send Email">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </button>
+              )}
+              {selectedReq.phone && (
+                <button onClick={() => window.open(`tel:${selectedReq.phone}`)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:text-white hover:border-white/30 transition-colors" title="Call">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.9 12.9a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.82 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </button>
+              )}
+              <button onClick={() => { const msg=encodeURIComponent(`Hi ${selectedReq.name||"there"}, regarding your request: "${selectedReq.subject||selectedReq.requestType||""}"`); window.open(`https://wa.me/${selectedReq.phone?.replace(/\D/g,"")||""}?text=${msg}`, "_blank"); }}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:text-green-400 hover:border-green-500/40 transition-colors" title="WhatsApp">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+              </button>
+            </div>
+          </div>
+          {/* Details */}
+          <div className="p-5 border-b border-white/5 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label:"Request Type", value: selectedReq.requestType || selectedReq.service || "—" },
+                { label:"Priority",     value: selectedReq.priority || "Medium" },
+                { label:"Status",       value: selectedReq.status || "new" },
+                { label:"Assigned To",  value: selectedReq.assignedTo || "Unassigned" },
+                { label:"Created",      value: fmtCreated(selectedReq) },
+                { label:"Source",       value: selectedReq.source || "Portal" },
+              ].map(f => (
+                <div key={f.label}>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{f.label}</p>
+                  <p className="text-sm font-semibold text-white">{f.value}</p>
+                </div>
+              ))}
+            </div>
+            {selectedReq.message && (
+              <div>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Message</p>
+                <p className="text-sm text-gray-300 bg-[#111315] border border-white/5 rounded-xl p-3 leading-relaxed">{selectedReq.message}</p>
+              </div>
+            )}
+          </div>
+          {/* Quick actions */}
+          <div className="p-5 border-b border-white/5">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-3">Update Status</p>
+            <div className="flex flex-wrap gap-2">
+              {["new","In Progress","Resolved","Closed"].map(s => (
+                <button key={s} onClick={() => patchRequest(selectedReq._id, { status: s })}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${(selectedReq.status||"new")===s?"bg-[#C7E36B] text-black border-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30 hover:text-white"}`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Assign */}
+          <div className="p-5 mt-auto border-t border-white/5">
+            <button onClick={() => patchRequest(selectedReq._id, { assignedTo: adminName || "Admin" })}
+              className="w-full bg-[#C7E36B] text-black font-bold text-sm py-2.5 rounded-xl hover:bg-[#b8d44f] transition-colors">
+              Assign To Me
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
   );
 }
 
