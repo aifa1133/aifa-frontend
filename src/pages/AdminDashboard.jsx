@@ -4295,6 +4295,21 @@ function CommunityAdmin({ token, adminName }) {
   const [challenge, setChallenge] = useState({ title:"", desc:"", type:"VIDEO", deadline:"", prizes:"" });
   const [challenges, setChallenges] = useState(DEMO_CHALLENGES);
 
+  /* ── Clubs state ── */
+  const [clubs, setClubs]               = useState([]);
+  const [showClubForm, setShowClubForm] = useState(false);
+  const [clubForm, setClubForm]         = useState({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false });
+  const [selectedClub, setSelectedClub] = useState(null);
+  const [clubDetailTab, setClubDetailTab] = useState("feed");
+
+  /* ── Chats state ── */
+  const [channels, setChannels]               = useState([]);
+  const [showChannelForm, setShowChannelForm] = useState(false);
+  const [channelForm, setChannelForm]         = useState({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
+
+  /* ── Event thumbnail ── */
+  const [thumbPreview, setThumbPreview] = useState(null);
+
   /* ── Nav ── */
   const [commTab, setCommTab] = useState("forum");
   const [pinnedIds, setPinnedIds] = useState(new Set());
@@ -4702,6 +4717,7 @@ function CommunityAdmin({ token, adminName }) {
           setEvents(prev => [created, ...prev]);
           setShowEventForm(false);
           setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"",description:"",link:"",location:"",openRSVP:true,featured:false});
+          setThumbPreview(null);
           setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
         } else alert("Failed to create event.");
       } catch { alert("Network error."); }
@@ -4730,6 +4746,26 @@ function CommunityAdmin({ token, adminName }) {
               <p className="text-xs font-bold text-white">Basic Information</p>
             </div>
             <Fld label="EVENT TITLE" value={event.title} onChange={v => setEvent({...event,title:v})} placeholder="e.g. AI Prompt Engineering Masterclass" />
+            {/* Fix 1 — Thumbnail upload */}
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">THUMBNAIL IMAGE</p>
+              <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl cursor-pointer transition-colors h-36 overflow-hidden ${thumbPreview?"border-[#C7E36B]/40":"border-white/15 hover:border-[#C7E36B]/40"}`}>
+                {thumbPreview ? (
+                  <img src={thumbPreview} alt="Thumbnail" className="w-full h-full object-cover"/>
+                ) : (
+                  <div className="text-center p-4">
+                    <svg className="w-8 h-8 text-gray-600 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <p className="text-sm text-gray-400">Drop your image here or <span className="text-[#C7E36B] underline">browse</span></p>
+                    <p className="text-[10px] text-gray-600 mt-1">RECOMMENDED: 16:9 ASPECT RATIO</p>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) { const r = new FileReader(); r.onload = ev => setThumbPreview(ev.target.result); r.readAsDataURL(file); }
+                }}/>
+              </label>
+              {thumbPreview && <button onClick={() => setThumbPreview(null)} className="mt-1 text-[10px] text-red-400 hover:text-red-300">✕ Remove image</button>}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold mb-1">EVENT TYPE</p>
@@ -4749,7 +4785,6 @@ function CommunityAdmin({ token, adminName }) {
                 </div>
               </div>
             </div>
-            {/* Description — Fix 2 */}
             <div>
               <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
               <textarea value={event.description} onChange={e => setEvent({...event,description:e.target.value})}
@@ -4766,32 +4801,31 @@ function CommunityAdmin({ token, adminName }) {
               <p className="text-xs font-bold text-white">Schedule &amp; Logistics</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {/* Fix 3 — date placeholder mm/dd/yyyy */}
               <Fld label="DATE" value={event.date} onChange={v => setEvent({...event,date:v})} placeholder="mm/dd/yyyy" />
-              {/* Fix 4 — capacity default empty = Unlimited */}
-              <Fld label="CAPACITY" value={event.capacity} onChange={v => setEvent({...event,capacity:v})} placeholder="Unlimited" />
               <Fld label="START TIME (24h)" value={event.startTime} onChange={v => setEvent({...event,startTime:v})} placeholder="e.g. 18:00" />
               <Fld label="END TIME (24h)" value={event.endTime} onChange={v => setEvent({...event,endTime:v})} placeholder="e.g. 20:00" />
               <Fld label="TIMEZONE" value={event.timezone} onChange={v => setEvent({...event,timezone:v})} placeholder="e.g. GMT+5:30" />
-              <Fld label="DURATION" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="e.g. 1 Hour" />
+              <div className="col-span-2"><Fld label="DURATION" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="e.g. 1 Hour" /></div>
               <div className="col-span-2"><Fld label="MEETING LINK / VENUE ADDRESS" value={event.location||""} onChange={v => setEvent({...event,location:v})} placeholder="https://zoom.us/j/... or physical address" /></div>
             </div>
-            {event.mode==="ONLINE" && <Fld label="MEETING LINK" value={event.link} onChange={v => setEvent({...event,link:v})} placeholder="https://zoom.us/..." />}
           </div>
 
-          {/* Event Controls */}
+          {/* Event Settings — Fix 2 (labels) + Fix 3 (capacity moved here) */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49"/></svg>
-              <p className="text-xs font-bold text-white">Event Controls</p>
+              <p className="text-xs font-bold text-white">Event Settings</p>
             </div>
             <div className="flex items-center justify-between">
-              <div><p className="text-sm text-white">Open RSVP</p><p className="text-[10px] text-gray-400">Allow users to register</p></div>
+              <div><p className="text-sm text-white">Enable RSVPs</p><p className="text-[10px] text-gray-400">Allow users to register for seats.</p></div>
               <Tog value={event.openRSVP} onChange={v => setEvent({...event,openRSVP:v})} />
             </div>
             <div className="flex items-center justify-between">
-              <div><p className="text-sm text-white">Featured Event</p><p className="text-[10px] text-gray-400">Show at top of list</p></div>
+              <div><p className="text-sm text-white">Featured Event</p><p className="text-[10px] text-gray-400">Pin to top of community feed.</p></div>
               <Tog value={event.featured} onChange={v => setEvent({...event,featured:v})} />
+            </div>
+            <div>
+              <Fld label="CAPACITY LIMIT" value={event.capacity} onChange={v => setEvent({...event,capacity:v})} placeholder="Leave blank for unlimited" />
             </div>
           </div>
 
@@ -4810,7 +4844,8 @@ function CommunityAdmin({ token, adminName }) {
           </div>
           <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
             {/* Thumbnail */}
-            <div className="h-[140px] bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 relative">
+            <div className="h-[140px] relative overflow-hidden" style={{ background: thumbPreview ? "transparent" : "linear-gradient(135deg,#1e3a8a,#312e81,#581c87)" }}>
+              {thumbPreview && <img src={thumbPreview} alt="" className="w-full h-full object-cover"/>}
               {event.type && (
                 <span className="absolute top-3 left-3 text-[9px] font-black bg-black/50 text-white px-2 py-0.5 rounded uppercase tracking-wider">{event.type}</span>
               )}
@@ -5161,26 +5196,499 @@ function CommunityAdmin({ token, adminName }) {
       )}
 
       {/* ════ CLUBS TAB ════ */}
-      {commTab === "clubs" && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-5xl mb-4">🏛️</p>
-            <h2 className="text-lg font-bold text-white mb-1">Clubs Management</h2>
-            <p className="text-sm text-gray-500">Coming soon — manage student clubs and groups.</p>
+      {commTab === "clubs" && (() => {
+        /* ── Club Detail View ── */
+        if (selectedClub) return (
+          <div className="flex flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Header */}
+              <div className="flex items-start gap-4 mb-6">
+                <button onClick={() => setSelectedClub(null)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg shrink-0 mt-1">← Back</button>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center text-white font-black text-lg shrink-0">{selectedClub.name?.[0]}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl font-bold text-white">{selectedClub.name}</h1>
+                    {selectedClub.isPrimary && <span className="text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded">PRIMARY</span>}
+                  </div>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    <svg className="inline w-3 h-3 mr-1 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {selectedClub.city} · {selectedClub.members?.toLocaleString() || 0} Members · {selectedClub.events || 0} Active Events
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button className="text-sm border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit Club
+                  </button>
+                  <button className="text-sm bg-[#C7E36B] text-black font-semibold px-4 py-2 rounded-lg hover:bg-[#b8d44f] flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Post
+                  </button>
+                </div>
+              </div>
+              {/* Sub-tabs */}
+              <div className="flex gap-0.5 border-b border-white/5 mb-5">
+                {["Feed","Collaborations","Events","Members"].map(t => (
+                  <button key={t} onClick={() => setClubDetailTab(t.toLowerCase())}
+                    className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px ${clubDetailTab===t.toLowerCase()?"border-[#C7E36B] text-white":"border-transparent text-gray-500 hover:text-gray-300"}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              {/* Feed */}
+              {clubDetailTab === "feed" && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-base font-bold text-white">Recent Posts</h2>
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      Filter:
+                      <select className="bg-transparent text-gray-300 outline-none cursor-pointer">
+                        <option>All Posts</option><option>Flagged</option><option>Pinned</option>
+                      </select>
+                    </div>
+                  </div>
+                  {selectedClub.posts?.length ? selectedClub.posts.map((p, i) => (
+                    <div key={i} className={`bg-[#111315] border rounded-xl p-4 mb-3 ${p.reported?"border-red-500/30":"border-white/10"}`}>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">{p.author?.[0]}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-semibold text-white">{p.author}</span>
+                            {p.reported && <span className="text-[9px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">REPORTED</span>}
+                            <span className="text-[10px] text-gray-500">{p.time}</span>
+                          </div>
+                          <p className="text-sm text-gray-300">{p.content}</p>
+                          {!p.reported && <div className="flex gap-3 mt-2 text-[10px] text-gray-500"><span>👍 {p.likes}</span><span>💬 {p.comments}</span></div>}
+                        </div>
+                        {p.reported ? (
+                          <div className="flex gap-2 shrink-0">
+                            <button className="text-[10px] font-bold text-red-400 border border-red-500/30 px-2.5 py-1 rounded hover:bg-red-500/10">REMOVE</button>
+                            <button className="text-[10px] font-bold text-gray-400 border border-white/15 px-2.5 py-1 rounded hover:bg-white/5">DISMISS</button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1.5 shrink-0">
+                            <button className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-[#C7E36B] transition-colors">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v20M2 12h20" transform="rotate(45 12 12)"/></svg>
+                            </button>
+                            <button className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-red-400 transition-colors">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="flex flex-col items-center py-12 text-center">
+                      <p className="text-gray-500 text-sm">No posts yet in this club.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {clubDetailTab !== "feed" && (
+                <div className="flex flex-col items-center py-16 text-center">
+                  <p className="text-gray-500 text-sm font-medium capitalize">{clubDetailTab} — coming soon</p>
+                </div>
+              )}
+            </div>
+            {/* Sidebar */}
+            <div className="w-[260px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto space-y-4">
+              <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Moderation Summary</p>
+                {[["Pending Reports",selectedClub.pendingReports??0],["Flagged Keywords",selectedClub.flaggedKeywords??0],["Banned Users",selectedClub.bannedUsers??0]].map(([k,v]) => (
+                  <div key={k} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                    <span className="text-xs text-gray-400">{k}</span>
+                    <span className="text-xs font-bold text-white">{v}</span>
+                  </div>
+                ))}
+                <button className="w-full mt-3 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-[#b8d44f]">Moderation Settings</button>
+              </div>
+              <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Club Health</p>
+                {[
+                  { label:"Engagement Rate", value: selectedClub.engagementRate??0, color:"#22c55e", suffix:"%" },
+                  { label:"Member Growth",   value: selectedClub.memberGrowth??0, color:"#06b6d4", prefix:"+" },
+                ].map(s => (
+                  <div key={s.label} className="mb-3 last:mb-0">
+                    <div className="flex justify-between text-[10px] mb-1.5">
+                      <span className="text-gray-400">{s.label}</span>
+                      <span className="font-bold text-white">{s.prefix}{s.value}{s.suffix}</span>
+                    </div>
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width:`${Math.min(s.value,100)}%`, background:s.color }}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+
+        /* ── Create Club Form ── */
+        if (showClubForm) return (
+          <div className="flex flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <button onClick={() => setShowClubForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back to Clubs</button>
+                <div>
+                  <h1 className="text-xl font-bold text-white">Create New Club</h1>
+                  <p className="text-xs text-gray-400">Configure your city-based creator community.</p>
+                </div>
+              </div>
+              {/* Basic Info */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-wider">Basic Information</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Fld label="CLUB NAME" value={clubForm.name} onChange={v => setClubForm({...clubForm,name:v})} placeholder="e.g. Hyderabad Club"/>
+                  <Fld label="CITY / REGION" value={clubForm.city} onChange={v => setClubForm({...clubForm,city:v})} placeholder="e.g. Telangana, India"/>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-1">CLUB DESCRIPTION</p>
+                  <textarea value={clubForm.description} onChange={e => setClubForm({...clubForm,description:e.target.value})} rows={3} placeholder="Tell the community what this club is about..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 resize-none"/>
+                </div>
+              </div>
+              {/* Club Settings */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-wider">Club Settings</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-semibold mb-1">CLUB TYPE</p>
+                    <select value={clubForm.type} onChange={e => setClubForm({...clubForm,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                      {["Public (Open to All)","Private","Invite Only"].map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <Fld label="MEMBER LIMIT" value={clubForm.memberLimit} onChange={v => setClubForm({...clubForm,memberLimit:v})} placeholder="No Limit"/>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#111315] rounded-xl">
+                  <div><p className="text-sm text-white">Mark as Primary Club</p><p className="text-[10px] text-gray-400">Highlight this as the main community for the region.</p></div>
+                  <Tog value={clubForm.isPrimary} onChange={v => setClubForm({...clubForm,isPrimary:v})}/>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#111315] rounded-xl">
+                  <div><p className="text-sm text-white">Auto-detect City</p><p className="text-[10px] text-gray-400">Suggest this club to users based on their IP location.</p></div>
+                  <Tog value={clubForm.autoDetect} onChange={v => setClubForm({...clubForm,autoDetect:v})}/>
+                </div>
+              </div>
+              {/* Media */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-wider mb-3">Media</p>
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/15 rounded-xl h-32 cursor-pointer hover:border-[#C7E36B]/40 transition-colors">
+                  <svg className="w-8 h-8 text-gray-600 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <p className="text-sm text-gray-400">Click to upload banner image</p>
+                  <p className="text-[10px] text-gray-600 mt-1">Recommended size: 1200×675px (16:9)</p>
+                  <input type="file" accept="image/*" className="hidden"/>
+                </label>
+              </div>
+              {/* Actions */}
+              <div className="flex gap-3 pb-4">
+                <button onClick={() => setShowClubForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
+                <button onClick={() => {
+                  if (!clubForm.name.trim()) return;
+                  const newClub = { _id:`cl${Date.now()}`, ...clubForm, type: clubForm.type.replace(" (Open to All)",""), members:0, events:0, posts:[] };
+                  setClubs(prev => [newClub, ...prev]);
+                  setClubForm({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false });
+                  setShowClubForm(false);
+                }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Create Club
+                </button>
+              </div>
+            </div>
+            {/* Live Card Preview */}
+            <div className="w-[300px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">Live Card Preview</p>
+              <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+                <div className="h-[150px] bg-gradient-to-br from-blue-900 to-purple-900 relative">
+                  {clubForm.isPrimary && <span className="absolute top-3 right-3 text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded">PRIMARY CLUB</span>}
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <h3 className="text-sm font-bold text-white">{clubForm.name || "Club Name"}</h3>
+                    <p className="text-[10px] text-gray-300">{clubForm.city || "City"}</p>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div><p className="text-[9px] text-gray-500 uppercase mb-0.5">Members</p><p className="text-sm font-bold text-white flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="#C7E36B"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>0</p></div>
+                    <div><p className="text-[9px] text-gray-500 uppercase mb-0.5">Events</p><p className="text-sm font-bold text-white flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="#C7E36B"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="#C7E36B" strokeWidth="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="#C7E36B" strokeWidth="2"/></svg>0 Active</p></div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400"/>PUBLIC</span>
+                    <button className="text-[10px] border border-white/15 text-gray-300 px-3 py-1 rounded-lg">Manage Club</button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[9px] text-gray-600 mt-3 text-center">This preview shows how the club card will appear in the main community directory for students.</p>
+            </div>
+          </div>
+        );
+
+        /* ── Club List View ── */
+        return (
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white">Clubs Management</h1>
+                <p className="text-sm text-gray-400 mt-1">Oversee city-based creator communities and activities.</p>
+              </div>
+              <button onClick={() => setShowClubForm(true)} className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-[#b8d44f] flex items-center gap-2 shrink-0">
+                <I name="plus" size={15}/> Create Club
+              </button>
+            </div>
+            {/* Stats */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              {[
+                { label:"TOTAL CLUBS",   value: clubs.length, icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+                { label:"TOTAL MEMBERS", value: clubs.reduce((s,c)=>s+(c.members||0),0), icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                { label:"ACTIVE EVENTS", value: clubs.reduce((s,c)=>s+(c.events||0),0), icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+                { label:"NEW REQUESTS",  value: 0, icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb923c" strokeWidth="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
+              ].map(s => (
+                <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 tracking-widest mb-1.5">{s.label}</p>
+                    <p className="text-3xl font-black text-white">{s.value.toLocaleString?.() ?? s.value}</p>
+                  </div>
+                  <div className="opacity-80">{s.icon}</div>
+                </div>
+              ))}
+            </div>
+            {/* Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {clubs.map((club, i) => {
+                const grd = ["from-indigo-900 to-blue-900","from-purple-900 to-pink-900","from-teal-900 to-cyan-900"][i%3];
+                const typeCls = club.type==="Private"?"bg-purple-500/20 text-purple-400":club.type==="Invite Only"?"bg-blue-500/20 text-blue-400":"bg-green-500/20 text-green-400";
+                return (
+                  <div key={club._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all cursor-pointer" onClick={() => setSelectedClub(club)}>
+                    <div className={`relative h-[170px] bg-gradient-to-br ${grd}`}>
+                      {club.isPrimary && <span className="absolute top-3 right-3 text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded">PRIMARY CLUB</span>}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <h3 className="text-base font-bold text-white">{club.name}</h3>
+                        <p className="text-xs text-gray-300">{club.city}</p>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-500 uppercase mb-0.5 flex items-center gap-1"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Members</p>
+                          <p className="text-sm font-bold text-white">{club.members?.toLocaleString()||0}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-500 uppercase mb-0.5 flex items-center gap-1"><svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>Events</p>
+                          <p className="text-sm font-bold text-white">{club.events||0} Active</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${typeCls}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current"/>
+                          {club.type||"Public"}
+                        </span>
+                        <button onClick={e => {e.stopPropagation(); setSelectedClub(club);}} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5">Manage Club</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {clubs.length === 0 && (
+                <div className="col-span-3 flex flex-col items-center justify-center py-20 text-center">
+                  <svg className="w-12 h-12 text-gray-700 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                  <p className="text-gray-500 text-sm font-medium">No clubs yet</p>
+                  <p className="text-gray-600 text-xs mt-1">Click "+ Create Club" to add the first community.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ════ CHATS TAB ════ */}
-      {commTab === "chats" && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-5xl mb-4">💬</p>
-            <h2 className="text-lg font-bold text-white mb-1">Chats Moderation</h2>
-            <p className="text-sm text-gray-500">Coming soon — monitor and moderate live chats.</p>
+      {commTab === "chats" && (() => {
+        /* ── Add Channel Form ── */
+        if (showChannelForm) return (
+          <div className="flex flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <button onClick={() => setShowChannelForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back to Chats</button>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Chats / New Channel</p>
+                  <h1 className="text-xl font-bold text-white">Add New Channel</h1>
+                </div>
+              </div>
+              {/* Channel Info */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-wider">Channel Details</p>
+                <Fld label="CHANNEL NAME" value={channelForm.name} onChange={v => setChannelForm({...channelForm,name:v})} placeholder="e.g. #filmmakers-hub"/>
+                <div>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-1">CHANNEL CATEGORY</p>
+                  <select value={channelForm.category} onChange={e => setChannelForm({...channelForm,category:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                    {["General","Study Group","Regional","Creative","Support","Announcement"].map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
+                  <textarea value={channelForm.description} onChange={e => setChannelForm({...channelForm,description:e.target.value})} rows={2} placeholder="What is this channel for?" className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 resize-none"/>
+                </div>
+              </div>
+              {/* Channel Settings */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-wider">Channel Settings</p>
+                <div>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-1">ACCESS TYPE</p>
+                  <div className="flex gap-2">
+                    {["Public","Private","Admin Only"].map(a => (
+                      <button key={a} onClick={() => setChannelForm({...channelForm,access:a})}
+                        className={`flex-1 text-sm py-2 rounded-lg border font-medium transition-colors ${channelForm.access===a?"bg-[#C7E36B] text-black border-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30"}`}>
+                        {a}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Fld label="INVITE LINK (OPTIONAL)" value={channelForm.inviteLink} onChange={v => setChannelForm({...channelForm,inviteLink:v})} placeholder="https://discord.gg/..."/>
+              </div>
+              {/* Actions */}
+              <div className="flex gap-3 pb-4">
+                <button onClick={() => setShowChannelForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
+                <button onClick={() => {
+                  if (!channelForm.name.trim()) return;
+                  const catColors = { General:"bg-blue-500",  "Study Group":"bg-green-500", Regional:"bg-orange-500", Creative:"bg-purple-500", Support:"bg-yellow-500", Announcement:"bg-red-500" };
+                  const newCh = { _id:`ch${Date.now()}`, ...channelForm, color: catColors[channelForm.category]||"bg-blue-500", members:0, active:0 };
+                  setChannels(prev => [newCh, ...prev]);
+                  setChannelForm({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
+                  setShowChannelForm(false);
+                }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Create Channel
+                </button>
+              </div>
+            </div>
+            {/* Live Preview */}
+            <div className="w-[300px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">Live Card Preview</p>
+              {(({ catColors, catIcon }) => {
+                const bgs = { General:"from-blue-900 to-blue-800", "Study Group":"from-green-900 to-green-800", Regional:"from-orange-900 to-orange-800", Creative:"from-purple-900 to-purple-800", Support:"from-yellow-900 to-yellow-800", Announcement:"from-red-900 to-red-800" };
+                const bg = bgs[channelForm.category]||"from-blue-900 to-blue-800";
+                const accCls = { General:"bg-blue-500", "Study Group":"bg-green-500", Regional:"bg-orange-500", Creative:"bg-purple-500", Support:"bg-yellow-500", Announcement:"bg-red-500" }[channelForm.category]||"bg-blue-500";
+                const accTxt = { General:"text-blue-400", "Study Group":"text-green-400", Regional:"text-orange-400", Creative:"text-purple-400", Support:"text-yellow-400", Announcement:"text-red-400" }[channelForm.category]||"text-blue-400";
+                return (
+                  <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+                    <div className={`flex items-center gap-3 p-4 bg-gradient-to-r ${bg} border-b border-white/5`}>
+                      <div className={`w-10 h-10 rounded-xl ${accCls} flex items-center justify-center`}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">{channelForm.name || "# channel-name"}</p>
+                        <p className={`text-[9px] font-bold ${accTxt}`}>{channelForm.category}</p>
+                      </div>
+                      <span className={`text-[9px] font-black ${channelForm.access==="Public"?"bg-green-500/20 text-green-400":channelForm.access==="Admin Only"?"bg-red-500/20 text-red-400":"bg-gray-500/20 text-gray-400"} px-2 py-0.5 rounded-full`}>{channelForm.access}</span>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      {channelForm.description && <p className="text-xs text-gray-300">{channelForm.description}</p>}
+                      <div className="flex items-center justify-between text-[10px] text-gray-500">
+                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400"/>0 active</span>
+                        <span>0 members</span>
+                      </div>
+                      {channelForm.inviteLink && (
+                        <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 mt-2">
+                          <span className="text-[9px] text-gray-400 flex-1 truncate">{channelForm.inviteLink}</span>
+                          <button className="text-[9px] text-[#C7E36B] font-bold shrink-0">Copy</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })({})}
+              <p className="text-[9px] text-gray-600 mt-3 text-center">Preview updates as you fill in the form above.</p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+
+        /* ── Channel List View ── */
+        const catColors = { General:"bg-blue-500", "Study Group":"bg-green-500", Regional:"bg-orange-500", Creative:"bg-purple-500", Support:"bg-yellow-500", Announcement:"bg-red-500" };
+        const catTextColors = { General:"text-blue-400", "Study Group":"text-green-400", Regional:"text-orange-400", Creative:"text-purple-400", Support:"text-yellow-400", Announcement:"text-red-400" };
+        const totalActive = channels.reduce((s,c) => s+(c.active||0), 0);
+        const totalMembers = channels.reduce((s,c) => s+(c.members||0), 0);
+
+        return (
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h1 className="text-2xl font-bold text-white">Community Chats</h1>
+                <p className="text-sm text-gray-400 mt-1">Monitor and manage all community channels.</p>
+              </div>
+              <button onClick={() => setShowChannelForm(true)} className="bg-[#C7E36B] text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-[#b8d44f] flex items-center gap-2 shrink-0">
+                <I name="plus" size={15}/> Add New Channel
+              </button>
+            </div>
+            {/* Discord Redirection Policy Banner */}
+            <div className="bg-[#111315] border border-[#5865F2]/30 rounded-2xl p-4 mb-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-[#5865F2] flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23A.077.077 0 0 0 8.562 3c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026 13.83 13.83 0 0 0 1.226-1.963.074.074 0 0 0-.041-.104 13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125c-.598.344-1.22.635-1.873.877a.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.028z"/></svg>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-bold text-white">Discord Redirection Policy</p>
+                  <span className="text-[9px] font-black bg-[#5865F2]/20 text-[#5865F2] px-2 py-0.5 rounded">ACTIVE</span>
+                </div>
+                <p className="text-xs text-gray-400">Students are redirected to Discord channels for live community interaction. Channels shown below are linked to Discord or managed natively.</p>
+              </div>
+              <button className="text-xs border border-[#5865F2]/40 text-[#5865F2] px-3 py-1.5 rounded-lg hover:bg-[#5865F2]/10 shrink-0">Manage Policy</button>
+            </div>
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mb-5">
+              {[
+                { label:"TOTAL CHANNELS", value: channels.length, color:"#C7E36B" },
+                { label:"ACTIVE NOW",     value: totalActive,     color:"#22c55e" },
+                { label:"TOTAL MEMBERS",  value: totalMembers,    color:"#60a5fa" },
+              ].map(s => (
+                <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 text-center">
+                  <p className="text-3xl font-black" style={{color:s.color}}>{s.value.toLocaleString?.()??s.value}</p>
+                  <p className="text-[10px] font-bold text-gray-500 tracking-widest mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+            {/* Channel cards */}
+            <div className="space-y-3">
+              {channels.map((ch, i) => {
+                const accCls = ch.access==="Public"?"bg-green-500/20 text-green-400":ch.access==="Admin Only"?"bg-red-500/20 text-red-400":"bg-gray-500/20 text-gray-400";
+                const iconBg = catColors[ch.category]||"bg-blue-500";
+                const txtCol = catTextColors[ch.category]||"text-blue-400";
+                return (
+                  <div key={ch._id||i} className="bg-[#111315] border border-white/10 rounded-2xl p-4 flex items-center gap-4 hover:border-white/20 transition-all">
+                    <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <p className="text-sm font-bold text-white">{ch.name}</p>
+                        <span className={`text-[9px] font-bold ${txtCol}`}>{ch.category}</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${accCls}`}>{ch.access}</span>
+                      </div>
+                      {ch.description && <p className="text-xs text-gray-500 truncate">{ch.description}</p>}
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-[10px] text-gray-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400"/>{ch.active||0} active</span>
+                        <span className="text-[10px] text-gray-500">{ch.members||0} members</span>
+                      </div>
+                    </div>
+                    {ch.inviteLink && (
+                      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 max-w-[180px] shrink-0">
+                        <span className="text-[9px] text-gray-400 flex-1 truncate">{ch.inviteLink}</span>
+                        <button onClick={() => navigator.clipboard?.writeText(ch.inviteLink)} className="text-[9px] font-bold text-[#C7E36B] hover:underline shrink-0">Copy</button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:bg-white/5">Edit</button>
+                      <button onClick={() => setChannels(prev => prev.filter(c => c._id!==ch._id))} className="text-xs border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">Delete</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {channels.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <svg className="w-12 h-12 text-gray-700 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                  <p className="text-gray-500 text-sm font-medium">No channels yet</p>
+                  <p className="text-gray-600 text-xs mt-1">Click "Add New Channel" to create the first community channel.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ════ AWARDS TAB ════ */}
       {commTab === "awards" && (
