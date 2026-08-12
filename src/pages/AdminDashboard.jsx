@@ -4286,7 +4286,7 @@ function CommunityAdmin({ token, adminName }) {
   const [eventSearch, setEventSearch] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState("All Types");
   const [showEventForm, setShowEventForm] = useState(false);
-  const [event, setEvent] = useState({ title:"", type:"Workshop", mode:"ONLINE", date:"", startTime:"", endTime:"", timezone:"", duration:"2", capacity:"50", link:"", location:"", openRSVP:true, featured:false });
+  const [event, setEvent] = useState({ title:"", type:"Workshop", mode:"ONLINE", date:"", startTime:"", endTime:"", timezone:"", duration:"2", capacity:"", description:"", link:"", location:"", openRSVP:true, featured:false });
   const [eventSuccess, setEventSuccess] = useState(false);
 
   /* ── Awards/Challenges state ── */
@@ -4683,107 +4683,167 @@ function CommunityAdmin({ token, adminName }) {
      EVENT CREATE FORM (full-page overlay)
   ══════════════════════════════════════════ */
   if (showEventForm) {
-    const previewDate = event.date ? new Date(event.date + "T00:00:00") : null;
+    const parseDate = d => { if (!d) return null; const a = new Date(d); if (!isNaN(a)) return a; const b = new Date(d + "T00:00:00"); return isNaN(b) ? null : b; };
+    const previewDate  = parseDate(event.date);
+    const previewMonth = previewDate ? previewDate.toLocaleDateString("en",{month:"short"}).toUpperCase() : null;
+    const previewDay   = previewDate ? previewDate.getDate() : null;
+    const previewMode  = event.mode === "ONLINE" ? (event.link ? "ONLINE (ZOOM)" : "ONLINE") : "OFFLINE";
+    const durLabel     = event.duration ? (event.duration.toString().toLowerCase().includes("hour") ? event.duration : `${event.duration} Hours`) : "";
+    const previewTime  = event.startTime ? `${event.startTime}${durLabel ? ` · ${durLabel}` : ""}` : "Time TBD";
+    const previewCap   = event.capacity ? `${event.capacity} SEATS AVAILABLE` : "UNLIMITED SEATS";
+
+    const doSubmit = async (status) => {
+      try {
+        const h = {"Content-Type":"application/json", Authorization:`Bearer ${token}`};
+        const body = {...event, status, date: event.date ? new Date(event.date) : null, capacity: event.capacity ? Number(event.capacity) : null};
+        const res = await fetch("/api/community/events",{method:"POST",headers:h,body:JSON.stringify(body)});
+        if (res.ok) {
+          const created = await res.json();
+          setEvents(prev => [created, ...prev]);
+          setShowEventForm(false);
+          setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"",description:"",link:"",location:"",openRSVP:true,featured:false});
+          setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
+        } else alert("Failed to create event.");
+      } catch { alert("Network error."); }
+    };
+
     return (
       <div className="flex h-full overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Header with Save Draft + Publish Event — Fix 1 */}
           <div className="flex items-center gap-3 mb-2">
-            <button onClick={() => setShowEventForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg">← Back</button>
-            <h1 className="text-xl font-bold text-white">Create New Event</h1>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Basic Info</p>
-            <Fld label="EVENT TITLE" value={event.title} onChange={v => setEvent({...event,title:v})} placeholder="e.g. AI Filmmaking Masterclass" />
+            <button onClick={() => setShowEventForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg shrink-0">← Back</button>
             <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-1">EVENT TYPE</p>
-              <select value={event.type} onChange={e => setEvent({...event,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
-                {["Workshop","Webinar","Masterclass","AMA","Hackathon"].map(t => <option key={t}>{t}</option>)}
-              </select>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Events / Editor</p>
+              <h1 className="text-xl font-bold text-white leading-tight">Create New Event</h1>
             </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-semibold mb-2">MODE</p>
-              <div className="flex gap-2">
-                {["ONLINE","OFFLINE"].map(m => (
-                  <button key={m} onClick={() => setEvent({...event,mode:m})}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${event.mode===m?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30"}`}>
-                    {m}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <button onClick={() => doSubmit("draft")} className="text-sm border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors">Save Draft</button>
+              <button onClick={() => doSubmit("published")} className="text-sm bg-[#C7E36B] text-black font-semibold px-4 py-2 rounded-lg hover:bg-[#b8d44f] transition-colors">Publish Event</button>
             </div>
           </div>
+
+          {/* Basic Info */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Schedule</p>
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <p className="text-xs font-bold text-white">Basic Information</p>
+            </div>
+            <Fld label="EVENT TITLE" value={event.title} onChange={v => setEvent({...event,title:v})} placeholder="e.g. AI Prompt Engineering Masterclass" />
             <div className="grid grid-cols-2 gap-3">
-              <Fld label="DATE" value={event.date} onChange={v => setEvent({...event,date:v})} placeholder="YYYY-MM-DD" />
-              <Fld label="CAPACITY" value={event.capacity} onChange={v => setEvent({...event,capacity:v})} placeholder="50" />
-              <Fld label="START TIME (24h)" value={event.startTime} onChange={v => setEvent({...event,startTime:v})} placeholder="e.g. 18:00" />
-              <Fld label="END TIME (24h)" value={event.endTime} onChange={v => setEvent({...event,endTime:v})} placeholder="e.g. 20:00" />
-              <Fld label="TIMEZONE" value={event.timezone} onChange={v => setEvent({...event,timezone:v})} placeholder="e.g. GMT+5:30" />
-              <Fld label="DURATION (hrs)" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="2" />
-              <div className="col-span-2"><Fld label="LOCATION / VENUE" value={event.location||""} onChange={v => setEvent({...event,location:v})} placeholder="e.g. The Shard, London" /></div>
-            </div>
-            {event.mode==="ONLINE" && <Fld label="MEETING LINK" value={event.link} onChange={v => setEvent({...event,link:v})} placeholder="https://zoom.us/..." />}
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Event Controls</p>
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-white">Open RSVP</p><p className="text-[10px] text-gray-400">Allow students to register</p></div>
-              <Tog value={event.openRSVP} onChange={v => setEvent({...event,openRSVP:v})} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-white">Featured Event</p><p className="text-[10px] text-gray-400">Show FEATURED badge on the card</p></div>
-              <Tog value={event.featured} onChange={v => setEvent({...event,featured:v})} />
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={() => setShowEventForm(false)} className="text-xs border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
-            <button onClick={async () => {
-              try {
-                const h = {"Content-Type":"application/json", Authorization:`Bearer ${token}`};
-                const res = await fetch("/api/community/events",{method:"POST",headers:h,body:JSON.stringify({...event,date:event.date?new Date(event.date):null,capacity:Number(event.capacity)})});
-                if (res.ok) {
-                  const created = await res.json();
-                  setEvents(prev => [created, ...prev]);
-                  setShowEventForm(false);
-                  setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"50",link:"",location:"",openRSVP:true,featured:false});
-                  setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
-                } else alert("Failed to create event.");
-              } catch { alert("Network error."); }
-            }} className="text-xs bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-lime-300 flex items-center gap-2"><I name="plus" size={14}/> Create Event</button>
-          </div>
-        </div>
-        {/* Live preview panel */}
-        <div className="w-[280px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">Live Preview</p>
-          <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
-            <div className={`h-[130px] bg-gradient-to-br from-blue-900 to-purple-900 relative`}>
-              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center">
-                <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider">{previewDate ? previewDate.toLocaleDateString("en",{month:"short"}) : "MON"}</p>
-                <p className="text-xl font-black text-white leading-none">{previewDate ? previewDate.getDate() : "—"}</p>
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">EVENT TYPE</p>
+                <select value={event.type} onChange={e => setEvent({...event,type:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
+                  {["Workshop","Webinar","Masterclass","AMA","Hackathon","Screening","Networking"].map(t => <option key={t}>{t}</option>)}
+                </select>
               </div>
-              {event.featured && <span className="absolute top-3 right-3 text-[9px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded">FEATURED</span>}
-            </div>
-            <div className="p-4 space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {event.startTime || "Time TBD"}
-              </div>
-              <h3 className="text-sm font-bold text-white">{event.title || "Event Title"}</h3>
-              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                {event.location || event.mode}
-              </div>
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-[10px] text-[#C7E36B] font-semibold">0 / {event.capacity} RSVPs</span>
-                <div className="flex gap-1.5">
-                  <button className="text-[10px] border border-white/15 text-gray-300 px-2.5 py-1.5 rounded-lg">✎</button>
-                  <button className="text-[10px] bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg">Manage</button>
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1">MODE</p>
+                <div className="flex gap-2">
+                  {["ONLINE","OFFLINE"].map(m => (
+                    <button key={m} onClick={() => setEvent({...event,mode:m})}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${event.mode===m?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/15 text-gray-400 hover:border-white/30"}`}>
+                      {m}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
+            {/* Description — Fix 2 */}
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
+              <textarea value={event.description} onChange={e => setEvent({...event,description:e.target.value})}
+                placeholder="What is this event about?"
+                rows={3}
+                className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 resize-none"/>
+            </div>
           </div>
-          <p className="text-[9px] text-gray-600 mt-4 text-center">Preview updates in real-time</p>
+
+          {/* Schedule & Logistics */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <p className="text-xs font-bold text-white">Schedule &amp; Logistics</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Fix 3 — date placeholder mm/dd/yyyy */}
+              <Fld label="DATE" value={event.date} onChange={v => setEvent({...event,date:v})} placeholder="mm/dd/yyyy" />
+              {/* Fix 4 — capacity default empty = Unlimited */}
+              <Fld label="CAPACITY" value={event.capacity} onChange={v => setEvent({...event,capacity:v})} placeholder="Unlimited" />
+              <Fld label="START TIME (24h)" value={event.startTime} onChange={v => setEvent({...event,startTime:v})} placeholder="e.g. 18:00" />
+              <Fld label="END TIME (24h)" value={event.endTime} onChange={v => setEvent({...event,endTime:v})} placeholder="e.g. 20:00" />
+              <Fld label="TIMEZONE" value={event.timezone} onChange={v => setEvent({...event,timezone:v})} placeholder="e.g. GMT+5:30" />
+              <Fld label="DURATION" value={event.duration} onChange={v => setEvent({...event,duration:v})} placeholder="e.g. 1 Hour" />
+              <div className="col-span-2"><Fld label="MEETING LINK / VENUE ADDRESS" value={event.location||""} onChange={v => setEvent({...event,location:v})} placeholder="https://zoom.us/j/... or physical address" /></div>
+            </div>
+            {event.mode==="ONLINE" && <Fld label="MEETING LINK" value={event.link} onChange={v => setEvent({...event,link:v})} placeholder="https://zoom.us/..." />}
+          </div>
+
+          {/* Event Controls */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49"/></svg>
+              <p className="text-xs font-bold text-white">Event Controls</p>
+            </div>
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm text-white">Open RSVP</p><p className="text-[10px] text-gray-400">Allow users to register</p></div>
+              <Tog value={event.openRSVP} onChange={v => setEvent({...event,openRSVP:v})} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm text-white">Featured Event</p><p className="text-[10px] text-gray-400">Show at top of list</p></div>
+              <Tog value={event.featured} onChange={v => setEvent({...event,featured:v})} />
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="flex gap-3 pb-4">
+            <button onClick={() => setShowEventForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
+            <button onClick={() => doSubmit("published")} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-lime-300 flex items-center gap-2"><I name="plus" size={14}/> Create Event</button>
+          </div>
+        </div>
+
+        {/* Live preview panel — Fix 5 */}
+        <div className="w-[300px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Real-Time Preview</p>
+            <span className="text-[9px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">LIVE</span>
+          </div>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+            {/* Thumbnail */}
+            <div className="h-[140px] bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 relative">
+              {event.type && (
+                <span className="absolute top-3 left-3 text-[9px] font-black bg-black/50 text-white px-2 py-0.5 rounded uppercase tracking-wider">{event.type}</span>
+              )}
+              {event.featured && (
+                <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded tracking-wider">FEATURED</span>
+              )}
+              {/* Date badge — reactive to date field */}
+              <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[48px]">
+                <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider leading-none mb-0.5">{previewMonth || "—"}</p>
+                <p className="text-2xl font-black text-white leading-none">{previewDay ?? "—"}</p>
+              </div>
+            </div>
+            {/* Card body */}
+            <div className="p-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>{previewTime}</span>
+              </div>
+              <h3 className="text-sm font-bold text-white leading-snug">{event.title || "AI Workshop Event"}</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                <div>
+                  <p className="text-[9px] text-gray-600 uppercase">Mode</p>
+                  <p className="text-[10px] font-semibold text-gray-300">{previewMode}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-gray-600 uppercase">Capacity</p>
+                  <p className="text-[10px] font-semibold text-gray-300">{previewCap}</p>
+                </div>
+              </div>
+              <button className="w-full mt-3 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-[#b8d44f] transition-colors">RSVP Now</button>
+            </div>
+          </div>
+          <p className="text-[9px] text-gray-600 mt-3 text-center">This is how your event will appear in the community grid.</p>
         </div>
       </div>
     );
