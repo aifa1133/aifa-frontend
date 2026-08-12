@@ -3417,26 +3417,21 @@ function CommunitySection({ token, profile }) {
 }
 
 /* ─── HIRE TALENT SECTION ─── */
-const FALLBACK_TALENT = [
-  { _id: "1", name: "Sarah Jenkins", location: "New York, USA", category: "Logo Design", avatar: "", bio: "Award-winning brand identity designer with 8 years experience in logo design and visual branding for startups.", skills: ["Logo Design", "Brand Identity", "Typography", "Illustrator"], works: ["", "", ""], contactEmail: "sarah@example.com", isActive: true },
-  { _id: "2", name: "Rajiv Kumar", location: "Bangalore, India", category: "UI Design", avatar: "", bio: "Senior UI/UX designer specialising in SaaS products and mobile-first design systems.", skills: ["UI Design", "Figma", "Prototyping", "Design Systems"], works: ["", "", ""], contactEmail: "rajiv@example.com", isActive: true },
-  { _id: "3", name: "Jessica Park", location: "Seoul, South Korea", category: "Video Editing", avatar: "", bio: "Creative video editor and motion graphics artist working with global brands on ad campaigns and social content.", skills: ["Premiere Pro", "After Effects", "Motion Graphics", "Color Grading"], works: ["", "", ""], contactEmail: "jessica@example.com", isActive: true },
-];
-const HT_CATEGORIES = ["All", "Logo Design", "UI Design", "Video Editing", "3D Modeling", "Animation", "VFX", "Sound Design"];
+const HT_CATEGORIES = ["All", "AI Filmmakers", "Video Editors", "AI Artists & Designers", "Prompt Engineers", "VFX & CGI Artists", "Sound Designers", "3D Artists"];
 
 function HireTalentSection({ token }) {
   const [talents, setTalents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("All");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
   const [inquiry, setInquiry] = useState(null);
   const [inqMsg, setInqMsg] = useState("");
   const [sent, setSent] = useState(false);
-  const [toast, setToast] = useState(""); // top-right toast: talent name
+  const catScrollRef = useRef(null);
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") setInquiry(null);
-    };
+    const handleEsc = (e) => { if (e.key === "Escape") setInquiry(null); };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
@@ -3444,17 +3439,21 @@ function HireTalentSection({ token }) {
   useEffect(() => {
     fetch("/api/talent")
       .then(r => r.json())
-      .then(d => { setTalents(Array.isArray(d) && d.length > 0 ? d : FALLBACK_TALENT); setLoading(false); })
-      .catch(() => { setTalents(FALLBACK_TALENT); setLoading(false); });
+      .then(d => { setTalents(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => { setTalents([]); setLoading(false); });
   }, []);
 
-  const filtered = talents.filter(t => catFilter === "All" || t.category === catFilter);
+  const filtered = talents.filter(t => {
+    if (catFilter !== "All" && t.category !== catFilter) return false;
+    if (countryFilter && !(t.location || "").toLowerCase().includes(countryFilter.toLowerCase())) return false;
+    if (cityFilter && !(t.location || "").toLowerCase().includes(cityFilter.toLowerCase())) return false;
+    return true;
+  });
 
   const openInquiry = (t) => { setInquiry(t); setInqMsg(""); setSent(false); };
 
   const sendInquiry = async () => {
     if (!inqMsg.trim()) return;
-    /* POST to service requests */
     try {
       const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
       await fetch("/api/service-requests", {
@@ -3462,125 +3461,173 @@ function HireTalentSection({ token }) {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           name: user.name || "Student",
-          email: user.email || "student@aifa.co.in",
+          email: user.email || "",
           service: "hire-talent",
           message: `[Inquiry to ${inquiry.name}] ${inqMsg}`,
         }),
       });
-    } catch { /* ignore — show success anyway */ }
+    } catch { /* show success anyway */ }
     setSent(true);
-    setToast(inquiry.name);
-    setTimeout(() => setToast(""), 3000);
-    setTimeout(() => { setInquiry(null); setSent(false); }, 2000);
   };
 
-  /* Quick toast on card button (no modal needed for simple inquiry) */
-  const quickInquiry = async (t) => {
-    try {
-      const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
-      await fetch("/api/service-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({
-          name: user.name || "Student",
-          email: user.email || "student@aifa.co.in",
-          service: "hire-talent",
-          message: `Interest in ${t.name} (${t.category})`,
-        }),
-      });
-    } catch { /* ignore */ }
-    setToast(t.name);
-    setTimeout(() => setToast(""), 3000);
+  const scrollCats = (dir) => {
+    if (catScrollRef.current) catScrollRef.current.scrollBy({ left: dir * 200, behavior: "smooth" });
   };
 
   return (
     <div className="p-6">
-      {/* Top-right toast */}
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 bg-[#C7E36B] text-black px-5 py-3 rounded-xl font-semibold shadow-lg text-sm">
-          Inquiry sent to {toast}!
+      {/* Header + filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl font-bold text-white">Available Talent</h1>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            value={countryFilter}
+            onChange={e => setCountryFilter(e.target.value)}
+            placeholder="Select a Country"
+            className="bg-[#111315] border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40 w-44"
+          />
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              value={cityFilter}
+              onChange={e => setCityFilter(e.target.value)}
+              placeholder="City"
+              className="bg-[#111315] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40 w-36"
+            />
+          </div>
         </div>
-      )}
-      <div className="mb-5">
-        <h1 className="text-xl font-bold text-white mb-1">Hire Talent</h1>
-        <p className="text-xs text-gray-400">Connect with skilled creative professionals</p>
       </div>
 
-      {/* Category scroll filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-thin">
-        {HT_CATEGORIES.map(c => (
-          <button key={c} onClick={() => setCatFilter(c)} className={`text-xs px-3 py-1.5 rounded-full font-semibold whitespace-nowrap shrink-0 transition-all ${catFilter === c ? "bg-[#7C3AED] text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}>{c}</button>
-        ))}
+      {/* Category scroll tabs with arrows */}
+      <div className="flex items-center gap-2 mb-6">
+        <button onClick={() => scrollCats(-1)} className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div ref={catScrollRef} className="flex gap-2 overflow-x-auto scrollbar-none flex-1">
+          {HT_CATEGORIES.map(c => (
+            <button
+              key={c}
+              onClick={() => setCatFilter(c)}
+              className={`text-xs px-4 py-2 rounded-full font-semibold whitespace-nowrap shrink-0 transition-all ${catFilter === c ? "bg-[#C7E36B] text-black" : "bg-white/8 text-gray-300 hover:bg-white/15"}`}
+            >{c}</button>
+          ))}
+        </div>
+        <button onClick={() => scrollCats(1)} className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
       </div>
 
       {loading ? (
         <p className="text-gray-500 text-sm animate-pulse">Loading talent...</p>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <p className="text-gray-500 text-sm">No talent found{catFilter !== "All" ? ` in ${catFilter}` : ""}</p>
+        </div>
       ) : (
         <div className="space-y-6">
           {filtered.map(t => (
-            <div key={t._id} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
+            <div key={t._id} className="bg-[#111315] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden shrink-0">
-                  {t.avatar ? <img src={t.avatar} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full bg-gradient-to-br from-[#7C3AED] to-purple-800 flex items-center justify-center text-white font-black text-xl">{t.name[0]}</div>}
+                {/* Avatar */}
+                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 relative">
+                  {t.avatar
+                    ? <img src={t.avatar} className="w-full h-full object-cover" alt=""
+                        onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}/>
+                    : null}
+                  <div className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-lg"
+                    style={{display: t.avatar ? "none" : "flex"}}>{t.name?.[0]?.toUpperCase()}</div>
                 </div>
+                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-base font-bold text-white">{t.name}</p>
-                    <span className="text-[10px] bg-[#7C3AED]/20 text-[#7C3AED] font-bold px-2 py-0.5 rounded-full">{t.category}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5">📍 {t.location}</p>
-                  <p className="text-sm text-gray-300 mt-1.5 leading-relaxed">{t.bio}</p>
+                  <p className="text-base font-bold text-white">{t.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                    <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    {t.location}
+                  </p>
+                  {t.bio && <p className="text-sm text-gray-400 mt-1.5 leading-relaxed line-clamp-2">{t.bio}</p>}
                 </div>
-                <button onClick={() => { quickInquiry(t); openInquiry(t); }} className="shrink-0 text-xs bg-[#7C3AED] text-white font-bold px-4 py-2 rounded-xl hover:bg-violet-500 transition-all">SEND INQUIRY</button>
+                {/* CTA */}
+                <button
+                  onClick={() => openInquiry(t)}
+                  className="shrink-0 flex items-center gap-1.5 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-xl hover:brightness-110 transition-all"
+                >
+                  Send Inquiry
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
               </div>
 
               {/* Skills */}
               {t.skills?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {t.skills.map(s => <span key={s} className="text-[10px] bg-white/8 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{s}</span>)}
+                  {t.skills.map(s => (
+                    <span key={s} className="text-[10px] border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">{s}</span>
+                  ))}
                 </div>
               )}
 
-              {/* Works grid */}
-              {t.works?.length > 0 && (
+              {/* Portfolio grid */}
+              {t.works?.filter(Boolean).length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
-                  {t.works.map((w, i) => (
-                    <div key={i} className="aspect-video rounded-lg overflow-hidden bg-white/5">
-                      {w ? <img src={w} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full flex items-center justify-center text-gray-600 text-[10px]">Portfolio {i + 1}</div>}
+                  {t.works.filter(Boolean).slice(0, 3).map((w, i) => (
+                    <div key={i} className="aspect-video rounded-xl overflow-hidden bg-white/5">
+                      <img src={w} className="w-full h-full object-cover" alt=""/>
                     </div>
                   ))}
                 </div>
               )}
             </div>
           ))}
-          {filtered.length === 0 && <div className="text-center py-12"><p className="text-gray-500 text-sm">No talent found in this category</p></div>}
         </div>
       )}
 
       {/* Inquiry Modal */}
       {inquiry && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && setInquiry(null)}>
-          <div className="bg-[#0F1112] border border-white/15 rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={e => e.target === e.currentTarget && !sent && setInquiry(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             {sent ? (
-              <div className="text-center py-4">
-                <p className="text-4xl mb-3">✅</p>
-                <p className="text-white font-bold">Inquiry Sent!</p>
-                <p className="text-xs text-gray-400 mt-1">{inquiry.name} will get back to you soon.</p>
+              /* Success state — matches Figma */
+              <div className="p-8 text-center relative">
+                <button onClick={() => setInquiry(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+                <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-5">
+                  <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                </div>
+                <h3 className="text-lg font-black text-black mb-2">Inquiry Sent Successfully</h3>
+                <p className="text-sm text-gray-500 mb-6">Your message has been sent to the talent. They will get back to you soon.</p>
+                <button onClick={() => setInquiry(null)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all">
+                  Continue Browsing
+                </button>
               </div>
             ) : (
-              <>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C3AED] to-purple-800 flex items-center justify-center text-white font-bold">{inquiry.name[0]}</div>
-                  <div><p className="text-sm font-bold text-white">{inquiry.name}</p><p className="text-[10px] text-gray-400">{inquiry.category}</p></div>
-                  <button onClick={() => setInquiry(null)} className="ml-auto text-gray-500 hover:text-white"><Ic name="close" size={18}/></button>
+              /* Message form */
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-base shrink-0">
+                    {inquiry.name?.[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-black">{inquiry.name}</p>
+                    <p className="text-xs text-gray-500">{inquiry.category}</p>
+                  </div>
+                  <button onClick={() => setInquiry(null)} className="ml-auto text-gray-400 hover:text-gray-700">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
                 </div>
-                <p className="text-[10px] text-gray-400 font-semibold mb-2">YOUR MESSAGE</p>
-                <textarea value={inqMsg} onChange={e => setInqMsg(e.target.value)} rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#7C3AED]/50 resize-none mb-3" placeholder={`Hi ${inquiry.name.split(" ")[0]}, I'm interested in your ${inquiry.category} services...`}/>
+                <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide mb-2">Your Message</p>
+                <textarea
+                  value={inqMsg}
+                  onChange={e => setInqMsg(e.target.value)}
+                  rows={4}
+                  placeholder={`Hi ${inquiry.name?.split(" ")[0]}, I'm interested in your services...`}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-black placeholder-gray-400 outline-none focus:border-gray-400 resize-none mb-4"
+                />
                 <div className="flex gap-2">
-                  <button onClick={() => setInquiry(null)} className="flex-1 text-xs border border-white/15 text-gray-400 py-2 rounded-xl hover:bg-white/5">Cancel</button>
-                  <button onClick={sendInquiry} disabled={!inqMsg.trim()} className="flex-1 text-xs bg-[#7C3AED] text-white font-bold py-2 rounded-xl disabled:opacity-40 hover:bg-violet-500">Send</button>
+                  <button onClick={() => setInquiry(null)} className="flex-1 text-sm border border-gray-200 text-gray-500 py-2.5 rounded-xl hover:bg-gray-50 font-medium">Cancel</button>
+                  <button onClick={sendInquiry} disabled={!inqMsg.trim()} className="flex-1 text-sm bg-[#C7E36B] text-black font-bold py-2.5 rounded-xl disabled:opacity-40 hover:brightness-105 transition-all">Send</button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
