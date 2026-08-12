@@ -2088,28 +2088,22 @@ function CertificatesSection({ token, profile }) {
 /* ════════════════════════════════════════════
    JOBS SECTION
 ════════════════════════════════════════════ */
-const TAG_COLORS = { "AI Film": "bg-[#C7E36B] text-black", "AI Ads": "bg-orange-400 text-black", "AI Story": "bg-pink-400 text-black", "AI Editing": "bg-blue-400 text-black", "AI Voice": "bg-purple-400 text-white", "AI Avatar": "bg-teal-400 text-black", "AI Music": "bg-indigo-400 text-white" };
-
-const JOB_CATEGORIES = ["Cinematography","Video Editing","Sound Design","Directing","Production Design"];
-const JOB_BUDGETS    = ["< ₹50/hr","₹50-100/hr","₹100-200/hr","₹200+/hr"];
-const JOB_TIMELINES  = ["Immediate","Within 2 Weeks","1 Month+","Flexible"];
-const JOB_TAG_COLORS = { "AI Film":"bg-[#C7E36B]/20 text-[#C7E36B]","AI Story":"bg-purple-500/20 text-purple-300","AI Editing":"bg-blue-500/20 text-blue-300","AI Ads":"bg-orange-500/20 text-orange-300","AI Music":"bg-pink-500/20 text-pink-300" };
+const JOB_BUDGETS   = ["< ₹50/hr","₹50-100/hr","₹100-200/hr","₹200+/hr"];
+const JOB_TIMELINES = ["Immediate","Within 2 Weeks","1 Month+","Flexible"];
 
 function JobsSection({ token }) {
-  const [jobs, setJobs]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [catFilter, setCat]     = useState("All");
-  const [budgetFilter, setBudget]     = useState("All");
+  const [jobs, setJobs]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [catFilter, setCat]         = useState("All");
+  const [budgetFilter, setBudget]   = useState("All");
   const [timelineFilter, setTimeline] = useState("All");
-  const [detailJob, setDetailJob]     = useState(null);
-  const [applied, setApplied]         = useState(false);
+  const [detailJob, setDetailJob]   = useState(null);
+  const [applied, setApplied]       = useState(false);
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") { setDetailJob(null); setApplied(false); }
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
+    const onEsc = (e) => { if (e.key === "Escape") { setDetailJob(null); setApplied(false); } };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
   }, []);
 
   useEffect(() => {
@@ -2119,107 +2113,131 @@ function JobsSection({ token }) {
       .catch(() => setLoading(false));
   }, []);
 
+  const allTags     = ["All", ...Array.from(new Set(jobs.map(j => j.tag).filter(Boolean)))];
+  const allBudgets  = ["All", ...Array.from(new Set(jobs.map(j => j.budget).filter(Boolean)))];
+  const allTimelines = ["All", ...Array.from(new Set(jobs.map(j => j.timeline).filter(Boolean)))];
+
   const filtered = jobs.filter(j => {
-    if (catFilter !== "All" && !(j.skills || []).some(s => s.toLowerCase().includes(catFilter.toLowerCase()))) return false;
-    if (budgetFilter !== "All" && j.budget !== budgetFilter) return false;
+    if (catFilter      !== "All" && j.tag      !== catFilter)      return false;
+    if (budgetFilter   !== "All" && j.budget   !== budgetFilter)   return false;
     if (timelineFilter !== "All" && j.timeline !== timelineFilter) return false;
     return true;
   });
 
-  const Sel = ({ val, opts, onChange, placeholder }) => (
-    <select value={val} onChange={e => onChange(e.target.value)} className="bg-white/5 border border-white/10 text-gray-300 text-sm rounded-xl px-4 py-2 outline-none hover:border-white/20 transition-all">
-      <option value="All">{placeholder}</option>
-      {opts.map(o => <option key={o} value={o}>{o}</option>)}
-    </select>
+  const timeAgo = (iso) => {
+    if (!iso) return "";
+    const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+    if (diff < 3600)  return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hour${Math.floor(diff/3600)>1?"s":""} ago`;
+    return `${Math.floor(diff / 86400)} day${Math.floor(diff/86400)>1?"s":""} ago`;
+  };
+
+  const DropFilter = ({ val, opts, onChange, label }) => (
+    <div className="relative">
+      <select
+        value={val}
+        onChange={e => onChange(e.target.value)}
+        className="appearance-none bg-[#111315] border border-white/15 text-sm text-gray-300 rounded-xl px-4 pr-9 py-2.5 outline-none cursor-pointer hover:border-white/25 transition-all min-w-[140px]"
+      >
+        <option value="All">{label}</option>
+        {opts.filter(o => o !== "All").map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
   );
 
   return (
     <div className="p-6">
-      {/* View Details Modal */}
-      {detailJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => { setDetailJob(null); setApplied(false); }}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${TAG_COLORS[detailJob.tag] || "bg-gray-500/30 text-white"}`}>{detailJob.tag}</span>
-                <h2 className="text-lg font-bold text-white mt-2">{detailJob.title}</h2>
-                <p className="text-xs text-gray-500 uppercase font-semibold mt-0.5">{detailJob.type}</p>
-              </div>
-              <button onClick={() => { setDetailJob(null); setApplied(false); }} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
-            </div>
-            <p className="text-sm text-gray-300 leading-relaxed mb-4">{detailJob.description || "Exciting opportunity to work with cutting-edge AI filmmaking tools. Apply now to be part of the AIFA talent network."}</p>
-            {detailJob.skills?.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Required Skills</p>
-                <div className="flex flex-wrap gap-2">
-                  {detailJob.skills.map(s => <span key={s} className="text-xs bg-[#7C3AED]/20 text-purple-300 border border-[#7C3AED]/30 px-3 py-1 rounded-full">{s}</span>)}
-                </div>
-              </div>
-            )}
-            <div className="flex gap-3 mb-4">
-              {detailJob.budget && <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-center flex-1"><p className="text-[10px] text-gray-500 uppercase">Budget</p><p className="text-sm font-bold text-white">{detailJob.budget}</p></div>}
-              {detailJob.timeline && <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-center flex-1"><p className="text-[10px] text-gray-500 uppercase">Timeline</p><p className="text-sm font-bold text-white">{detailJob.timeline}</p></div>}
-            </div>
-            <div className="bg-[#7C3AED]/10 border border-[#7C3AED]/30 rounded-xl p-4 mb-4">
-              <p className="text-xs font-bold text-purple-300 mb-1">How to Apply</p>
-              <p className="text-xs text-gray-400">Submit your portfolio and a brief introduction via the AIFA platform. Shortlisted candidates will be contacted within 5 business days.</p>
-            </div>
-            {applied ? (
-              <div className="w-full bg-green-500/10 border border-green-500/30 rounded-xl py-3 text-center">
-                <p className="text-green-400 font-bold text-sm">✓ Application Submitted!</p>
-                <p className="text-green-300 text-xs mt-1">We'll contact you within 5 business days.</p>
-              </div>
-            ) : (
-              <button onClick={()=>setApplied(true)} className="w-full bg-[#7C3AED] hover:bg-[#6d28d9] text-white font-bold py-3 rounded-xl transition-all text-sm">Apply Now</button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Jobs</h1>
-        <p className="text-gray-400 text-sm mt-1">{loading ? "Loading..." : `${filtered.length} of ${jobs.length} opportunities`}</p>
-      </div>
-
       {/* Filters */}
-      <div className="flex gap-3 mb-6 flex-wrap">
-        <Sel val={catFilter}      opts={JOB_CATEGORIES} onChange={setCat}      placeholder="All Categories" />
-        <Sel val={budgetFilter}   opts={JOB_BUDGETS}    onChange={setBudget}   placeholder="All Budgets" />
-        <Sel val={timelineFilter} opts={JOB_TIMELINES}  onChange={setTimeline} placeholder="All Timelines" />
+      <div className="flex gap-3 mb-8 flex-wrap">
+        <DropFilter val={catFilter}      opts={allTags}      onChange={setCat}      label="Category" />
+        <DropFilter val={budgetFilter}   opts={allBudgets}   onChange={setBudget}   label="Budget" />
+        <DropFilter val={timelineFilter} opts={allTimelines} onChange={setTimeline} label="Timeline" />
         {(catFilter !== "All" || budgetFilter !== "All" || timelineFilter !== "All") && (
-          <button onClick={() => { setCat("All"); setBudget("All"); setTimeline("All"); }} className="text-xs text-gray-400 hover:text-white underline">Clear</button>
+          <button onClick={() => { setCat("All"); setBudget("All"); setTimeline("All"); }} className="text-xs text-gray-500 hover:text-white underline self-center">Clear</button>
         )}
       </div>
 
       {loading ? (
-        <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading jobs...</p>
+        <p className="text-gray-500 text-sm animate-pulse text-center py-12">Loading jobs...</p>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-white font-semibold text-sm">No Jobs Found</p>
-          <p className="text-gray-500 text-xs mt-1">Try changing your filters or check back later.</p>
+        <div className="text-center py-20 text-gray-500">
+          <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          <p className="text-sm font-semibold text-white mb-1">No Jobs Found</p>
+          <p className="text-xs">Try changing your filters or check back later.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((j) => (
-            <div key={j._id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all flex flex-col">
-              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full w-fit mb-2 ${TAG_COLORS[j.tag] || "bg-gray-500/30 text-white"}`}>{j.tag}</span>
-              <h3 className="text-sm font-bold text-white mb-1">{j.title}</h3>
-              <p className="text-[11px] text-gray-500 uppercase font-semibold mb-2">{j.type}</p>
-              <p className="text-xs text-gray-400 flex-1 mb-3 line-clamp-3">{j.description}</p>
-              {j.skills?.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {j.skills.slice(0, 3).map(s => <span key={s} className="text-[10px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full">{s}</span>)}
-                </div>
+            <div key={j._id} className="bg-[#111315] border border-white/8 rounded-2xl p-5 hover:border-white/18 transition-all flex flex-col">
+              {/* Tag */}
+              {j.tag && (
+                <span className="text-[11px] font-bold bg-[#C7E36B] text-black px-3 py-1 rounded-full w-fit mb-3">{j.tag}</span>
               )}
-              <div className="flex items-center justify-between border-t border-white/10 pt-3 mt-auto">
-                <div className="flex gap-2">
-                  {j.budget && <span className="text-xs bg-white/10 text-white px-2.5 py-1 rounded-full font-semibold">{j.budget}</span>}
-                  {j.timeline && <span className="text-[11px] bg-white/10 text-gray-400 px-2.5 py-1 rounded-full">{j.timeline}</span>}
-                </div>
-                <button onClick={() => setDetailJob(j)} className="text-xs text-[#7C3AED] hover:text-purple-300 font-semibold transition-all">View Details →</button>
+              {/* Title + type */}
+              <h3 className="text-base font-bold text-white mb-1 leading-snug">{j.title}</h3>
+              <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide mb-3">{j.type}</p>
+              {/* Description */}
+              <p className="text-sm text-gray-400 flex-1 mb-4 line-clamp-3 leading-relaxed">{j.description}</p>
+              {/* View Details */}
+              <button
+                onClick={() => { setDetailJob(j); setApplied(false); }}
+                className="text-sm text-[#C7E36B] font-semibold hover:underline text-left mb-4"
+              >View Details</button>
+              {/* Footer */}
+              <div className="flex items-center gap-2 flex-wrap border-t border-white/8 pt-3">
+                {j.budget && (
+                  <span className="text-xs border border-white/15 text-gray-300 px-3 py-1 rounded-lg font-medium">{j.budget}</span>
+                )}
+                {(j.createdAt || j.postedAt) && (
+                  <span className="text-xs border border-white/15 text-gray-400 px-3 py-1 rounded-lg">{timeAgo(j.createdAt || j.postedAt)}</span>
+                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => { setDetailJob(null); setApplied(false); }}>
+          <div className="bg-[#111315] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                {detailJob.tag && <span className="text-[10px] font-bold bg-[#C7E36B] text-black px-2.5 py-0.5 rounded-full">{detailJob.tag}</span>}
+                <h2 className="text-lg font-bold text-white mt-2 mb-0.5">{detailJob.title}</h2>
+                <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide">{detailJob.type}</p>
+              </div>
+              <button onClick={() => { setDetailJob(null); setApplied(false); }} className="text-gray-500 hover:text-white ml-4 shrink-0">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <p className="text-sm text-gray-300 leading-relaxed mb-5">{detailJob.description}</p>
+            {detailJob.skills?.length > 0 && (
+              <div className="mb-5">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">Required Skills</p>
+                <div className="flex flex-wrap gap-2">
+                  {detailJob.skills.map(s => <span key={s} className="text-xs border border-white/15 text-gray-300 px-3 py-1 rounded-full">{s}</span>)}
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3 mb-5">
+              {detailJob.budget && <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center flex-1"><p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Budget</p><p className="text-sm font-bold text-white">{detailJob.budget}</p></div>}
+              {detailJob.timeline && <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center flex-1"><p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Timeline</p><p className="text-sm font-bold text-white">{detailJob.timeline}</p></div>}
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+              <p className="text-xs font-bold text-gray-300 mb-1">How to Apply</p>
+              <p className="text-xs text-gray-500">Submit your portfolio and a brief introduction via the AIFA platform. Shortlisted candidates will be contacted within 5 business days.</p>
+            </div>
+            {applied ? (
+              <div className="w-full bg-[#C7E36B]/10 border border-[#C7E36B]/30 rounded-xl py-4 text-center">
+                <p className="text-[#C7E36B] font-bold text-sm">Application Submitted!</p>
+                <p className="text-gray-400 text-xs mt-1">We'll contact you within 5 business days.</p>
+              </div>
+            ) : (
+              <button onClick={() => setApplied(true)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all text-sm">Apply Now</button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -2940,20 +2958,11 @@ function SettingsSection({ token, profile }) {
    RESOURCES SECTION
 ════════════════════════════════════════════ */
 const RES_TABS = [
-  { key: "prompt",   label: "PROMPT LIBRARY" },
-  { key: "workflow", label: "WORK FLOW"       },
-  { key: "project",  label: "PROJECT"         },
-  { key: "tip",      label: "LEARNING TIPS"   },
-  { key: "deal",     label: "AI DEAL"         },
-];
-
-const PLACEHOLDER_IMGS = [
-  "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600&q=80",
-  "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=600&q=80",
-  "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80",
-  "https://images.unsplash.com/photo-1672240651781-3562e88f6c3f?w=600&q=80",
-  "https://images.unsplash.com/photo-1655720828018-edd2daec9349?w=600&q=80",
-  "https://images.unsplash.com/photo-1682685797660-3d847763208e?w=600&q=80",
+  { key: "prompt",   label: "PROMP LIBRARY" },
+  { key: "workflow", label: "WORK FLOW"      },
+  { key: "project",  label: "PROJECT"        },
+  { key: "tip",      label: "LEARNING TIPS"  },
+  { key: "deal",     label: "AI DEAL"        },
 ];
 
 function ResourcesSection({ token }) {
@@ -2962,7 +2971,6 @@ function ResourcesSection({ token }) {
   const [resources, setRes]         = useState([]);
   const [loading, setLoading]       = useState(false);
   const [copied, setCopied]         = useState(null);
-  const [detail, setDetail]         = useState(null);
   const [catFilter, setCatFilter]   = useState("All");
   const [subCatFilter, setSubCatFilter] = useState("All");
   const [dealCatFilter, setDealCatFilter] = useState("All Benefits");
@@ -2983,7 +2991,7 @@ function ResourcesSection({ token }) {
       .finally(() => setLoading(false));
   }, [tab]);
 
-  const img = (r, i) => r.logo || PLACEHOLDER_IMGS[i % PLACEHOLDER_IMGS.length];
+  const img = (r) => r.thumbnail || r.logo || null;
 
   const copyText = r => {
     navigator.clipboard.writeText(r.content || r.description || "").catch(() => {});
@@ -3034,11 +3042,11 @@ function ResourcesSection({ token }) {
         </div>
       </div>
 
-      {/* Tab bar — uppercase pill style, lime active */}
-      <div className="flex gap-2 mb-4">
+      {/* Tab bar — underline style matching Figma */}
+      <div className="flex gap-0 border-b border-white/8 mb-6">
         {RES_TABS.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setCatFilter("All"); setSubCatFilter("All"); setDealCatFilter("All Benefits"); }}
-            className={`px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap ${tab === t.key ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 -mb-px transition-all whitespace-nowrap ${tab === t.key ? "border-[#C7E36B] text-[#C7E36B]" : "border-transparent text-gray-500 hover:text-gray-300"}`}>
             {t.label}
           </button>
         ))}
@@ -3072,26 +3080,29 @@ function ResourcesSection({ token }) {
       ) : tab === "prompt" ? (
         /* ── PROMPT LIBRARY ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r, i) => (
-            <div key={r._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-[#7C3AED]/40 transition-all">
-              <div className="h-[140px] overflow-hidden">
-                <img src={img(r, i)} alt={r.title} className="w-full h-full object-cover" />
+          {filtered.map((r) => (
+            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/18 transition-all">
+              <div className="h-[160px] overflow-hidden bg-white/5">
+                {img(r)
+                  ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover"/>
+                  : <div className="w-full h-full flex items-center justify-center"><svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+                }
               </div>
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-white mb-2 line-clamp-1">{r.title}</h3>
-                <div className="bg-white/5 rounded-lg p-2 mb-2 relative group">
-                  <span className="text-[9px] font-bold text-gray-500 tracking-widest uppercase block mb-1">PROMPT</span>
-                  <p className="text-[11px] text-gray-400 line-clamp-3 pr-5">{r.content || r.description}</p>
-                  <button onClick={() => copyText(r)} title="Copy prompt"
-                    className="absolute top-2 right-2 p-1 rounded hover:bg-white/10 transition-all">
-                    <Ic name={copied === r._id ? "check" : "copy"} size={13}
-                      className={copied === r._id ? "text-green-400" : "text-gray-500"} />
-                  </button>
+              <div className="p-4">
+                <h3 className="text-sm font-bold text-white mb-3 line-clamp-1">{r.title}</h3>
+                <div className="bg-[#0B0F10] border border-white/8 rounded-xl p-3 relative group">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[9px] font-bold text-gray-500 tracking-widest uppercase">PROMPT</span>
+                    <button onClick={() => copyText(r)} title="Copy prompt" className="p-1 rounded hover:bg-white/10 transition-all">
+                      <Ic name={copied === r._id ? "check" : "copy"} size={13} className={copied === r._id ? "text-[#C7E36B]" : "text-gray-500"}/>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-400 line-clamp-3">{r.content || r.description}</p>
                 </div>
                 {r.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 mt-3">
                     {r.tags.slice(0, 3).map(t => (
-                      <span key={t} className="text-[9px] bg-white/10 text-gray-400 px-1.5 py-0.5 rounded">{t}</span>
+                      <span key={t} className="text-[9px] border border-white/10 text-gray-500 px-2 py-0.5 rounded-full">{t}</span>
                     ))}
                   </div>
                 )}
@@ -3102,12 +3113,18 @@ function ResourcesSection({ token }) {
       ) : tab === "workflow" || tab === "project" ? (
         /* ── WORKFLOWS / PROJECTS ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r, i) => (
+          {filtered.map((r) => (
             <div key={r._id}
-              onClick={() => tab === "workflow" ? navigate(`/workflow/${r._id}`) : setDetail(r)}
-              className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 transition-all cursor-pointer group">
-              <div className="h-[180px] overflow-hidden relative">
-                <img src={img(r, i)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              onClick={() => {
+                const path = tab === "workflow" ? `/workflow/${r._id}` : `/projects/${r._id}`;
+                navigate(path, { state: { resource: r } });
+              }}
+              className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all cursor-pointer group">
+              <div className="h-[200px] overflow-hidden relative bg-white/5">
+                {img(r)
+                  ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                  : <div className="w-full h-full flex items-center justify-center"><svg width="40" height="40" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+                }
                 {r.category && (
                   <span className="absolute top-3 left-3 text-[9px] font-bold bg-black/70 text-[#C7E36B] px-2 py-1 rounded uppercase tracking-wider">{r.category}</span>
                 )}
@@ -3116,7 +3133,8 @@ function ResourcesSection({ token }) {
                 <h3 className="text-base font-bold text-white mb-1.5">{r.title}</h3>
                 <p className="text-xs text-gray-400 line-clamp-2 mb-3">{r.description}</p>
                 <span className="flex items-center gap-1.5 text-sm text-[#C7E36B] font-semibold">
-                  View Details <span>→</span>
+                  View Details
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </span>
               </div>
             </div>
@@ -3125,12 +3143,12 @@ function ResourcesSection({ token }) {
       ) : tab === "tip" ? (
         /* ── LEARNING TIPS ── 3-column thumbnail + Watch Now grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r, i) => (
-            <div key={r._id} className="bg-[#1A1D1E] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/20 transition-all">
+          {filtered.map((r) => (
+            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden group hover:border-white/18 transition-all">
               <div className="aspect-video overflow-hidden bg-white/5 relative">
-                {r.thumbnail
-                  ? <img src={r.thumbnail} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
-                  : <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#111 0%,#1a1d2e 100%)"}}>
+                {img(r)
+                  ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                  : <div className="w-full h-full flex items-center justify-center bg-[#0B0F10]">
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </div>
                 }
@@ -3193,34 +3211,6 @@ function ResourcesSection({ token }) {
         </div>
       ) : null}
 
-      {/* Projects detail modal */}
-      {detail && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="h-[200px] overflow-hidden rounded-t-2xl relative">
-              <img src={img(detail, 0)} alt={detail.title} className="w-full h-full object-cover" />
-              <button onClick={() => setDetail(null)}
-                className="absolute top-3 right-3 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-all text-white text-lg">✕</button>
-            </div>
-            <div className="p-6">
-              {detail.category && <span className="text-[10px] font-bold text-[#C7E36B] tracking-wider uppercase">{detail.category}</span>}
-              <h2 className="text-xl font-bold text-white mt-1 mb-2">{detail.title}</h2>
-              <p className="text-sm text-gray-400 mb-4">{detail.description}</p>
-              {detail.content && (
-                <div className="bg-white/5 rounded-xl p-4 mb-4">
-                  <p className="text-sm text-gray-300 whitespace-pre-wrap">{detail.content}</p>
-                </div>
-              )}
-              {detail.link && (
-                <a href={detail.link} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all">
-                  View Project →
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
