@@ -3885,10 +3885,49 @@ function EnrolmentsAdmin({ token }) {
                     </div>
                     <button
                       onClick={() => {
-                        const content = `Invoice #${invId}\nStudent: ${en.user?.name||""}\nEmail: ${en.user?.email||""}\nProgram: ${en.item||""}\nType: ${typeLabel(en.type)}\nAmount: ${en.price ? `₹${en.price}` : "—"}\nDate: ${new Date(en.enrolledAt).toLocaleDateString()}`;
-                        const a = document.createElement("a");
-                        a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(content);
-                        a.download = `invoice-${invId}.txt`; a.click();
+                        const date = new Date(en.enrolledAt).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"});
+                        const amount = en.price ? `₹${Number(en.price).toLocaleString("en-IN")}` : "—";
+                        const w = window.open("","_blank");
+                        w.document.write(`<!DOCTYPE html><html><head><title>Invoice #${invId}</title><style>
+                          *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+                          body{background:#fff;color:#111;padding:48px;max-width:680px;margin:auto}
+                          .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid #111}
+                          .brand{font-size:28px;font-weight:900;letter-spacing:-1px}
+                          .brand span{color:#84a800}
+                          .inv-num{font-size:13px;color:#666;margin-top:4px}
+                          .badge{background:#f0f7d4;color:#4a6000;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;margin-top:8px;display:inline-block}
+                          h2{font-size:14px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+                          .card{background:#f8f9fa;border-radius:10px;padding:20px;margin-bottom:24px}
+                          .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
+                          .row:last-child{border:none}
+                          .label{color:#666}
+                          .value{font-weight:600;color:#111}
+                          .total-row{display:flex;justify-content:space-between;padding:16px 0 0;font-size:18px;font-weight:800;border-top:2px solid #111;margin-top:8px}
+                          .footer{margin-top:48px;padding-top:24px;border-top:1px solid #eee;font-size:12px;color:#999;text-align:center}
+                          @media print{body{padding:24px}}
+                        </style></head><body>
+                          <div class="header">
+                            <div><div class="brand">Ai<span>FA</span></div><div class="inv-num">Invoice #${invId}</div><div class="badge">PAID</div></div>
+                            <div style="text-align:right;font-size:13px;color:#666"><div style="font-weight:700;color:#111;font-size:15px">AIFA Academy</div><div>aifa.co.in</div><div style="margin-top:4px">${date}</div></div>
+                          </div>
+                          <h2>Bill To</h2>
+                          <div class="card">
+                            <div class="row"><span class="label">Student Name</span><span class="value">${en.user?.name||"—"}</span></div>
+                            <div class="row"><span class="label">Email</span><span class="value">${en.user?.email||"—"}</span></div>
+                          </div>
+                          <h2>Purchase Details</h2>
+                          <div class="card">
+                            <div class="row"><span class="label">Program</span><span class="value">${en.item||"—"}</span></div>
+                            <div class="row"><span class="label">Type</span><span class="value">${typeLabel(en.type)}</span></div>
+                            <div class="row"><span class="label">Enrolled On</span><span class="value">${date}</span></div>
+                            <div class="row"><span class="label">Payment ID</span><span class="value">PAY-${invId.replace("INV-","")}</span></div>
+                          </div>
+                          <div class="total-row"><span>Total Paid</span><span>${amount}</span></div>
+                          <div class="footer">Thank you for learning with AIFA · This is a computer-generated invoice</div>
+                        </body></html>`);
+                        w.document.close();
+                        w.focus();
+                        setTimeout(() => w.print(), 400);
                       }}
                       className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors shrink-0 whitespace-nowrap">
                       Download Invoice
@@ -6184,6 +6223,7 @@ function ServiceRequestAdmin({ token }) {
   const [page, setPage]           = useState(1);
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedReq, setSelectedReq] = useState(null);
+  const [helpModal, setHelpModal]     = useState(null); // "guidelines" | "templates"
   const [showCreate, setShowCreate]   = useState(false);
   const [ticketCreated, setTicketCreated] = useState(null); // the created ticket
   const [form, setForm]           = useState(BLANK_FORM);
@@ -6838,14 +6878,78 @@ function ServiceRequestAdmin({ token }) {
             Help Resources
           </h3>
           <p className="text-[10px] text-gray-500 mb-3">Quick links for your support team.</p>
-          {["Support Guidelines","Response Templates"].map(l => (
-            <div key={l} className="flex items-center justify-between py-3 border-t border-white/5">
-              <span className="text-sm text-gray-300">{l}</span>
+          {[
+            { label:"Support Guidelines", key:"guidelines" },
+            { label:"Response Templates", key:"templates"  },
+          ].map(({ label, key }) => (
+            <button key={key} onClick={() => setHelpModal(key)} className="w-full flex items-center justify-between py-3 border-t border-white/5 hover:opacity-80 transition-opacity text-left">
+              <span className="text-sm text-gray-300">{label}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+    {/* ── Help Resource Modals ── */}
+    {helpModal && (
+      <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setHelpModal(null)}>
+        <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 sticky top-0 bg-[#111315] z-10">
+            <div className="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <h2 className="text-base font-bold text-white">{helpModal === "guidelines" ? "Support Guidelines" : "Response Templates"}</h2>
+            </div>
+            <button onClick={() => setHelpModal(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            {helpModal === "guidelines" ? (
+              <>
+                {[
+                  { title:"Response Time Targets", items:["Urgent tickets: respond within 1 hour","High priority: respond within 4 hours","Normal tickets: respond within 24 hours","Low priority: respond within 48 hours"] },
+                  { title:"Ticket Handling", items:["Always greet the student by name","Read the full message before responding","Check previous tickets from the same student","Add a note summarizing the issue before assigning","Never close a ticket without confirmation from the student"] },
+                  { title:"Escalation Rules", items:["Escalate payment issues to the finance team","Technical bugs go to the developer queue","Bootcamp complaints escalate to the program manager","Threats or abusive messages: notify the team lead immediately"] },
+                  { title:"Status Definitions", items:["New — unread, no action taken yet","In Progress — actively being worked on","Waiting for User — awaiting student reply","Resolved — issue solved, student confirmed","Closed — no response from student after 7 days"] },
+                ].map(section => (
+                  <div key={section.title}>
+                    <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-wider mb-2">{section.title}</p>
+                    <ul className="space-y-2">
+                      {section.items.map(item => (
+                        <li key={item} className="flex items-start gap-2.5 text-sm text-gray-300">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-500 mt-2 shrink-0"/>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-gray-500">Click any template to copy it to your clipboard.</p>
+                {[
+                  { label:"Initial Response", text:`Hi [Name],\n\nThank you for reaching out to AIFA Support. We've received your request and our team is reviewing it.\n\nWe'll get back to you within 24 hours. If this is urgent, please reply to this message.\n\nBest regards,\nAIFA Support Team` },
+                  { label:"Request More Info", text:`Hi [Name],\n\nThank you for contacting us. To help resolve your issue quickly, could you please provide:\n\n• [Specific info needed]\n• Your registered email address\n• Any screenshots if applicable\n\nWe look forward to your response.\n\nBest regards,\nAIFA Support Team` },
+                  { label:"Issue Resolved", text:`Hi [Name],\n\nGreat news — your issue has been resolved! Here's a summary of what was done:\n\n• [Resolution details]\n\nPlease let us know if you face any further issues. We're here to help!\n\nBest regards,\nAIFA Support Team` },
+                  { label:"Escalation Notice", text:`Hi [Name],\n\nWe've escalated your request to our specialist team for further assistance. You can expect an update within [timeframe].\n\nWe appreciate your patience.\n\nBest regards,\nAIFA Support Team` },
+                  { label:"Follow-Up (No Reply)", text:`Hi [Name],\n\nWe noticed we haven't heard back from you regarding your support request. If your issue has been resolved, we'll go ahead and close this ticket.\n\nIf you still need help, please reply and we'll be happy to assist.\n\nBest regards,\nAIFA Support Team` },
+                ].map(tpl => (
+                  <div key={tpl.label} className="bg-[#0B0F10] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors group cursor-pointer"
+                    onClick={() => { navigator.clipboard?.writeText(tpl.text); }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold text-[#C7E36B]">{tpl.label}</p>
+                      <span className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors">Click to copy</span>
+                    </div>
+                    <p className="text-xs text-gray-400 whitespace-pre-line leading-relaxed">{tpl.text}</p>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* ── Ticket Detail Slide-Over ── */}
     {selectedReq && (
@@ -6959,7 +7063,7 @@ const SC_PRIORITY = {
 
 function SalesConsultAdmin({ token }) {
   const BLANK_LEAD = { name:"", phone:"", email:"", consultType:"Workshop", status:"New", priority:"Normal", date:"", assignedTo:"", source:"", note:"" };
-  const BLANK_UPD  = { consultType:"", status:"", assignedTo:"", followDate:"", note:"" };
+  const BLANK_UPD  = { consultType:"", status:"", priority:"Normal", assignedTo:"", followDate:"", note:"" };
 
   const [leads, setLeads]             = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -6988,7 +7092,7 @@ function SalesConsultAdmin({ token }) {
       .catch(() => setLoading(false));
   }, [token]);
 
-  const openEdit = (l) => { setEditLead(l); setUpd({ consultType: l.consultType||"", status: l.status||"", assignedTo: l.assignedTo||"", followDate: l.followDate||"", note: l.note||"" }); };
+  const openEdit = (l) => { setEditLead(l); setUpd({ consultType: l.consultType||"", status: l.status||"", priority: l.priority||"Normal", assignedTo: l.assignedTo||"", followDate: l.followDate||"", note: l.note||"" }); };
 
   const handleUpdate = async () => {
     if (!editLead) return;
@@ -7203,6 +7307,10 @@ function SalesConsultAdmin({ token }) {
                 <Sel value={upd.status} onChange={v=>setUpd({...upd,status:v})} options={["New","Contacted","Booked","Follow up","Converted","Lost"]} placeholder="Select Status"/>
               </div>
               <div>
+                <label className="block text-xs font-semibold text-white mb-1.5">Priority</label>
+                <Sel value={upd.priority} onChange={v=>setUpd({...upd,priority:v})} options={["High","Normal","Low"]} placeholder="Select Priority"/>
+              </div>
+              <div>
                 <label className="block text-xs font-semibold text-white mb-1.5">Assigned To</label>
                 <Sel value={upd.assignedTo} onChange={v=>setUpd({...upd,assignedTo:v})} options={["Ravi","Priya","Arun","Team Lead"]} placeholder="Select team member"/>
               </div>
@@ -7272,6 +7380,10 @@ function SalesConsultAdmin({ token }) {
                 <div>
                   <label className="block text-sm font-medium text-white mb-1.5">Assigned to</label>
                   <Sel value={newLead.assignedTo} onChange={v=>setNewLead({...newLead,assignedTo:v})} options={["Ravi","Priya","Arun","Team Lead"]} placeholder="Select team member"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1.5">Priority</label>
+                  <Sel value={newLead.priority} onChange={v=>setNewLead({...newLead,priority:v})} options={["High","Normal","Low"]} placeholder="Select Priority"/>
                 </div>
               </div>
               <div>
@@ -7457,8 +7569,13 @@ function HireTalentAdmin({ token }) {
             {talents.map(t=>(
               <div key={t._id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
-                    {t.avatar ? <img src={t.avatar} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-lg">{t.name[0]}</div>}
+                  <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 relative">
+                    {t.avatar
+                      ? <img src={t.avatar} className="w-full h-full object-cover" alt=""
+                          onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}/>
+                      : null}
+                    <div className={`w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-lg ${t.avatar ? "hidden" : ""}`}
+                      style={{display: t.avatar ? "none" : "flex"}}>{t.name?.[0]?.toUpperCase()}</div>
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-white truncate">{t.name}</p>
