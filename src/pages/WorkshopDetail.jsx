@@ -42,6 +42,181 @@ function CountdownTimer({ scheduledAt }) {
 
 const FALLBACK = "/courses/v1.png";
 
+const DEFAULT_OUTCOMES = [
+  { title: "AI Storytelling & Script Writing", description: "Generate engaging stories and scripts using AI." },
+  { title: "Prompt Engineering", description: "Write effective prompts for consistent cinematic results." },
+  { title: "Image Generation", description: "Create high-quality scenes and characters with AI." },
+  { title: "AI Video Creation", description: "Transform images into cinematic videos using modern AI tools." },
+  { title: "Voice, Music & Sound Design", description: "Add realistic narration, music, and sound effects." },
+  { title: "Editing & Final Export", description: "Combine everything into a polished final film." },
+];
+
+const DEFAULT_AUDIENCE = [
+  { title: "CONTENT CREATORS & INFLUENCERS", description: "Produce scroll-stopping reels and videos faster with AI." },
+  { title: "FILMMAKERS & ANIMATORS", description: "Level up your storytelling with AI-powered Animations." },
+  { title: "DESIGNERS & CREATIVE PROFESSIONALS", description: "Expand your skillset with AI-driven visuals and workflows." },
+  { title: "SOCIAL MEDIA MANAGERS", description: "Learn practical AI skills, build creative projects, and prepare for careers in content creation and digital media." },
+  { title: "STUDENTS", description: "Plan, create, and publish engaging AI-powered content that increases reach and audience engagement." },
+  { title: "AD & MARKETING PROFESSIONALS", description: "Create high-converting ads and brand content using AI tools." },
+];
+
+const DEFAULT_TESTIMONIALS = [
+  { name: "K.Krishna Vamsi", role: "AI Filmmaker", quote: "Before joining AIFA, I only had theoretical knowledge. The practical sessions, mentorship, and assignments helped me build real-world skills that I can confidently apply." },
+  { name: "CH.Sridhar", role: "AI Video Editor", quote: "The learning experience was simple, practical, and career-focused. AIFA breaks down complex AI concepts into easy-to-understand lessons. I was able to create projects and improve my portfolio within a short time." },
+  { name: "M.P.C.H.Mani", role: "AI Motion Graphics", quote: "AIFA helped me build confidence and open up new opportunities. After completing the training, I was able to work on client projects and present them professionally." },
+];
+
+const DEFAULT_FAQS = [
+  { question: "Do I need prior experience?", answer: "No, this workshop is designed for both beginners and experienced creators. We cover everything from the basics of prompt engineering to advanced cinematic workflows." },
+  { question: "How long is the workshop?", answer: "The workshop typically runs for 3 hours with live Q&A sessions included." },
+  { question: "Which tools will be covered?", answer: "We cover industry-leading AI tools for video creation, image generation, voice synthesis, and more." },
+];
+
+function WhatYouWillLearn({ outcomes }) {
+  const items = (outcomes && outcomes.length > 0) ? outcomes : DEFAULT_OUTCOMES;
+  return (
+    <section className="bg-[#0B0F10] py-16 px-4">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-white font-black text-3xl md:text-4xl text-center mb-3">What You Will Learn</h2>
+        <p className="text-gray-400 text-center text-sm mb-10">Master the complete AI filmmaking workflow—from idea generation to exporting professional-quality videos.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {items.map((item, i) => (
+            <div key={i} className="bg-[#111315] rounded-2xl px-6 py-5">
+              <p className="text-white font-bold text-base mb-1">{item.title}</p>
+              <p className="text-gray-400 text-sm">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhatYouWillCreate({ projects }) {
+  const items = (projects && projects.length > 0) ? projects : [
+    { label: "PROJECT", title: "AI SHORT FILM", image: "/bootcamp/bootcamp1.png", description: "By the end of this workshop, you'll build real AI filmmaking projects." },
+  ];
+  return (
+    <section className="bg-[#0B0F10] py-16 px-4">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-white font-black text-3xl md:text-4xl text-center mb-3">What You Will <span className="uppercase">CREATE</span></h2>
+        <p className="text-gray-400 text-center text-sm mb-10">{items[0]?.description || "By the end of this workshop, you'll build real AI filmmaking projects."}</p>
+        <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+          {items.map((proj, i) => (
+            <div key={i} className="flex flex-col sm:flex-row items-center gap-6 bg-[#111315] rounded-2xl p-6 max-w-lg w-full">
+              <div>
+                <p className="text-[#C7E36B] text-xs font-bold tracking-widest mb-1">{proj.label || "PROJECT"}</p>
+                <p className="text-white font-black text-xl mb-2">{proj.title}</p>
+              </div>
+              <img src={proj.image || FALLBACK} alt={proj.title}
+                className="w-40 h-40 object-cover rounded-2xl shrink-0"
+                onError={e => { e.target.src = FALLBACK; }} />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-center mt-8">
+          <button className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-xl hover:opacity-90 transition uppercase">
+            I WANT TO CREATE THIS
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhoIsItFor({ audience }) {
+  const items = (audience && audience.length > 0) ? audience : DEFAULT_AUDIENCE;
+  return (
+    <section className="bg-[#0B0F10] py-16 px-4">
+      <div className="max-w-5xl mx-auto grid md:grid-cols-[280px_1fr] gap-10 items-start">
+        <div>
+          <p className="text-[#C7E36B] text-xs font-bold tracking-widest mb-2">WHO IT'S FOR</p>
+          <h2 className="text-white font-black text-3xl md:text-4xl mb-4">WHO IS THIS WORKSHOP FOR?</h2>
+          <p className="text-gray-400 text-sm">Whether you are a seasoned creative or a complete beginner, this workshop is designed to level up your skills.</p>
+        </div>
+        <div className="flex flex-col gap-3">
+          {items.map((aud, i) => (
+            <div key={i} className="bg-[#111315] rounded-2xl px-6 py-4">
+              <p className="text-white font-bold text-sm mb-0.5">{aud.title}</p>
+              <p className="text-gray-400 text-xs">{aud.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SuccessStories({ testimonials }) {
+  const [idx, setIdx] = useState(0);
+  const items = (testimonials && testimonials.length > 0) ? testimonials : DEFAULT_TESTIMONIALS;
+  return (
+    <section className="bg-[#111315] py-16 px-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-white font-black text-3xl md:text-4xl">Student Success Stories</h2>
+            <p className="text-gray-400 text-sm mt-1">See what others achieved after taking this workshop.</p>
+          </div>
+          <button onClick={() => setIdx(i => (i + 1) % items.length)}
+            className="w-10 h-10 bg-[#C7E36B] rounded-lg flex items-center justify-center hover:opacity-90 transition shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B0F10" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {items.slice(0, 3).map((t, i) => (
+            <div key={i} className="bg-[#0B0F10] rounded-2xl p-6 flex flex-col justify-between gap-4">
+              <p className="text-gray-300 text-sm leading-relaxed">"{t.quote}"</p>
+              <div className="flex items-center gap-3 mt-2">
+                {t.avatar ? (
+                  <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] font-bold text-sm shrink-0">
+                    {t.name?.charAt(0) || "A"}
+                  </div>
+                )}
+                <div>
+                  <p className="text-white font-bold text-sm">{t.name}</p>
+                  <p className="text-gray-500 text-xs">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WorkshopFAQ({ faqs }) {
+  const [open, setOpen] = useState(0);
+  const items = (faqs && faqs.length > 0) ? faqs : DEFAULT_FAQS;
+  return (
+    <section className="bg-[#0B0F10] py-16 px-4">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-white font-black text-3xl md:text-4xl text-center mb-10 tracking-wide uppercase">Frequently-Asked Questions</h2>
+        <div className="flex flex-col gap-3">
+          {items.map((faq, i) => (
+            <div key={i} className="border border-white/10 rounded-2xl overflow-hidden">
+              <button
+                onClick={() => setOpen(open === i ? -1 : i)}
+                className="w-full flex items-center justify-between px-6 py-4 text-left text-white font-semibold text-sm bg-[#111315] hover:bg-[#161a1b] transition">
+                <span>{faq.question}</span>
+                <span className="text-xl leading-none text-gray-400 shrink-0 ml-4">{open === i ? "−" : "+"}</span>
+              </button>
+              {open === i && (
+                <div className="px-6 py-4 bg-[#111315] border-t border-white/10">
+                  <p className="text-gray-400 text-sm leading-relaxed">{faq.answer}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function WorkshopDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -583,16 +758,43 @@ export default function WorkshopDetail() {
 
         {/* VIDEO PREVIEW */}
         <div className="relative rounded-2xl overflow-hidden mb-8">
-          <img src={workshop.image || FALLBACK} alt={workshop.title}
-            className="w-full h-[280px] md:h-[400px] object-cover"
-            onError={e => { e.target.src = FALLBACK; }}/>
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-          </div>
+          {workshop.previewVideoUrl ? (
+            <iframe
+              src={workshop.previewVideoUrl}
+              className="w-full h-[280px] md:h-[400px]"
+              allow="autoplay; fullscreen"
+              allowFullScreen
+              title="Workshop preview"
+            />
+          ) : (
+            <>
+              <img src={workshop.image || FALLBACK} alt={workshop.title}
+                className="w-full h-[280px] md:h-[400px] object-cover"
+                onError={e => { e.target.src = FALLBACK; }}/>
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* WHAT YOU WILL LEARN */}
+      <WhatYouWillLearn outcomes={workshop.learningOutcomes} />
+
+      {/* WHAT YOU WILL CREATE */}
+      <WhatYouWillCreate projects={workshop.projects} />
+
+      {/* WHO IS THIS FOR */}
+      <WhoIsItFor audience={workshop.targetAudience} />
+
+      {/* STUDENT SUCCESS STORIES */}
+      <SuccessStories testimonials={workshop.testimonials} />
+
+      {/* FAQ */}
+      <WorkshopFAQ faqs={workshop.faqs} />
 
       {/* STICKY BAR — hidden when any modal is open */}
       {!showBuyModal && !showPayModal && !showSuccessModal && !showCalendarModal && !showSetPassword && (
