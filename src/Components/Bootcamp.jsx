@@ -40,7 +40,6 @@ export default function Bootcamps() {
         if (Array.isArray(data) && data.length > 0) {
           const mapped = data
             .filter(w => w.isPublished !== false)
-            .slice(0, 4)
             .map((w, i) => ({
               _id:      w._id,
               title:    w.title,
@@ -73,7 +72,7 @@ export default function Bootcamps() {
         </h2>
 
         <div className="flex flex-col gap-[0] sm:gap-[10px]">
-          {workshops.map((item, i) => (
+          {workshops.slice(0, 3).map((item, i) => (
             <motion.div
               key={item._id || i}
               initial={{ opacity: 0, y: 60 }}
@@ -148,6 +147,18 @@ export default function Bootcamps() {
               </div>
             </motion.div>
           ))}
+        </div>
+
+        {/* View All button */}
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => navigate("/workshops")}
+            className="flex items-center gap-[8px] px-[40px] py-[14px] rounded-[8px] border-2 border-[#C7E36B] text-[#C7E36B] font-[Montserrat] font-bold text-[16px] uppercase hover:bg-[#C7E36B] hover:text-[#0F1112] transition-all duration-300"
+          >
+            VIEW ALL WORKSHOPS
+            <img src="/Arrowleft2.svg" alt="arrow" className="w-[16px] h-[16px]" />
+          </button>
         </div>
       </div>
     </section>
