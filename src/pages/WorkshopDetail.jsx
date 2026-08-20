@@ -93,29 +93,38 @@ function WhatYouWillLearn({ outcomes }) {
 }
 
 function WhatYouWillCreate({ projects }) {
-  const items = (projects && projects.length > 0) ? projects : [
-    { label: "PROJECT", title: "AI SHORT FILM", image: "/bootcamp/bootcamp1.png", description: "By the end of this workshop, you'll build real AI filmmaking projects." },
-  ];
+  const proj = (projects && projects.length > 0) ? projects[0] : {
+    label: "PROJECT", title: "AI SHORT FILM", image: "/bootcamp/bootcamp1.png",
+    description: "By the end of this workshop, you'll build real AI filmmaking projects.",
+  };
   return (
     <section className="bg-[#0B0F10] py-16 px-4">
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-white font-black text-3xl md:text-4xl text-center mb-3">What You Will <span className="uppercase">CREATE</span></h2>
-        <p className="text-gray-400 text-center text-sm mb-10">{items[0]?.description || "By the end of this workshop, you'll build real AI filmmaking projects."}</p>
-        <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
-          {items.map((proj, i) => (
-            <div key={i} className="flex flex-col sm:flex-row items-center gap-6 bg-[#111315] rounded-2xl p-6 max-w-lg w-full">
-              <div>
-                <p className="text-[#C7E36B] text-xs font-bold tracking-widest mb-1">{proj.label || "PROJECT"}</p>
-                <p className="text-white font-black text-xl mb-2">{proj.title}</p>
-              </div>
-              <img src={proj.image || FALLBACK} alt={proj.title}
-                className="w-40 h-40 object-cover rounded-2xl shrink-0"
-                onError={e => { e.target.src = FALLBACK; }} />
-            </div>
-          ))}
+        <h2 className="text-white font-black text-3xl md:text-4xl text-center mb-3">
+          What You Will <span className="uppercase">CREATE</span>
+        </h2>
+        <p className="text-gray-400 text-center text-sm mb-12">
+          {proj.description || "By the end of this workshop, you'll build real AI filmmaking projects."}
+        </p>
+
+        {/* TWO-COLUMN: text left, big oval image right */}
+        <div className="grid md:grid-cols-2 gap-10 items-center mb-12">
+          <div>
+            <p className="text-gray-400 text-xs font-bold tracking-widest uppercase mb-3">{proj.label || "PROJECT"}</p>
+            <p className="text-white font-black text-4xl md:text-5xl leading-tight">{proj.title}</p>
+          </div>
+          <div className="flex justify-center">
+            <img
+              src={proj.image || FALLBACK}
+              alt={proj.title}
+              className="w-[320px] h-[280px] md:w-[400px] md:h-[340px] object-cover rounded-[50%]"
+              onError={e => { e.target.src = FALLBACK; }}
+            />
+          </div>
         </div>
-        <div className="flex justify-center mt-8">
-          <button className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-xl hover:opacity-90 transition uppercase">
+
+        <div className="flex justify-center">
+          <button className="bg-[#C7E36B] text-black font-black text-sm px-10 py-3 rounded-xl hover:opacity-90 transition uppercase tracking-wide">
             I WANT TO CREATE THIS
           </button>
         </div>
