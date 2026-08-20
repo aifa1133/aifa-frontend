@@ -491,6 +491,11 @@ export default function WorkshopDetail() {
             <p className="text-gray-500 text-sm max-w-[360px] leading-relaxed">Your live workshop link will appear here when the session is available.</p>
           </div>
         </div>
+        <WhatYouWillLearn outcomes={workshop.learningOutcomes} />
+        <WhatYouWillCreate projects={workshop.projects} />
+        <WhoIsItFor audience={workshop.targetAudience} />
+        <SuccessStories testimonials={workshop.testimonials} />
+        <WorkshopFAQ faqs={workshop.faqs} />
       </div>
     );
   }
@@ -598,7 +603,7 @@ export default function WorkshopDetail() {
                   <div className="flex-1">
                     <p className="text-xs text-gray-400 mb-1 font-semibold tracking-wide">Next Live Session</p>
                     <p className="text-base font-bold text-white mb-1">{fmtDateLong}, {fmtTime} (IST)</p>
-                    <p className="text-xs text-gray-500 mb-4">Live session will start in</p>
+                    <p className="text-xs text-gray-500 mb-4">Workshop Starts In</p>
                     <CountdownTimer scheduledAt={workshop.scheduledAt} />
                   </div>
                 </div>
@@ -624,16 +629,29 @@ export default function WorkshopDetail() {
 
           {/* VIDEO PREVIEW */}
           <div className="relative rounded-2xl overflow-hidden">
-            <img src={workshop.image || FALLBACK} alt={workshop.title}
-              className="w-full h-[280px] md:h-[380px] object-cover"
-              onError={e => { e.target.src = FALLBACK; }}/>
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
-              </div>
-            </div>
+            {workshop.previewVideoUrl ? (
+              <iframe src={workshop.previewVideoUrl} className="w-full h-[280px] md:h-[380px]" allow="autoplay; fullscreen" allowFullScreen title="Workshop preview" />
+            ) : (
+              <>
+                <img src={workshop.image || FALLBACK} alt={workshop.title}
+                  className="w-full h-[280px] md:h-[380px] object-cover"
+                  onError={e => { e.target.src = FALLBACK; }}/>
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
+
+        {/* RICH SECTIONS — same as pre-purchase */}
+        <WhatYouWillLearn outcomes={workshop.learningOutcomes} />
+        <WhatYouWillCreate projects={workshop.projects} />
+        <WhoIsItFor audience={workshop.targetAudience} />
+        <SuccessStories testimonials={workshop.testimonials} />
+        <WorkshopFAQ faqs={workshop.faqs} />
       </div>
     );
   }
