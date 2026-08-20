@@ -4773,6 +4773,7 @@ function CommunityAdmin({ token, adminName }) {
   /* ── Nav ── */
   const [commTab, setCommTab] = useState("forum");
   const [commSort, setCommSort] = useState("newest");
+  const [commSortOpen, setCommSortOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(new Set());
   const [openThreadMenu, setOpenThreadMenu] = useState(null);
 
@@ -5408,16 +5409,22 @@ function CommunityAdmin({ token, adminName }) {
                   {f}
                 </button>
               ))}
-              <select
-                value={commSort}
-                onChange={e => setCommSort(e.target.value)}
-                className="ml-auto bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:border-white/20"
-              >
-                <option value="newest">Sort: Newest</option>
-                <option value="oldest">Sort: Oldest</option>
-                <option value="most_votes">Sort: Most Voted</option>
-                <option value="most_replies">Sort: Most Replies</option>
-              </select>
+              <div className="ml-auto relative">
+                <button onClick={() => setCommSortOpen(o => !o)} className="flex items-center gap-2 bg-[#111315] border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 hover:border-white/20">
+                  Sort: {({newest:"Newest",oldest:"Oldest",most_votes:"Most Voted",most_replies:"Most Replies"})[commSort]}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                {commSortOpen && (
+                  <div className="absolute right-0 top-full mt-1 bg-[#111315] border border-white/10 rounded-xl overflow-hidden z-50 min-w-[140px] shadow-xl">
+                    {[["newest","Newest"],["oldest","Oldest"],["most_votes","Most Voted"],["most_replies","Most Replies"]].map(([v,l]) => (
+                      <button key={v} onClick={() => { setCommSort(v); setCommSortOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-xs hover:bg-white/5 ${commSort===v?"text-[#C7E36B] font-bold":"text-gray-300"}`}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-3">
               {threadsLoading ? <AdminLoader label="Loading Threads" /> : threads.length === 0 ? (
