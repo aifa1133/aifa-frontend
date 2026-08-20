@@ -5510,18 +5510,16 @@ function CommunityAdmin({ token, adminName }) {
                     const rBadge = REPORT_BADGE[rType] || "bg-yellow-500/20 text-yellow-400";
                     const isSpam = rType === "SPAM";
                     return (
-                      <div key={t._id} className="bg-[#0F1112] border border-white/10 rounded-xl p-3 space-y-2">
-                        <div className="flex items-center justify-between">
+                      <div key={t._id} className="bg-[#0F1112] border border-white/10 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-2">
                           <span className={`text-[9px] font-black px-2 py-0.5 rounded ${rBadge}`}>{rType}</span>
                           <span className="text-[9px] text-gray-600">{fmtRelTime(t.createdAt)}</span>
                         </div>
-                        <p className="text-[10px] text-gray-400 line-clamp-2">Reported on: "{(t.title||"").slice(0,35)}{t.title?.length>35?"...":""}"</p>
+                        <p className="text-xs text-white font-semibold mb-2 leading-snug">
+                          "{(t.title||t.body||"").slice(0,45)}{(t.title||t.body||"").length>45?"...":""}"
+                        </p>
                         <div className="flex gap-1.5">
-                          {isSpam ? (
-                            <button onClick={async()=>{ try{await fetch(`/api/users/${t.authorId}/warn`,{method:"POST",headers:{Authorization:`Bearer ${token}`}});}catch{}  setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[]}:x)); }} className="flex-1 text-[10px] bg-orange-500 text-white font-bold py-1.5 rounded-lg hover:bg-orange-600">Warn</button>
-                          ) : (
-                            <button onClick={async()=>{ try{await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});}catch{} setThreads(prev=>prev.filter(x=>x._id!==t._id)); }} className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg hover:bg-red-600">Ban</button>
-                          )}
+                          <button onClick={async()=>{ try{await fetch(`/api/community/threads/${t._id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});}catch{} setThreads(prev=>prev.filter(x=>x._id!==t._id)); }} className="flex-1 text-[10px] bg-red-500 text-white font-bold py-1.5 rounded-lg hover:bg-red-600">Remove</button>
                           <button onClick={()=>setThreads(prev=>prev.map(x=>x._id===t._id?{...x,isReported:false,reports:[],reportCount:0}:x))} className="flex-1 text-[10px] bg-[#1A1D1E] text-gray-300 font-bold py-1.5 rounded-lg hover:bg-white/10">Dismiss</button>
                         </div>
                       </div>
