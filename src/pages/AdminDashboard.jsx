@@ -4774,6 +4774,10 @@ function CommunityAdmin({ token, adminName }) {
   const [commTab, setCommTab] = useState("forum");
   const [commSort, setCommSort] = useState("newest");
   const [commSortOpen, setCommSortOpen] = useState(false);
+  const [commCategory, setCommCategory] = useState("all");
+  const [commCatOpen, setCommCatOpen] = useState(false);
+  const [commStatus, setCommStatus] = useState("active");
+  const [commStatusOpen, setCommStatusOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(new Set());
   const [openThreadMenu, setOpenThreadMenu] = useState(null);
 
@@ -5404,11 +5408,62 @@ function CommunityAdmin({ token, adminName }) {
               </div>
             )}
             <div className="flex items-center gap-3 mb-5 flex-wrap">
-              {["All Categories","All Flairs","Status: Active"].map(f => (
-                <button key={f} className="bg-white/5 text-white text-sm px-4 py-2 rounded-full hover:bg-white/10 transition-colors font-medium">
-                  {f}
+              {/* Category filter */}
+              {(() => {
+                const cats = ["all", ...Array.from(new Set(threads.map(t => t.tag).filter(Boolean)))];
+                return (
+                  <div className="relative">
+                    <button onClick={() => { setCommCatOpen(o=>!o); setCommStatusOpen(false); setCommSortOpen(false); }}
+                      className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border transition-colors font-medium ${commCategory==="all"?"bg-white/5 border-white/10 text-white hover:bg-white/10":"bg-[#C7E36B]/10 border-[#C7E36B]/40 text-[#C7E36B]"}`}>
+                      {commCategory === "all" ? "All Categories" : commCategory}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    {commCatOpen && (
+                      <div className="absolute left-0 top-full mt-1 bg-[#111315] border border-white/10 rounded-xl overflow-hidden z-50 min-w-[160px] shadow-xl">
+                        {cats.map(c => (
+                          <button key={c} onClick={() => { setCommCategory(c); setCommCatOpen(false); }}
+                            className={`w-full text-left px-4 py-2 text-xs hover:bg-white/5 ${commCategory===c?"text-[#C7E36B] font-bold":"text-gray-300"}`}>
+                            {c === "all" ? "All Categories" : c}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Flair filter — same as category (tags serve as flairs) */}
+              {(() => {
+                const flairs = ["all", ...Array.from(new Set(threads.map(t => t.tag).filter(Boolean)))];
+                return (
+                  <div className="relative">
+                    <button onClick={() => { setCommCatOpen(false); setCommStatusOpen(false); setCommSortOpen(false); }}
+                      className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-sm px-4 py-2 rounded-full hover:bg-white/10 transition-colors font-medium">
+                      All Flairs
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {/* Status filter */}
+              <div className="relative">
+                <button onClick={() => { setCommStatusOpen(o=>!o); setCommCatOpen(false); setCommSortOpen(false); }}
+                  className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border transition-colors font-medium ${commStatus==="all"?"bg-white/5 border-white/10 text-white hover:bg-white/10":"bg-[#C7E36B]/10 border-[#C7E36B]/40 text-[#C7E36B]"}`}>
+                  Status: {commStatus==="active"?"Active":commStatus==="reported"?"Reported":"All"}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
-              ))}
+                {commStatusOpen && (
+                  <div className="absolute left-0 top-full mt-1 bg-[#111315] border border-white/10 rounded-xl overflow-hidden z-50 min-w-[140px] shadow-xl">
+                    {[["active","Active"],["reported","Reported"],["all","All"]].map(([v,l]) => (
+                      <button key={v} onClick={() => { setCommStatus(v); setCommStatusOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-xs hover:bg-white/5 ${commStatus===v?"text-[#C7E36B] font-bold":"text-gray-300"}`}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="ml-auto relative">
                 <button onClick={() => setCommSortOpen(o => !o)} className="flex items-center gap-2 bg-[#111315] border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 hover:border-white/20">
                   Sort: {({newest:"Newest",oldest:"Oldest",most_votes:"Most Voted",most_replies:"Most Replies"})[commSort]}
@@ -5433,11 +5488,19 @@ function CommunityAdmin({ token, adminName }) {
                   <p className="text-white font-semibold text-sm">No community threads yet</p>
                   <p className="text-gray-500 text-xs mt-1">Students can start discussions from their dashboard.</p>
                 </div>
-              ) : [...threads].sort((a, b) => {
+              ) : [...threads]
+                .filter(t => {
+                  const isRep = t.isReported || (t.reports && t.reports.length > 0);
+                  if (commStatus === "active"   && isRep)  return false;
+                  if (commStatus === "reported" && !isRep) return false;
+                  if (commCategory !== "all" && t.tag !== commCategory) return false;
+                  return true;
+                })
+                .sort((a, b) => {
                   if (commSort === "oldest")      return new Date(a.createdAt) - new Date(b.createdAt);
                   if (commSort === "most_votes")  return ((b.votes||0)+(b.upvotes?.length||0)) - ((a.votes||0)+(a.upvotes?.length||0));
                   if (commSort === "most_replies")return (b.replyCount??b.replies?.length??0) - (a.replyCount??a.replies?.length??0);
-                  return new Date(b.createdAt) - new Date(a.createdAt); // newest
+                  return new Date(b.createdAt) - new Date(a.createdAt);
                 }).map(t => {
                 const isReported = t.isReported || (t.reports && t.reports.length > 0);
                 const voteCount = typeof t.votes === "number" ? t.votes : (t.upvotes?.length||0)-(t.downvotes?.length||0);
