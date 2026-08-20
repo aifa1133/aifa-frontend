@@ -774,37 +774,10 @@ export default function WorkshopDetail() {
           </div>
         </div>
 
-        {/* VIDEO PREVIEW */}
-        <div className="relative rounded-2xl overflow-hidden mb-8">
-          {workshop.previewVideoUrl ? (
-            <iframe
-              src={workshop.previewVideoUrl}
-              className="w-full h-[280px] md:h-[400px]"
-              allow="autoplay; fullscreen"
-              allowFullScreen
-              title="Workshop preview"
-            />
-          ) : (
-            <>
-              <img src={workshop.image || FALLBACK} alt={workshop.title}
-                className="w-full h-[280px] md:h-[400px] object-cover"
-                onError={e => { e.target.src = FALLBACK; }}/>
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* COUNTDOWN CARD — pre-purchase urgency */}
-      {dt && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-2">
-          <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
+        {/* COUNTDOWN CARD — above video */}
+        {dt && (
+          <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden mb-8">
             <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
-              {/* Left: countdown */}
               <div className="p-6 flex items-start gap-4">
                 <div className="w-14 h-14 bg-[#1a1f20] rounded-full flex items-center justify-center shrink-0">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -818,7 +791,6 @@ export default function WorkshopDetail() {
                   <CountdownTimer scheduledAt={workshop.scheduledAt} />
                 </div>
               </div>
-              {/* Right: benefits */}
               <div className="p-6">
                 <p className="text-sm font-bold text-white mb-4">Get ready for an interactive learning experience.</p>
                 {[
@@ -836,8 +808,26 @@ export default function WorkshopDetail() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* VIDEO PREVIEW */}
+        <div className="relative rounded-2xl overflow-hidden mb-8">
+          {workshop.previewVideoUrl ? (
+            <iframe src={workshop.previewVideoUrl} className="w-full h-[280px] md:h-[400px]" allow="autoplay; fullscreen" allowFullScreen title="Workshop preview" />
+          ) : (
+            <>
+              <img src={workshop.image || FALLBACK} alt={workshop.title}
+                className="w-full h-[280px] md:h-[400px] object-cover"
+                onError={e => { e.target.src = FALLBACK; }}/>
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       {/* WHAT YOU WILL LEARN */}
       <WhatYouWillLearn outcomes={workshop.learningOutcomes} />
