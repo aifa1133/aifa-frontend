@@ -4772,6 +4772,7 @@ function CommunityAdmin({ token, adminName }) {
 
   /* ── Nav ── */
   const [commTab, setCommTab] = useState("forum");
+  const [commSort, setCommSort] = useState("newest");
   const [pinnedIds, setPinnedIds] = useState(new Set());
   const [openThreadMenu, setOpenThreadMenu] = useState(null);
 
@@ -5407,7 +5408,16 @@ function CommunityAdmin({ token, adminName }) {
                   {f}
                 </button>
               ))}
-              <div className="ml-auto text-xs text-gray-500">Sort: <span className="text-white font-semibold">Newest</span></div>
+              <select
+                value={commSort}
+                onChange={e => setCommSort(e.target.value)}
+                className="ml-auto bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:border-white/20"
+              >
+                <option value="newest">Sort: Newest</option>
+                <option value="oldest">Sort: Oldest</option>
+                <option value="most_votes">Sort: Most Voted</option>
+                <option value="most_replies">Sort: Most Replies</option>
+              </select>
             </div>
             <div className="space-y-3">
               {threadsLoading ? <AdminLoader label="Loading Threads" /> : threads.length === 0 ? (
@@ -5416,7 +5426,12 @@ function CommunityAdmin({ token, adminName }) {
                   <p className="text-white font-semibold text-sm">No community threads yet</p>
                   <p className="text-gray-500 text-xs mt-1">Students can start discussions from their dashboard.</p>
                 </div>
-              ) : threads.map(t => {
+              ) : [...threads].sort((a, b) => {
+                  if (commSort === "oldest")      return new Date(a.createdAt) - new Date(b.createdAt);
+                  if (commSort === "most_votes")  return ((b.votes||0)+(b.upvotes?.length||0)) - ((a.votes||0)+(a.upvotes?.length||0));
+                  if (commSort === "most_replies")return (b.replyCount??b.replies?.length??0) - (a.replyCount??a.replies?.length??0);
+                  return new Date(b.createdAt) - new Date(a.createdAt); // newest
+                }).map(t => {
                 const isReported = t.isReported || (t.reports && t.reports.length > 0);
                 const voteCount = typeof t.votes === "number" ? t.votes : (t.upvotes?.length||0)-(t.downvotes?.length||0);
                 const initials = (t.author||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
