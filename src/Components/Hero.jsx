@@ -370,6 +370,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import BookingModal from "./BookingModal.jsx";
 
 const slides = [
   {
@@ -400,6 +401,7 @@ const slides = [
 
 export default function Hero() {
   const [active, setActive] = useState(0);
+  const [showBooking, setShowBooking] = useState(false);
 
   const videoRef = useRef(null);
 
@@ -566,6 +568,7 @@ export default function Hero() {
 
           {/* BUTTON */}
           <button
+            onClick={() => setShowBooking(true)}
             className="
               mt-[40px]
 
@@ -601,6 +604,7 @@ export default function Hero() {
           >
             BOOK A FREE 30 MINS CONSULTATION
           </button>
+          {showBooking && <BookingModal onClose={() => setShowBooking(false)} />}
         </div>
       </div>
 
