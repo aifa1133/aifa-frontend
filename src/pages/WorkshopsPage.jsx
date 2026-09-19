@@ -124,7 +124,7 @@ export default function WorkshopsPage() {
       alert("Booking coming soon!");
       return;
     }
-    navigate(`/workshops/${workshop._id}`);
+    navigate(`/workshops/${workshop._id}`, { state: { openBuyModal: true } });
   };
 
   return (

@@ -237,7 +237,9 @@ ${
               >
                 JOIN
               </button>
-              <button className="flex items-center justify-center gap-[8px] px-[16px] py-[8px] rounded-[4px] bg-[#F0F0F0] text-[#0F1112] font-montserrat text-[14px] font-bold leading-[24px] transition-all duration-300 hover:bg-[#C7E36B] active:scale-[0.97] hover:cursor-pointer">
+              <button
+                onClick={() => window.open("https://wa.me/919052088000?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20AIFA%20courses.", "_blank")}
+                className="flex items-center justify-center gap-[8px] px-[16px] py-[8px] rounded-[4px] bg-[#F0F0F0] text-[#0F1112] font-montserrat text-[14px] font-bold leading-[24px] transition-all duration-300 hover:bg-[#C7E36B] active:scale-[0.97] hover:cursor-pointer">
                 TALK TO SALES
                 <img
                   src="/logos/Arrowleftsales.svg"

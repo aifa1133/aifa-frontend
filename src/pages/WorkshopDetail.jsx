@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import BuyModal from "../Components/BuyModal";
 import PaymentModal from "../Components/PaymentModal";
 import SuccessModal from "../Components/SuccessModal";
@@ -229,6 +229,7 @@ function WorkshopFAQ({ faqs }) {
 export default function WorkshopDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [workshop, setWorkshop] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -293,6 +294,13 @@ export default function WorkshopDetail() {
       })
       .catch(() => setLoading(false));
   }, [id, token]);
+
+  // Auto-open BuyModal when navigated from "RESERVE SPOT" on the listing page
+  useEffect(() => {
+    if (location.state?.openBuyModal && workshop && !isEnrolled) {
+      setShowBuyModal(true);
+    }
+  }, [workshop, isEnrolled]);
 
   const handleBookClick = () => setShowBuyModal(true);
 
