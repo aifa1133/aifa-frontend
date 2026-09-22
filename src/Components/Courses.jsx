@@ -338,31 +338,27 @@
 
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-const courses = [
-  {
-    title: "Google Flow Masterclass",
-    image: "/courses/v1.png",
-    duration: "1h 10m",
-  },
-  {
-    title: "Kling AI Video Masterclass",
-    image: "/courses/v2.png",
-    duration: "1h 10m",
-  },
-  {
-    title: "AI Background Magic",
-    image: "/courses/v3.png",
-    duration: "1h 10m",
-  },
+const FALLBACK_COURSES = [
+  { title: "Google Flow Masterclass",    image: "/courses/v1.png", duration: "1h 10m" },
+  { title: "Kling AI Video Masterclass", image: "/courses/v2.png", duration: "1h 10m" },
+  { title: "AI Background Magic",        image: "/courses/v3.png", duration: "1h 10m" },
 ];
 
 export default function Courses() {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
+  const [courses, setCourses] = useState(FALLBACK_COURSES);
+
+  useEffect(() => {
+    fetch("/api/courses")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { if (Array.isArray(data) && data.length > 0) setCourses(data); })
+      .catch(() => {});
+  }, []);
 
   // CURRENT FIRST CARD
   const [activeIndex, setActiveIndex] = useState(0);
@@ -522,7 +518,10 @@ export default function Courses() {
 
                 {/* BUY BUTTON */}
                 <button
-                  onClick={() => course._id ? navigate(`/courses/${course._id}/pay`) : navigate("/courses")}
+                  onClick={() => navigate(
+                    course._id ? `/courses/${course._id}/pay` : `/courses/static/pay`,
+                    { state: { courseData: { title: course.title, image: course.image, duration: course.duration, price: course.price || 399, originalPrice: course.originalPrice || 999 } } }
+                  )}
                   className="
                     mt-[8px]
                     w-full

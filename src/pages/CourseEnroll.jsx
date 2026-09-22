@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 const loadRazorpay = () =>
   new Promise(resolve => {
@@ -16,6 +16,7 @@ const loadRazorpay = () =>
 export default function CourseEnroll() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const token      = localStorage.getItem("aifa_token");
   const isLoggedIn = !!token;
@@ -40,7 +41,16 @@ export default function CourseEnroll() {
 
   /* ── Fetch course ── */
   useEffect(() => {
-    if (!id || id.startsWith("m")) { setNotFound(true); setLoading(false); return; }
+    // If navigated with inline course data (e.g. from homepage static cards), use it directly
+    if (location.state?.courseData) {
+      setCourse(location.state.courseData);
+      setLoading(false);
+      return;
+    }
+
+    if (!id || id === "static" || id.startsWith("m")) {
+      setNotFound(true); setLoading(false); return;
+    }
 
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     fetch(`/api/courses/${id}`, { headers })
@@ -122,7 +132,12 @@ export default function CourseEnroll() {
 
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST", headers: h,
-        body: JSON.stringify({ itemType: "course", itemId: course._id }),
+        body: JSON.stringify({
+          itemType: "course",
+          itemId: course._id || null,
+          amount: course.price,
+          itemTitle: course.title,
+        }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) { alert(orderData.message || "Could not create order. Try again."); setPaying(false); return; }
