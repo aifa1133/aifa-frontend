@@ -522,7 +522,7 @@ export default function Courses() {
 
                 {/* BUY BUTTON */}
                 <button
-                  onClick={() => navigate("/courses")}
+                  onClick={() => course._id ? navigate(`/courses/${course._id}/pay`) : navigate("/courses")}
                   className="
                     mt-[8px]
                     w-full

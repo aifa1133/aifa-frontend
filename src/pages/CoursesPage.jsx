@@ -75,7 +75,7 @@ export default function CoursesPage() {
   });
 
   const handleBuy = (course) => {
-    navigate(`/courses/${course._id}`);
+    navigate(`/courses/${course._id}/pay`);
   };
 
   const displayCourses =
