@@ -351,13 +351,15 @@ const FALLBACK_COURSES = [
 export default function Courses() {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
-  const [courses, setCourses] = useState(FALLBACK_COURSES);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/courses")
       .then(r => r.ok ? r.json() : [])
-      .then(data => { if (Array.isArray(data) && data.length > 0) setCourses(data); })
-      .catch(() => {});
+      .then(data => { setCourses(Array.isArray(data) && data.length > 0 ? data : FALLBACK_COURSES); })
+      .catch(() => { setCourses(FALLBACK_COURSES); })
+      .finally(() => setLoading(false));
   }, []);
 
   // CURRENT FIRST CARD
@@ -425,8 +427,24 @@ export default function Courses() {
           </div>
         </div>
 
+        {/* SKELETON CARDS while loading */}
+        {loading && (
+          <div className="flex flex-col sm:flex-row gap-[16px] sm:gap-[24px]">
+            {[1, 2, 3].map(n => (
+              <div key={n} className="w-full sm:min-w-[300px] md:min-w-[336px] bg-[#111516] border border-white/10 rounded-[12px] overflow-hidden animate-pulse flex-shrink-0">
+                <div className="w-full h-[200px] sm:h-[240px] md:h-[261px] bg-white/10" />
+                <div className="p-[16px] sm:p-[24px] flex flex-col gap-[12px]">
+                  <div className="h-4 bg-white/10 rounded w-3/4" />
+                  <div className="h-3 bg-white/10 rounded w-1/3" />
+                  <div className="h-10 bg-white/10 rounded mt-2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* CARDS */}
-        <div
+        {!loading && <div
           ref={scrollRef}
           className="
             flex
@@ -548,7 +566,7 @@ export default function Courses() {
               </div>
             </motion.div>
           ))}
-        </div>
+        </div>}
 
         {/* EXPLORE COURSES BUTTON */}
         <div className="flex justify-center">

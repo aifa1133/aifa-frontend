@@ -185,8 +185,9 @@ export default function StudentDashboard() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center">
-      <div className="text-white text-lg animate-pulse">Loading dashboard...</div>
+    <div className="min-h-screen bg-[#0B0F10] flex flex-col items-center justify-center gap-4">
+      <div className="w-12 h-12 border-4 border-[#C7E36B] border-t-transparent rounded-full animate-spin" />
+      <p className="text-gray-400 text-sm">Loading your dashboard...</p>
     </div>
   );
 
