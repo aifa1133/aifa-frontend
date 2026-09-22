@@ -61,24 +61,36 @@ export default function WorkshopsPage() {
   useEffect(() => {
     const userId = JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
 
+    const finishLoading = () => {
+      setLoading(false);
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        setHighlighted(hash);
+        setTimeout(() => {
+          const el = document.getElementById(hash);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 300);
+      }
+    };
+
     const loadWorkshops = (attempt = 1) => {
       fetch("/api/workshops")
         .then(async (r) => {
           const ct = r.headers.get("content-type") || "";
           if (!ct.includes("application/json")) {
-            // Render cold-start returns HTML "Redirecting..." — retry once after 3s
+            // Non-JSON (502/cold-start) — keep skeleton visible and retry
             if (attempt < 3) {
               setTimeout(() => loadWorkshops(attempt + 1), 3000);
             } else {
               setWorkshops(MOCK_WORKSHOPS);
-              setLoading(false);
+              finishLoading();
             }
             return null;
           }
           return r.json();
         })
         .then((data) => {
-          if (!data) return;
+          if (!data) return; // retrying — keep loading
           if (Array.isArray(data) && data.length > 0) {
             setWorkshops(data);
             if (userId) {
@@ -95,23 +107,14 @@ export default function WorkshopsPage() {
           } else {
             setWorkshops(MOCK_WORKSHOPS);
           }
+          finishLoading();
         })
         .catch(() => {
           if (attempt < 3) {
-            setTimeout(() => loadWorkshops(attempt + 1), 3000);
+            setTimeout(() => loadWorkshops(attempt + 1), 3000); // keep skeleton visible
           } else {
             setWorkshops(MOCK_WORKSHOPS);
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-          const hash = window.location.hash.slice(1);
-          if (hash) {
-            setHighlighted(hash);
-            setTimeout(() => {
-              const el = document.getElementById(hash);
-              if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 300);
+            finishLoading();
           }
         });
     };
