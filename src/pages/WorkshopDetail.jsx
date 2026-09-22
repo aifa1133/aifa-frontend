@@ -742,15 +742,11 @@ export default function WorkshopDetail() {
         {/* HERO GRID */}
         <div className="grid md:grid-cols-[1fr_300px] gap-8 mb-10 items-start">
           {/* LEFT — with workshop image as background */}
-          <div className="relative rounded-2xl overflow-hidden min-h-[260px] flex items-end">
-            {workshop.image && (
-              <>
-                <img src={workshop.image} alt={workshop.title}
-                  className="absolute inset-0 w-full h-full object-cover object-center"
-                  onError={e => e.target.style.display = "none"} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-              </>
-            )}
+          <div className="relative rounded-2xl overflow-hidden min-h-[280px] flex items-end">
+            <img src={workshop.image || FALLBACK} alt={workshop.title}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              onError={e => { e.target.src = FALLBACK; }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" />
             <div className="relative z-10 p-6 md:p-8 w-full">
               <h1 className="text-4xl md:text-5xl font-black text-white mb-3 leading-[1.1]">{workshop.title}</h1>
               {workshop.description && (
