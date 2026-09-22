@@ -1570,20 +1570,20 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", published:true });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", previewVideoUrl:"", published:true });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
   const startEdit = (w) => {
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:"", time:"", published:!!w.isPublished });
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:"", time:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished });
     setIsEditing(true); setView("create");
   };
 
   const doCreate = async () => {
     setSaving(true);
     try {
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published };
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"" };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1644,6 +1644,15 @@ function WorkshopsAdmin({ token }) {
               <div><p className="text-[10px] text-gray-400 mb-1">Action Type</p><div className="flex gap-2"><button className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg">External Link</button><button className="flex-1 bg-white/10 text-gray-300 text-xs py-2 rounded-lg">Internal Checkout</button></div></div>
             </div>
             <Fld label="Redirect URL" value="https://checkout.aifa.com/workshop-id" onChange={()=>{}} />
+          </Sect>
+          <Sect icon="videocam" title="Preview Video (5-sec teaser)">
+            <Fld
+              label="YouTube Video URL"
+              value={cf.previewVideoUrl}
+              onChange={v=>setCf({...cf,previewVideoUrl:v})}
+              placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Visitors see the first 5 seconds then see a 🔒 lock overlay. Use a short promo/trailer clip — not the full workshop.</p>
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
