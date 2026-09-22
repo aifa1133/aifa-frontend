@@ -388,7 +388,7 @@ export default function WorkshopDetail() {
     }
   }, [workshop, isEnrolled]);
 
-  const handleBookClick = () => navigate(`/workshops/${id}/pay`);
+  const handleBookClick = () => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } });
 
   const handleBuyFormDone = async (buyer) => {
     setBuyerInfo(buyer);
@@ -924,7 +924,7 @@ export default function WorkshopDetail() {
           <WorkshopVideoPreview
             url={workshop.previewVideoUrl}
             workshopId={id}
-            onEnroll={() => navigate(`/workshops/${id}/pay`)}
+            onEnroll={() => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } })}
           />
         ) : (
           <div className="relative rounded-2xl overflow-hidden mb-8">
