@@ -388,7 +388,7 @@ export default function WorkshopDetail() {
     }
   }, [workshop, isEnrolled]);
 
-  const handleBookClick = () => setShowBuyModal(true);
+  const handleBookClick = () => navigate(`/workshops/${id}/pay`);
 
   const handleBuyFormDone = async (buyer) => {
     setBuyerInfo(buyer);
