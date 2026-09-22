@@ -78,9 +78,9 @@ export default function WorkshopsPage() {
         .then(async (r) => {
           const ct = r.headers.get("content-type") || "";
           if (!ct.includes("application/json")) {
-            // Non-JSON (502/cold-start) — keep skeleton visible and retry
-            if (attempt < 3) {
-              setTimeout(() => loadWorkshops(attempt + 1), 3000);
+            // Non-JSON (502/cold-start) — keep skeleton visible and retry once
+            if (attempt < 2) {
+              setTimeout(() => loadWorkshops(attempt + 1), 1500);
             } else {
               setWorkshops(MOCK_WORKSHOPS);
               finishLoading();
@@ -110,8 +110,8 @@ export default function WorkshopsPage() {
           finishLoading();
         })
         .catch(() => {
-          if (attempt < 3) {
-            setTimeout(() => loadWorkshops(attempt + 1), 3000); // keep skeleton visible
+          if (attempt < 2) {
+            setTimeout(() => loadWorkshops(attempt + 1), 1500); // keep skeleton visible
           } else {
             setWorkshops(MOCK_WORKSHOPS);
             finishLoading();
