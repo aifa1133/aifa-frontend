@@ -138,6 +138,7 @@ import AiDeals from "./pages/AiDeals";
 import ServicesPage from "./pages/ServicesPage";
 import WorkshopsPage from "./pages/WorkshopsPage";
 import WorkshopDetail from "./pages/WorkshopDetail";
+import WorkshopEnroll from "./pages/WorkshopEnroll";
 import Bootcamppage from "./pages/Bootcamppage";
 import Forums from "./pages/Forums";
 import Events from "./pages/Events";
@@ -239,6 +240,7 @@ function AppShell() {
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/workshops" element={<WorkshopsPage />} />
           <Route path="/workshops/:id" element={<WorkshopDetail />} />
+          <Route path="/workshops/:id/pay" element={<WorkshopEnroll />} />
           <Route path="/forums" element={<Forums />} />
           <Route path="/events" element={<Events />} />
           <Route path="/clubs" element={<Clubs />} />
