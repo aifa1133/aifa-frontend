@@ -1332,8 +1332,8 @@ function WorkshopsSection({ token }) {
     e?.stopPropagation();
     if (!w._id || w._id?.startsWith?.("m")) { alert("Booking coming soon!"); return; }
     if (reserved.has(w._id)) return;
-    // Redirect to workshop detail page which has the full payment flow
-    navigate(`/workshops/${w._id}`);
+    // Go to workshop detail and auto-open the BuyModal
+    navigate(`/workshops/${w._id}`, { state: { openBuyModal: true } });
   };
 
   const fmtDateBox = (scheduledAt) => {
