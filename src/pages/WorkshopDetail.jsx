@@ -741,22 +741,32 @@ export default function WorkshopDetail() {
 
         {/* HERO GRID */}
         <div className="grid md:grid-cols-[1fr_300px] gap-8 mb-10 items-start">
-          {/* LEFT */}
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-3 leading-[1.1]">{workshop.title}</h1>
-            {workshop.description && (
-              <p className="text-gray-400 text-base mb-6 leading-relaxed">{workshop.description}</p>
+          {/* LEFT — with workshop image as background */}
+          <div className="relative rounded-2xl overflow-hidden min-h-[260px] flex items-end">
+            {workshop.image && (
+              <>
+                <img src={workshop.image} alt={workshop.title}
+                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  onError={e => e.target.style.display = "none"} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+              </>
             )}
-            <div className="flex flex-wrap gap-3">
-              {fmtDate && (
-                <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold">{fmtDate}</span>
+            <div className="relative z-10 p-6 md:p-8 w-full">
+              <h1 className="text-4xl md:text-5xl font-black text-white mb-3 leading-[1.1]">{workshop.title}</h1>
+              {workshop.description && (
+                <p className="text-gray-300 text-base mb-6 leading-relaxed">{workshop.description}</p>
               )}
-              {timeIST && (
-                <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold">{timeIST}</span>
-              )}
-              <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold">
-                {workshop.mode === "OFFLINE" ? "Offline" : "Live Online"}
-              </span>
+              <div className="flex flex-wrap gap-3">
+                {fmtDate && (
+                  <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold backdrop-blur-sm">{fmtDate}</span>
+                )}
+                {timeIST && (
+                  <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold backdrop-blur-sm">{timeIST}</span>
+                )}
+                <span className="bg-white/10 border border-white/20 text-white text-sm px-4 py-1.5 rounded-full font-semibold backdrop-blur-sm">
+                  {workshop.mode === "OFFLINE" ? "Offline" : "Live Online"}
+                </span>
+              </div>
             </div>
           </div>
 
