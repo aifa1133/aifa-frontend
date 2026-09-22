@@ -138,29 +138,33 @@ export default function WorkshopsPage() {
 
           <div className="flex flex-col gap-[20px]">
             {loading && [1,2,3].map(n => (
-              <div key={n} className="w-full rounded-[24px] overflow-hidden bg-[#111315] border-[6px] border-[#111315] animate-pulse">
+              <div key={n} className="w-full rounded-[24px] overflow-hidden bg-[#111315] animate-pulse">
                 <div className="flex flex-col md:flex-row gap-[6px] w-full">
-                  <div className="w-full md:w-[266px] h-[200px] bg-white/[0.07] rounded-tl-[20px] shrink-0"/>
-                  <div className="flex-1 flex flex-col gap-[6px]">
-                    <div className="h-[105px] bg-white/[0.07] rounded-tr-[20px] p-5 flex flex-col gap-3 justify-center">
-                      <div className="h-4 bg-white/10 rounded w-2/3"/>
-                      <div className="h-3 bg-white/10 rounded w-1/3"/>
+                  {/* image placeholder */}
+                  <div className="w-full md:w-[266px] h-[200px] bg-[#1E2122] shrink-0"/>
+                  <div className="flex-1 flex flex-col gap-[6px] p-1">
+                    {/* title area */}
+                    <div className="bg-[#1E2122] rounded-[12px] p-5 flex flex-col gap-3 justify-center h-[105px]">
+                      <div className="h-5 bg-[#2A2D2E] rounded-full w-2/3"/>
+                      <div className="h-3.5 bg-[#2A2D2E] rounded-full w-1/4"/>
                     </div>
+                    {/* info boxes */}
                     <div className="grid grid-cols-3 gap-[6px]">
                       {[1,2,3].map(k=>(
-                        <div key={k} className="h-[80px] bg-white/[0.07] rounded-[8px] flex flex-col gap-2 p-3 justify-center">
-                          <div className="h-2.5 bg-white/10 rounded w-1/2"/>
-                          <div className="h-4 bg-white/10 rounded w-3/4"/>
+                        <div key={k} className="h-[80px] bg-[#1E2122] rounded-[10px] flex flex-col gap-2 p-4 justify-center">
+                          <div className="h-2.5 bg-[#2A2D2E] rounded-full w-1/2"/>
+                          <div className="h-4 bg-[#2A2D2E] rounded-full w-3/4"/>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
-                <div className="h-[52px] bg-[#C7E36B]/10 flex items-center justify-center">
-                  <div className="h-4 bg-white/10 rounded w-32"/>
+                {/* button placeholders */}
+                <div className="h-[52px] bg-[#1a2100] flex items-center justify-center mt-[6px]">
+                  <div className="h-4 bg-[#2A2D2E] rounded-full w-32"/>
                 </div>
-                <div className="h-[52px] bg-[#C7E36B]/20 flex items-center justify-center">
-                  <div className="h-4 bg-white/10 rounded w-40"/>
+                <div className="h-[52px] bg-[#1e2800] flex items-center justify-center mt-[6px]">
+                  <div className="h-4 bg-[#2A2D2E] rounded-full w-40"/>
                 </div>
               </div>
             ))}
