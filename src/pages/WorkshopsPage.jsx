@@ -138,17 +138,30 @@ export default function WorkshopsPage() {
 
           <div className="flex flex-col gap-[20px]">
             {loading && [1,2,3].map(n => (
-              <div key={n} className="w-full rounded-[24px] overflow-hidden bg-[#0F1112] border-[6px] border-[#0F1112] animate-pulse">
+              <div key={n} className="w-full rounded-[24px] overflow-hidden bg-[#111315] border-[6px] border-[#111315] animate-pulse">
                 <div className="flex flex-col md:flex-row gap-[6px] w-full">
-                  <div className="w-full md:w-[266px] h-[200px] bg-white/10 rounded-tl-[20px] shrink-0"/>
+                  <div className="w-full md:w-[266px] h-[200px] bg-white/[0.07] rounded-tl-[20px] shrink-0"/>
                   <div className="flex-1 flex flex-col gap-[6px]">
-                    <div className="h-[105px] bg-white/10 rounded-tr-[20px]"/>
-                    <div className="grid grid-cols-4 gap-[8px]">
-                      {[1,2,3,4].map(k=><div key={k} className="h-[80px] bg-white/10 rounded-[8px]"/>)}
+                    <div className="h-[105px] bg-white/[0.07] rounded-tr-[20px] p-5 flex flex-col gap-3 justify-center">
+                      <div className="h-4 bg-white/10 rounded w-2/3"/>
+                      <div className="h-3 bg-white/10 rounded w-1/3"/>
+                    </div>
+                    <div className="grid grid-cols-3 gap-[6px]">
+                      {[1,2,3].map(k=>(
+                        <div key={k} className="h-[80px] bg-white/[0.07] rounded-[8px] flex flex-col gap-2 p-3 justify-center">
+                          <div className="h-2.5 bg-white/10 rounded w-1/2"/>
+                          <div className="h-4 bg-white/10 rounded w-3/4"/>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-                <div className="h-[52px] bg-white/10"/>
+                <div className="h-[52px] bg-[#C7E36B]/10 flex items-center justify-center">
+                  <div className="h-4 bg-white/10 rounded w-32"/>
+                </div>
+                <div className="h-[52px] bg-[#C7E36B]/20 flex items-center justify-center">
+                  <div className="h-4 bg-white/10 rounded w-40"/>
+                </div>
               </div>
             ))}
             {!loading && workshops.map((item, i) => {
