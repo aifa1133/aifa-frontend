@@ -1334,7 +1334,7 @@ function WorkshopsSection({ token }) {
     if (!w._id || w._id?.startsWith?.("m")) { alert("Booking coming soon!"); return; }
     if (reserved.has(w._id)) return;
     // Go to workshop detail and auto-open the BuyModal
-    navigate(`/workshops/${w._id}/pay`);
+    navigate(`/workshops/${w._id}/pay`, { state: { workshopData: w } });
   };
 
   const fmtDateBox = (scheduledAt) => {

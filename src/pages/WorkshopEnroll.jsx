@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 const GST_RATE = 0.18;
 
@@ -18,6 +18,7 @@ const loadRazorpay = () =>
 export default function WorkshopEnroll() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const token      = localStorage.getItem("aifa_token");
   const isLoggedIn = !!token;
@@ -45,6 +46,14 @@ export default function WorkshopEnroll() {
   /* ── Fetch workshop ── */
   useEffect(() => {
     if (!id) { navigate("/workshops"); return; }
+
+    /* Use state data passed from listing/dashboard immediately — no wait */
+    if (location.state?.workshopData) {
+      setWorkshop(location.state.workshopData);
+      setLoading(false);
+    }
+
+    /* Still fetch from API to get fresh data + check enrollment status */
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     fetch(`/api/workshops/${id}`, { headers })
       .then(r => r.ok ? r.json() : null)
@@ -53,18 +62,16 @@ export default function WorkshopEnroll() {
           setWorkshop(data);
           /* Redirect if already enrolled */
           if (token) {
-            const user = storedUser;
             const enrolled = data.registrations?.some(r => {
               const rid = r?.user?._id || r?.user || r;
-              return String(rid) === String(user._id);
+              return String(rid) === String(storedUser._id);
             });
             if (enrolled) navigate(`/workshops/${id}`, { replace: true });
           }
-        } else {
-          navigate("/workshops");
         }
+        /* If fetch fails but we have state data, silently continue */
       })
-      .catch(() => navigate("/workshops"))
+      .catch(() => {})
       .finally(() => setLoading(false));
 
     /* Pre-fill from profile */
@@ -193,13 +200,16 @@ export default function WorkshopEnroll() {
   };
 
   /* ── Loading ── */
-  if (loading) return (
+  if (loading && !workshop) return (
     <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
-  if (!workshop) return null;
+  if (!workshop) {
+    navigate("/workshops");
+    return null;
+  }
 
   const basePrice      = Number(workshop.price || 0);
   const currency       = workshop.currency === "USD" ? "$" : "₹";
