@@ -119,7 +119,7 @@ function WorkshopVideoPreview({ url, workshopId, onEnroll }) {
           </div>
           <button onClick={onEnroll}
             className="bg-[#C7E36B] text-black font-black px-8 py-3 rounded-xl hover:opacity-90 active:scale-[0.98] transition text-sm uppercase tracking-widest">
-            Reserve My Seat →
+            Book your seat →
           </button>
           <p className="text-gray-500 text-xs">🔒 Secure payment · Instant access</p>
         </div>
