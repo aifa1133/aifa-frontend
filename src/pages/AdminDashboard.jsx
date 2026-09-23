@@ -8274,11 +8274,43 @@ function HireTalentAdmin({ token }) {
           <Fld label="CONTACT EMAIL" value={form.contactEmail} onChange={v=>setForm({...form,contactEmail:v})} placeholder="email@example.com"/>
           <Fld label="SKILLS (comma-separated)" value={form.skills} onChange={v=>setForm({...form,skills:v})} placeholder="AI, Design, Motion"/>
         </div>
-        <Fld label="AVATAR URL" value={form.avatar} onChange={v=>setForm({...form,avatar:v})} placeholder="https://..."/>
-        <div className="grid grid-cols-3 gap-3">
-          <Fld label="PORTFOLIO 1" value={form.work1} onChange={v=>setForm({...form,work1:v})} placeholder="Image URL"/>
-          <Fld label="PORTFOLIO 2" value={form.work2} onChange={v=>setForm({...form,work2:v})} placeholder="Image URL"/>
-          <Fld label="PORTFOLIO 3" value={form.work3} onChange={v=>setForm({...form,work3:v})} placeholder="Image URL"/>
+        {/* AVATAR UPLOAD */}
+        <div>
+          <p className="text-[10px] text-gray-400 font-semibold mb-1">AVATAR</p>
+          <div className="flex items-center gap-3">
+            {form.avatar && <img src={form.avatar} alt="avatar" className="w-12 h-12 rounded-full object-cover border border-white/20"/>}
+            <label className="flex items-center gap-2 cursor-pointer bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 hover:border-[#C7E36B]/50 transition">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {form.avatar ? "Change Avatar" : "Upload Avatar"}
+              <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                const f=e.target.files?.[0]; if(!f) return;
+                const fd=new FormData(); fd.append("image",f);
+                const res=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                if(res.ok){const d=await res.json(); setForm(prev=>({...prev,avatar:d.url||""}));}
+              }}/>
+            </label>
+          </div>
+        </div>
+        {/* PORTFOLIO UPLOADS */}
+        <div>
+          <p className="text-[10px] text-gray-400 font-semibold mb-1">PORTFOLIO IMAGES</p>
+          <div className="grid grid-cols-3 gap-3">
+            {[["work1","Portfolio 1"],["work2","Portfolio 2"],["work3","Portfolio 3"]].map(([key,label])=>(
+              <div key={key} className="flex flex-col gap-1">
+                {form[key] && <img src={form[key]} alt={label} className="w-full h-20 object-cover rounded-lg border border-white/10"/>}
+                <label className="flex items-center justify-center gap-1 cursor-pointer bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-2 text-[11px] text-gray-300 hover:border-[#C7E36B]/50 transition">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  {form[key] ? "Change" : label}
+                  <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                    const f=e.target.files?.[0]; if(!f) return;
+                    const fd=new FormData(); fd.append("image",f);
+                    const res=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                    if(res.ok){const d=await res.json(); setForm(prev=>({...prev,[key]:d.url||""}));}
+                  }}/>
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="flex gap-3 pt-2">
           <button onClick={()=>setShowForm(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg">Cancel</button>
