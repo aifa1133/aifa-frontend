@@ -53,100 +53,17 @@ export default function VideoSection({
 
         {/* VIDEO CARD */}
         <div
-          className="
-            relative
-
-            w-full
-            max-w-[1180px]
-
-            rounded-[18px]
-
-            overflow-hidden
-
-            border
-            border-[#2E3133]
-
-            shadow-[0_20px_80px_rgba(0,0,0,0.45)]
-
-            max-sm:rounded-[14px]
-          "
+          className="w-full max-w-[1180px] rounded-[18px] overflow-hidden border border-[#2E3133] shadow-[0_20px_80px_rgba(0,0,0,0.45)] max-sm:rounded-[14px]"
+          style={{ padding: "56.25% 0 0 0", position: "relative" }}
         >
-          {/* IMAGE */}
-          <img
-            src={image}
-            alt="Video Preview"
-            className="
-              w-full
-
-              h-[601px]
-
-              object-cover
-
-              max-sm:h-[240px]
-            "
+          <iframe
+            src="https://player.vimeo.com/video/1229658722?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0"
+            frameBorder="0"
+            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+            title="Bootcamp Preview"
           />
-
-          {/* DARK OVERLAY */}
-          <div
-            className="
-              absolute
-              inset-0
-
-              bg-black/25
-            "
-          />
-
-          {/* CENTER PLAY BUTTON */}
-          <div
-            className="
-              absolute
-              inset-0
-
-              flex
-              items-center
-              justify-center
-            "
-          >
-            <button
-              onClick={onPlay}
-              className="
-                flex
-                items-center
-                justify-center
-
-                w-[180px]
-                h-[70px]
-
-                bg-[#D0E46A]
-
-                transition-all
-                duration-300
-
-                hover:scale-[1.05]
-                active:scale-[0.96]
-
-                shadow-[0_0_40px_rgba(208,228,106,0.45)]
-
-                max-sm:w-[90px]
-                max-sm:h-[50px]
-              "
-            >
-              <img
-                src="/Polygon 2.svg"
-                alt="Play"
-                className="
-                  w-[28px]
-                  h-[28px]
-
-                  ml-[6px]
-
-                  max-sm:w-[18px]
-                  max-sm:h-[18px]
-                  max-sm:ml-[3px]
-                "
-              />
-            </button>
-          </div>
         </div>
       </div>
     </section>

@@ -139,6 +139,11 @@ import ServicesPage from "./pages/ServicesPage";
 import WorkshopsPage from "./pages/WorkshopsPage";
 import WorkshopDetail from "./pages/WorkshopDetail";
 import WorkshopEnroll from "./pages/WorkshopEnroll";
+import WorkshopConfirmation from "./pages/WorkshopConfirmation";
+import AIFilmmakingPage from "./pages/Workshopspages/AIFilmmakingPage";
+import AIAnimationPage from "./pages/Workshopspages/AIAnimationPage";
+import AIAdvertisingPage from "./pages/Workshopspages/AIAdvertisingPage";
+import AIContentCreationPage from "./pages/Workshopspages/AIContentCreationPage";
 import Bootcamppage from "./pages/Bootcamppage";
 import Forums from "./pages/Forums";
 import Events from "./pages/Events";
@@ -239,6 +244,11 @@ function AppShell() {
           <Route path="/deals" element={<AiDeals />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/workshops" element={<WorkshopsPage />} />
+          <Route path="/workshops/confirmation" element={<WorkshopConfirmation />} />
+          <Route path="/workshops/ai-filmmaking" element={<AIFilmmakingPage />} />
+          <Route path="/workshops/ai-animation" element={<AIAnimationPage />} />
+          <Route path="/workshops/ai-advertising" element={<AIAdvertisingPage />} />
+          <Route path="/workshops/ai-content-creation" element={<AIContentCreationPage />} />
           <Route path="/workshops/:id" element={<WorkshopDetail />} />
           <Route path="/workshops/:id/pay" element={<WorkshopEnroll />} />
           <Route path="/forums" element={<Forums />} />

@@ -64,6 +64,7 @@ const MGMT_ITEMS = [
   { id: "membership",  label: "Membership",  icon: "membership" },
   { id: "enrolments",  label: "Enrolments",  icon: "enrolments" },
   { id: "analytics",   label: "Analytics",   icon: "analytics"  },
+  { id: "payments",    label: "Payments",    icon: "billing"    },
   { id: "influencers", label: "Influencers", icon: "community"  },
 ];
 
@@ -76,6 +77,7 @@ export default function AdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [adminSearch, setAdminSearch] = useState("");
   const [adminNotifs, setAdminNotifs] = useState([]);
   const [adminNotifCount, setAdminNotifCount] = useState(0);
 
@@ -122,7 +124,6 @@ export default function AdminDashboard() {
       <aside className="w-[160px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         <div className="px-4 py-5 border-b border-white/5">
           <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" onError={e => { e.target.style.display='none'; }} />
-          <span className="text-white font-black text-sm">AIFA</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {[...NAV_ITEMS, { _divider: true }, ...MGMT_ITEMS].map((item, idx) => {
@@ -156,7 +157,15 @@ export default function AdminDashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-[#0F1112] border-b border-white/5 px-6 py-3 flex items-center justify-between shrink-0">
           <div className="relative">
-            <input type="text" placeholder="Search platform..." className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 w-[240px]" />
+            <input type="text" value={adminSearch} onChange={e => setAdminSearch(e.target.value)}
+            onKeyDown={e => {
+              if (e.key !== "Enter" || !adminSearch.trim()) return;
+              const q = adminSearch.toLowerCase();
+              const map = [["user","users"],["student","users"],["bootcamp","bootcamp"],["workshop","workshops"],["course","video-courses"],["resource","resources"],["community","community"],["payment","payments"],["analytics","analytics"],["membership","membership"],["influencer","influencers"],["enrol","enrolments"],["hire","hire-talent"],["service","service-request"],["sales","sales-consultation"],["certif","certificates"]];
+              const match = map.find(([k]) => q.includes(k));
+              if (match) { setPage(match[1]); setAdminSearch(""); }
+            }}
+            placeholder="Search platform..." className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 w-[240px]" />
             <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           </div>
           <div className="flex items-center gap-3 relative">
@@ -1411,12 +1420,21 @@ function BootcampAdmin({ token }) {
                 )}
                 <label className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 cursor-pointer">
                   <I name="upload" size={13}/> Upload Assets
-                  <input type="file" multiple accept=".pdf,.zip,.docx,.pptx,.mp4" className="hidden" onChange={async e=>{
+                  <input type="file" multiple accept=".pdf,.zip,.docx,.pptx,.mp4,image/*" className="hidden" onChange={async e=>{
                     const files=Array.from(e.target.files||[]);
                     for(const f of files){
                       const typeMap={pdf:"PDF Document",zip:"Compressed Archive",docx:"Word Document",pptx:"Presentation",mp4:"MP4 Video"};
                       const ext=(f.name.split(".").pop()||"").toLowerCase();
-                      const payload={name:f.name,fileType:typeMap[ext]||"File",fileSize:(f.size/1024/1024).toFixed(1)+" MB",category:"General"};
+                      const isImage=f.type.startsWith("image/");
+                      let fileUrl="";
+                      try {
+                        const fd=new FormData();
+                        const endpoint=isImage?"/api/uploads/image":"/api/uploads/file";
+                        fd.append(isImage?"image":"file",f);
+                        const up=await fetch(endpoint,{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                        if(up.ok){const ud=await up.json();fileUrl=ud.url||"";}
+                      } catch{}
+                      const payload={name:f.name,fileType:typeMap[ext]||"File",fileSize:(f.size/1024/1024).toFixed(1)+" MB",category:"General",fileUrl};
                       const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(payload)});
                       if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
                     }
@@ -1570,20 +1588,37 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", previewVideoUrl:"", published:true });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"" });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [manageTab, setManageTab] = useState("overview");
+  const [wsStudents, setWsStudents] = useState([]);
+  const [wsStudentsLoading, setWsStudentsLoading] = useState(false);
 
   const startEdit = (w) => {
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:"", time:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished });
+    let dateStr = "", timeStr = "";
+    if (w.scheduledAt) {
+      const dt = new Date(w.scheduledAt);
+      dateStr = `${String(dt.getMonth()+1).padStart(2,"0")}/${String(dt.getDate()).padStart(2,"0")}/${dt.getFullYear()}`;
+      timeStr = dt.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true});
+    }
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"" });
     setIsEditing(true); setView("create");
   };
 
   const doCreate = async () => {
     setSaving(true);
     try {
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"" };
+      let scheduledAt = null;
+      if (cf.date) {
+        try {
+          const combined = cf.time ? `${cf.date} ${cf.time}` : cf.date;
+          const d = new Date(combined);
+          if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
+        } catch {}
+      }
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1627,9 +1662,21 @@ function WorkshopsAdmin({ token }) {
           <Sect icon="resources" title="Basic Information">
             <Fld label="Workshop Title" value={cf.title} onChange={v=>setCf({...cf,title:v})} placeholder="AI Cinematography Masterclass" />
             <Fld label="Short Description" value={cf.shortDesc} onChange={v=>setCf({...cf,shortDesc:v})} textarea placeholder="Master the art of visual storytelling..." />
-            <div className="border-2 border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all">
-              <I name="upload" size={20} className="mx-auto text-gray-500 mb-1"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP (Max 5MB)</p>
-            </div>
+            <label className="border-2 border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all block">
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async e => {
+                const file = e.target.files?.[0]; if (!file) return;
+                const fd = new FormData(); fd.append("image", file);
+                try {
+                  const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
+                  const data = await res.json();
+                  if (data.url) setCf(p => ({...p, image: data.url}));
+                } catch {}
+              }}/>
+              {cf.image
+                ? <img src={cf.image} alt="Preview" className="w-full h-32 object-cover rounded-lg mb-2"/>
+                : <><I name="upload" size={20} className="mx-auto text-gray-500 mb-1"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP (Max 5MB)</p></>
+              }
+            </label>
           </Sect>
           <Sect icon="service" title="Key Details">
             <div className="grid grid-cols-3 gap-3">
@@ -1640,10 +1687,18 @@ function WorkshopsAdmin({ token }) {
           </Sect>
           <Sect icon="link" title="CTA Section">
             <div className="grid grid-cols-2 gap-3">
-              <Fld label="Button Text" value="Reserve Spot" onChange={()=>{}} />
-              <div><p className="text-[10px] text-gray-400 mb-1">Action Type</p><div className="flex gap-2"><button className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg">External Link</button><button className="flex-1 bg-white/10 text-gray-300 text-xs py-2 rounded-lg">Internal Checkout</button></div></div>
+              <Fld label="Button Text" value={cf.ctaText} onChange={v=>setCf({...cf,ctaText:v})} placeholder="Reserve Spot" />
+              <div>
+                <p className="text-[10px] text-gray-400 mb-1">Action Type</p>
+                <div className="flex gap-2">
+                  <button onClick={()=>setCf({...cf,ctaType:"external"})} className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${cf.ctaType==="external" ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-300 hover:bg-white/15"}`}>External Link</button>
+                  <button onClick={()=>setCf({...cf,ctaType:"internal"})} className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all ${cf.ctaType==="internal" ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-300 hover:bg-white/15"}`}>Internal Checkout</button>
+                </div>
+              </div>
             </div>
-            <Fld label="Redirect URL" value="https://checkout.aifa.com/workshop-id" onChange={()=>{}} />
+            {cf.ctaType === "external" && (
+              <Fld label="Redirect URL" value={cf.ctaUrl} onChange={v=>setCf({...cf,ctaUrl:v})} placeholder="https://checkout.aifa.com/workshop-id" />
+            )}
           </Sect>
           <Sect icon="videocam" title="Preview Video (5-sec teaser)">
             <Fld
@@ -1657,8 +1712,8 @@ function WorkshopsAdmin({ token }) {
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
               <Fld label="Date" value={cf.date} onChange={v=>setCf({...cf,date:v})} placeholder="mm/dd/yyyy" />
-              <Fld label="Time" value={cf.time} onChange={v=>setCf({...cf,time:v})} placeholder="--:-- --" />
-              <Fld label="Timezone" value="UTC (GMT+0)" onChange={()=>{}} />
+              <Fld label="Time" value={cf.time} onChange={v=>setCf({...cf,time:v})} placeholder="10:00 AM" />
+              <Fld label="Timezone" value={cf.timezone||""} onChange={v=>setCf({...cf,timezone:v})} placeholder="IST (GMT+5:30)" />
             </div>
           </Sect>
           <div className="flex items-center justify-between">
@@ -1695,55 +1750,128 @@ function WorkshopsAdmin({ token }) {
 
   if(view==="manage"&&sel) return (
     <div className="p-6">
+      {/* Header */}
       <button onClick={()=>setView("list")} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 mb-3"><I name="back" size={14}/>Back to Workshops</button>
       {successMsg && <div className="bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-sm px-4 py-2 rounded-lg mb-4 flex items-center gap-2"><I name="check" size={14}/>{successMsg}</div>}
-      <div className="flex gap-6">
-        <div className="flex-1">
-          <div className="flex gap-2 mb-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span><span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span></div>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <div className="flex gap-2 mb-1">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${sel.isPublished?"bg-green-500/20 text-green-400":"bg-[#C7E36B]/20 text-[#C7E36B]"}`}>{sel.isPublished?"PUBLISHED":"DRAFT"}</span>
+            <span className="text-[10px] text-gray-400">{sel.mode||"ONLINE"}</span>
+          </div>
           <h2 className="text-2xl font-black text-white">{sel.title}</h2>
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            {[["PRICE",sel.price||"₹1,499"],["DURATION",sel.duration||"4 Hours"],["SEAT LIMIT","50 Seats"]].map(([k,v])=>(
-              <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-3"><p className="text-[10px] text-gray-400 font-semibold">{k}</p><p className="text-base font-bold text-white">{v}</p></div>
-            ))}
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 mt-4 flex flex-col items-center justify-center min-h-[180px]">
-            <I name="users" size={32} className="text-gray-600 mb-2"/>
-            <p className="text-sm text-gray-400 font-semibold">{sel.registrations?.length ? `${sel.registrations.length} registrations` : "No registrations yet"}</p>
-            <p className="text-xs text-gray-500 mt-1 text-center">Once published, learner registrations will appear here in real-time.</p>
-            {!sel.isPublished && (
-              <button onClick={()=>doPublish(sel)} className="mt-4 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300">📣 Publish Workshop to Live</button>
-            )}
-            {sel.isPublished && (
-              <span className="mt-4 text-xs text-green-400 font-semibold">✓ Published and Live</span>
-            )}
-          </div>
         </div>
-        <div className="w-[200px] shrink-0 space-y-3">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs font-semibold text-white mb-3">Management Actions</p>
-            {[
-              ["Edit Details","edit",()=>startEdit(sel)],
-              ["Preview Website Card","eye",()=>window.open("/workshops","_blank")],
-              ["Copy Registration Link","copy",()=>{ navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`); alert("Link copied!"); }],
-              ["Delete Workshop","trash",()=>{ doDelete(sel._id); setView("list"); }],
-            ].map(([l,ic,fn])=>(
-              <button key={l} onClick={fn} className={`w-full flex items-center gap-2 text-xs py-2 border-b border-white/5 last:border-0 ${l.includes("Delete")?"text-red-400":"text-gray-300"} hover:text-white`}>
-                <I name={ic} size={12}/>{l}
-              </button>
-            ))}
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs font-semibold text-white mb-3">Schedule Summary</p>
-            {[
-              ["DATE", sel.scheduledAt ? new Date(sel.scheduledAt).toLocaleDateString("en-IN") : "Not scheduled"],
-              ["DURATION", sel.duration || "—"],
-              ["MODE", sel.mode || "ONLINE"],
-            ].map(([k,v])=>(
-              <div key={k} className="mb-2"><p className="text-[9px] text-gray-500 font-semibold">{k}</p><p className="text-xs text-white">{v}</p></div>
-            ))}
-          </div>
+        <div className="flex gap-2">
+          <button onClick={()=>startEdit(sel)} className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={12}/>Edit</button>
+          {!sel.isPublished && <button onClick={()=>doPublish(sel)} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300">📣 Publish</button>}
         </div>
       </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-white/10 mb-6">
+        {[["overview","Overview"],["session","Session Details"],["students","Students"]].map(([t,l])=>(
+          <button key={t} onClick={()=>{
+            setManageTab(t);
+            if(t==="students" && wsStudents.length===0){
+              setWsStudentsLoading(true);
+              fetch(`/api/workshops/${sel._id}/registrations`,{headers:{Authorization:`Bearer ${token}`}})
+                .then(r=>r.ok?r.json():[]).then(d=>{ setWsStudents(Array.isArray(d)?d:[]); setWsStudentsLoading(false); }).catch(()=>setWsStudentsLoading(false));
+            }
+          }}
+          className={`text-xs font-semibold px-4 py-2.5 border-b-2 transition-all ${manageTab===t?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-500 hover:text-white"}`}>{l}</button>
+        ))}
+      </div>
+
+      {/* ── Overview Tab ── */}
+      {manageTab==="overview" && (
+        <div className="grid grid-cols-3 gap-4">
+          {[["PRICE","₹"+sel.price],["DURATION",sel.duration||"—"],["SEATS",`${sel.registrations?.length||0} / ${sel.seats||50}`],["MODE",sel.mode||"ONLINE"],["DATE",sel.scheduledAt?new Date(sel.scheduledAt).toLocaleDateString("en-IN"):"Not scheduled"],["STATUS",sel.isPublished?"Published":"Draft"]].map(([k,v])=>(
+            <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <p className="text-[10px] text-gray-500 font-semibold mb-1">{k}</p>
+              <p className="text-base font-bold text-white">{v}</p>
+            </div>
+          ))}
+          <div className="col-span-3 bg-white/5 border border-white/10 rounded-xl p-4">
+            <p className="text-xs font-semibold text-white mb-2">Description</p>
+            <p className="text-sm text-gray-400">{sel.description||"No description added."}</p>
+          </div>
+          <div className="col-span-3 flex gap-3">
+            <button onClick={()=>window.open("/workshops","_blank")} className="text-xs border border-white/20 text-gray-300 px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="eye" size={12}/>Preview Live Card</button>
+            <button onClick={()=>{navigator.clipboard.writeText(`${window.location.origin}/workshops#${sel._id}`);alert("Link copied!");}} className="text-xs border border-white/20 text-gray-300 px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="copy" size={12}/>Copy Registration Link</button>
+            <button onClick={()=>{doDelete(sel._id);setView("list");}} className="text-xs border border-red-500/30 text-red-400 px-3 py-2 rounded-lg hover:bg-red-500/10 flex items-center gap-1 ml-auto"><I name="trash" size={12}/>Delete Workshop</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Session Details Tab ── */}
+      {manageTab==="session" && (
+        <div className="space-y-4 max-w-2xl">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><p className="text-[10px] text-gray-500 font-semibold mb-1">DATE</p><p className="text-sm font-bold text-white">{sel.scheduledAt?new Date(sel.scheduledAt).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"}):"Not scheduled"}</p></div>
+              <div><p className="text-[10px] text-gray-500 font-semibold mb-1">TIME</p><p className="text-sm font-bold text-white">{sel.scheduledAt?new Date(sel.scheduledAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}):"—"}</p></div>
+              <div><p className="text-[10px] text-gray-500 font-semibold mb-1">DURATION</p><p className="text-sm font-bold text-white">{sel.duration||"—"}</p></div>
+              <div><p className="text-[10px] text-gray-500 font-semibold mb-1">MODE</p><p className="text-sm font-bold text-white">{sel.mode||"ONLINE"}</p></div>
+              <div><p className="text-[10px] text-gray-500 font-semibold mb-1">TRAINER</p><p className="text-sm font-bold text-white">{sel.trainer||"—"}</p></div>
+              <div><p className="text-[10px] text-gray-500 font-semibold mb-1">SESSION CODE</p><p className="text-sm font-bold text-white">{sel.sessionCode||"—"}</p></div>
+            </div>
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-[10px] text-gray-500 font-semibold mb-1">ZOOM LINK</p>
+              {sel.zoomLink?<a href={sel.zoomLink} target="_blank" rel="noreferrer" className="text-sm text-[#C7E36B] hover:underline break-all">{sel.zoomLink}</a>:<p className="text-sm text-gray-500">No Zoom link added</p>}
+            </div>
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-[10px] text-gray-500 font-semibold mb-2">CTA BUTTON</p>
+              <div className="flex items-center gap-3">
+                <span className="text-xs bg-[#C7E36B]/10 text-[#C7E36B] border border-[#C7E36B]/20 px-3 py-1 rounded-lg font-semibold">{sel.ctaText||"Reserve Spot"}</span>
+                <span className="text-[10px] text-gray-500">{sel.ctaType||"EXTERNAL"}</span>
+                {sel.ctaUrl && <span className="text-xs text-gray-400 truncate max-w-[200px]">{sel.ctaUrl}</span>}
+              </div>
+            </div>
+          </div>
+          <button onClick={()=>startEdit(sel)} className="text-xs bg-white/5 border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/10 flex items-center gap-1.5"><I name="edit" size={12}/>Edit Session Details</button>
+        </div>
+      )}
+
+      {/* ── Students Tab ── */}
+      {manageTab==="students" && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-bold text-white">{wsStudents.length} Registered Students</p>
+          </div>
+          {wsStudentsLoading ? (
+            <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/></div>
+          ) : wsStudents.length === 0 ? (
+            <div className="text-center py-16 bg-white/5 border border-white/10 rounded-xl">
+              <I name="users" size={32} className="mx-auto text-gray-600 mb-2"/>
+              <p className="text-sm text-gray-400 font-semibold">No registrations yet</p>
+              <p className="text-xs text-gray-500 mt-1">Students who register for this workshop will appear here.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-white/10">
+              <table className="w-full text-xs">
+                <thead><tr className="border-b border-white/10 bg-white/5">
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Registered</th>
+                </tr></thead>
+                <tbody>
+                  {wsStudents.map((s,i)=>(
+                    <tr key={s._id||i} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="px-4 py-3 text-gray-500">{i+1}</td>
+                      <td className="px-4 py-3 font-semibold text-white">{s.name||"—"}</td>
+                      <td className="px-4 py-3 text-gray-400">{s.email||"—"}</td>
+                      <td className="px-4 py-3 text-gray-400">{s.phone||s.mobile||"—"}</td>
+                      <td className="px-4 py-3 text-gray-500">{s.registeredAt?new Date(s.registeredAt).toLocaleDateString("en-IN"):"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -1797,7 +1925,7 @@ function WorkshopsAdmin({ token }) {
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <span className="text-base font-bold text-white">₹{w.price}</span>
                 <div className="flex gap-2">
-                  <button onClick={()=>{setSel(w);setView("manage");}} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
+                  <button onClick={()=>{setSel(w);setView("manage");setManageTab("overview");setWsStudents([]);}} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
                     {w.isPublished?"Manage Workshop":"Continue Editing"}
                   </button>
                   <button onClick={()=>doDelete(w._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={12}/></button>
@@ -2087,65 +2215,6 @@ function CourseEditor({ course, token, onBack, onSaved }) {
           })}
         </div>
 
-        {/* Add/Edit lesson modal */}
-        {addLessonModal !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            onClick={() => setAddLessonModal(null)}>
-            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4"
-              onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-white">{addLessonModal.editIdx !== null ? "Edit Lesson" : "Add Lesson"}</p>
-                <button onClick={() => setAddLessonModal(null)} className="text-gray-500 hover:text-white">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                </button>
-              </div>
-              <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
-              <div>
-                <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Video URL (Vimeo or YouTube embed)</p>
-                <input value={newLesson.videoUrl||""} onChange={e=>setNewLesson(l=>({...l,videoUrl:e.target.value}))}
-                  onBlur={async e => {
-                    const url = e.target.value;
-                    if (!url) return;
-                    const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-                    if (vm) {
-                      try {
-                        const r = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vm[1]}`);
-                        const d = await r.json();
-                        if (d.duration && !newLesson.duration) {
-                          const m = Math.floor(d.duration/60), s = String(d.duration%60).padStart(2,"0");
-                          setNewLesson(l=>({...l,duration:`${m}:${s}`}));
-                        }
-                      } catch {}
-                    }
-                  }}
-                  placeholder="https://player.vimeo.com/video/...  or  https://www.youtube.com/embed/..."
-                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"/>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Fld label="Duration (e.g. 12:30)" value={newLesson.duration||""} onChange={v=>setNewLesson(l=>({...l,duration:v}))} placeholder="mm:ss"/>
-                <div className="flex items-center gap-3 pt-5">
-                  <Tog value={newLesson.isFree||false} onChange={v=>setNewLesson(l=>({...l,isFree:v}))}/>
-                  <span className="text-xs text-gray-400">Free Preview</span>
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setAddLessonModal(null)} className="flex-1 border border-white/15 text-gray-400 text-sm py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
-                <button onClick={() => {
-                  const { moduleIdx, editIdx } = addLessonModal;
-                  setModules(ms => ms.map((m,i) => i!==moduleIdx ? m : {
-                    ...m,
-                    lessons: editIdx !== null
-                      ? m.lessons.map((l,j) => j===editIdx ? {...newLesson} : l)
-                      : [...m.lessons, {...newLesson}]
-                  }));
-                  setAddLessonModal(null);
-                }} className="flex-1 bg-[#C7E36B] text-black font-bold text-sm py-2.5 rounded-xl hover:brightness-105">
-                  {addLessonModal.editIdx !== null ? "Save Changes" : "Add Lesson"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -2348,6 +2417,66 @@ function CourseEditor({ course, token, onBack, onSaved }) {
         {tab === "overview"    && <OverviewTab />}
         {tab === "curriculum"  && <CurriculumTab />}
         {tab === "enrollments" && <EnrollmentsTab />}
+
+        {/* Add/Edit lesson modal — lives at CourseEditor level to avoid remount on state change */}
+        {addLessonModal !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setAddLessonModal(null)}>
+            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-white">{addLessonModal.editIdx !== null ? "Edit Lesson" : "Add Lesson"}</p>
+                <button onClick={() => setAddLessonModal(null)} className="text-gray-500 hover:text-white">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Video URL (Vimeo or YouTube embed)</p>
+                <input value={newLesson.videoUrl||""} onChange={e=>setNewLesson(l=>({...l,videoUrl:e.target.value}))}
+                  onBlur={async e => {
+                    const url = e.target.value;
+                    if (!url) return;
+                    const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+                    if (vm) {
+                      try {
+                        const r = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${vm[1]}`);
+                        const d = await r.json();
+                        if (d.duration && !newLesson.duration) {
+                          const m = Math.floor(d.duration/60), s = String(d.duration%60).padStart(2,"0");
+                          setNewLesson(l=>({...l,duration:`${m}:${s}`}));
+                        }
+                      } catch {}
+                    }
+                  }}
+                  placeholder="https://player.vimeo.com/video/...  or  https://www.youtube.com/embed/..."
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50 font-mono"/>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Fld label="Duration (e.g. 12:30)" value={newLesson.duration||""} onChange={v=>setNewLesson(l=>({...l,duration:v}))} placeholder="mm:ss"/>
+                <div className="flex items-center gap-3 pt-5">
+                  <Tog value={newLesson.isFree||false} onChange={v=>setNewLesson(l=>({...l,isFree:v}))}/>
+                  <span className="text-xs text-gray-400">Free Preview</span>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setAddLessonModal(null)} className="flex-1 border border-white/15 text-gray-400 text-sm py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
+                <button onClick={() => {
+                  const { moduleIdx, editIdx } = addLessonModal;
+                  setModules(ms => ms.map((m,i) => i!==moduleIdx ? m : {
+                    ...m,
+                    lessons: editIdx !== null
+                      ? m.lessons.map((l,j) => j===editIdx ? {...newLesson} : l)
+                      : [...m.lessons, {...newLesson}]
+                  }));
+                  setAddLessonModal(null);
+                }} className="flex-1 bg-[#C7E36B] text-black font-bold text-sm py-2.5 rounded-xl hover:brightness-105">
+                  {addLessonModal.editIdx !== null ? "Save Changes" : "Add Lesson"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2953,7 +3082,7 @@ function ResourcesAdmin({ token }) {
                   };
                   return (
                     <button key={t.key} onClick={() => setResType(t.key)}
-                      className={`flex flex-col items-center gap-2 px-6 py-4 rounded-2xl border transition-all ${resType===t.key?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/10 bg-white/5 text-gray-400 hover:border-white/20 hover:text-white"}`}>
+                      className={`flex flex-col items-center justify-center gap-2 w-[90px] h-[80px] rounded-2xl border transition-all ${resType===t.key?"border-[#C7E36B] bg-[#C7E36B]/10 text-[#C7E36B]":"border-white/10 bg-white/5 text-gray-400 hover:border-white/20 hover:text-white"}`}>
                       {icons[t.key]}
                       <span className="text-[11px] font-bold uppercase tracking-wide">{t.label}</span>
                     </button>
@@ -4752,6 +4881,8 @@ function CommunityAdmin({ token, adminName }) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [event, setEvent] = useState({ title:"", type:"Workshop", mode:"ONLINE", date:"", startTime:"", endTime:"", timezone:"", duration:"2", capacity:"", description:"", link:"", location:"", openRSVP:true, featured:false });
   const [eventSuccess, setEventSuccess] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [editEventId, setEditEventId] = useState(null);
 
   /* ── Awards/Challenges state ── */
   const [challengeFilter, setChallengeFilter]   = useState("Active");
@@ -5186,15 +5317,18 @@ function CommunityAdmin({ token, adminName }) {
       try {
         const h = {"Content-Type":"application/json", Authorization:`Bearer ${token}`};
         const body = {...event, status, date: event.date ? new Date(event.date) : null, capacity: event.capacity ? Number(event.capacity) : null};
-        const res = await fetch("/api/community/events",{method:"POST",headers:h,body:JSON.stringify(body)});
+        const isEdit = !!editEventId;
+        const url = isEdit ? `/api/community/events/${editEventId}` : "/api/community/events";
+        const res = await fetch(url, {method: isEdit ? "PUT" : "POST", headers: h, body: JSON.stringify(body)});
         if (res.ok) {
-          const created = await res.json();
-          setEvents(prev => [created, ...prev]);
+          const saved = await res.json();
+          setEvents(prev => isEdit ? prev.map(e => e._id === saved._id ? saved : e) : [saved, ...prev]);
           setShowEventForm(false);
+          setEditEventId(null);
           setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"",description:"",link:"",location:"",openRSVP:true,featured:false});
           setThumbPreview(null);
           setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
-        } else alert("Failed to create event.");
+        } else alert(isEdit ? "Failed to update event." : "Failed to create event.");
       } catch { alert("Network error."); }
     };
 
@@ -5203,10 +5337,10 @@ function CommunityAdmin({ token, adminName }) {
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Header with Save Draft + Publish Event — Fix 1 */}
           <div className="flex items-center gap-3 mb-2">
-            <button onClick={() => setShowEventForm(false)} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg shrink-0">← Back</button>
+            <button onClick={() => { setShowEventForm(false); setEditEventId(null); }} className="text-xs text-gray-400 hover:text-white border border-white/15 px-3 py-1.5 rounded-lg shrink-0">← Back</button>
             <div>
               <p className="text-[10px] text-gray-500 uppercase tracking-wider">Events / Editor</p>
-              <h1 className="text-xl font-bold text-white leading-tight">Create New Event</h1>
+              <h1 className="text-xl font-bold text-white leading-tight">{editEventId ? "Edit Event" : "Create New Event"}</h1>
             </div>
             <div className="flex items-center gap-2 ml-auto">
               <button onClick={() => doSubmit("draft")} className="text-sm border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors">Save Draft</button>
@@ -5679,8 +5813,89 @@ function CommunityAdmin({ token, adminName }) {
               <button key={f} className="bg-white/5 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">{f}</button>
             ))}
           </div>
+          {/* ── Event Manage Detail View ── */}
+          {selectedEvent && (() => {
+            const ev = selectedEvent;
+            const month = ev.month || (ev.date ? new Date(ev.date).toLocaleDateString("en",{month:"short"}).toUpperCase() : "");
+            const day   = ev.day   || (ev.date ? new Date(ev.date).getDate() : "");
+            const doDeleteEvent = async () => {
+              if (!confirm(`Delete "${ev.title}"? This cannot be undone.`)) return;
+              const r = await fetch(`/api/community/events/${ev._id}`, {method:"DELETE", headers:{Authorization:`Bearer ${token}`}});
+              if (r.ok) { setEvents(prev => prev.filter(e => e._id !== ev._id)); setSelectedEvent(null); }
+              else alert("Failed to delete.");
+            };
+            return (
+              <div>
+                <button onClick={() => setSelectedEvent(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white mb-5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                  Back to Events
+                </button>
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Left: event card preview */}
+                  <div className="w-full md:w-[320px] shrink-0">
+                    <div className={`rounded-2xl overflow-hidden bg-gradient-to-br ${ev.bg || "from-blue-900 to-purple-900"} h-[180px] relative mb-4`}>
+                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[44px]">
+                        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider leading-none mb-0.5">{month}</p>
+                        <p className="text-2xl font-black text-white leading-none">{day}</p>
+                      </div>
+                      {ev.featured && <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded-lg">FEATURED</span>}
+                    </div>
+                    <h2 className="text-lg font-bold text-white mb-1">{ev.title}</h2>
+                    <p className="text-xs text-gray-400 mb-4">{ev.type} · {ev.mode}</p>
+                    <div className="flex flex-col gap-2 text-sm">
+                      {ev.date && <div className="flex items-center gap-2 text-gray-300"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{new Date(ev.date).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"})}</div>}
+                      {(ev.startTime || ev.endTime) && <div className="flex items-center gap-2 text-gray-300"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{[ev.startTime, ev.endTime].filter(Boolean).join(" – ")}{ev.timezone ? ` (${ev.timezone})` : ""}</div>}
+                      {(ev.link || ev.location) && <div className="flex items-center gap-2 text-gray-300"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span className="truncate">{ev.link || ev.location}</span></div>}
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <button onClick={() => {
+                        setEditEventId(ev._id);
+                        setEvent({ title:ev.title||"", type:ev.type||"Workshop", mode:ev.mode||"ONLINE", date:ev.date?new Date(ev.date).toISOString().split("T")[0]:"", startTime:ev.startTime||"", endTime:ev.endTime||"", timezone:ev.timezone||"", duration:ev.duration||"2", capacity:ev.capacity?String(ev.capacity):"", description:ev.description||"", link:ev.link||"", location:ev.location||"", openRSVP:ev.openRSVP!==false, featured:ev.featured||false });
+                        setThumbPreview(ev.image||null);
+                        setSelectedEvent(null);
+                        setShowEventForm(true);
+                      }} className="flex-1 text-sm border border-white/20 text-gray-300 py-2 rounded-lg hover:bg-white/5 transition-colors text-center">Edit Event</button>
+                      <button onClick={doDeleteEvent} className="flex-1 text-sm border border-red-500/30 text-red-400 py-2 rounded-lg hover:bg-red-500/10 transition-colors text-center">Delete</button>
+                    </div>
+                  </div>
+                  {/* Right: stats */}
+                  <div className="flex-1 space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        {label:"RSVPs", val: ev.rsvps ?? 0, sub:"registered"},
+                        {label:"Capacity", val: ev.capacity ?? "∞", sub:"total seats"},
+                        {label:"Status", val: ev.status || "draft", sub:"current state"},
+                      ].map(s => (
+                        <div key={s.label} className="bg-[#111315] border border-white/10 rounded-xl p-4 text-center">
+                          <p className="text-2xl font-black text-[#C7E36B]">{s.val}</p>
+                          <p className="text-xs font-bold text-white mt-1">{s.label}</p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">{s.sub}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {ev.description && (
+                      <div className="bg-[#111315] border border-white/10 rounded-xl p-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</p>
+                        <p className="text-sm text-gray-300 leading-relaxed">{ev.description}</p>
+                      </div>
+                    )}
+                    <div className="bg-[#111315] border border-white/10 rounded-xl p-4">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Settings</p>
+                      <div className="flex flex-col gap-2 text-sm text-gray-300">
+                        <div className="flex justify-between"><span>Open RSVP</span><span className={ev.openRSVP !== false ? "text-green-400" : "text-red-400"}>{ev.openRSVP !== false ? "Yes" : "No"}</span></div>
+                        <div className="flex justify-between"><span>Featured</span><span className={ev.featured ? "text-[#C7E36B]" : "text-gray-500"}>{ev.featured ? "Yes" : "No"}</span></div>
+                        <div className="flex justify-between"><span>Duration</span><span>{ev.duration ? `${ev.duration} Hours` : "—"}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Event cards grid */}
-          {eventsLoading ? <AdminLoader label="Loading Events"/> : (
+          {!selectedEvent && eventsLoading && <AdminLoader label="Loading Events"/>}
+          {!selectedEvent && !eventsLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {(events.filter(e => !eventSearch || e.title?.toLowerCase().includes(eventSearch.toLowerCase()))).map((ev, i) => {
                 const bg = ev.bg || ["from-blue-900 to-purple-900","from-emerald-900 to-teal-900","from-orange-900 to-red-900"][i%3];
@@ -5725,10 +5940,15 @@ function CommunityAdmin({ token, adminName }) {
                           <p className="text-sm font-black"><span className="text-[#C7E36B]">{rsvps}</span><span className="text-gray-400"> / {cap}</span></p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:border-white/30 hover:text-white transition-all">
+                          <button onClick={() => {
+                            setEditEventId(ev._id);
+                            setEvent({ title:ev.title||"", type:ev.type||"Workshop", mode:ev.mode||"ONLINE", date:ev.date?new Date(ev.date).toISOString().split("T")[0]:"", startTime:ev.startTime||"", endTime:ev.endTime||"", timezone:ev.timezone||"", duration:ev.duration||"2", capacity:ev.capacity?String(ev.capacity):"", description:ev.description||"", link:ev.link||"", location:ev.location||"", openRSVP:ev.openRSVP!==false, featured:ev.featured||false });
+                            setThumbPreview(ev.image||null);
+                            setShowEventForm(true);
+                          }} className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/15 text-gray-400 hover:border-white/30 hover:text-white transition-all">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           </button>
-                          <button className="bg-[#C7E36B] text-black text-sm font-bold px-4 py-1.5 rounded-lg hover:bg-lime-300 transition-all">Manage</button>
+                          <button onClick={() => setSelectedEvent(ev)} className="bg-[#C7E36B] text-black text-sm font-bold px-4 py-1.5 rounded-lg hover:bg-lime-300 transition-all">Manage</button>
                         </div>
                       </div>
                     </div>

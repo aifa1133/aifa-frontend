@@ -18,10 +18,6 @@ export default function CourseCardMobile() {
 
         {/* Content */}
         <div className="px-[16px] py-[16px]">
-          <p className="text-[10px] font-bold uppercase text-[#D7D7D7]">
-            Beginner
-          </p>
-
           <h2 className="mt-[8px] text-[18px] leading-[24px] font-black text-white uppercase">
             AI FILMMAKING
             <br />

@@ -214,10 +214,10 @@ export default function WorkshopsPage() {
                     <div className="flex-1 flex flex-col gap-3">
                       {/* TITLE + META */}
                       <div className="relative px-[16px] py-[14px] flex flex-col justify-center gap-[6px] self-stretch rounded-tr-[18px] bg-[#DCDCDC] flex-1">
-                        {status && status !== "Draft" && status !== "Completed" && (
+                        {status && status !== "Draft" && status !== "Completed" && status !== "Live" && (
                           <div>
                             <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit ${STATUS_STYLE[status] || "bg-gray-500 text-white"}`}>
-                              {status === "Live" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>}{status}
+                              {status}
                             </span>
                           </div>
                         )}
@@ -308,7 +308,7 @@ export default function WorkshopsPage() {
                         onClick={(e) => { e.stopPropagation(); navigate(`/workshops/${item._id}`); }}
                         className="flex justify-center items-center px-[30px] py-[12px] w-full font-[Montserrat] text-[18px] leading-[28px] font-bold bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition"
                       >
-                        View Details
+                        VIEW DETAILS
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleReserve(item); }}
@@ -338,7 +338,7 @@ export default function WorkshopsPage() {
             <p className="text-[#000000] text-center font-[Montserrat] text-[18px] leading-[28px] sm:text-[24px] sm:leading-[32px] md:text-[32px] md:leading-[40px] font-bold mb-[28px] md:mb-[32px]">
               Get personalised guidance from our team
             </p>
-            <button className="inline-flex justify-center items-center gap-[8px] px-[22px] py-[12px] md:px-[30px] md:py-[12px] rounded-[12px] bg-[#D0E46A] text-[#0F1112] font-[Montserrat] text-[15px] md:text-[18px] font-bold leading-[28px] uppercase transition-all duration-300 hover:opacity-90">
+            <button onClick={() => window.open("https://wa.me/919052088000?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20the%20AIFA%20workshops.", "_blank")} className="inline-flex justify-center items-center gap-[8px] px-[22px] py-[12px] md:px-[30px] md:py-[12px] rounded-[12px] bg-[#D0E46A] text-[#0F1112] font-[Montserrat] text-[15px] md:text-[18px] font-bold leading-[28px] uppercase transition-all duration-300 hover:opacity-90">
               CHAT WITH US NOW
             </button>
           </div>

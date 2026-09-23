@@ -205,7 +205,7 @@ export default function LoginModal({ onClose, onSwitchToSignup }) {
       <h2 className="text-white text-2xl font-semibold mb-6">Enter your number</h2>
       <div className="flex gap-3 mb-4">
         <div className="flex items-center border border-white/20 rounded-lg px-4 py-3 text-white shrink-0">+91</div>
-        <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ""))} onKeyDown={e => e.key === "Enter" && handleSendPhoneOtp()} className="flex-1 bg-transparent border border-white/20 rounded-lg px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
+        <input type="tel" placeholder="Phone Number" maxLength={10} value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))} onKeyDown={e => e.key === "Enter" && handleSendPhoneOtp()} className="flex-1 bg-transparent border border-white/20 rounded-lg px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
       </div>
       <TurnstileWidget />
       {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
@@ -293,7 +293,7 @@ export default function LoginModal({ onClose, onSwitchToSignup }) {
         <input type={showPassword ? "text" : "password"} placeholder="Enter Your Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleEmailLogin()} className="w-full bg-transparent border border-white/20 rounded-lg px-4 py-3 text-white mb-3 outline-none focus:border-[#C7E36B]"/>
 
         <div className="flex items-center gap-2 mb-4">
-          <input type="checkbox" id="show-pwd" onChange={() => setShowPassword(p => !p)} />
+          <input type="checkbox" id="show-pwd" checked={showPassword} onChange={() => setShowPassword(p => !p)} />
           <label htmlFor="show-pwd" className="text-gray-400 text-sm cursor-pointer">Show password</label>
         </div>
 

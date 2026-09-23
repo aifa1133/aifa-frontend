@@ -86,7 +86,7 @@ export default function BootcampCardMobile({
         }
         className="mt-2 h-[42px] w-full rounded-[8px] bg-[#F2FEB1] text-[15px] font-bold text-[#111]"
       >
-        View Details
+        VIEW DETAILS
       </button>
 
     <button

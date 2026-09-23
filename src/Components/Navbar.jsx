@@ -9,7 +9,7 @@ const navLinks = [
     name: "COURSES",
     dropdown: [
       { label: "BOOTCAMP", path: "/bootcamp" },
-      { label: "VIDEO COURSES", path: "/coursespage" },
+      { label: "VIDEO COURSES", path: "/courses" },
       { label: "WORKSHOPS", path: "/workshops" },
     ],
   },

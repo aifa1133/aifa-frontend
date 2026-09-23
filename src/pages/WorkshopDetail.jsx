@@ -736,10 +736,15 @@ export default function WorkshopDetail() {
               <iframe src={workshop.previewVideoUrl} className="w-full h-[280px] md:h-[380px]" allow="autoplay; fullscreen" allowFullScreen title="Workshop preview" />
             ) : (
               <>
-                <img src={workshop.image || FALLBACK} alt={workshop.title}
-                  className="w-full h-[280px] md:h-[380px] object-cover"
-                  onError={e => { e.target.src = FALLBACK; }}/>
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div style={{padding:"56.37% 0 0 0", position:"relative"}}>
+                  <iframe src="https://player.vimeo.com/video/1229658092?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0"
+                    frameBorder="0"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
+                    title="Workshop Preview" />
+                </div>
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center hidden">
                   <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
                   </div>
@@ -919,7 +924,7 @@ export default function WorkshopDetail() {
           </div>
         )}
 
-        {/* VIDEO PREVIEW — 5-sec teaser or thumbnail fallback */}
+        {/* VIDEO PREVIEW — Vimeo default, YouTube teaser if set */}
         {workshop.previewVideoUrl && getYouTubeId(workshop.previewVideoUrl) ? (
           <WorkshopVideoPreview
             url={workshop.previewVideoUrl}
@@ -927,15 +932,15 @@ export default function WorkshopDetail() {
             onEnroll={() => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } })}
           />
         ) : (
-          <div className="relative rounded-2xl overflow-hidden mb-8">
-            <img src={workshop.image || FALLBACK} alt={workshop.title}
-              className="w-full h-[280px] md:h-[400px] object-cover"
-              onError={e => { e.target.src = FALLBACK; }}/>
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="w-16 h-16 bg-[#C7E36B]/90 rounded-xl flex items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#0B0F10"><path d="M8 5v14l11-7z"/></svg>
-              </div>
-            </div>
+          <div className="rounded-2xl overflow-hidden mb-8" style={{padding:"56.37% 0 0 0", position:"relative"}}>
+            <iframe
+              src="https://player.vimeo.com/video/1229658092?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0"
+              frameBorder="0"
+              allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
+              title="Workshop Preview"
+            />
           </div>
         )}
       </div>

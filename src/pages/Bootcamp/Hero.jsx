@@ -159,7 +159,7 @@ export default function Hero() {
             </h1>
 
             <Link
-              to="/courses"
+              to="/bootcamp/enroll"
               className="
     flex
     items-center

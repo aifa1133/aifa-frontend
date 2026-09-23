@@ -41,14 +41,8 @@ export default function CourseEnroll() {
 
   /* ── Fetch course ── */
   useEffect(() => {
-    // If navigated with inline course data (e.g. from homepage static cards), use it directly
-    if (location.state?.courseData) {
-      setCourse(location.state.courseData);
-      setLoading(false);
-      return;
-    }
-
-    if (!id || id === "static" || id.startsWith("m")) {
+    // Validate the URL id first — fallback/static IDs must never reach the API
+    if (!id || id === "static" || id.startsWith("c") || id.startsWith("m") || id.length < 20) {
       setNotFound(true); setLoading(false); return;
     }
 
@@ -57,7 +51,8 @@ export default function CourseEnroll() {
       .then(r => r.json())
       .then(data => {
         if (data._id) {
-          setCourse(data);
+          // Merge with any passed state (for display extras), but always use the real DB data
+          setCourse({ ...location.state?.courseData, ...data });
         } else {
           setNotFound(true);
         }
@@ -309,9 +304,9 @@ export default function CourseEnroll() {
 
       {/* Back */}
       <div className="max-w-5xl mx-auto px-4 pt-8">
-        <button onClick={() => navigate("/courses")} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors mb-8">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors mb-8">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Back to Courses
+          Back
         </button>
       </div>
 
@@ -414,20 +409,13 @@ export default function CourseEnroll() {
             </div>
           )}
 
-          {/* CTA buttons */}
-          <button
-            onClick={() => setShowSummary(true)}
-            className="w-full py-4 bg-[#C7E36B] text-black font-bold text-lg rounded-xl hover:bg-lime-300 transition-colors"
-          >
-            Buy Now — ₹{course.price}
-          </button>
-
+          {/* CTA button */}
           <button
             onClick={handlePay}
             disabled={paying}
-            className="w-full py-3 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/5 transition-colors disabled:opacity-60 text-sm"
+            className="w-full py-4 bg-[#C7E36B] text-black font-bold text-lg rounded-xl hover:bg-lime-300 transition-colors disabled:opacity-60"
           >
-            {paying ? "Processing payment..." : "Pay directly with Razorpay"}
+            {paying ? "Processing payment..." : `Buy Now — ₹${course.price}`}
           </button>
 
           <p className="text-gray-500 text-xs text-center">

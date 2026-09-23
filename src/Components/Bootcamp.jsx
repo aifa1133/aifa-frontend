@@ -60,7 +60,7 @@ export default function Bootcamps() {
   };
 
   const handleReserve = (item) => {
-    if (item._id) navigate(`/workshops/${item._id}`);
+    if (item._id) navigate(`/workshops/${item._id}/pay`, { state: { workshopData: item } });
     else navigate("/workshops");
   };
 
@@ -128,7 +128,7 @@ export default function Bootcamps() {
                       onClick={() => handleViewDetails(item)}
                       className="flex w-full justify-center items-center px-[30px] py-[12px] rounded-[8px] bg-[#F2FEB1] text-[#0F1112] font-[Montserrat] text-[18px] font-bold leading-[28px] hover:bg-[#EAF99A] transition-all duration-300 cursor-pointer"
                     >
-                      View Details
+                      VIEW DETAILS
                     </button>
                     <button
                       type="button"

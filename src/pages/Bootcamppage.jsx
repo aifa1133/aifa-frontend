@@ -14,7 +14,7 @@ import CourseContent from "./Bootcamp/CourseContent";
 import IncludedSection from "./Bootcamp/IncludedSection";
 
 export default function Bootcamppage() {
-  const [showBar, setShowBar] = useState(false);
+  const [showBar, setShowBar] = useState(true);
   const [bootcamp, setBootcamp] = useState(null);
   const navigate = useNavigate();
 
@@ -27,7 +27,7 @@ export default function Bootcamppage() {
       const scrollY = window.scrollY;
       const docH = document.documentElement.scrollHeight;
       const winH = window.innerHeight;
-      setShowBar(scrollY > 300 && scrollY + winH < docH - 300);
+      setShowBar(scrollY + winH < docH - 200);
     };
     window.addEventListener("scroll", handle, { passive: true });
     return () => window.removeEventListener("scroll", handle);

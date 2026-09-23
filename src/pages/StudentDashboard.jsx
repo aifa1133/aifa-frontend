@@ -307,6 +307,7 @@ export default function StudentDashboard() {
                 <NotificationDropdown
                   notifs={notifs}
                   onClose={() => setShowNotif(false)}
+                  onViewAll={() => { setShowNotif(false); navigateTo("community"); }}
                   onMarkRead={async () => {
                     await fetch("/api/notifications/read", { method:"PUT", headers:{ Authorization:`Bearer ${token}` } });
                     setNotifCount(0);
@@ -431,7 +432,7 @@ function timeAgoNotif(dateStr) {
   return new Date(dateStr).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
 }
 
-function NotificationDropdown({ notifs, onClose, onMarkRead }) {
+function NotificationDropdown({ notifs, onClose, onMarkRead, onViewAll }) {
   const list = notifs || [];
   const style = t => NOTIF_STYLE[t] || NOTIF_STYLE.general;
   return (
@@ -480,7 +481,7 @@ function NotificationDropdown({ notifs, onClose, onMarkRead }) {
       {/* Footer */}
       {list.length > 0 && (
         <div className="px-5 py-3 border-t border-white/5 text-center">
-          <button className="text-xs text-[#C7E36B] font-semibold hover:underline">View all notifications →</button>
+          <button onClick={() => { onViewAll?.(); onClose?.(); }} className="text-xs text-[#C7E36B] font-semibold hover:underline">View all notifications →</button>
         </div>
       )}
     </div>
@@ -604,7 +605,7 @@ function UserMenuDropdown({ name, email, avatar, isGuest, onProfile, onSettings,
       {[
         { icon: "person", label: "View Profile", action: onProfile },
         { icon: "settings", label: "Account Settings", action: onSettings },
-        { icon: "help", label: "Help & Support", action: null },
+        { icon: "help", label: "Help & Support", action: () => window.open("mailto:support@aifa.co.in", "_blank") },
         { icon: "receipt", label: "Billing & Payments", action: onBilling },
       ].map(item => (
         <button key={item.label} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all">
@@ -842,7 +843,8 @@ function BootcampSection({ token, profile }) {
   }, []);
 
   /* API data */
-  const [bootcampData, setBootcampData] = useState(null);
+  const [allBootcamps, setAllBootcamps] = useState(null); // null = loading
+  const [viewBootcamp, setViewBootcamp] = useState(null); // detail view
   const [sessions, setSessions]         = useState([]);
   const [projects, setProjects]         = useState([]);
   const [announcements, setAnnouncements] = useState([]);
@@ -852,17 +854,26 @@ function BootcampSection({ token, profile }) {
   const [sessFilter, setSessFilter] = useState("All Sessions");
   const [videoMsg, setVideoMsg] = useState("");
 
+  const userId = profile?._id || JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
+
   useEffect(() => {
     fetch("/api/bootcamps")
       .then(r => r.ok ? r.json() : [])
-      .then(d => { if (Array.isArray(d) && d.length > 0) setBootcampData(d[0]); else setBootcampData({}); })
-      .catch(() => { setBootcampData({}); });
+      .then(d => setAllBootcamps(Array.isArray(d) ? d : []))
+      .catch(() => setAllBootcamps([]));
   }, []);
 
-  /* Derive enrollment from DB — user's _id must be in bootcamp.enrollments */
-  const userId = profile?._id || JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
-  const bcLoaded  = bootcampData !== null;
-  const enrolled  = !!(bootcampData && userId && bootcampData.enrollments?.some(
+  /* Auto-select enrolled bootcamp */
+  useEffect(() => {
+    if (!allBootcamps || viewBootcamp) return;
+    const enrolledOne = allBootcamps.find(bc => bc.enrollments?.some(id => String(id) === String(userId)));
+    if (enrolledOne) setViewBootcamp(enrolledOne);
+  }, [allBootcamps, userId]);
+
+  /* Aliases for compatibility with existing enrolled-view code */
+  const bootcampData = viewBootcamp;
+  const bcLoaded  = allBootcamps !== null;
+  const enrolled  = !!(viewBootcamp && userId && viewBootcamp.enrollments?.some(
     id => String(id) === String(userId)
   ));
 
@@ -906,9 +917,83 @@ function BootcampSection({ token, profile }) {
     </div>
   );
 
+  /* ── All Bootcamps Grid (when no bootcamp is selected / not enrolled) ── */
+  if (!viewBootcamp) return (
+    <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <h1 className="text-2xl font-black text-white mb-1">Bootcamps</h1>
+          <p className="text-gray-400 text-sm">Explore all AIFA bootcamp programs and enroll to get started.</p>
+        </div>
+        {allBootcamps?.length === 0 ? (
+          <div className="text-center py-20 text-gray-500">
+            <p className="text-4xl mb-3">🎬</p>
+            <p className="font-semibold text-white">No bootcamps available yet</p>
+            <p className="text-sm mt-1">Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {allBootcamps?.map(bc => {
+              const isEnrolled = bc.enrollments?.some(id => String(id) === String(userId));
+              const isActive = bc.isPublished;
+              return (
+                <div key={bc._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden flex flex-col hover:border-white/18 transition-all">
+                  {/* Thumbnail / batch code */}
+                  <div className="h-36 bg-gradient-to-br from-[#1a1040] to-[#0d1117] flex items-center justify-center relative">
+                    {bc.image
+                      ? <img src={bc.image} alt={bc.title} className="w-full h-full object-cover"/>
+                      : <span className="text-5xl font-black text-white/10 tracking-widest">{bc.batchCode || "BC"}</span>
+                    }
+                    <span className={`absolute top-3 right-3 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-widest ${isActive ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-400"}`}>
+                      {isActive ? "ACTIVE" : "COMING SOON"}
+                    </span>
+                    {isEnrolled && (
+                      <span className="absolute top-3 left-3 text-[9px] font-bold bg-[#7C3AED] text-white px-2 py-1 rounded uppercase tracking-widest">Enrolled</span>
+                    )}
+                  </div>
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-2">{bc.title}</h3>
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">{bc.description || "AI-powered filmmaking bootcamp"}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-gray-500 mb-4">
+                      {bc.duration && <span>⏱ {bc.duration}</span>}
+                      {bc.seats && <span>👥 {bc.enrollments?.length || 0}/{bc.seats} seats</span>}
+                    </div>
+                    <div className="mt-auto">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg font-black text-white">₹{(bc.price || 0).toLocaleString("en-IN")}</span>
+                        {bc.originalPrice > bc.price && <span className="text-gray-500 line-through text-xs">₹{bc.originalPrice?.toLocaleString("en-IN")}</span>}
+                      </div>
+                      {isEnrolled ? (
+                        <button onClick={() => setViewBootcamp(bc)} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all">
+                          Continue Learning →
+                        </button>
+                      ) : isActive ? (
+                        <button onClick={() => setViewBootcamp(bc)} className="w-full bg-[#C7E36B] !text-black text-xs font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
+                          View & Enroll →
+                        </button>
+                      ) : (
+                        <button disabled className="w-full bg-white/5 text-gray-500 text-xs font-bold py-2.5 rounded-xl cursor-not-allowed">
+                          Coming Soon
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (!enrolled) return (
     <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
       <div className="max-w-4xl mx-auto px-6 py-10">
+        <button onClick={() => setViewBootcamp(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-6">
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          All Bootcamps
+        </button>
         {/* Header */}
         <div className="mb-8">
           <span className="text-[10px] bg-[#7C3AED] text-white font-bold px-3 py-1 rounded-full tracking-wider">{bootcampData?.batchLabel || "Batch 2024"}</span>
@@ -999,7 +1084,7 @@ function BootcampSection({ token, profile }) {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80')] bg-cover bg-center opacity-20"/>
         <div className="relative px-6 py-5">
           <div className="flex items-center gap-2 mb-2 text-[10px] text-white/60">
-            <button onClick={()=>navigateTo("bootcamp")} className="hover:text-white transition-colors">← Back to Bootcamps</button>
+            <button onClick={()=>setViewBootcamp(null)} className="hover:text-white transition-colors">← All Bootcamps</button>
           </div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">IN PROGRESS</span>
@@ -1070,10 +1155,10 @@ function BootcampSection({ token, profile }) {
             <div className="w-[210px] shrink-0 space-y-4">
               <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
                 <h3 className="text-xs font-semibold text-gray-900 mb-3">Bootcamp Resources</h3>
-                {["Filmmaking Syllabus.pdf","Resource Engineering.zip","Weekly Reading List.pdf"].map((r,i)=>(
+                {(bootcampData?.resources?.slice(0,3)||[{name:"Filmmaking Syllabus.pdf"},{name:"Resource Engineering.zip"},{name:"Weekly Reading List.pdf"}]).map((r,i)=>(
                   <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                    <span className="text-[10px] text-gray-600 truncate flex-1 mr-1">📄 {r}</span>
-                    <button onClick={()=>alert(`Downloading ${r}...`)} className="text-gray-400 hover:text-[#7C3AED] shrink-0"><Ic name="download" size={13}/></button>
+                    <span className="text-[10px] text-gray-600 truncate flex-1 mr-1">📄 {r.name||r}</span>
+                    <button onClick={()=>r.fileUrl?window.open(r.fileUrl,"_blank"):null} className={`text-gray-400 shrink-0 ${r.fileUrl?"hover:text-[#7C3AED] cursor-pointer":"opacity-40 cursor-not-allowed"}`} title={r.fileUrl?"Download":"No file available"}><Ic name="download" size={13}/></button>
                   </div>
                 ))}
                 <button onClick={() => setShowDrawer(true)} className="text-xs text-[#7C3AED] hover:underline mt-2">View All Files</button>
@@ -1086,7 +1171,7 @@ function BootcampSection({ token, profile }) {
                       <div className="w-7 h-7 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">{m.name[0]}</div>
                       <div><p className="text-[10px] font-semibold text-gray-900">{m.name}</p><p className="text-[9px] text-gray-400">{m.role}</p></div>
                     </div>
-                    <button onClick={()=>alert("Messaging feature coming soon! Reach your mentor via Discord for now.")} className="text-gray-400 hover:text-[#7C3AED]"><Ic name="message" size={13}/></button>
+                    <button onClick={()=>m.email?window.open(`mailto:${m.email}`,"_blank"):window.open("https://discord.gg/aifa","_blank")} title={m.email||"Contact via Discord"} className="text-gray-400 hover:text-[#7C3AED]"><Ic name="message" size={13}/></button>
                   </div>
                 )) : <p className="text-[11px] text-gray-400 py-2">No mentors assigned yet.</p>}
               </div>
@@ -1264,9 +1349,9 @@ function BootcampSection({ token, profile }) {
                 <p className="text-gray-400 text-[10px] mt-0.5">{f.meta}</p>
               </div>
               <button
-                onClick={() => alert("Download starting...")}
-                className="text-gray-400 hover:text-[#7C3AED] shrink-0 transition-all"
-                title={f.type === "link" ? "Open link" : "Download"}
+                onClick={() => f.url ? window.open(f.url, "_blank") : f.fileUrl ? window.open(f.fileUrl, "_blank") : null}
+                className={`shrink-0 transition-all ${f.url||f.fileUrl?"text-gray-400 hover:text-[#7C3AED] cursor-pointer":"text-gray-600 opacity-40 cursor-not-allowed"}`}
+                title={f.type === "link" ? "Open link" : (f.url||f.fileUrl ? "Download" : "No file available")}
               >
                 {f.type === "link" ? "↗" : "↓"}
               </button>
@@ -1275,7 +1360,7 @@ function BootcampSection({ token, profile }) {
         </div>
 
         <div className="px-4 py-4 border-t border-gray-100">
-          <button onClick={() => alert("Download starting...")} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
+          <button onClick={() => drawerFiles.filter(f=>f.url||f.fileUrl).forEach(f=>window.open(f.url||f.fileUrl,"_blank"))} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Download All
           </button>
         </div>
@@ -1646,12 +1731,25 @@ function VideoCoursesSection({ profile, onNavigate }) {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={() => { setDetailCourse(null); navigate(`/courses/${detailCourse._id}/watch`); }}
-                className="w-full bg-[#7C3AED] hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all text-sm"
-              >
-                Start Course →
-              </button>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-black text-white">₹{(detailCourse.price || 0).toLocaleString("en-IN")}</span>
+                  {detailCourse.originalPrice > detailCourse.price && (
+                    <span className="text-gray-400 line-through text-sm">₹{(detailCourse.originalPrice).toLocaleString("en-IN")}</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    const realId = detailCourse._id;
+                    if (!realId || String(realId).length < 20) { alert("Course details are still loading. Please wait a moment and try again."); return; }
+                    setDetailCourse(null);
+                    navigate(`/courses/${realId}/pay`, { state: { courseData: detailCourse } });
+                  }}
+                  className="w-full bg-[#C7E36B] hover:bg-lime-300 text-black font-bold py-3 rounded-xl transition-all text-sm"
+                >
+                  Buy & Enroll →
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2236,7 +2334,16 @@ function JobsSection({ token }) {
                 <p className="text-gray-400 text-xs mt-1">We'll contact you within 5 business days.</p>
               </div>
             ) : (
-              <button onClick={() => setApplied(true)} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all text-sm">Apply Now</button>
+              <button onClick={async () => {
+                const token = localStorage.getItem("aifa_token");
+                if (!token) { alert("Please log in to apply."); return; }
+                try {
+                  const r = await fetch(`/api/jobs/${detailJob._id}/apply`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+                  const d = await r.json();
+                  if (r.ok || d.message === "Already applied") setApplied(true);
+                  else alert(d.message || "Failed to apply. Try again.");
+                } catch { alert("Network error. Please try again."); }
+              }} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all text-sm">Apply Now</button>
             )}
           </div>
         </div>
@@ -3086,7 +3193,12 @@ function ResourcesSection({ token }) {
               <div className="h-[160px] overflow-hidden bg-white/5">
                 {img(r)
                   ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover"/>
-                  : <div className="w-full h-full flex items-center justify-center"><svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+                  : <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1f23] to-[#0d1117]">
+                      <div className="w-12 h-12 rounded-2xl bg-[#C7E36B]/10 flex items-center justify-center mb-2">
+                        <svg width="24" height="24" fill="none" stroke="#C7E36B" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M9 12h6M9 16h6M7 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v0z"/></svg>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#C7E36B]/60 tracking-widest uppercase">Prompt</span>
+                    </div>
                 }
               </div>
               <div className="p-4">
@@ -3124,7 +3236,15 @@ function ResourcesSection({ token }) {
               <div className="h-[200px] overflow-hidden relative bg-white/5">
                 {img(r)
                   ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
-                  : <div className="w-full h-full flex items-center justify-center"><svg width="40" height="40" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+                  : <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1f23] to-[#0d1117]">
+                      <div className="w-14 h-14 rounded-2xl bg-[#C7E36B]/10 flex items-center justify-center mb-2">
+                        {tab === "workflow"
+                          ? <svg width="26" height="26" fill="none" stroke="#C7E36B" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M9.5 17.5 12 11l2.5 6.5"/></svg>
+                          : <svg width="26" height="26" fill="none" stroke="#C7E36B" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        }
+                      </div>
+                      <span className="text-[10px] font-bold text-[#C7E36B]/60 tracking-widest uppercase">{tab === "workflow" ? "Workflow" : "Project"}</span>
+                    </div>
                 }
                 {r.category && (
                   <span className="absolute top-3 left-3 text-[9px] font-bold bg-black/70 text-[#C7E36B] px-2 py-1 rounded uppercase tracking-wider">{r.category}</span>
@@ -3176,24 +3296,24 @@ function ResourcesSection({ token }) {
           {filtered
             .filter(r => dealCatFilter === "All Benefits" || (r.category || "").toLowerCase() === dealCatFilter.toLowerCase())
             .map((r, i) => (
-            <div key={r._id} className="bg-white rounded-2xl overflow-hidden shadow-sm flex flex-col">
+            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden flex flex-col hover:border-white/18 transition-all">
               {/* Logo header */}
-              <div className="h-[100px] bg-white flex items-center justify-center px-6 border-b border-gray-100">
+              <div className="h-[100px] bg-[#1a1f23] flex items-center justify-center px-6 border-b border-white/8">
                 {r.logo && (r.logo.startsWith("http") || r.logo.startsWith("/"))
                   ? <img src={r.logo} alt={r.title} className="max-h-[60px] max-w-[160px] object-contain"/>
-                  : <span className="text-base font-bold text-gray-800">{r.title}</span>
+                  : <span className="text-base font-bold text-white">{r.title}</span>
                 }
               </div>
               {/* Category badge */}
               {r.category && (
                 <div className="px-4 pt-3">
-                  <span className="text-[9px] font-bold bg-gray-800 text-white px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
+                  <span className="text-[9px] font-bold bg-white/10 text-gray-300 px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
                 </div>
               )}
               <div className="p-4 pt-2 flex flex-col flex-1">
-                <h3 className="text-base font-bold text-gray-900 mt-1">{r.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5 flex-1">{r.description}</p>
-                <p className="text-2xl font-black text-gray-900 mt-3">{r.discount}</p>
+                <h3 className="text-base font-bold text-white mt-1">{r.title}</h3>
+                <p className="text-xs text-gray-400 mt-0.5 flex-1">{r.description}</p>
+                <p className="text-2xl font-black text-white mt-3">{r.discount}</p>
                 <p className="text-[10px] text-[#C7E36B] font-semibold mt-0.5">VIA AIFA</p>
                 {r.link ? (
                   <a href={r.link} target="_blank" rel="noopener noreferrer"
@@ -3205,7 +3325,7 @@ function ResourcesSection({ token }) {
                     Get Deal
                   </button>
                 )}
-                <p className="text-[10px] text-gray-400 text-center mt-1.5">Redirects to official site</p>
+                <p className="text-[10px] text-gray-600 text-center mt-1.5">Redirects to official site</p>
               </div>
             </div>
           ))}
@@ -3320,7 +3440,7 @@ function CommunitySection({ token, profile }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-white">Latest Discussions</h2>
-          <span className="text-xs text-[#C7E36B] cursor-pointer hover:underline">View all</span>
+          <span className="text-xs text-[#C7E36B] cursor-pointer hover:underline" onClick={() => setActiveTab("forum")}>View all</span>
         </div>
         {threadsLoading ? (
           <p className="text-gray-500 text-sm animate-pulse">Loading discussions...</p>
@@ -3380,7 +3500,7 @@ function CommunitySection({ token, profile }) {
                       {ev.date ? new Date(ev.date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "TBD"}
                       {ev.startTime && <><svg className="ml-1" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{ev.startTime}{ev.timezone ? ` ${ev.timezone}` : ""}</>}
                     </div>
-                    <button className="w-full text-[10px] bg-[#C7E36B] text-black font-bold py-1.5 rounded-lg hover:brightness-105 transition-all">View Event</button>
+                    <button onClick={() => ev.link ? window.open(ev.link, "_blank") : alert("Event link coming soon!")} className="w-full text-[10px] bg-[#C7E36B] !text-black font-bold py-1.5 rounded-lg hover:brightness-105 transition-all">View Event</button>
                   </div>
                 </div>
               ))}
@@ -3407,7 +3527,13 @@ function CommunitySection({ token, profile }) {
                     <p className="text-xs font-semibold text-white truncate">{cl.name}</p>
                     <p className="text-[10px] text-gray-500">{cl.memberCount || cl.members?.length || 0} members</p>
                   </div>
-                  <button className="text-[10px] border border-[#C7E36B]/40 text-[#C7E36B] font-semibold px-3 py-1 rounded-lg hover:bg-[#C7E36B]/10 transition-all shrink-0">Join</button>
+                  <button onClick={async () => {
+                    const tok = localStorage.getItem("aifa_token");
+                    if (!tok) { alert("Please log in to join a club."); return; }
+                    const r = await fetch(`/api/community/clubs/${cl._id}/join`, { method: "POST", headers: { Authorization: `Bearer ${tok}` } });
+                    const d = await r.json();
+                    alert(r.ok ? `Joined ${cl.name}!` : (d.message || "Could not join club."));
+                  }} className="text-[10px] border border-[#C7E36B]/40 text-[#C7E36B] font-semibold px-3 py-1 rounded-lg hover:bg-[#C7E36B]/10 transition-all shrink-0">Join</button>
                 </div>
               ))}
             </div>
@@ -3443,7 +3569,7 @@ function CommunitySection({ token, profile }) {
                     {ev.startTime}{ev.endTime ? ` - ${ev.endTime}` : ""} {ev.timezone || ""}
                   </div>
                 )}
-                <button className="w-full text-xs bg-[#C7E36B] text-black font-bold py-2 rounded-xl hover:brightness-105 transition-all">View Event</button>
+                <button onClick={() => ev.link ? window.open(ev.link, "_blank") : alert("Event link coming soon!")} className="w-full text-xs bg-[#C7E36B] !text-black font-bold py-2 rounded-xl hover:brightness-105 transition-all">View Event</button>
               </div>
             </div>
           ))}

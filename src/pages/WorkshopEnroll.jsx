@@ -26,6 +26,7 @@ export default function WorkshopEnroll() {
 
   const [workshop, setWorkshop] = useState(null);
   const [loading,  setLoading]  = useState(true);
+  const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
 
   /* step: "info" (guest form) | "pay" (order summary) | "done" */
   const [step, setStep] = useState(isLoggedIn ? "pay" : "info");
@@ -60,13 +61,13 @@ export default function WorkshopEnroll() {
       .then(data => {
         if (data?._id) {
           setWorkshop(data);
-          /* Redirect if already enrolled */
+          /* Check if already enrolled (registrations are populated user objects with _id) */
           if (token) {
             const enrolled = data.registrations?.some(r => {
-              const rid = r?.user?._id || r?.user || r;
+              const rid = r?._id || r;
               return String(rid) === String(storedUser._id);
             });
-            if (enrolled) navigate(`/workshops/${id}`, { replace: true });
+            if (enrolled) setAlreadyEnrolled(true);
           }
         }
         /* If fetch fails but we have state data, silently continue */
@@ -211,6 +212,18 @@ export default function WorkshopEnroll() {
     return null;
   }
 
+  if (alreadyEnrolled) return (
+    <div className="min-h-screen bg-[#0B0F10] flex flex-col items-center justify-center text-white gap-4 px-6 text-center">
+      <div className="text-4xl">✅</div>
+      <h2 className="text-2xl font-black">You're already enrolled!</h2>
+      <p className="text-gray-400 text-sm max-w-xs">You have already reserved a seat for <span className="text-white font-semibold">{workshop.title}</span>. Check your dashboard for details.</p>
+      <button onClick={() => navigate("/dashboard/workshops")}
+        className="bg-[#C7E36B] text-black font-black px-6 py-3 rounded-xl hover:opacity-90 transition text-sm uppercase tracking-wider mt-2">
+        Go to My Workshops
+      </button>
+    </div>
+  );
+
   const basePrice      = Number(workshop.price || 0);
   const currency       = workshop.currency === "USD" ? "$" : "₹";
   const discountAmount = couponResult ? Math.round(basePrice * couponResult.discount) / 100 : 0;
@@ -254,12 +267,12 @@ export default function WorkshopEnroll() {
     <div className="min-h-screen bg-[#0B0F10]">
       {/* Back */}
       <div className="max-w-5xl mx-auto px-4 pt-8 pb-2">
-        <button onClick={() => navigate("/workshops")}
+        <button onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
           </svg>
-          Back to Workshops
+          Back
         </button>
       </div>
 

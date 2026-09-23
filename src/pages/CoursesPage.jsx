@@ -210,7 +210,8 @@ export default function CoursesPage() {
                     tab={activeTab}
                     isEnrolled={enrolledIds.has(String(course._id))}
                     onBuy={() => handleBuy(course)}
-                    onContinue={() => navigate(`/courses/${course._id}/watch`)}
+                    onContinue={() => navigate(`/courses/${course._id}`)}
+                    onCertificate={() => navigate("/dashboard/certificates")}
                   />
                 ))}
               </div>
@@ -224,7 +225,7 @@ export default function CoursesPage() {
   );
 }
 
-function CourseCard({ course, tab, isEnrolled, onBuy, onContinue }) {
+function CourseCard({ course, tab, isEnrolled, onBuy, onContinue, onCertificate }) {
   const pct = course.percentComplete || 0;
 
   return (
@@ -309,7 +310,7 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue }) {
           {tab === "completed" && (
             <>
               <button
-                onClick={() => {/* TODO: open certificate */ }}
+                onClick={onCertificate}
                 className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] bg-[#C7E36B] text-black text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-lime-300"
               >
                 View Certificate

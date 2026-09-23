@@ -122,13 +122,13 @@ export default function BookingModal({ onClose }) {
     <>
       {confetti && <Confetti />}
 
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onBd}>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4" onClick={onBd}>
         <div
-          className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex"
-          style={{ width: showTimeSide ? "min(900px,96vw)" : "min(760px,96vw)", maxHeight:"90vh", transition:"width 0.3s ease" }}
+          className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col sm:flex-row w-full"
+          style={{ maxWidth: showTimeSide ? "min(900px,96vw)" : "min(760px,96vw)", maxHeight:"92vh", transition:"max-width 0.3s ease" }}
         >
-          {/* ── LEFT INFO PANEL ── */}
-          <div className="w-[220px] shrink-0 border-r border-gray-200 flex flex-col p-6 gap-3" style={{overflowY:"auto"}}>
+          {/* ── LEFT INFO PANEL (hidden on mobile) ── */}
+          <div className="hidden sm:flex w-[220px] shrink-0 border-r border-gray-200 flex-col p-6 gap-3" style={{overflowY:"auto"}}>
             <div className="w-12 h-12 rounded-xl bg-[#4f7df3]/10 flex items-center justify-center mb-1">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f7df3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
@@ -156,9 +156,23 @@ export default function BookingModal({ onClose }) {
             <p className="text-[11px] text-gray-400 mt-auto leading-relaxed">Book a free 30-minute session with our expert counsellor to discuss your learning goals.</p>
           </div>
 
+          {/* ── MOBILE-ONLY HEADER ── */}
+          <div className="sm:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-200 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#4f7df3]/10 flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f7df3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+              <p className="text-[11px] text-gray-400 font-semibold">AIFA Academy</p>
+              <p className="text-sm font-black text-gray-900">Free Counselling Call · 30 min</p>
+            </div>
+            <button onClick={onClose} className="ml-auto w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
           {/* ── CENTER: CALENDAR ── */}
           {step === 1 && (
-            <div className="flex-1 p-6 overflow-y-auto border-r border-gray-200">
+            <div className="flex-1 p-4 sm:p-6 overflow-y-auto border-b sm:border-b-0 sm:border-r border-gray-200">
               <h3 className="text-[15px] font-bold text-gray-900 mb-5">Select a Date &amp; Time</h3>
 
               {/* Month nav */}
@@ -209,9 +223,9 @@ export default function BookingModal({ onClose }) {
 
           {/* ── RIGHT: TIME SLOTS ── */}
           {step === 1 && showTimeSide && (
-            <div className="w-[200px] shrink-0 p-6 overflow-y-auto">
+            <div className="w-full sm:w-[200px] shrink-0 p-4 sm:p-6 overflow-y-auto border-t sm:border-t-0 border-gray-200">
               <p className="text-sm font-bold text-gray-900 mb-4">{fmtFull()}</p>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:block">
                 {selTime ? (
                   <div className="flex flex-col gap-3">
                     <p className="text-xs text-gray-500">{selTime}</p>
@@ -229,15 +243,17 @@ export default function BookingModal({ onClose }) {
                     </button>
                   </div>
                 ) : (
-                  TIME_SLOTS.map(t => (
-                    <button
-                      key={t}
-                      onClick={() => pickTime(t)}
-                      className="w-full py-2.5 px-3 rounded-lg text-sm font-bold border-2 border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 bg-white transition-all text-center"
-                    >
-                      {t}
-                    </button>
-                  ))
+                  <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
+                    {TIME_SLOTS.map(t => (
+                      <button
+                        key={t}
+                        onClick={() => pickTime(t)}
+                        className="w-full py-2.5 px-3 rounded-lg text-sm font-bold border-2 border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 bg-white transition-all text-center"
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

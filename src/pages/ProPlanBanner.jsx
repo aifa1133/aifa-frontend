@@ -1,6 +1,9 @@
 "use client";
 
+import { useNavigate } from "react-router-dom";
+
 export default function ProPlanBanner() {
+  const navigate = useNavigate();
   return (
     <section className="w-full bg-[#0B0F10] py-10 md:py-16 flex justify-center px-4">
       <div
@@ -123,6 +126,7 @@ export default function ProPlanBanner() {
 
             {/* BUTTON */}
             <button
+              onClick={() => navigate("/bootcamp/enroll")}
               className="
                 flex
                 justify-center
