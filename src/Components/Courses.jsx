@@ -342,12 +342,6 @@ import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-const FALLBACK_COURSES = [
-  { title: "Google Flow Masterclass",    image: "/courses/v1.png", duration: "1h 10m" },
-  { title: "Kling AI Video Masterclass", image: "/courses/v2.png", duration: "1h 10m" },
-  { title: "AI Background Magic",        image: "/courses/v3.png", duration: "1h 10m" },
-];
-
 export default function Courses() {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
@@ -357,8 +351,8 @@ export default function Courses() {
   useEffect(() => {
     fetch("/api/courses")
       .then(r => r.ok ? r.json() : [])
-      .then(data => { setCourses(Array.isArray(data) && data.length > 0 ? data : FALLBACK_COURSES); })
-      .catch(() => { setCourses(FALLBACK_COURSES); })
+      .then(data => { if (Array.isArray(data) && data.length > 0) setCourses(data); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

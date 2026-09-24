@@ -5,13 +5,6 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import BootcampCardMobile from "./BootcampCardMobile";
 
-const MOCK_WORKSHOPS = [
-  { _id: null, title: "AI Filmmaking Workshop",       image: "/bootcamp/bootcamp1.png", duration: "3 HOURS", price: "INR 999.00", date: "25-JUL-2026 | 10 AM" },
-  { _id: null, title: "AI Advertising Workshop",      image: "/bootcamp/bootcamp2.png", duration: "3 HOURS", price: "INR 999.00", date: "28-JUL-2026 | 3 PM"  },
-  { _id: null, title: "AI Animation Workshop",        image: "/bootcamp/bootcamp3.png", duration: "3 HOURS", price: "INR 999.00", date: "30-JUL-2026 | 5 PM"  },
-  { _id: null, title: "AI Content Creation Workshop", image: "/bootcamp/bootcamp4.png", duration: "3 HOURS", price: "INR 999.00", date: "30-JUL-2026 | 4 PM"  },
-];
-
 const FALLBACK_IMAGES = ["/bootcamp/bootcamp1.png","/bootcamp/bootcamp2.png","/bootcamp/bootcamp3.png","/bootcamp/bootcamp4.png"];
 
 const fmtDateBox = (scheduledAt) => {
@@ -31,7 +24,7 @@ const fmtPrice = (w) => {
 
 export default function Bootcamps() {
   const navigate = useNavigate();
-  const [workshops, setWorkshops] = useState(MOCK_WORKSHOPS);
+  const [workshops, setWorkshops] = useState([]);
 
   useEffect(() => {
     fetch("/api/workshops")

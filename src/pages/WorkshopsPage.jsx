@@ -20,14 +20,6 @@ const googleCalLink = (w) => {
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(w.title)}&dates=${fmt(start)}/${fmt(end)}`;
 };
 
-const MOCK_WORKSHOPS = [
-  { _id: "mw1", title: "AI Lego Animation Workshop", image: "/courses/v1.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
-  { _id: "mw2", title: "AI Cinematic Workshop", image: "/courses/v2.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
-  { _id: "mw3", title: "AI Sci-Fi Movie Creator", image: "/courses/v3.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
-  { _id: "mw4", title: "AI Fantasy World Builder", image: "/courses/v4.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
-  { _id: "mw5", title: "AI Product Ad Filmmaking", image: "/courses/v4.png", duration: "3 Hours", price: 199, mode: "ONLINE" },
-];
-
 const FALLBACK_IMAGES = ["/courses/v1.png","/courses/v2.png","/courses/v3.png","/courses/v4.png"];
 
 const getStatus = (w) => {
@@ -82,7 +74,7 @@ export default function WorkshopsPage() {
             if (attempt < 2) {
               setTimeout(() => loadWorkshops(attempt + 1), 1500);
             } else {
-              setWorkshops(MOCK_WORKSHOPS);
+              setWorkshops([]);
               finishLoading();
             }
             return null;
@@ -104,16 +96,14 @@ export default function WorkshopsPage() {
               );
               setReserved(myIds);
             }
-          } else {
-            setWorkshops(MOCK_WORKSHOPS);
           }
           finishLoading();
         })
         .catch(() => {
           if (attempt < 2) {
-            setTimeout(() => loadWorkshops(attempt + 1), 1500); // keep skeleton visible
+            setTimeout(() => loadWorkshops(attempt + 1), 1500);
           } else {
-            setWorkshops(MOCK_WORKSHOPS);
+            setWorkshops([]);
             finishLoading();
           }
         });
@@ -123,10 +113,7 @@ export default function WorkshopsPage() {
   }, []);
 
   const handleReserve = (workshop) => {
-    if (!workshop._id || workshop._id.startsWith("mw")) {
-      alert("Booking coming soon!");
-      return;
-    }
+    if (!workshop._id) return;
     navigate(`/workshops/${workshop._id}/pay`, { state: { workshopData: workshop } });
   };
 

@@ -12,18 +12,6 @@ const parseDurationMinutes = (d) => {
   return 0;
 };
 
-const MOCK_COURSES = [
-  { _id: "m1", title: "AI Reels & Shorts Masterclass", description: "Master AI-powered tools to write engaging and impactful scripts.", image: "/courses/v1.png", duration: "1h 10m", price: 399, originalPrice: 799 },
-  { _id: "m2", title: "AI Social Media Design Course", description: "Transform still images into dynamic visuals using AI tools.", image: "/courses/v2.png", duration: "1h 10m", price: 299, originalPrice: 799 },
-  { _id: "m3", title: "AI Thumbnail Creation Masterclass", description: "Create realistic AI avatars with advanced editing techniques.", image: "/courses/v3.png", duration: "1h 10m", price: 349, originalPrice: 799 },
-  { _id: "m4", title: "AI Video Editing Masterclass", description: "Design stunning virtual fashion models using AI technology.", image: "/courses/v4.png", duration: "2h 00m", price: 499, originalPrice: 999 },
-  { _id: "m5", title: "AI Content Creation Bootcamp", description: "Restore and enhance colors in photos with AI precision.", image: "/courses/v5.png", duration: "1h 30m", price: 399, originalPrice: 799 },
-  { _id: "m6", title: "AI Cinematic Storytelling", description: "Enhance facial details and clarity using powerful AI tools.", image: "/courses/v6.png", duration: "2h 15m", price: 599, originalPrice: 999 },
-  { _id: "m7", title: "AI Scriptwriting Masterclass", description: "Build intelligent workflows and automate tasks using AI tools.", image: "/courses/v7.png", duration: "1h 45m", price: 449, originalPrice: 899 },
-  { _id: "m8", title: "AI Visual Effects Course", description: "Create stunning AI-generated videos with cinematic precision.", image: "/courses/v8.png", duration: "2h 30m", price: 649, originalPrice: 1299 },
-  { _id: "m9", title: "AI Sound Design Masterclass", description: "Generate immersive backgrounds and scenes using AI tools.", image: "/courses/v9.png", duration: "1h 20m", price: 349, originalPrice: 699 },
-];
-
 const TABS = [
   { key: "all", label: "All Courses" },
   { key: "my", label: "My Courses" },
