@@ -58,6 +58,7 @@ const NAV_ITEMS = [
   { id: "service-request",    label: "Service Request",   icon: "service"   },
   { id: "sales-consultation", label: "Sales Consultation",icon: "sales"     },
   { id: "hire-talent",        label: "Hire Requests",     icon: "hire"      },
+  { id: "prompt-library",    label: "Prompt Library",    icon: "resources" },
 ];
 const MGMT_ITEMS = [
   { id: "users",       label: "Users",       icon: "users"      },
@@ -257,6 +258,7 @@ export default function AdminDashboard() {
           {activePage === "hire-talent"        && <HireTalentAdmin token={token} />}
           {activePage === "membership"         && <MembershipAdmin token={token} />}
           {activePage === "influencers"        && <AdminInfluencers token={token} />}
+          {activePage === "prompt-library"     && <PromptsAdmin token={token} />}
           {activePage === "analytics"          && <AnalyticsAdmin token={token} />}
           {activePage === "platform-settings"  && <PlatformSettings token={token} />}
         </main>
@@ -10193,6 +10195,153 @@ function JobsAdmin({ token }) {
             ))}
           </div>
         )
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PROMPTS ADMIN
+══════════════════════════════════════════════════════════ */
+const PROMPT_CATS = ["Cinematic","Product","Character","Landscape","VFX"];
+const EMPTY_PROMPT = { title:"", category:"Cinematic", image:"", text:"", order:0, isPublished:true };
+
+function PromptsAdmin({ token }) {
+  const h = { Authorization: `Bearer ${token}` };
+  const [prompts, setPrompts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState(EMPTY_PROMPT);
+  const [editId, setEditId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    fetch("/api/prompts/admin", { headers: h })
+      .then(r => r.json()).then(d => { if (Array.isArray(d)) setPrompts(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+  useEffect(load, [token]);
+
+  const startEdit = (p) => { setEditId(p._id); setForm({ title: p.title, category: p.category, image: p.image, text: p.text, order: p.order || 0, isPublished: p.isPublished }); };
+  const cancelEdit = () => { setEditId(null); setForm(EMPTY_PROMPT); };
+
+  const uploadImage = async (file) => {
+    setUploading(true);
+    const fd = new FormData(); fd.append("image", file);
+    const r = await fetch("/api/uploads/image", { method: "POST", headers: h, body: fd });
+    const d = await r.json(); setUploading(false);
+    return d.url || "";
+  };
+
+  const save = async () => {
+    if (!form.title.trim() || !form.text.trim()) { setMsg("Title and prompt text are required."); return; }
+    setSaving(true); setMsg("");
+    const url = editId ? `/api/prompts/${editId}` : "/api/prompts";
+    const method = editId ? "PUT" : "POST";
+    const r = await fetch(url, { method, headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const d = await r.json();
+    if (r.ok) {
+      if (editId) setPrompts(ps => ps.map(p => p._id === editId ? d : p));
+      else setPrompts(ps => [d, ...ps]);
+      setMsg(editId ? "Updated!" : "Added!"); cancelEdit();
+    } else { setMsg(d.message || "Error"); }
+    setSaving(false);
+    setTimeout(() => setMsg(""), 2500);
+  };
+
+  const del = async (id) => {
+    if (!window.confirm("Delete this prompt?")) return;
+    const r = await fetch(`/api/prompts/${id}`, { method: "DELETE", headers: h });
+    if (r.ok) setPrompts(ps => ps.filter(p => p._id !== id));
+  };
+
+  const toggle = async (p) => {
+    const r = await fetch(`/api/prompts/${p._id}`, { method: "PUT", headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify({ isPublished: !p.isPublished }) });
+    if (r.ok) { const d = await r.json(); setPrompts(ps => ps.map(x => x._id === d._id ? d : x)); }
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold text-white">Prompt Library</h2>
+
+      {/* FORM */}
+      <div className="bg-[#111] border border-white/10 rounded-2xl p-5 space-y-4">
+        <h3 className="text-sm font-bold text-[#C7E36B] uppercase tracking-widest">{editId ? "Edit Prompt" : "Add New Prompt"}</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-gray-400 uppercase mb-1 block">Title</label>
+            <input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm" placeholder="Prompt title" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 uppercase mb-1 block">Category</label>
+            <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm">
+              {PROMPT_CATS.map(c=><option key={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-400 uppercase mb-1 block">Image</label>
+          <div className="flex items-center gap-3">
+            {form.image && <img src={form.image} alt="" className="w-16 h-16 object-cover rounded-lg border border-white/10" />}
+            <label className="cursor-pointer bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-300 hover:border-[#C7E36B]/50 transition">
+              {uploading ? "Uploading…" : "Upload Image"}
+              <input type="file" accept="image/*" className="hidden" onChange={async e=>{ if(e.target.files[0]){ const url=await uploadImage(e.target.files[0]); setForm(f=>({...f,image:url})); }}} />
+            </label>
+            {form.image && <button onClick={()=>setForm(f=>({...f,image:""}))} className="text-xs text-red-400 hover:text-red-300">Remove</button>}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-400 uppercase mb-1 block">Prompt Text</label>
+          <textarea rows={4} value={form.text} onChange={e=>setForm(f=>({...f,text:e.target.value}))} className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm resize-y" placeholder="Full AI prompt text…" />
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div>
+            <label className="text-xs text-gray-400 uppercase mb-1 block">Order</label>
+            <input type="number" value={form.order} onChange={e=>setForm(f=>({...f,order:parseInt(e.target.value)||0}))} className="w-24 bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+          </div>
+          <label className="flex items-center gap-2 mt-4 cursor-pointer select-none text-sm text-gray-300">
+            <input type="checkbox" checked={form.isPublished} onChange={e=>setForm(f=>({...f,isPublished:e.target.checked}))} className="accent-[#C7E36B]" />
+            Published
+          </label>
+        </div>
+
+        {msg && <p className={`text-sm ${msg.includes("!") ? "text-[#C7E36B]" : "text-red-400"}`}>{msg}</p>}
+
+        <div className="flex gap-3">
+          <button onClick={save} disabled={saving||uploading} className="bg-[#C7E36B] text-black px-5 py-2 rounded-lg text-sm font-bold hover:opacity-90 disabled:opacity-50">
+            {saving ? "Saving…" : editId ? "Save Changes" : "Add Prompt"}
+          </button>
+          {editId && <button onClick={cancelEdit} className="text-sm text-gray-400 hover:text-white px-4 py-2">Cancel</button>}
+        </div>
+      </div>
+
+      {/* LIST */}
+      {loading ? <AdminLoader label="Loading Prompts" /> : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {prompts.map(p => (
+            <div key={p._id} className={`bg-[#111] border rounded-2xl overflow-hidden ${p.isPublished ? "border-white/10" : "border-red-500/30"}`}>
+              {p.image && <img src={p.image} alt={p.title} className="w-full h-40 object-cover" />}
+              <div className="p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-white leading-tight">{p.title}</h4>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-400 shrink-0">{p.category}</span>
+                </div>
+                <p className="text-xs text-gray-500 line-clamp-2">{p.text}</p>
+                <div className="flex items-center gap-2 pt-1">
+                  <button onClick={()=>startEdit(p)} className="text-xs text-[#C7E36B] hover:underline">Edit</button>
+                  <button onClick={()=>toggle(p)} className={`text-xs ${p.isPublished ? "text-gray-400 hover:text-yellow-400" : "text-green-400 hover:text-green-300"}`}>{p.isPublished ? "Unpublish" : "Publish"}</button>
+                  <button onClick={()=>del(p._id)} className="text-xs text-red-500 hover:text-red-400 ml-auto">Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
