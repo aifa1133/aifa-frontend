@@ -82,14 +82,16 @@ export default function PromptLibrary() {
                     {/* CONTENT */}
                     <div className="p-5">
                       <h3 className="text-md font-semibold mb-3">{item.title}</h3>
-                      <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-gray-400 text-sm relative">
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-gray-400 text-sm">
+                        <div className="flex justify-end mb-2">
+                          <button
+                            onClick={() => handleCopy(item.text, i)}
+                            className={`text-xs font-semibold transition-colors px-2 py-0.5 rounded ${copiedIndex === i ? "text-[#C7E36B]" : "text-gray-400 hover:text-white"}`}
+                          >
+                            {copiedIndex === i ? "✓ Copied!" : "📋 Copy"}
+                          </button>
+                        </div>
                         <p className="line-clamp-4">{item.text}</p>
-                        <button
-                          onClick={() => handleCopy(item.text, i)}
-                          className={`absolute top-3 right-3 text-xs font-semibold transition-colors ${copiedIndex === i ? "text-[#C7E36B]" : "text-gray-400 hover:text-white"}`}
-                        >
-                          {copiedIndex === i ? "✓ Copied!" : "📋"}
-                        </button>
                       </div>
                     </div>
                   </div>
