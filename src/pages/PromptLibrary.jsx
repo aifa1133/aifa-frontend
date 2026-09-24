@@ -9,6 +9,13 @@ export default function PromptLibrary() {
   const [category, setCategory] = useState("All");
   const [subCategory, setSubCategory] = useState("All");
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+
+  const handleCopy = (text, index) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
   const prompts = [
     {
@@ -78,10 +85,10 @@ export default function PromptLibrary() {
 
                   {/* COPY BUTTON */}
                   <button
-                    onClick={() => navigator.clipboard.writeText(item.text)}
-                    className="absolute top-3 right-3 text-gray-400 hover:text-white"
+                    onClick={() => handleCopy(item.text, i)}
+                    className={`absolute top-3 right-3 text-xs font-semibold transition-colors ${copiedIndex === i ? "text-[#C7E36B]" : "text-gray-400 hover:text-white"}`}
                   >
-                    📋
+                    {copiedIndex === i ? "✓ Copied!" : "📋"}
                   </button>
                 </div>
               </div>
