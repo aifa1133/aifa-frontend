@@ -57,7 +57,7 @@ export default function VideoSection({
           style={{ padding: "56.25% 0 0 0", position: "relative" }}
         >
           <iframe
-            src="https://player.vimeo.com/video/1229658722?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1&muted=1&loop=1&controls=0&title=0&byline=0&portrait=0"
+            src="https://player.vimeo.com/video/1229658722?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0"
             frameBorder="0"
             allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
