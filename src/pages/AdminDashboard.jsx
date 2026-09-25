@@ -3502,9 +3502,9 @@ function ResourcesAdmin({ token }) {
 
             {/* Preview card */}
             {lt === "deal" ? (
-              <div className="bg-white rounded-2xl overflow-hidden shadow-xl">
+              <div className="bg-[#111] rounded-2xl overflow-hidden shadow-xl border border-white/10">
                 {/* Logo header */}
-                <div className="h-[100px] bg-white border-b border-gray-100 flex items-center justify-center px-6">
+                <div className="h-[100px] bg-[#1a1a1a] border-b border-white/10 flex items-center justify-center px-6">
                   {form.logo && (form.logo.startsWith("http") || form.logo.startsWith("/"))
                     ? <img src={form.logo} alt={form.title} className="max-h-[60px] max-w-[160px] object-contain"/>
                     : <span className="text-5xl">{form.logo || "🔧"}</span>
@@ -3685,9 +3685,9 @@ function ResourcesAdmin({ token }) {
         /* ── Deal cards (white cards, Figma style) ── */
         <div className="grid grid-cols-3 gap-4">
           {visibleResources.map(r => (
-            <div key={r._id} className="bg-white rounded-2xl overflow-hidden shadow-sm relative group">
+            <div key={r._id} className="bg-[#111] rounded-2xl overflow-hidden shadow-sm relative group border border-white/10">
               {/* Partner logo header */}
-              <div className="h-[100px] bg-white flex items-center justify-center px-6 border-b border-gray-100">
+              <div className="h-[100px] bg-[#1a1a1a] flex items-center justify-center px-6 border-b border-white/10">
                 {r.logo && (r.logo.startsWith("http") || r.logo.startsWith("/"))
                   ? <img src={r.logo} alt={r.title} className="max-h-[60px] max-w-[140px] object-contain"/>
                   : <span className="text-4xl">{r.logo || "🔧"}</span>
@@ -3696,13 +3696,13 @@ function ResourcesAdmin({ token }) {
               {/* Category badge */}
               {r.category && (
                 <div className="px-4 pt-3">
-                  <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
+                  <span className="text-[9px] font-bold bg-white/10 text-gray-400 px-2 py-0.5 rounded tracking-widest uppercase">{r.category}</span>
                 </div>
               )}
               <div className="p-4 pt-2">
-                <h3 className="text-base font-bold text-gray-900 mt-1">{r.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{r.description}</p>
-                <p className="text-xl font-black text-gray-900 mt-3">{r.discount}</p>
+                <h3 className="text-base font-bold text-white mt-1">{r.title}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{r.description}</p>
+                <p className="text-xl font-black text-white mt-3">{r.discount}</p>
                 <p className="text-[10px] text-[#C7E36B] font-semibold mt-0.5">VIA AIFA</p>
                 <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-lg mt-3 hover:bg-lime-300 transition-colors">Get Deal</button>
                 <p className="text-[10px] text-gray-400 text-center mt-1.5">Redirects to official site</p>
