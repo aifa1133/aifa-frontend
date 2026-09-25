@@ -3212,7 +3212,7 @@ function ResourcesAdmin({ token }) {
                   3. Brand Assets
                 </p>
                 {form.logo && (form.logo.startsWith("http") || form.logo.startsWith("/")) ? (
-                  <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white group h-28 flex items-center justify-center">
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 bg-[#1a1a1a] group h-28 flex items-center justify-center">
                     <img src={form.logo} alt="logo" className="max-h-20 max-w-[180px] object-contain"/>
                     <button type="button" onClick={() => setForm({...form, logo:""})}
                       className="absolute top-2 right-2 bg-black/60 hover:bg-red-500/80 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all">

@@ -65,7 +65,7 @@ export default function AiDeals() {
             {filtered.map((item, i) => (
               <div key={item._id || i} className="rounded-3xl border border-white/10 overflow-hidden bg-black hover:border-[#C7E36B]/40 transition">
                 {/* LOGO */}
-                <div className="h-28 flex items-center justify-center bg-gradient-to-br from-white to-gray-100 p-4">
+                <div className="h-28 flex items-center justify-center bg-[#1a1a1a] p-4">
                   <img src={item.logo || item.thumbnail} alt={item.title} className="h-full max-h-20 object-contain" />
                 </div>
                 {/* CONTENT */}
