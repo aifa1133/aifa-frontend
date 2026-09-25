@@ -275,7 +275,7 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue, onCertificate 
         <div className="flex flex-col gap-2 self-stretch mt-auto">
           {/* All Courses — enrolled: View Details */}
           {tab === "all" && isEnrolled && (
-            <button onClick={onBuy} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] border border-[#414243] text-white text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white/5">
+            <button onClick={onContinue} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] border border-[#414243] text-white text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white/5">
               View Details
             </button>
           )}

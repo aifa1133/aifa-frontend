@@ -34,7 +34,7 @@ export default function Bootcamppage() {
   }, []);
 
   return (
-    <div className="bg-[#0B0F19] flex flex-col">
+    <div className="bg-[#0B0F19] flex flex-col pb-24 md:pb-0">
       <Hero />
       <VideoSection />
       <LearnSection />
