@@ -48,55 +48,7 @@
 // import Features from "./Components/Features";
 // import Directors from "./Components/Directors";
 // import Stats from "./Components/Stats";
-// import Testimonial from "./Components/Testimonial";
-// import CTASection from "./Components/CTASection";
-// import Footer from "./Components/Footer";
-// import LoginModal from "./authentication/LoginModal";
-// import SignUpModal from "./authentication/SignUpModal";
 
-// const App = () => {
-//   const [showLogin, setShowLogin] = useState(false);
-//   const [showSignup, setShowSignup] = useState(false);
-
-//   return (
-//     <div className="bg-[#0B0F10] min-h-screen">
-//       <Navbar
-//         onLoginClick={() => {
-//           setShowSignup(false);
-//           setShowLogin(true);
-//         }}
-//         onSignupClick={() => {
-//           setShowLogin(false);
-//           setShowSignup(true);
-//         }}
-//       />
-
-//       <Hero />
-//       <Companies />
-//       <CourseCard />
-//       <Courses />
-//       <Tools />
-//       <Bootcamps />
-//       <Features />
-//       <Directors />
-//       <Stats />
-//       <Testimonial />
-//       <CTASection />
-//       <Footer />
-
-//       {/* LOGIN MODAL */}
-//       {/* LOGIN MODAL */}
-//       {showLogin && !showSignup && (
-//         <LoginModal
-//           onClose={() => setShowLogin(false)}
-//           onSwitchToSignup={() => {
-//             setShowLogin(false);
-//             setShowSignup(true);
-//           }}
-//         />
-//       )}
-
-//       {/* SIGNUP MODAL */}
 //       {showSignup && !showLogin && (
 //         <SignUpModal
 //           onClose={() => setShowSignup(false)}
@@ -194,14 +146,47 @@ function ScrollToTop() {
   return null;
 }
 
+function ServerDownBanner() {
+  return (
+    <div className="fixed inset-0 z-[9999] bg-[#0B0F10] flex flex-col items-center justify-center text-center px-6">
+      <div className="mb-6 w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
+        <svg width="32" height="32" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        </svg>
+      </div>
+      <h1 className="text-white text-2xl font-bold mb-2">Server Unavailable</h1>
+      <p className="text-gray-400 text-sm max-w-sm mb-6">
+        We are having trouble connecting to our servers. Please check your connection or try again in a moment.
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        className="bg-[#C7E36B] text-black font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition text-sm"
+      >
+        Try Again
+      </button>
+    </div>
+  );
+}
+
 function AppShell() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [serverDown, setServerDown] = useState(false);
   const location = useLocation();
 
   const isFullScreen =
     FULLSCREEN_PATHS.includes(location.pathname) ||
     FULLSCREEN_PATTERNS.some(p => p.test(location.pathname));
+
+  useEffect(() => {
+    const check = () =>
+      fetch("/api/courses", { signal: AbortSignal.timeout(6000) })
+        .then(r => { if (!r.ok && r.status >= 500) setServerDown(true); else setServerDown(false); })
+        .catch(() => setServerDown(true));
+    check();
+    const id = setInterval(check, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   // Auto-open signup when ?ref= is in the URL (influencer referral link)
   useEffect(() => {
@@ -216,6 +201,8 @@ function AppShell() {
       }
     }
   }, [location.search, isFullScreen]);
+
+  if (serverDown) return <ServerDownBanner />;
 
   return (
     <div className={`w-full min-h-screen bg-[#0B0F10] overflow-x-hidden`}>
