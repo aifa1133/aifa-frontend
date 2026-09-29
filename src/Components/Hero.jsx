@@ -513,32 +513,19 @@ export default function Hero() {
 
           {/* TITLE */}
           <h1
-            className="
+            className={`
               mt-[10px]
-
               text-white
-
               font-montserrat
               font-black
-
               uppercase
-
               tracking-[-0.05em]
-
-              text-[42px]
-              leading-[42px]
-
-              sm:text-[64px]
-              sm:leading-[64px]
-
-              md:text-[90px]
-              md:leading-[86px]
-
-              lg:text-[120px]
-              lg:leading-[110px]
-
               max-w-[1000px]
-            "
+              ${active <= 1
+                ? "text-[34px] leading-[36px] sm:text-[52px] sm:leading-[54px] md:text-[70px] md:leading-[68px] lg:text-[90px] lg:leading-[86px]"
+                : "text-[42px] leading-[42px] sm:text-[64px] sm:leading-[64px] md:text-[90px] md:leading-[86px] lg:text-[120px] lg:leading-[110px]"
+              }
+            `}
           >
             {slides[active].title}
           </h1>
