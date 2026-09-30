@@ -1,5 +1,6 @@
 import { CalendarDays, Filter } from "lucide-react";
-import ProGate from "../Components/ProGate";
+import { useIsPro, ProUpgradeModal } from "../Components/ProGate";
+import { useState } from "react";
 
 const events = [
   {
@@ -22,38 +23,58 @@ const events = [
   },
 ];
 
-function EventCard({ event }) {
+const LockOverlay = () => (
+  <div className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl">
+    <div className="bg-[#111315]/90 border border-white/10 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span className="text-white text-xs font-semibold">Pro Members Only — Tap to Unlock</span>
+    </div>
+  </div>
+);
+
+function EventCard({ event, locked, onLockedClick }) {
   return (
-    <div className="group bg-[#0F1112] border border-[#282A2C] rounded-2xl overflow-hidden transition-all duration-500 hover:border-[#E4A76D] hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(228,167,109,0.15)]">
-      <div className="relative overflow-hidden">
-        <img src={event.image} alt={event.title} className="w-full h-[220px] md:h-[240px] object-cover transition-transform duration-700 group-hover:scale-110" />
-        <span className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md border border-[#E4A76D] rounded-full text-[#E4A76D] text-[10px] font-bold uppercase tracking-wider">{event.tag}</span>
-      </div>
-      <div className="p-5 md:p-6 flex flex-col">
-        <p className="text-[#767779] text-sm">{event.date}</p>
-        <h3 className="mt-3 text-white text-[20px] md:text-[22px] font-semibold leading-[30px] md:leading-[32px]">{event.title}</h3>
-        <p className="mt-3 text-[#9A9A9A] text-[14px] leading-6">{event.description}</p>
-        <div className="mt-5">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <img src={event.hostImage || "/default-avatar.png"} alt={event.host} className="w-4 h-4 rounded-full object-cover" />
-              <span className="text-[#DCDCDC] text-[12px]">{event.host}</span>
+    <div
+      className={`group bg-[#0F1112] border border-[#282A2C] rounded-2xl overflow-hidden relative transition-all duration-500 ${locked ? "cursor-pointer" : "hover:border-[#E4A76D] hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(228,167,109,0.15)]"}`}
+      onClick={locked ? onLockedClick : undefined}
+    >
+      <div className={locked ? "blur-sm opacity-50 pointer-events-none select-none" : ""}>
+        <div className="relative overflow-hidden">
+          <img src={event.image} alt={event.title} className="w-full h-[220px] md:h-[240px] object-cover transition-transform duration-700 group-hover:scale-110" />
+          <span className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md border border-[#E4A76D] rounded-full text-[#E4A76D] text-[10px] font-bold uppercase tracking-wider">{event.tag}</span>
+        </div>
+        <div className="p-5 md:p-6 flex flex-col">
+          <p className="text-[#767779] text-sm">{event.date}</p>
+          <h3 className="mt-3 text-white text-[20px] md:text-[22px] font-semibold leading-[30px] md:leading-[32px]">{event.title}</h3>
+          <p className="mt-3 text-[#9A9A9A] text-[14px] leading-6">{event.description}</p>
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <img src={event.hostImage || "/default-avatar.png"} alt={event.host} className="w-4 h-4 rounded-full object-cover" />
+                <span className="text-[#DCDCDC] text-[12px]">{event.host}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <img src="/Usericon.svg" alt="users" className="w-4 h-4" />
+                <span className="text-[#BDBDBD] text-sm">{event.attendees}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <img src="/Usericon.svg" alt="users" className="w-4 h-4" />
-              <span className="text-[#BDBDBD] text-sm">{event.attendees}</span>
-            </div>
+            <button className="w-full flex justify-center items-center gap-[4px] px-[16px] py-[8px] rounded-[4px] border border-[#F0F0F0] text-[#F0F0F0] text-[14px] font-bold leading-[24px] transition-all duration-300 hover:bg-[#F0F0F0] hover:text-[#0F1112]">
+              RSVP NOW
+            </button>
           </div>
-          <button className="w-full flex justify-center items-center gap-[4px] px-[16px] py-[8px] rounded-[4px] border border-[#F0F0F0] text-[#F0F0F0] text-[14px] font-bold leading-[24px] transition-all duration-300 hover:bg-[#F0F0F0] hover:text-[#0F1112]">
-            RSVP NOW
-          </button>
         </div>
       </div>
+      {locked && <LockOverlay />}
     </div>
   );
 }
 
 export default function EventsPage() {
+  const isPro = useIsPro();
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <section className="w-full bg-[#05080D] flex justify-center">
       <div className="w-full max-w-[1366px] px-5 md:px-[93px] pt-[32px] pb-[120px] md:pb-[293px] flex flex-col items-start gap-[32px]">
@@ -85,19 +106,15 @@ export default function EventsPage() {
           <div className="text-[#767779] text-[14px]">Sort by: <span className="text-white">Upcoming</span></div>
         </div>
 
-        {/* First card — always visible */}
+        {/* Event grid — first open, rest locked */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-          <EventCard event={events[0]} />
+          {events.map((e, i) => (
+            <EventCard key={i} event={e} locked={i > 0 && !isPro} onLockedClick={() => setShowModal(true)} />
+          ))}
         </div>
-
-        {/* Rest — gated */}
-        <ProGate preview={null}>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-            {events.slice(1).map((e, i) => <EventCard key={i} event={e} />)}
-          </div>
-        </ProGate>
-
       </div>
+
+      {showModal && <ProUpgradeModal onClose={() => setShowModal(false)} />}
     </section>
   );
 }

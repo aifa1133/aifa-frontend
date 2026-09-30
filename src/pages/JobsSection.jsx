@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import ProGate from "../Components/ProGate";
+import { useIsPro, ProUpgradeModal } from "../Components/ProGate";
 
 const CATEGORIES = ["Cinematography", "Video Editing", "Sound Design", "Directing", "Production Design"];
 const BUDGETS = ["< ₹50/hr", "₹50–100/hr", "₹100–200/hr", "₹200+/hr"];
@@ -50,7 +50,49 @@ function FilterDropdown({ label, options, selected, onToggle }) {
   );
 }
 
-function JobCard({ job, timeAgo, onSelect }) {
+function JobCard({ job, timeAgo, onSelect, locked, onLockedClick }) {
+  const inner = (
+    <>
+      <div className="flex items-start justify-between mb-3">
+        <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
+          {job.tag || job.category}
+        </span>
+        {job.type && (
+          <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase">
+            {job.type}
+          </span>
+        )}
+      </div>
+      <h3 className="text-base font-semibold text-white mb-2 leading-tight">{job.title}</h3>
+      <p className="text-gray-400 text-sm leading-relaxed flex-1 mb-4">{job.description || job.desc}</p>
+      <div className="text-[#C7E36B] text-sm font-medium mb-4">View Details →</div>
+      <div className="border-t border-white/10 pt-4 flex items-center justify-between flex-wrap gap-2">
+        {job.budget && <span className="border border-white/20 text-white text-xs px-3 py-1 rounded-md font-medium">{job.budget}</span>}
+        {job.timeline && <span className="border border-white/20 text-gray-400 text-xs px-3 py-1 rounded-md">{job.timeline}</span>}
+        <span className="text-[11px] text-gray-600 ml-auto">{timeAgo(job.createdAt)}</span>
+      </div>
+    </>
+  );
+
+  if (locked) {
+    return (
+      <div
+        className="bg-[#111] border border-white/10 rounded-2xl p-6 flex flex-col relative cursor-pointer"
+        onClick={onLockedClick}
+      >
+        <div className="blur-sm opacity-50 pointer-events-none select-none flex flex-col flex-1">{inner}</div>
+        <div className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl">
+          <div className="bg-[#111315]/90 border border-white/10 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span className="text-white text-xs font-semibold">Pro Members Only — Tap to Unlock</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#111] border border-white/10 rounded-2xl p-6 hover:border-[#C7E36B]/40 transition-all flex flex-col">
       <div className="flex items-start justify-between mb-3">
@@ -84,6 +126,8 @@ export default function JobsSection() {
   const [budgetFilter, setBudgetFilter] = useState([]);
   const [timelineFilter, setTimelineFilter] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const isPro = useIsPro();
 
   const STATIC_JOBS = [
     { tag: "AI Film",    title: "A 2-minute short AI film needed",          type: "PART-TIME",  description: "Create an AI-driven cinematic ad emphasizing clarity and strong user engagement.", budget: "< ₹50/hr",    timeline: "Immediate",     category: "Cinematography",    createdAt: new Date() },
@@ -125,13 +169,13 @@ export default function JobsSection() {
     <section className="bg-[#0B0F10] text-white py-28">
       <div className="max-w-7xl mx-auto px-6">
 
-        {/* Header — always visible */}
+        {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Find AI Filmmaking Jobs</h1>
           <p className="text-gray-400 text-sm">{loading ? "Loading..." : `${filtered.length} opportunities available`}</p>
         </div>
 
-        {/* Filter bar — always visible */}
+        {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-3 mb-10">
           <FilterDropdown label="Category"  options={CATEGORIES} selected={catFilter}      onToggle={toggle(setCatFilter)} />
           <FilterDropdown label="Budget"    options={BUDGETS}    selected={budgetFilter}   onToggle={toggle(setBudgetFilter)} />
@@ -163,29 +207,37 @@ export default function JobsSection() {
           </div>
         )}
 
-        {/* First job card — always visible */}
+        {/* Job grid — first card always open, rest locked for non-Pro */}
         {!loading && filtered.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-6 mb-6">
-            <JobCard job={filtered[0]} timeAgo={timeAgo} onSelect={setSelectedJob} />
+          <div className="grid md:grid-cols-3 gap-6">
+            {filtered.map((job, i) => (
+              <JobCard
+                key={job._id || i}
+                job={job}
+                timeAgo={timeAgo}
+                onSelect={setSelectedJob}
+                locked={i > 0 && !isPro}
+                onLockedClick={() => setShowModal(true)}
+              />
+            ))}
           </div>
         )}
 
-        {/* Remaining jobs — gated */}
-        {!loading && filtered.length > 1 && (
-          <ProGate preview={null}>
-            <div className="grid md:grid-cols-3 gap-6">
-              {filtered.slice(1).map((job, i) => (
-                <JobCard key={job._id || i} job={job} timeAgo={timeAgo} onSelect={setSelectedJob} />
-              ))}
-            </div>
-            <div className="flex justify-center mt-12">
-              <button className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
-                + Load more jobs →
-              </button>
-            </div>
-          </ProGate>
+        {/* Load more */}
+        {!loading && filtered.length > 0 && (
+          <div className="flex justify-center mt-12">
+            <button
+              onClick={() => !isPro && setShowModal(true)}
+              className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
+            >
+              + Load more jobs →
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Pro upgrade modal */}
+      {showModal && <ProUpgradeModal onClose={() => setShowModal(false)} />}
 
       {/* Job Detail Modal */}
       {selectedJob && (

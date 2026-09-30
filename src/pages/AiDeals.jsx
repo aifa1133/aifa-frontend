@@ -1,12 +1,25 @@
 "use client";
 import { useState, useEffect } from "react";
-import ProGate from "../Components/ProGate";
+import { useIsPro, ProUpgradeModal } from "../Components/ProGate";
+
+const LockOverlay = () => (
+  <div className="absolute inset-0 flex items-center justify-center z-10 rounded-3xl">
+    <div className="bg-[#111315]/90 border border-white/10 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span className="text-white text-xs font-semibold">Pro Members Only — Tap to Unlock</span>
+    </div>
+  </div>
+);
 
 export default function AiDeals() {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("All Benefits");
   const [categories, setCategories] = useState(["All Benefits"]);
+  const [showModal, setShowModal] = useState(false);
+  const isPro = useIsPro();
 
   useEffect(() => {
     fetch("/api/resources?type=deal")
@@ -24,53 +37,23 @@ export default function AiDeals() {
 
   const filtered = active === "All Benefits" ? deals : deals.filter(d => d.category === active);
 
-  function DealCard({ item }) {
-    return (
-      <div className="rounded-3xl border border-white/10 overflow-hidden bg-black hover:border-[#C7E36B]/40 transition">
-        <div className="h-28 flex items-center justify-center bg-[#1a1a1a] p-4">
-          <img src={item.logo || item.thumbnail} alt={item.title} className="h-full max-h-20 object-contain" />
-        </div>
-        <div className="p-6">
-          <span className="text-xs bg-white/10 px-3 py-1 rounded-full text-gray-300">{item.category}</span>
-          <h3 className="text-lg font-semibold mt-4">{item.title}</h3>
-          <p className="text-gray-400 text-sm mt-1 mb-4">{item.description}</p>
-          <h2 className="text-3xl font-bold">{item.discount}</h2>
-          <p className="text-[#C7E36B] text-xs mt-1">VIA AIFA</p>
-          <a
-            href={item.link || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 w-full bg-[#C7E36B] text-black py-3 rounded-xl font-medium hover:opacity-90 transition block text-center"
-          >
-            {item.ctaText || "Get Deal"}
-          </a>
-          <p className="text-gray-500 text-xs text-center mt-2">Redirects to official site</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <section className="bg-[#0B0F10] text-white py-16">
       <div className="max-w-7xl mx-auto px-6">
-        {/* TITLE — always visible */}
+        {/* TITLE */}
         <h2 className="text-2xl md:text-3xl font-semibold mb-6">AI Deals</h2>
 
-        {/* FILTERS — always visible */}
+        {/* FILTERS */}
         <div className="flex flex-wrap gap-4 mb-10 text-sm">
           {categories.map((cat, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(cat)}
-              className={`px-4 py-2 border border-white/10 transition ${active === cat ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}
-            >
+            <button key={i} onClick={() => setActive(cat)}
+              className={`px-4 py-2 border border-white/10 transition ${active === cat ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
               {cat}
             </button>
           ))}
         </div>
 
-        {/* LOADING SKELETON */}
-        {loading && (
+        {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-3xl border border-white/10 overflow-hidden bg-black animate-pulse">
@@ -85,31 +68,47 @@ export default function AiDeals() {
               </div>
             ))}
           </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
+        ) : filtered.length === 0 ? (
           <p className="text-center text-gray-500 py-20">No deals available yet.</p>
-        )}
-
-        {/* First deal — always visible */}
-        {!loading && filtered.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            <DealCard item={filtered[0]} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((item, i) => {
+              const locked = i > 0 && !isPro;
+              return (
+                <div
+                  key={item._id || i}
+                  className={`rounded-3xl border border-white/10 overflow-hidden bg-black relative transition ${locked ? "cursor-pointer" : "hover:border-[#C7E36B]/40"}`}
+                  onClick={locked ? () => setShowModal(true) : undefined}
+                >
+                  <div className={locked ? "blur-sm opacity-50 pointer-events-none select-none" : ""}>
+                    <div className="h-28 flex items-center justify-center bg-[#1a1a1a] p-4">
+                      <img src={item.logo || item.thumbnail} alt={item.title} className="h-full max-h-20 object-contain" />
+                    </div>
+                    <div className="p-6">
+                      <span className="text-xs bg-white/10 px-3 py-1 rounded-full text-gray-300">{item.category}</span>
+                      <h3 className="text-lg font-semibold mt-4">{item.title}</h3>
+                      <p className="text-gray-400 text-sm mt-1 mb-4">{item.description}</p>
+                      <h2 className="text-3xl font-bold">{item.discount}</h2>
+                      <p className="text-[#C7E36B] text-xs mt-1">VIA AIFA</p>
+                      <a
+                        href={item.link || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => locked && e.preventDefault()}
+                        className="mt-6 w-full bg-[#C7E36B] text-black py-3 rounded-xl font-medium hover:opacity-90 transition block text-center"
+                      >
+                        {item.ctaText || "Get Deal"}
+                      </a>
+                      <p className="text-gray-500 text-xs text-center mt-2">Redirects to official site</p>
+                    </div>
+                  </div>
+                  {locked && <LockOverlay />}
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Rest — gated */}
-        {!loading && filtered.length > 1 && (
-          <ProGate preview={null}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.slice(1).map((item, i) => (
-                <DealCard key={item._id || i} item={item} />
-              ))}
-            </div>
-          </ProGate>
-        )}
-
-        {/* CTA */}
         <div className="text-center mt-16">
           <p className="text-gray-300 mb-4 text-4xl font-semibold">Start Saving on AI Tools Today</p>
           <button className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold text-lg hover:opacity-90 transition">
@@ -117,6 +116,7 @@ export default function AiDeals() {
           </button>
         </div>
       </div>
+      {showModal && <ProUpgradeModal onClose={() => setShowModal(false)} />}
     </section>
   );
 }

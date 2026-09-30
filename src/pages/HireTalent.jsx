@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import ProGate from "../Components/ProGate";
+import { useIsPro, ProUpgradeModal } from "../Components/ProGate";
 
 const STATIC_TALENTS = [
   { name: "Sarah Jenkins", location: "San Francisco, CA", avatar: "/talent/avatar1.jpg", works: ["/talent/ta1.png", "/talent/ta2.png", "/talent/ta3.png"] },
@@ -20,7 +20,55 @@ const filters = [
   { name: "Sound Design",  img: "/logos/logoback.jpg" },
 ];
 
-function TalentBlock({ t, onInquiry, inquirySent }) {
+function TalentBlock({ t, onInquiry, locked, onLockedClick }) {
+  const cardInner = (
+    <div>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 mb-6">
+        <div className="flex items-center gap-4">
+          <img src={t.avatar} alt={t.name} className="w-[48px] h-[48px] md:w-[56px] md:h-[56px] rounded-full object-cover" />
+          <div>
+            <h3 className="text-[#F0F0F0] font-[Montserrat] text-[18px] leading-[28px] font-[700]">{t.name}</h3>
+            <p className="text-[#DCDCDC] font-[Montserrat] text-[14px] leading-[20px] font-[400] mt-1">{t.location}</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center gap-[4px] bg-[#D0E46A] text-black px-[16px] py-[10px] rounded-[4px] w-full sm:w-auto">
+          <span className="font-[Montserrat] text-[14px] font-[600]">SEND INQUIRY</span>
+          <img src="/Arrowleftsend.svg" alt="" className="w-[20px] h-[20px]" />
+        </div>
+      </div>
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {t.works.map((img, idx) => (
+          <div key={idx} className="rounded-[16px] overflow-hidden border border-white/10">
+            <img src={img} alt="work" className="w-full h-[260px] lg:h-[280px] object-cover" />
+          </div>
+        ))}
+      </div>
+      <div className="sm:hidden flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2">
+        {t.works.map((img, idx) => (
+          <div key={idx} className="min-w-[85%] flex-shrink-0 snap-center rounded-[16px] overflow-hidden border border-white/10">
+            <img src={img} alt="work" className="w-full h-[240px] object-cover" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (locked) {
+    return (
+      <div className="relative cursor-pointer" onClick={onLockedClick}>
+        <div className="blur-sm opacity-50 pointer-events-none select-none">{cardInner}</div>
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="bg-[#111315]/90 border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span className="text-white text-sm font-semibold">Pro Members Only — Tap to Unlock</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 mb-6">
@@ -39,7 +87,6 @@ function TalentBlock({ t, onInquiry, inquirySent }) {
           <img src="/Arrowleftsend.svg" alt="" className="w-[20px] h-[20px]" />
         </button>
       </div>
-      {/* Desktop grid */}
       <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {t.works.map((img, idx) => (
           <div key={idx} className="rounded-[16px] overflow-hidden border border-white/10 group">
@@ -47,7 +94,6 @@ function TalentBlock({ t, onInquiry, inquirySent }) {
           </div>
         ))}
       </div>
-      {/* Mobile slider */}
       <div className="sm:hidden flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth pb-2">
         {t.works.map((img, idx) => (
           <div key={idx} className="min-w-[85%] flex-shrink-0 snap-center rounded-[16px] overflow-hidden border border-white/10">
@@ -64,6 +110,8 @@ export default function HireTalent() {
   const scrollRef = useRef(null);
   const [talents, setTalents] = useState(STATIC_TALENTS);
   const [inquirySent, setInquirySent] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const isPro = useIsPro();
 
   useEffect(() => {
     fetch("/api/talent")
@@ -98,7 +146,7 @@ export default function HireTalent() {
 
       <div className="w-full max-w-[1440px] mx-auto px-[16px] sm:px-[24px] md:px-[40px] lg:px-[60px] xl:px-[93px]">
 
-        {/* TOP BAR — always visible */}
+        {/* TOP BAR */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <h2 className="text-[#F0F0F0] font-[Montserrat] text-[28px] leading-[36px] sm:text-[32px] sm:leading-[40px] font-[900]">AVAILABLE TALENT</h2>
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -110,7 +158,7 @@ export default function HireTalent() {
           </div>
         </div>
 
-        {/* FILTER SLIDER — always visible */}
+        {/* FILTER SLIDER */}
         <div className="flex items-center gap-2 mb-12">
           <button onClick={() => scroll("left")} className="min-w-[40px] h-[40px] md:min-w-[48px] md:h-[48px] flex items-center justify-center rounded-full bg-white">
             <img src="/Arrowleftnewhire1.svg" alt="left" className="w-[18px] h-[18px]" />
@@ -129,26 +177,31 @@ export default function HireTalent() {
           </button>
         </div>
 
-        {/* First talent — always visible */}
+        {/* TALENT LIST — first open, rest locked for non-Pro */}
         <div className="space-y-[64px] mb-[64px]">
-          <TalentBlock t={talents[0]} onInquiry={sendInquiry} inquirySent={inquirySent} />
+          {talents.map((t, i) => (
+            <TalentBlock
+              key={i}
+              t={t}
+              onInquiry={sendInquiry}
+              locked={i > 0 && !isPro}
+              onLockedClick={() => setShowModal(true)}
+            />
+          ))}
         </div>
 
-        {/* Rest — gated */}
-        <ProGate preview={null}>
-          <div className="space-y-[64px]">
-            {talents.slice(1).map((t, i) => (
-              <TalentBlock key={i} t={t} onInquiry={sendInquiry} inquirySent={inquirySent} />
-            ))}
-          </div>
-          <div className="flex justify-center mt-[64px]">
-            <button className="flex justify-center items-center gap-[8px] bg-[#F0F0F0] text-black px-[20px] py-[12px] rounded-[4px] transition-all duration-300 hover:bg-[#e4e4e4] w-full sm:w-auto">
-              LOAD MORE PROFILES
-            </button>
-          </div>
-        </ProGate>
-
+        {/* Load more */}
+        <div className="flex justify-center mt-[64px]">
+          <button
+            onClick={() => !isPro && setShowModal(true)}
+            className="flex justify-center items-center gap-[8px] bg-[#F0F0F0] text-black px-[20px] py-[12px] rounded-[4px] transition-all duration-300 hover:bg-[#e4e4e4] w-full sm:w-auto"
+          >
+            LOAD MORE PROFILES
+          </button>
+        </div>
       </div>
+
+      {showModal && <ProUpgradeModal onClose={() => setShowModal(false)} />}
     </section>
   );
 }
