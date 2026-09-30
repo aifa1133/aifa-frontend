@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import ProGate from "../Components/ProGate";
 
 const CATEGORIES = ["Cinematography", "Video Editing", "Sound Design", "Directing", "Production Design"];
 const BUDGETS = ["< ₹50/hr", "₹50–100/hr", "₹100–200/hr", "₹200+/hr"];
@@ -49,6 +50,33 @@ function FilterDropdown({ label, options, selected, onToggle }) {
   );
 }
 
+function JobCard({ job, timeAgo, onSelect }) {
+  return (
+    <div className="bg-[#111] border border-white/10 rounded-2xl p-6 hover:border-[#C7E36B]/40 transition-all flex flex-col">
+      <div className="flex items-start justify-between mb-3">
+        <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
+          {job.tag || job.category}
+        </span>
+        {job.type && (
+          <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase">
+            {job.type}
+          </span>
+        )}
+      </div>
+      <h3 className="text-base font-semibold text-white mb-2 leading-tight">{job.title}</h3>
+      <p className="text-gray-400 text-sm leading-relaxed flex-1 mb-4">{job.description || job.desc}</p>
+      <button onClick={() => onSelect(job)} className="text-[#C7E36B] text-sm font-medium hover:underline text-left mb-4">
+        View Details →
+      </button>
+      <div className="border-t border-white/10 pt-4 flex items-center justify-between flex-wrap gap-2">
+        {job.budget && <span className="border border-white/20 text-white text-xs px-3 py-1 rounded-md font-medium">{job.budget}</span>}
+        {job.timeline && <span className="border border-white/20 text-gray-400 text-xs px-3 py-1 rounded-md">{job.timeline}</span>}
+        <span className="text-[11px] text-gray-600 ml-auto">{timeAgo(job.createdAt)}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function JobsSection() {
   const [allJobs, setAllJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +85,6 @@ export default function JobsSection() {
   const [timelineFilter, setTimelineFilter] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
 
-  // Fallback static jobs for when DB has no data yet
   const STATIC_JOBS = [
     { tag: "AI Film",    title: "A 2-minute short AI film needed",          type: "PART-TIME",  description: "Create an AI-driven cinematic ad emphasizing clarity and strong user engagement.", budget: "< ₹50/hr",    timeline: "Immediate",     category: "Cinematography",    createdAt: new Date() },
     { tag: "AI Ads",     title: "Build high-converting AI video ads",       type: "FULL-TIME",  description: "Create an AI-driven cinematic ad focused on brand clarity and user engagement.",  budget: "₹200+/hr",    timeline: "Within 2 Weeks", category: "Video Editing",      createdAt: new Date() },
@@ -98,90 +125,65 @@ export default function JobsSection() {
     <section className="bg-[#0B0F10] text-white py-28">
       <div className="max-w-7xl mx-auto px-6">
 
-        {/* Header */}
+        {/* Header — always visible */}
         <div className="mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Find AI Filmmaking Jobs</h1>
           <p className="text-gray-400 text-sm">{loading ? "Loading..." : `${filtered.length} opportunities available`}</p>
         </div>
 
-        {/* Filter bar */}
+        {/* Filter bar — always visible */}
         <div className="flex flex-wrap items-center gap-3 mb-10">
           <FilterDropdown label="Category"  options={CATEGORIES} selected={catFilter}      onToggle={toggle(setCatFilter)} />
           <FilterDropdown label="Budget"    options={BUDGETS}    selected={budgetFilter}   onToggle={toggle(setBudgetFilter)} />
           <FilterDropdown label="Timeline"  options={TIMELINES}  selected={timelineFilter} onToggle={toggle(setTimelineFilter)} />
-
           {hasFilters && (
-            <button onClick={clearAll} className="text-xs text-gray-400 hover:text-white underline transition-all">
-              Clear all
-            </button>
+            <button onClick={clearAll} className="text-xs text-gray-400 hover:text-white underline transition-all">Clear all</button>
           )}
-
           <div className="ml-auto">
             <span className="text-xs text-gray-500">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
           </div>
         </div>
 
-        {/* Job grid */}
-        {loading ? (
+        {/* Loading skeleton */}
+        {loading && (
           <div className="grid md:grid-cols-3 gap-6">
             {[1,2,3,4,5,6].map(i => (
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 animate-pulse h-52" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        )}
+
+        {/* No results */}
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-20">
             <p className="text-2xl mb-2">🎬</p>
             <p className="text-white font-semibold">No jobs match your filters</p>
             <p className="text-gray-500 text-sm mt-1">Try removing some filters</p>
             <button onClick={clearAll} className="mt-4 text-sm text-[#C7E36B] underline">Clear all filters</button>
           </div>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-6">
-            {filtered.map((job, i) => (
-              <div key={job._id || i} className="bg-[#111] border border-white/10 rounded-2xl p-6 hover:border-[#C7E36B]/40 transition-all flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
-                    {job.tag || job.category}
-                  </span>
-                  {job.type && (
-                    <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase">
-                      {job.type}
-                    </span>
-                  )}
-                </div>
+        )}
 
-                <h3 className="text-base font-semibold text-white mb-2 leading-tight">{job.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed flex-1 mb-4">{job.description || job.desc}</p>
-
-                <button onClick={() => setSelectedJob(job)} className="text-[#C7E36B] text-sm font-medium hover:underline text-left mb-4">
-                  View Details →
-                </button>
-
-                <div className="border-t border-white/10 pt-4 flex items-center justify-between flex-wrap gap-2">
-                  {job.budget && (
-                    <span className="border border-white/20 text-white text-xs px-3 py-1 rounded-md font-medium">
-                      {job.budget}
-                    </span>
-                  )}
-                  {job.timeline && (
-                    <span className="border border-white/20 text-gray-400 text-xs px-3 py-1 rounded-md">
-                      {job.timeline}
-                    </span>
-                  )}
-                  <span className="text-[11px] text-gray-600 ml-auto">{timeAgo(job.createdAt)}</span>
-                </div>
-              </div>
-            ))}
+        {/* First job card — always visible */}
+        {!loading && filtered.length > 0 && (
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <JobCard job={filtered[0]} timeAgo={timeAgo} onSelect={setSelectedJob} />
           </div>
         )}
 
-        {/* Load more */}
-        {!loading && filtered.length > 0 && (
-          <div className="flex justify-center mt-12">
-            <button className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
-              + Load more jobs →
-            </button>
-          </div>
+        {/* Remaining jobs — gated */}
+        {!loading && filtered.length > 1 && (
+          <ProGate preview={null}>
+            <div className="grid md:grid-cols-3 gap-6">
+              {filtered.slice(1).map((job, i) => (
+                <JobCard key={job._id || i} job={job} timeAgo={timeAgo} onSelect={setSelectedJob} />
+              ))}
+            </div>
+            <div className="flex justify-center mt-12">
+              <button className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
+                + Load more jobs →
+              </button>
+            </div>
+          </ProGate>
         )}
       </div>
 
@@ -190,7 +192,6 @@ export default function JobsSection() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setSelectedJob(null)}>
           <div className="bg-[#111] border border-white/15 rounded-2xl max-w-lg w-full p-6 relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setSelectedJob(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-lg leading-none">✕</button>
-
             <div className="flex items-start gap-3 mb-4">
               <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[selectedJob.tag] || "bg-white/10 text-white"}`}>
                 {selectedJob.tag || selectedJob.category}
@@ -201,16 +202,13 @@ export default function JobsSection() {
                 </span>
               )}
             </div>
-
             <h2 className="text-lg font-bold text-white mb-3">{selectedJob.title}</h2>
             <p className="text-gray-300 text-sm leading-relaxed mb-5">{selectedJob.description || selectedJob.desc}</p>
-
             <div className="flex flex-wrap gap-2 mb-5">
               {selectedJob.budget && <span className="border border-white/20 text-white text-xs px-3 py-1 rounded-md">{selectedJob.budget}</span>}
               {selectedJob.timeline && <span className="border border-white/20 text-gray-300 text-xs px-3 py-1 rounded-md">{selectedJob.timeline}</span>}
               {selectedJob.category && <span className="border border-white/20 text-gray-300 text-xs px-3 py-1 rounded-md">{selectedJob.category}</span>}
             </div>
-
             <button
               onClick={() => selectedJob.link ? window.open(selectedJob.link, "_blank") : setSelectedJob(null)}
               className="w-full bg-[#C7E36B] text-black py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
