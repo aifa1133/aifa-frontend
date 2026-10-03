@@ -101,7 +101,7 @@ export default function PaymentFailed() {
           Back to Workshops
         </button>
         <a
-          href="https://wa.me/919052088000?text=Hi%2C%20my%20payment%20failed.%20Payment%20ID%3A%20" + (paymentId || "N/A")
+          href={`https://wa.me/919052088000?text=Hi%2C%20my%20payment%20failed.%20Payment%20ID%3A%20${paymentId || "N/A"}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full py-3 text-center text-gray-500 text-xs hover:text-gray-300 transition"
