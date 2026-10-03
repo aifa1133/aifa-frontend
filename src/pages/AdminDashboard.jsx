@@ -1602,8 +1602,8 @@ function WorkshopsAdmin({ token }) {
     let dateStr = "", timeStr = "";
     if (w.scheduledAt) {
       const dt = new Date(w.scheduledAt);
-      dateStr = `${String(dt.getMonth()+1).padStart(2,"0")}/${String(dt.getDate()).padStart(2,"0")}/${dt.getFullYear()}`;
-      timeStr = dt.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true});
+      dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+      timeStr = `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
     }
     setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"" });
     setIsEditing(true); setView("create");
@@ -1615,7 +1615,7 @@ function WorkshopsAdmin({ token }) {
       let scheduledAt = null;
       if (cf.date) {
         try {
-          const combined = cf.time ? `${cf.date} ${cf.time}` : cf.date;
+          const combined = cf.time ? `${cf.date}T${cf.time}:00` : `${cf.date}T00:00:00`;
           const d = new Date(combined);
           if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
         } catch {}
@@ -1713,10 +1713,32 @@ function WorkshopsAdmin({ token }) {
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
-              <Fld label="Date" value={cf.date} onChange={v=>setCf({...cf,date:v})} placeholder="mm/dd/yyyy" />
-              <Fld label="Time" value={cf.time} onChange={v=>setCf({...cf,time:v})} placeholder="10:00 AM" />
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1 uppercase">Date</p>
+                <input
+                  type="date"
+                  value={cf.date}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={e => setCf({...cf, date: e.target.value})}
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/60 [color-scheme:dark] cursor-pointer"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-1 uppercase">Time</p>
+                <input
+                  type="time"
+                  value={cf.time}
+                  onChange={e => setCf({...cf, time: e.target.value})}
+                  className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/60 [color-scheme:dark] cursor-pointer"
+                />
+              </div>
               <Fld label="Timezone" value={cf.timezone||""} onChange={v=>setCf({...cf,timezone:v})} placeholder="IST (GMT+5:30)" />
             </div>
+            {cf.date && (
+              <p className="text-[11px] text-[#C7E36B] mt-2">
+                📅 Scheduled: {new Date(`${cf.date}T${cf.time||"00:00"}:00`).toLocaleString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true })}
+              </p>
+            )}
           </Sect>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3"><Tog value={cf.published} onChange={v=>setCf({...cf,published:v})} /><span className="text-sm text-white">Published</span></div>
