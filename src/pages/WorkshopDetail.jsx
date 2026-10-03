@@ -48,82 +48,20 @@ const getYouTubeId = (url = "") => {
   return m ? m[1] : null;
 };
 
-/* ── 5-second YouTube preview with lock overlay ── */
-function WorkshopVideoPreview({ url, workshopId, onEnroll }) {
-  const [locked, setLocked]   = useState(false);
-  const playerRef = useRef(null);
-  const timerRef  = useRef(null);
-  const initedRef = useRef(false);
-  const videoId   = getYouTubeId(url);
-
-  useEffect(() => {
-    if (!videoId || initedRef.current) return;
-
-    const playerId = `yt-ws-${workshopId}`;
-
-    const createPlayer = () => {
-      if (!window.YT?.Player || initedRef.current) return;
-      initedRef.current = true;
-      playerRef.current = new window.YT.Player(playerId, {
-        videoId,
-        playerVars: { autoplay: 1, mute: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, fs: 0 },
-        events: {
-          onStateChange: (e) => {
-            if (e.data === window.YT.PlayerState.PLAYING && !timerRef.current) {
-              timerRef.current = setTimeout(() => {
-                try { playerRef.current?.pauseVideo(); } catch {}
-                setLocked(true);
-              }, 5000);
-            }
-          },
-        },
-      });
-    };
-
-    if (window.YT?.Player) {
-      createPlayer();
-    } else {
-      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-        const s = document.createElement("script");
-        s.src = "https://www.youtube.com/iframe_api";
-        document.body.appendChild(s);
-      }
-      const prev = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => { if (prev) prev(); createPlayer(); };
-    }
-
-    return () => {
-      clearTimeout(timerRef.current);
-      try { playerRef.current?.destroy(); } catch {}
-      initedRef.current = false;
-    };
-  }, [videoId, workshopId]);
-
+/* ── YouTube preview — full playback, no lock ── */
+function WorkshopVideoPreview({ url, workshopId }) {
+  const videoId = getYouTubeId(url);
   if (!videoId) return null;
-
   return (
-    <div className="relative rounded-2xl overflow-hidden w-full h-[280px] md:h-[400px] bg-black mb-8">
-      {/* YouTube player fills the container */}
-      <div id={`yt-ws-${workshopId}`} className="w-full h-full" />
-
-      {/* Lock overlay — fades in after 5 seconds */}
-      {locked && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 text-center px-6"
-          style={{ backdropFilter: "blur(12px)", background: "rgba(0,0,0,0.65)" }}>
-          <div className="text-5xl select-none">🔒</div>
-          <div>
-            <h3 className="text-white font-black text-xl md:text-2xl mb-2">Enroll to watch full workshop</h3>
-            <p className="text-gray-300 text-sm max-w-[280px] mx-auto leading-relaxed">
-              Get lifetime access to this workshop and all session recordings after enrolling.
-            </p>
-          </div>
-          <button onClick={onEnroll}
-            className="bg-[#C7E36B] text-black font-black px-8 py-3 rounded-xl hover:opacity-90 active:scale-[0.98] transition text-sm uppercase tracking-widest">
-            Book your seat →
-          </button>
-          <p className="text-gray-500 text-xs">🔒 Secure payment · Instant access</p>
-        </div>
-      )}
+    <div className="rounded-2xl overflow-hidden w-full mb-8" style={{ padding: "56.25% 0 0 0", position: "relative" }}>
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+        title="Workshop Preview"
+        frameBorder="0"
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowFullScreen
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+      />
     </div>
   );
 }

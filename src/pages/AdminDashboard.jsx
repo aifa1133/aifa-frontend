@@ -3906,6 +3906,20 @@ function UsersAdmin({ token }) {
     setTogglingId(null);
   };
 
+  const deleteUser = async (u) => {
+    if (!window.confirm(`Permanently delete "${u.name}" (${u.email})? This cannot be undone.`)) return;
+    setTogglingId(u._id);
+    try {
+      await fetch(`/api/users/${u._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(us => us.filter(x => x._id !== u._id));
+      setViewUser(null);
+    } catch {}
+    setTogglingId(null);
+  };
+
   const roleBadge = role => {
     if (role === "admin") return "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30";
     if (role === "instructor") return "bg-purple-500/15 text-purple-300 border border-purple-500/30";
@@ -3990,8 +4004,8 @@ function UsersAdmin({ token }) {
                 </div>
               </div>
 
-              {/* Bottom action button */}
-              <div className="px-5 pb-5">
+              {/* Bottom action buttons */}
+              <div className="px-5 pb-5 flex flex-col gap-2">
                 {isActive ? (
                   <button
                     onClick={() => toggleStatus(viewUser)}
@@ -4009,6 +4023,13 @@ function UsersAdmin({ token }) {
                     {togglingId === viewUser._id ? "UPDATING..." : `ACTIVATE ${roleLabel.toUpperCase()}`}
                   </button>
                 )}
+                <button
+                  onClick={() => deleteUser(viewUser)}
+                  disabled={!!togglingId}
+                  className="w-full py-3 rounded-xl bg-red-600/20 border border-red-600/40 text-red-400 font-black text-sm tracking-wide hover:bg-red-600/30 transition-colors disabled:opacity-50"
+                >
+                  {togglingId === viewUser._id ? "DELETING..." : "DELETE USER PERMANENTLY"}
+                </button>
               </div>
             </div>
           </div>
