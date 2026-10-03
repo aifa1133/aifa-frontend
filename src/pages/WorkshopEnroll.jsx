@@ -180,12 +180,36 @@ export default function WorkshopEnroll() {
             });
             const verifyData = await verifyRes.json();
             if (verifyRes.ok && verifyData.success) {
-              setStep("done");
+              navigate("/payment/success", {
+                state: {
+                  workshopTitle: workshop.title,
+                  workshopId: id,
+                  paymentId: response.razorpay_payment_id,
+                  orderId: response.razorpay_order_id,
+                  redirectTo: `/workshops/${id}`,
+                },
+              });
             } else {
-              alert("Payment verification failed. Contact support with payment ID: " + response.razorpay_payment_id);
+              navigate("/payment/failed", {
+                state: {
+                  workshopTitle: workshop.title,
+                  workshopId: id,
+                  paymentId: response.razorpay_payment_id,
+                  errorMessage: verifyData.message || "Verification failed",
+                  retryPath: `/workshops/${id}/pay`,
+                },
+              });
             }
           } catch {
-            alert("Verification error. Save your payment ID: " + response.razorpay_payment_id);
+            navigate("/payment/failed", {
+              state: {
+                workshopTitle: workshop?.title,
+                workshopId: id,
+                paymentId: response.razorpay_payment_id,
+                errorMessage: "Verification error. Please contact support.",
+                retryPath: `/workshops/${id}/pay`,
+              },
+            });
           }
           setPaying(false);
         },
@@ -239,28 +263,6 @@ export default function WorkshopEnroll() {
     "Certificate of completion",
     "Direct trainer Q&A",
   ];
-
-  /* ── Success ── */
-  if (step === "done") return (
-    <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-[#111315] border border-white/10 rounded-2xl p-8 text-center space-y-5">
-        <div className="text-6xl">🎉</div>
-        <h2 className="text-white text-2xl font-bold">Seat Reserved!</h2>
-        <p className="text-gray-400 text-sm">
-          You&apos;ve successfully enrolled in <span className="text-white font-semibold">{workshop.title}</span>.
-        </p>
-        <p className="text-gray-500 text-xs">A confirmation email has been sent to your registered email address.</p>
-        <button onClick={() => navigate(`/workshops/${id}`)}
-          className="w-full py-3 bg-[#C7E36B] text-black font-bold rounded-xl hover:opacity-90 transition">
-          View Workshop Details
-        </button>
-        <button onClick={() => navigate("/dashboard/workshops")}
-          className="w-full py-2 text-gray-400 text-sm hover:text-white transition">
-          Go to Dashboard
-        </button>
-      </div>
-    </div>
-  );
 
   /* ── Main page ── */
   return (
