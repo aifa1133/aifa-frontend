@@ -34,15 +34,17 @@ export default function WorkshopEnroll() {
   const [form,   setForm]   = useState({ name: storedUser.name || "", email: storedUser.email || "", phone: "" });
   const [errors, setErrors] = useState({});
   const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const [couponInput,   setCouponInput]   = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponResult,  setCouponResult]  = useState(null);
   const [couponError,   setCouponError]   = useState("");
 
-  const [paying,    setPaying]    = useState(false);
+  const [paying,     setPaying]     = useState(false);
   const [guestIsNew, setGuestIsNew] = useState(false);
-  const [tempPw,    setTempPw]    = useState("");
+  const [tempPw,     setTempPw]     = useState("");
+  const [guestToken, setGuestToken] = useState(null);  // temp token, never stored in localStorage
 
   /* ── Fetch workshop ── */
   useEffect(() => {
@@ -99,6 +101,7 @@ export default function WorkshopEnroll() {
     e.preventDefault();
     if (!validate()) return;
     setEmailError("");
+    setPhoneError("");
 
     try {
       const res = await fetch("/api/auth/guest-checkout", {
@@ -108,15 +111,15 @@ export default function WorkshopEnroll() {
       });
       const data = await res.json();
       if (res.status === 409) {
-        setEmailError(data.message || "This email is linked to an existing account. Please log in.");
+        if (data.code === "PHONE_EXISTS") {
+          setPhoneError(data.message);
+        } else {
+          setEmailError(data.message || "This email is linked to an existing account. Please log in.");
+        }
         return;
       }
       if (res.ok && data.token) {
-        localStorage.setItem("aifa_token", data.token);
-        localStorage.setItem("aifa_user", JSON.stringify({
-          name: data.name, _id: data._id, role: data.role,
-          profilePicture: data.profilePicture || "", isGuest: true,
-        }));
+        setGuestToken(data.token);  // keep in state only — do not store in localStorage
         if (data.isNewUser) { setGuestIsNew(true); setTempPw(data.tempPw || ""); }
       }
     } catch { /* proceed; payment API will catch real errors */ }
@@ -140,7 +143,7 @@ export default function WorkshopEnroll() {
 
   /* ── Payment ── */
   const handlePay = async () => {
-    const activeToken = localStorage.getItem("aifa_token");
+    const activeToken = localStorage.getItem("aifa_token") || guestToken;
     if (!activeToken) { setStep("info"); return; }
     setPaying(true);
 
@@ -188,6 +191,8 @@ export default function WorkshopEnroll() {
                   orderId: response.razorpay_order_id,
                   redirectTo: `/workshops/${id}`,
                   isNewUser: guestIsNew,
+                  guestToken: guestToken || null,
+                  userEmail: form.email || null,
                 },
               });
             } else {
@@ -353,10 +358,22 @@ export default function WorkshopEnroll() {
                 <div>
                   <label className="text-xs text-gray-400 font-semibold mb-1 block">Mobile Number</label>
                   <input type="tel" placeholder="Enter 10-digit mobile number" value={form.phone}
-                    onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                    onChange={e => { setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })); setPhoneError(""); }}
+                    onBlur={async e => {
+                      const ph = e.target.value.replace(/\D/g, "");
+                      if (ph.length !== 10) return;
+                      try {
+                        const res = await fetch(`/api/auth/check-phone?phone=${ph}&excludeEmail=${encodeURIComponent(form.email)}`);
+                        const data = await res.json();
+                        if (!data.available) setPhoneError("This mobile number is already linked to another account. Please log in.");
+                      } catch {}
+                    }}
                     inputMode="numeric" maxLength={10}
-                    className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]/60 placeholder-gray-600" />
-                  {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
+                    className={`w-full bg-[#1A1D1E] border rounded-xl px-4 py-3 text-white text-sm outline-none placeholder-gray-600 ${phoneError ? "border-red-500/70" : "border-white/10 focus:border-[#C7E36B]/60"}`} />
+                  {phoneError && (
+                    <p className="text-red-400 text-xs mt-1">{phoneError} <button type="button" onClick={() => navigate("/login")} className="underline hover:text-red-300">Log in →</button></p>
+                  )}
+                  {errors.phone && !phoneError && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
                 </div>
 
                 <button type="submit"
@@ -394,13 +411,25 @@ export default function WorkshopEnroll() {
 
               {/* Logged-in user info */}
               {isLoggedIn && (
-                <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
-                  <div className="w-8 h-8 rounded-full bg-[#C7E36B]/10 flex items-center justify-center text-[#C7E36B] font-bold text-sm shrink-0">
-                    {(storedUser.name || "U")[0].toUpperCase()}
+                <div className="bg-white/5 rounded-xl px-4 py-3 flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#C7E36B]/10 flex items-center justify-center text-[#C7E36B] font-bold text-sm shrink-0">
+                      {(storedUser.name || "U")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{storedUser.name || "Student"}</p>
+                      <p className="text-gray-400 text-xs">Logged in · payment will be linked to your account</p>
+                    </div>
                   </div>
                   <div>
-                    <p className="text-white text-sm font-semibold">{storedUser.name || "Student"}</p>
-                    <p className="text-gray-400 text-xs">Logged in · payment will be linked to your account</p>
+                    <label className="text-xs text-gray-400 font-semibold mb-1 block">Mobile Number for Payment</label>
+                    <input
+                      type="tel"
+                      placeholder="Enter 10-digit mobile number"
+                      value={form.phone}
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                      className="w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/60 placeholder-gray-600"
+                    />
                   </div>
                 </div>
               )}

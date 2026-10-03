@@ -177,10 +177,10 @@ export default function WorkshopsPage() {
 
               return (
                 <div key={item._id || i} id={item._id}
-                  className={`w-full rounded-[20px] overflow-hidden bg-[#0F1112] border-2 transition-all duration-500 ${
-                    isReserved ? "border-[#C7E36B]" :
+                  className={`w-full rounded-[20px] overflow-hidden bg-[#0F1112] border-2 transition-all duration-300 group ${
+                    isReserved ? "border-[#C7E36B] hover:shadow-[0_8px_32px_rgba(199,227,107,0.18)]" :
                     highlighted===item._id ? "border-[#D0E46A] shadow-[0_0_0_3px_rgba(208,228,106,0.3)]" :
-                    "border-transparent"}`}>
+                    "border-transparent hover:border-[#C7E36B]/40 hover:shadow-[0_8px_32px_rgba(199,227,107,0.12)]"} hover:-translate-y-1`}>
                   {/* TOP SECTION */}
                   <div className="flex flex-col md:flex-row gap-3 w-full cursor-pointer p-3"
                     onClick={() => { if (!isMock && item._id) navigate(`/workshops/${item._id}`); }}>
@@ -293,17 +293,25 @@ export default function WorkshopsPage() {
                     <div className="flex flex-col">
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/workshops/${item._id}`); }}
-                        className="flex justify-center items-center px-[30px] py-[12px] w-full font-[Montserrat] text-[18px] leading-[28px] font-bold bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition"
+                        className="relative flex justify-center items-center overflow-hidden px-[30px] py-[12px] w-full font-[Montserrat] text-[18px] leading-[28px] font-bold bg-[#F2FEB1] text-[#0F1112] hover:bg-[#0F1112] hover:text-[#F2FEB1] hover:tracking-[0.18em] hover:shadow-[inset_0_0_0_2px_#F2FEB1] transition-all duration-300 active:scale-[0.98]"
                       >
                         VIEW DETAILS
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleReserve(item); }}
                         disabled={isFull}
-                        className={`flex justify-center items-center gap-[4px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition
-                          ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#0F1112] hover:opacity-90"}`}
+                        className={`flex justify-center items-center gap-[8px] px-[30px] py-[12px] w-full rounded-b-[20px] font-[Montserrat] text-[18px] leading-[28px] font-black uppercase transition-all duration-300
+                          ${isFull
+                            ? "bg-gray-400 text-white cursor-not-allowed"
+                            : "bg-[#D0E46A] text-[#0F1112] hover:bg-[#C7E36B] hover:shadow-[0_0_28px_rgba(199,227,107,0.55)] hover:scale-[1.01] hover:gap-[16px] active:scale-[0.98]"
+                          }`}
                       >
-                        {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-[22px]">→</span></>}
+                        {isFull ? "SOLD OUT" : (
+                          <>
+                            <span>RESERVE SPOT</span>
+                            <span className="text-[22px] inline-block transition-transform duration-300 group-hover:translate-x-2">→</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   )}

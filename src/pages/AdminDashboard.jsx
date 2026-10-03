@@ -1590,7 +1590,7 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"" });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"" });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -1605,7 +1605,7 @@ function WorkshopsAdmin({ token }) {
       dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
       timeStr = `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
     }
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"" });
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"" });
     setIsEditing(true); setView("create");
   };
 
@@ -1620,7 +1620,7 @@ function WorkshopsAdmin({ token }) {
           if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
         } catch {}
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", ...(scheduledAt && { scheduledAt }) };
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -1738,6 +1738,10 @@ function WorkshopsAdmin({ token }) {
               <p className="text-[11px] text-[#C7E36B] mt-2">
                 📅 Scheduled: {new Date(`${cf.date}T${cf.time||"00:00"}:00`).toLocaleString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true })}
               </p>
+            )}
+            <Fld label="Zoom Meeting Link" value={cf.zoomLink} onChange={v=>setCf({...cf,zoomLink:v})} placeholder="https://zoom.us/j/..." />
+            {cf.zoomLink && (
+              <p className="text-[10px] text-[#C7E36B] mt-1">✓ Zoom link set — enrolled students can click "Join Workshop"</p>
             )}
           </Sect>
           <div className="flex items-center justify-between">
