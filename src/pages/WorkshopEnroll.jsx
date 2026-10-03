@@ -187,6 +187,7 @@ export default function WorkshopEnroll() {
                   paymentId: response.razorpay_payment_id,
                   orderId: response.razorpay_order_id,
                   redirectTo: `/workshops/${id}`,
+                  isNewUser: guestIsNew,
                 },
               });
             } else {
