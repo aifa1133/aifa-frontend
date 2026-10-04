@@ -282,7 +282,7 @@ export default function WorkshopDetail() {
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const w = data.find(x => x._id === id);
+          const w = data.find(x => x._id === id || x.slug === id);
           setWorkshop(w || null);
           const currentUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
           if (w && userId && !currentUser.isGuest) {
@@ -326,7 +326,7 @@ export default function WorkshopDetail() {
     }
   }, [workshop, isEnrolled]);
 
-  const handleBookClick = () => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } });
+  const handleBookClick = () => navigate(`/workshops/${workshop.slug || id}/pay`, { state: { workshopData: workshop } });
 
   const handleBuyFormDone = async (buyer) => {
     setBuyerInfo(buyer);
@@ -515,12 +515,16 @@ export default function WorkshopDetail() {
             onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
           />
         )}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-xs text-gray-500 flex gap-2 flex-wrap">
-          <Link to="/" className="hover:text-white transition-colors">Home</Link>
-          <span>›</span>
-          <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
-          <span>›</span>
-          <span className="text-[#C7E36B]">{workshop.title}</span>
+        {/* TOP BAR — logo + breadcrumb */}
+        <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center gap-4">
+          <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
+          <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
+            <span>›</span>
+            <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+            <span>›</span>
+            <span className="text-[#C7E36B]">{workshop.title}</span>
+          </div>
         </div>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <div className="bg-[#0F1112] border border-white/10 rounded-2xl flex flex-col items-center justify-center py-28 px-8 text-center min-h-[520px]">
@@ -572,13 +576,16 @@ export default function WorkshopDetail() {
             onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
           />
         )}
-        {/* BREADCRUMB */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-xs text-gray-500 flex gap-2 flex-wrap">
-          <Link to="/" className="hover:text-white transition-colors">Home</Link>
-          <span>›</span>
-          <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
-          <span>›</span>
-          <span className="text-[#C7E36B]">{workshop.title}</span>
+        {/* TOP BAR — logo + breadcrumb */}
+        <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center gap-4">
+          <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
+          <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
+            <span>›</span>
+            <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+            <span>›</span>
+            <span className="text-[#C7E36B]">{workshop.title}</span>
+          </div>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
@@ -751,13 +758,16 @@ export default function WorkshopDetail() {
           onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
         />
       )}
-      {/* BREADCRUMB */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-4 text-xs text-gray-500 flex gap-2 flex-wrap">
-        <Link to="/" className="hover:text-white transition-colors">Home</Link>
-        <span>›</span>
-        <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
-        <span>›</span>
-        <span className="text-[#C7E36B]">{workshop.title}</span>
+      {/* TOP BAR — logo + breadcrumb */}
+      <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center gap-4">
+        <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
+        <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
+          <Link to="/" className="hover:text-white transition-colors">Home</Link>
+          <span>›</span>
+          <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+          <span>›</span>
+          <span className="text-[#C7E36B]">{workshop.title}</span>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6" ref={heroRef}>

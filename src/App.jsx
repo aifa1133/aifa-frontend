@@ -139,6 +139,7 @@ const FULLSCREEN_PATTERNS = [
   /^\/courses\/.+\/setup$/,
   /^\/influencer(\/.*)?$/,
   /^\/admin(\/.*)?$/,
+  /^\/workshops\/[^/]+$/,
   /^\/dashboard(\/.*)?$/,
 ];
 

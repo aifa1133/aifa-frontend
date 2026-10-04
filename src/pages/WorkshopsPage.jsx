@@ -114,7 +114,7 @@ export default function WorkshopsPage() {
 
   const handleReserve = (workshop) => {
     if (!workshop._id) return;
-    navigate(`/workshops/${workshop._id}/pay`, { state: { workshopData: workshop } });
+    navigate(`/workshops/${workshop.slug || workshop._id}/pay`, { state: { workshopData: workshop } });
   };
 
   return (
@@ -183,7 +183,7 @@ export default function WorkshopsPage() {
                     "border-transparent hover:border-[#C7E36B]/40 hover:shadow-[0_8px_32px_rgba(199,227,107,0.12)]"} hover:-translate-y-1`}>
                   {/* TOP SECTION */}
                   <div className="flex flex-col md:flex-row gap-3 w-full cursor-pointer p-3"
-                    onClick={() => { if (!isMock && item._id) navigate(`/workshops/${item._id}`); }}>
+                    onClick={() => { if (!isMock && item._id) navigate(`/workshops/${item.slug || item._id}`); }}>
                     {/* IMAGE — fills full height, badge overlaid on top-left */}
                     <div className="relative w-full md:w-[240px] min-h-[180px] md:self-stretch shrink-0 bg-[#1a1e1f] overflow-hidden rounded-tl-[18px]">
                       {item.sessionCode && (
@@ -292,7 +292,7 @@ export default function WorkshopsPage() {
                   ) : (
                     <div className="flex flex-col">
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/workshops/${item._id}`); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/workshops/${item.slug || item._id}`); }}
                         className="relative flex justify-center items-center overflow-hidden px-[30px] py-[12px] w-full font-[Montserrat] text-[18px] leading-[28px] font-bold bg-[#F2FEB1] text-[#0F1112] hover:bg-[#0F1112] hover:text-[#F2FEB1] hover:tracking-[0.18em] hover:shadow-[inset_0_0_0_2px_#F2FEB1] transition-all duration-300 active:scale-[0.98]"
                       >
                         VIEW DETAILS
