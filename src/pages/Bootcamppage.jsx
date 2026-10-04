@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Hero from "./Bootcamp/Hero";
 import VideoSection from "./Bootcamp/Videosection";
 import LearnSection from "./Bootcamp/LearnSection";
@@ -17,6 +17,9 @@ export default function Bootcamppage() {
   const [showBar, setShowBar] = useState(true);
   const [bootcamp, setBootcamp] = useState(null);
   const navigate = useNavigate();
+  const token = localStorage.getItem("aifa_token");
+  const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+  const userInitial = storedUser?.name?.[0]?.toUpperCase() || "";
 
   useEffect(() => {
     fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
@@ -35,6 +38,20 @@ export default function Bootcamppage() {
 
   return (
     <div className="bg-[#0B0F19] flex flex-col pb-24 md:pb-0">
+      {/* Minimal top bar — logo left, profile right */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0B0F19]/90 backdrop-blur border-b border-white/5 px-5 py-3 flex items-center justify-between">
+        <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
+        {token ? (
+          <button onClick={() => navigate("/dashboard")} className="w-8 h-8 rounded-full bg-[#C7E36B] flex items-center justify-center text-black text-sm font-black" title="Dashboard">
+            {userInitial}
+          </button>
+        ) : (
+          <button onClick={() => navigate("/login")} className="text-xs font-bold text-gray-300 hover:text-white border border-white/20 px-4 py-1.5 rounded-full transition-colors">
+            Log in
+          </button>
+        )}
+      </header>
+      <div className="h-14" />{/* spacer for fixed header */}
       <Hero />
       <VideoSection />
       <LearnSection />

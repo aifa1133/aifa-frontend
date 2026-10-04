@@ -131,7 +131,7 @@ import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
 import InfluencerReferrals from "./pages/influencer/InfluencerReferrals";
 import InfluencerPayouts from "./pages/influencer/InfluencerPayouts";
 
-const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll", "/influencer"];
+const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll", "/bootcamp", "/influencer"];
 const DASHBOARD_SECTIONS = ["dashboard","bootcamp","workshops","video-courses","certificates","jobs","resources","community","hire-talent","profile","settings","billing"];
 const FULLSCREEN_PATTERNS = [
   /^\/courses\/.+\/watch$/,

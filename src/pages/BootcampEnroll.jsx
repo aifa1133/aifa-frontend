@@ -73,6 +73,8 @@ export default function BootcampEnroll() {
   const [confirmPw, setConfirmPw]         = useState("");
   const [showPw, setShowPw]               = useState(false);
   const [showCPw, setShowCPw]             = useState(false);
+  const [pwError, setPwError]             = useState("");
+  const [pwSaving, setPwSaving]           = useState(false);
   const [bootcamp, setBootcamp]           = useState(null);
   const [authToken, setAuthToken]         = useState(() => localStorage.getItem("aifa_token") || "");
   const [tempPw, setTempPw]               = useState("");
@@ -245,27 +247,46 @@ export default function BootcampEnroll() {
   };
 
   const handleCreateAccount = async () => {
+    setPwError("");
+    if (!password) { setPwError("Please enter a password."); return; }
+    if (password.length < 6) { setPwError("Password must be at least 6 characters."); return; }
+    if (password !== confirmPw) { setPwError("Passwords do not match."); return; }
+
+    setPwSaving(true);
     const token = authToken || localStorage.getItem("aifa_token");
     try {
-      if (token && tempPw && password) {
-        await fetch("/api/users/me/password", {
+      if (token && tempPw) {
+        const res = await fetch("/api/users/me/password", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
           body: JSON.stringify({ currentPassword: tempPw, newPassword: password }),
         });
-      } else if (!token) {
+        const data = await res.json();
+        if (!res.ok) { setPwError(data.message || "Failed to set password. Please try again."); setPwSaving(false); return; }
+      } else if (token && !tempPw) {
+        // Already logged-in user — use set-password endpoint (no current password needed for guest accounts)
+        const res = await fetch("/api/auth/set-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setPwError(data.message || "Failed to set password. Please try again."); setPwSaving(false); return; }
+      } else {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password }),
         });
         const data = await res.json();
+        if (!res.ok) { setPwError(data.message || "Account creation failed."); setPwSaving(false); return; }
         if (data.token) {
           localStorage.setItem("aifa_token", data.token);
           localStorage.setItem("aifa_user", JSON.stringify({ _id: data._id, name: data.name, role: data.role || "student" }));
         }
       }
-    } catch { /* ignore */ }
+    } catch { setPwError("Network error. Please try again."); setPwSaving(false); return; }
+    setPwSaving(false);
     navigate(backPage ? `/dashboard/${backPage}` : backTo);
   };
   /* ── Show loading until enrollment check completes — prevents Step 1 flash ── */
@@ -516,8 +537,9 @@ export default function BootcampEnroll() {
               </div>
             ))}
 
-            <button onClick={handleCreateAccount} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all">
-              ACCESS MY BOOTCAMP
+            {pwError && <p className="text-red-400 text-sm">{pwError}</p>}
+            <button onClick={handleCreateAccount} disabled={pwSaving} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-60">
+              {pwSaving ? "SAVING..." : "ACCESS MY BOOTCAMP"}
             </button>
           </div>
 
