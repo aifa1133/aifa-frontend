@@ -52,8 +52,10 @@ export default function PaymentSuccess() {
         body: JSON.stringify({ password }),
       });
       let data = {};
-      try { data = await res.json(); } catch {}
-      if (!res.ok) { setPwError(data.message || "Failed to set password. Please try again."); return; }
+      let rawText = "";
+      try { rawText = await res.text(); data = JSON.parse(rawText); } catch {}
+      console.error("[set-password]", res.status, rawText);
+      if (!res.ok) { setPwError(data.message || `Error ${res.status}: ${rawText.slice(0, 120)}`); return; }
 
       setPwDone(true);
       setTimeout(() => navigate("/login", { state: { prefillEmail: userEmail } }), 2000);
