@@ -81,7 +81,7 @@ export default function WorkshopEnroll() {
     if (token) {
       fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) setForm(f => ({ ...f, name: d.name || f.name, email: d.email || f.email, phone: d.phone || f.phone })); })
+        .then(d => { if (d) setForm(f => ({ ...f, name: d.name || f.name, email: d.email || f.email, phone: f.phone || d.phone })); })
         .catch(() => {});
     }
   }, [id]);
