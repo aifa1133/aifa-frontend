@@ -58,14 +58,11 @@ const NAV_ITEMS = [
   { id: "service-request",    label: "Service Request",   icon: "service"   },
   { id: "sales-consultation", label: "Sales Consultation",icon: "sales"     },
   { id: "hire-talent",        label: "Hire Requests",     icon: "hire"      },
-  { id: "prompt-library",    label: "Prompt Library",    icon: "resources" },
 ];
 const MGMT_ITEMS = [
   { id: "users",       label: "Users",       icon: "users"      },
   { id: "membership",  label: "Membership",  icon: "membership" },
   { id: "enrolments",  label: "Enrolments",  icon: "enrolments" },
-  { id: "analytics",   label: "Analytics",   icon: "analytics"  },
-  { id: "payments",    label: "Payments",    icon: "billing"    },
   { id: "influencers", label: "Influencers", icon: "community"  },
 ];
 
