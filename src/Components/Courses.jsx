@@ -479,8 +479,8 @@ export default function Courses() {
                 duration-300
               "
             >
-              {/* IMAGE */}
-              <div className="relative">
+              {/* IMAGE — clickable to detail page */}
+              <div className="relative cursor-pointer" onClick={() => course._id && navigate(`/courses/${course._id}`)}>
                 <img
                   src={course.image}
                   alt={course.title}
@@ -517,7 +517,10 @@ export default function Courses() {
 
               {/* CONTENT */}
               <div className="p-[16px] sm:p-[24px] flex flex-col gap-[8px]">
-                <h3 className="text-[#F0F0F0] font-bold text-[14px] sm:text-[16px]">
+                <h3
+                  onClick={() => course._id && navigate(`/courses/${course._id}`)}
+                  className="text-[#F0F0F0] font-bold text-[14px] sm:text-[16px] cursor-pointer hover:text-[#D0E46A] transition-colors"
+                >
                   {course.title}
                 </h3>
 
@@ -528,35 +531,24 @@ export default function Courses() {
                   <span className="line-through text-gray-400">₹999</span>
                 </div>
 
-                {/* BUY BUTTON */}
-                <button
-                  onClick={() => navigate(
-                    course._id ? `/courses/${course._id}/pay` : `/courses/static/pay`,
-                    { state: { courseData: { title: course.title, image: course.image, duration: course.duration, price: course.price || 399, originalPrice: course.originalPrice || 999 } } }
-                  )}
-                  className="
-                    mt-[8px]
-                    w-full
-
-                    bg-white
-                    text-black
-
-                    py-[10px]
-
-                    rounded-[6px]
-
-                    font-semibold
-
-                    cursor-pointer
-
-                    hover:bg-[#D0E46A]
-
-                    transition-all
-                    duration-300
-                  "
-                >
-                  BUY ₹399
-                </button>
+                {/* BUTTONS */}
+                <div className="mt-[8px] flex flex-col gap-[6px]">
+                  <button
+                    onClick={() => course._id && navigate(`/courses/${course._id}`)}
+                    className="w-full border border-white/20 text-white py-[8px] rounded-[6px] font-semibold cursor-pointer hover:bg-white/5 transition-all duration-300 text-[13px]"
+                  >
+                    View Details
+                  </button>
+                  <button
+                    onClick={() => navigate(
+                      course._id ? `/courses/${course._id}/pay` : `/courses`,
+                      { state: { courseData: { title: course.title, image: course.image, duration: course.duration, price: course.price || 399, originalPrice: course.originalPrice || 999 } } }
+                    )}
+                    className="w-full bg-white text-black py-[10px] rounded-[6px] font-semibold cursor-pointer hover:bg-[#D0E46A] transition-all duration-300"
+                  >
+                    BUY ₹{course.price || 399}
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
