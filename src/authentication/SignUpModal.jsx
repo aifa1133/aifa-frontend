@@ -108,7 +108,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
       if (!res.ok) setError(data.message || "Signup failed.");
       else {
         localStorage.setItem("aifa_token", data.token);
-        localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role }));
+        localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role, emailVerified: true }));
         onClose();
         window.location.reload();
       }
