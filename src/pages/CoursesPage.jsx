@@ -219,8 +219,8 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue, onCertificate 
   return (
     <div className="flex flex-col items-start justify-between w-full max-w-[386px] min-h-[477px] rounded-[8px] border border-[#414243] bg-[#0F1112] overflow-hidden transition-all duration-300 hover:border-[#5A5B5C] hover:translate-y-[-4px] max-sm:max-w-full">
 
-      {/* IMAGE */}
-      <div className="relative w-full">
+      {/* IMAGE — clickable to detail */}
+      <div className="relative w-full cursor-pointer" onClick={onContinue}>
         <img
           src={course.image}
           alt={course.title}
@@ -241,7 +241,7 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue, onCertificate 
 
       {/* CONTENT */}
       <div className="flex flex-col items-start gap-[16px] w-full p-[24px] flex-1 max-sm:p-[18px]">
-        <h3 className="text-[#F0F0F0] font-[Montserrat] text-[18px] font-semibold leading-[28px] max-sm:text-[16px] max-sm:leading-[24px]">
+        <h3 onClick={onContinue} className="text-[#F0F0F0] font-[Montserrat] text-[18px] font-semibold leading-[28px] max-sm:text-[16px] max-sm:leading-[24px] cursor-pointer hover:text-[#C7E36B] transition-colors">
           {course.title}
         </h3>
         <p className="self-stretch max-h-[48px] text-[#767779] font-[Montserrat] text-[16px] font-normal leading-[24px] overflow-hidden">
@@ -280,11 +280,16 @@ function CourseCard({ course, tab, isEnrolled, onBuy, onContinue, onCertificate 
             </button>
           )}
 
-          {/* All Courses — not enrolled: BUY */}
+          {/* All Courses — not enrolled: View Details + BUY */}
           {tab === "all" && !isEnrolled && (
-            <button onClick={onBuy} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] bg-[#F0F0F0] text-black text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white">
-              BUY ₹{course.price}
-            </button>
+            <>
+              <button onClick={onContinue} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] border border-[#414243] text-white text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white/5">
+                View Details
+              </button>
+              <button onClick={onBuy} className="flex justify-center items-center gap-2 self-stretch px-4 py-2 rounded-[4px] bg-[#F0F0F0] text-black text-[14px] font-semibold leading-[24px] transition-all duration-300 hover:bg-white">
+                BUY ₹{course.price}
+              </button>
+            </>
           )}
 
           {/* My Courses: Continue Watching */}
