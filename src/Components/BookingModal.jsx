@@ -258,7 +258,33 @@ export default function BookingModal({ onClose }) {
                       ← Change time
                     </button>
                   </div>
-                ) : (
+                ) : (() => {
+                  const allPast = TIME_SLOTS.every(t => isSlotPast(year, month, selDate, t));
+                  if (allPast) {
+                    const goNextDay = () => {
+                      let nd = selDate + 1, nm = month, ny = year;
+                      const dim = getDaysInMonth(ny, nm);
+                      if (nd > dim) { nd = 1; nm++; if (nm > 11) { nm = 0; ny++; } setYear(ny); setMonth(nm); }
+                      else setMonth(nm);
+                      setDate(nd); setTime(null); setConfirming(false);
+                    };
+                    return (
+                      <div className="flex flex-col items-center gap-3 py-4 text-center">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                        <p className="text-xs font-bold text-gray-500">No slots available for today</p>
+                        <p className="text-[11px] text-gray-400">All time slots have passed.</p>
+                        <button
+                          onClick={goNextDay}
+                          className="mt-1 w-full py-2.5 px-3 rounded-lg text-sm font-bold border-2 border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 transition-all"
+                        >
+                          Try next day →
+                        </button>
+                      </div>
+                    );
+                  }
+                  return (
                   <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
                     {TIME_SLOTS.map(t => {
                       const past = isSlotPast(year, month, selDate, t);
@@ -278,7 +304,8 @@ export default function BookingModal({ onClose }) {
                       );
                     })}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           )}

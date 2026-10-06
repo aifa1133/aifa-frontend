@@ -66,20 +66,22 @@ export default function CoursePlayer() {
   const getVimeoEmbed = (lesson) => {
     const raw = lesson.videoUrl?.trim() || "";
 
+    const params = "autoplay=0&color=C7E36B&title=0&byline=0&portrait=0&dnt=1";
+
     // Already a proper player embed URL
     if (raw.includes("player.vimeo.com/video/")) {
-      return raw.includes("?") ? raw : `${raw}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
+      return raw.includes("?") ? raw : `${raw}?${params}`;
     }
 
     // vimeoId field
     if (lesson.vimeoId) {
-      return `https://player.vimeo.com/video/${lesson.vimeoId}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
+      return `https://player.vimeo.com/video/${lesson.vimeoId}?${params}`;
     }
 
     // Standard vimeo.com/ID or vimeo.com/ID/hash
     if (raw.includes("vimeo.com")) {
       const match = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-      if (match) return `https://player.vimeo.com/video/${match[1]}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
+      if (match) return `https://player.vimeo.com/video/${match[1]}?${params}`;
     }
 
     // YouTube embed URL
@@ -189,8 +191,10 @@ export default function CoursePlayer() {
                   <iframe
                     src={getVimeoEmbed(activeLesson)}
                     className="w-full h-full"
-                    allow="autoplay; fullscreen; picture-in-picture"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
                     allowFullScreen
+                    frameBorder="0"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     title={activeLesson.title}
                   />
                 ) : (
