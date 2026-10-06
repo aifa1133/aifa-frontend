@@ -66,7 +66,7 @@ export default function CoursePlayer() {
   const getVimeoEmbed = (lesson) => {
     const raw = lesson.videoUrl?.trim() || "";
 
-    const params = "autoplay=0&color=C7E36B&title=0&byline=0&portrait=0&dnt=1";
+    const params = "autoplay=0&color=C7E36B&title=0&byline=0&portrait=0&logo=0";
 
     // Already a proper player embed URL
     if (raw.includes("player.vimeo.com/video/")) {
@@ -191,7 +191,7 @@ export default function CoursePlayer() {
                   <iframe
                     src={getVimeoEmbed(activeLesson)}
                     className="w-full h-full"
-                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; storage-access"
                     allowFullScreen
                     frameBorder="0"
                     referrerPolicy="strict-origin-when-cross-origin"

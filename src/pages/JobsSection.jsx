@@ -54,11 +54,18 @@ function JobCard({ job, timeAgo, onSelect, locked, onLockedClick }) {
   const inner = (
     <>
       <div className="flex items-start justify-between mb-3">
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
-          {job.tag || job.category}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
+            {job.tag || job.category}
+          </span>
+          {job.source && (
+            <span className="text-[9px] border border-blue-400/40 text-blue-300 px-2 py-0.5 rounded font-semibold uppercase tracking-wide">
+              {job.source}
+            </span>
+          )}
+        </div>
         {job.type && (
-          <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase">
+          <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase shrink-0">
             {job.type}
           </span>
         )}
@@ -96,16 +103,24 @@ function JobCard({ job, timeAgo, onSelect, locked, onLockedClick }) {
   return (
     <div className="bg-[#111] border border-white/10 rounded-2xl p-6 hover:border-[#C7E36B]/40 transition-all flex flex-col">
       <div className="flex items-start justify-between mb-3">
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
-          {job.tag || job.category}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${TAG_COLORS[job.tag] || "bg-white/10 text-white"}`}>
+            {job.tag || job.category}
+          </span>
+          {job.source && (
+            <span className="text-[9px] border border-blue-400/40 text-blue-300 px-2 py-0.5 rounded font-semibold uppercase tracking-wide">
+              {job.source}
+            </span>
+          )}
+        </div>
         {job.type && (
-          <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase">
+          <span className="text-[10px] border border-white/20 text-gray-400 px-2 py-0.5 rounded font-semibold uppercase shrink-0">
             {job.type}
           </span>
         )}
       </div>
       <h3 className="text-base font-semibold text-white mb-2 leading-tight">{job.title}</h3>
+      {job.company && <p className="text-xs text-gray-500 mb-1">{job.company}{job.location ? ` · ${job.location}` : ""}</p>}
       <p className="text-gray-400 text-sm leading-relaxed flex-1 mb-4">{job.description || job.desc}</p>
       <button onClick={() => onSelect(job)} className="text-[#C7E36B] text-sm font-medium hover:underline text-left mb-4">
         View Details →
@@ -139,10 +154,17 @@ export default function JobsSection() {
   ];
 
   useEffect(() => {
-    fetch("/api/jobs")
-      .then(r => r.json())
-      .then(d => { setAllJobs(Array.isArray(d) && d.length > 0 ? d : STATIC_JOBS); setLoading(false); })
-      .catch(() => { setAllJobs(STATIC_JOBS); setLoading(false); });
+    Promise.all([
+      fetch("/api/jobs").then(r => r.json()).catch(() => []),
+      fetch("/api/jobs/external").then(r => r.json()).catch(() => []),
+    ]).then(([internal, external]) => {
+      const combined = [
+        ...(Array.isArray(internal) ? internal : []),
+        ...(Array.isArray(external) ? external : []),
+      ];
+      setAllJobs(combined.length > 0 ? combined : STATIC_JOBS);
+      setLoading(false);
+    });
   }, []);
 
   const toggle = (setter) => (val) => setter(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
@@ -254,7 +276,10 @@ export default function JobsSection() {
                 </span>
               )}
             </div>
-            <h2 className="text-lg font-bold text-white mb-3">{selectedJob.title}</h2>
+            <h2 className="text-lg font-bold text-white mb-1">{selectedJob.title}</h2>
+            {selectedJob.company && (
+              <p className="text-sm text-gray-400 mb-3">{selectedJob.company}{selectedJob.location ? ` · ${selectedJob.location}` : ""}</p>
+            )}
             <p className="text-gray-300 text-sm leading-relaxed mb-5">{selectedJob.description || selectedJob.desc}</p>
             <div className="flex flex-wrap gap-2 mb-5">
               {selectedJob.budget && <span className="border border-white/20 text-white text-xs px-3 py-1 rounded-md">{selectedJob.budget}</span>}
