@@ -253,10 +253,10 @@ function AppShell() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/login" element={<UserLogin />} />
-          <Route path="/courses/:id" element={<CourseDetail />} />
-          <Route path="/courses/:id/watch" element={<CoursePlayer />} />
-          <Route path="/courses/:id/pay"   element={<CourseEnroll />} />
-          <Route path="/courses/:id/setup" element={<CourseSetup />} />
+          <Route path="/courses/:slug" element={<CourseDetail />} />
+          <Route path="/courses/:slug/watch" element={<CoursePlayer />} />
+          <Route path="/courses/:slug/pay"   element={<CourseEnroll />} />
+          <Route path="/courses/:slug/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-conditions" element={<TermsAndConditions />} />

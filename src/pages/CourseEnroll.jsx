@@ -14,7 +14,7 @@ const loadRazorpay = () =>
   });
 
 export default function CourseEnroll() {
-  const { id } = useParams();
+  const { slug: id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,8 +41,8 @@ export default function CourseEnroll() {
 
   /* ── Fetch course ── */
   useEffect(() => {
-    // Validate the URL id first — fallback/static IDs must never reach the API
-    if (!id || id === "static" || id.startsWith("c") || id.startsWith("m") || id.length < 20) {
+    // Block placeholder/static slugs
+    if (!id || id === "static") {
       setNotFound(true); setLoading(false); return;
     }
 
@@ -64,7 +64,7 @@ export default function CourseEnroll() {
       fetch("/api/courses/enrolled", { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then(enrolled => {
-          if (Array.isArray(enrolled) && enrolled.some(c => String(c._id) === id)) {
+          if (Array.isArray(enrolled) && enrolled.some(c => c.slug === id || String(c._id) === id)) {
             navigate(`/courses/${id}/watch`, { replace: true });
           }
         })

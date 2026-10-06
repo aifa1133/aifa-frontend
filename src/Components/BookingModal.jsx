@@ -4,7 +4,23 @@ import { useState, useEffect, useCallback } from "react";
 const MONTHS    = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const SHORT_MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS      = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
-const TIME_SLOTS = ["09:00am","10:00am","11:00am","12:00pm","01:00pm","02:00pm","03:00pm","04:00pm","05:00pm","06:00pm"];
+const TIME_SLOTS = ["10:00am","11:00am","12:00pm","01:00pm","02:00pm","03:00pm","04:00pm","05:00pm","06:00pm"];
+
+// Convert slot string like "02:00pm" to 24h minutes for comparison
+function slotToMinutes(slot) {
+  const [time, meridiem] = [slot.slice(0,-2), slot.slice(-2)];
+  let [h, m] = time.split(":").map(Number);
+  if (meridiem === "pm" && h !== 12) h += 12;
+  if (meridiem === "am" && h === 12) h = 0;
+  return h * 60 + m;
+}
+
+function isSlotPast(y, m, d, slot) {
+  const now = new Date();
+  const isToday = d === now.getDate() && m === now.getMonth() && y === now.getFullYear();
+  if (!isToday) return false;
+  return slotToMinutes(slot) <= now.getHours() * 60 + now.getMinutes();
+}
 
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDay(y, m)    { return new Date(y, m, 1).getDay(); }
@@ -122,10 +138,10 @@ export default function BookingModal({ onClose }) {
     <>
       {confetti && <Confetti />}
 
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4" onClick={onBd}>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-start justify-center p-4 pt-[80px] overflow-y-auto" onClick={onBd}>
         <div
-          className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col sm:flex-row w-full"
-          style={{ maxWidth: showTimeSide ? "min(900px,96vw)" : "min(760px,96vw)", maxHeight:"92vh", transition:"max-width 0.3s ease" }}
+          className="relative bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col sm:flex-row w-full my-auto"
+          style={{ maxWidth: showTimeSide ? "min(900px,96vw)" : "min(760px,96vw)", transition:"max-width 0.3s ease" }}
         >
           {/* ── LEFT INFO PANEL (hidden on mobile) ── */}
           <div className="hidden sm:flex w-[220px] shrink-0 border-r border-gray-200 flex-col p-6 gap-3" style={{overflowY:"auto"}}>
@@ -244,15 +260,23 @@ export default function BookingModal({ onClose }) {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
-                    {TIME_SLOTS.map(t => (
-                      <button
-                        key={t}
-                        onClick={() => pickTime(t)}
-                        className="w-full py-2.5 px-3 rounded-lg text-sm font-bold border-2 border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 bg-white transition-all text-center"
-                      >
-                        {t}
-                      </button>
-                    ))}
+                    {TIME_SLOTS.map(t => {
+                      const past = isSlotPast(year, month, selDate, t);
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => !past && pickTime(t)}
+                          disabled={past}
+                          className={`w-full py-2.5 px-3 rounded-lg text-sm font-bold border-2 transition-all text-center ${
+                            past
+                              ? "border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed"
+                              : "border-[#4f7df3] text-[#4f7df3] hover:bg-[#4f7df3]/5 bg-white"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -63,7 +63,7 @@ export default function CoursesPage() {
   });
 
   const handleBuy = (course) => {
-    navigate(`/courses/${course._id}/pay`);
+    navigate(`/courses/${course.slug || course._id}/pay`);
   };
 
   const displayCourses =
@@ -198,7 +198,7 @@ export default function CoursesPage() {
                     tab={activeTab}
                     isEnrolled={enrolledIds.has(String(course._id))}
                     onBuy={() => handleBuy(course)}
-                    onContinue={() => navigate(`/courses/${course._id}`)}
+                    onContinue={() => navigate(`/courses/${course.slug || course._id}`)}
                     onCertificate={() => navigate("/dashboard/certificates")}
                   />
                 ))}

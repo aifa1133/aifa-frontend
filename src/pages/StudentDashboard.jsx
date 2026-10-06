@@ -464,7 +464,7 @@ function NotificationDropdown({ notifs, onClose, onMarkRead, onViewAll }) {
         </div>
       </div>
       {/* List */}
-      <div className="divide-y divide-white/5 max-h-[420px] overflow-y-auto">
+      <div className="divide-y divide-white/5 max-h-[420px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {list.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <svg className="w-10 h-10 text-gray-700 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -739,7 +739,7 @@ function DashboardHome({ profile, token, onNavigate }) {
                       <span className="text-[10px] text-gray-400">{pct}% completed</span>
                       <span className="text-[10px] text-gray-400">{done}/{lessons} lessons</span>
                     </div>
-                    <button onClick={() => navigate(`/courses/${c._id}/watch`)}
+                    <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)}
                       className="w-full bg-[#C7E36B] hover:bg-[#d4f070] text-black text-xs font-bold py-2 rounded-lg transition-all">
                       Continue
                     </button>
@@ -1754,8 +1754,8 @@ function VideoCoursesSection({ profile, onNavigate }) {
                 </div>
                 <button
                   onClick={() => {
-                    const realId = detailCourse._id;
-                    if (!realId || String(realId).length < 20) { alert("Course details are still loading. Please wait a moment and try again."); return; }
+                    const realId = detailCourse.slug || detailCourse._id;
+                    if (!realId) { alert("Course details are still loading. Please wait a moment and try again."); return; }
                     setDetailCourse(null);
                     navigate(`/courses/${realId}/pay`, { state: { courseData: detailCourse } });
                   }}
@@ -1814,7 +1814,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c, i) => (
             <div key={c._id || i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all">
-              <div className="relative cursor-pointer" onClick={() => navigate(`/courses/${c._id}`)}>
+              <div className="relative cursor-pointer" onClick={() => navigate(`/courses/${c.slug || c._id}`)}>
                 <img src={c.image} alt={c.title} className="w-full h-[160px] object-cover" />
                 <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">{c.duration}</span>
                 {c.status === "completed" && (
@@ -1834,12 +1834,12 @@ function VideoCoursesSection({ profile, onNavigate }) {
                 {c.status === "completed" ? (
                   <div className="flex gap-2">
                     <button onClick={() => onNavigate?.("certificates")} className="flex-1 text-xs border border-[#C7E36B] text-[#C7E36B] py-1.5 rounded-lg hover:bg-[#C7E36B]/10 transition-all">View Certificate</button>
-                    <button onClick={() => navigate(`/courses/${c._id}/watch`)} className="flex-1 text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Again</button>
+                    <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="flex-1 text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Again</button>
                   </div>
                 ) : c.progress !== undefined ? (
-                  <button onClick={() => navigate(`/courses/${c._id}/watch`)} className="w-full text-xs bg-[#7C3AED] hover:bg-purple-700 text-white py-1.5 rounded-lg transition-all font-semibold">Continue Learning</button>
+                  <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="w-full text-xs bg-[#7C3AED] hover:bg-purple-700 text-white py-1.5 rounded-lg transition-all font-semibold">Continue Learning</button>
                 ) : (
-                  <button onClick={() => navigate(`/courses/${c._id}`)} className="w-full text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Details</button>
+                  <button onClick={() => navigate(`/courses/${c.slug || c._id}`)} className="w-full text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Details</button>
                 )}
               </div>
             </div>

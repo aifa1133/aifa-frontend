@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function CourseSetup() {
-  const { id } = useParams();
+  const { slug: id } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [password, setPassword] = useState("");

@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                     <p className="text-sm font-bold text-white">Notifications</p>
                     <button onClick={()=>setShowNotifPanel(false)} className="text-gray-400 hover:text-white text-lg leading-none">✕</button>
                   </div>
-                  <div className="max-h-[380px] overflow-y-auto divide-y divide-white/5">
+                  <div className="max-h-[380px] overflow-y-auto divide-y divide-white/5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {adminNotifs.length === 0
                       ? <p className="text-gray-500 text-xs text-center py-8">No notifications yet</p>
                       : adminNotifs.map((n,i) => (
@@ -218,7 +218,7 @@ export default function AdminDashboard() {
                     }
                   </div>
                   <div className="px-4 py-2 border-t border-white/10">
-                    <button onClick={()=>{ setShowNotifPanel(false); setPage("platform-settings"); }} className="text-xs text-[#C7E36B] hover:underline">Manage Notifications →</button>
+                    <button onClick={()=>{ setShowNotifPanel(false); }} className="text-xs text-[#C7E36B] hover:underline">Close</button>
                   </div>
                 </div>
               )}
@@ -241,7 +241,6 @@ export default function AdminDashboard() {
                   </div>
                   <div className="py-1">
                     <button onClick={()=>{ setShowProfileMenu(false); setPage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
-                    <button onClick={()=>{ setShowProfileMenu(false); setPage("platform-settings"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="settings" size={13}/>Settings</button>
                     <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
                   </div>
                 </div>
@@ -270,7 +269,6 @@ export default function AdminDashboard() {
           {activePage === "influencers"        && <AdminInfluencers token={token} />}
           {activePage === "prompt-library"     && <PromptsAdmin token={token} />}
           {activePage === "analytics"          && <AnalyticsAdmin token={token} />}
-          {activePage === "platform-settings"  && <PlatformSettings token={token} />}
         </main>
       </div>
     </div>
@@ -1998,7 +1996,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
   };
   const [modules, setModules] = useState(() => groupLessons(course.lessons));
   const [addLessonModal, setAddLessonModal] = useState(null); // { moduleIdx }
-  const [newLesson, setNewLesson] = useState({ title: "", videoUrl: "", duration: "", isFree: false });
+  const [newLesson, setNewLesson] = useState({ title: "", videoUrl: "", thumbnail: "", duration: "", isFree: false });
   const [renamingMod, setRenamingMod] = useState(null); // index
 
   // Enrollments state
@@ -2017,7 +2015,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
   };
 
   const flattenModules = () => modules.flatMap((m, mi) =>
-    m.lessons.map((l, li) => ({ ...l, module: m.title, order: mi * 100 + li }))
+    m.lessons.map((l, li) => ({ ...l, thumbnail: l.thumbnail||"", module: m.title, order: mi * 100 + li }))
   );
 
   const saveAll = async () => {
@@ -2470,6 +2468,29 @@ function CourseEditor({ course, token, onBack, onSaved }) {
               </div>
               <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
               <div>
+                <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
+                {newLesson.thumbnail ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2" style={{aspectRatio:"16/9"}}>
+                    <img src={newLesson.thumbnail} alt="thumbnail" className="w-full h-full object-cover"/>
+                    <button onClick={()=>setNewLesson(l=>({...l,thumbnail:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
+                  </div>
+                ) : (
+                  <>
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
+                      <input type="file" accept="image/*" className="hidden" onChange={e=>{
+                        const file=e.target.files?.[0]; if(!file) return;
+                        const reader=new FileReader();
+                        reader.onload=ev=>setNewLesson(l=>({...l,thumbnail:ev.target.result}));
+                        reader.readAsDataURL(file); e.target.value="";
+                      }}/>
+                      <I name="upload" size={16} className="text-gray-500 mb-1"/>
+                      <p className="text-[10px] text-gray-400">Click to upload</p>
+                    </label>
+                    <input value={newLesson.thumbnail||""} onChange={e=>setNewLesson(l=>({...l,thumbnail:e.target.value}))} placeholder="or paste image URL..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                  </>
+                )}
+              </div>
+              <div>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Video URL (Vimeo or YouTube embed)</p>
                 <input value={newLesson.videoUrl||""} onChange={e=>setNewLesson(l=>({...l,videoUrl:e.target.value}))}
                   onBlur={async e => {
@@ -2536,7 +2557,7 @@ function VideoCoursesAdmin({ token }) {
   const [f, setF] = useState({ title:"", shortDesc:"", fullDesc:"", category:"AI & Machine Learning", level:"Beginner", language:"English", instructor:"", price:"", discPrice:"", accessType:"Lifetime", genCert:true, allowCoupons:false });
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
-  const [sections, setSections] = useState([{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", isFree:true }] }]);
+  const [sections, setSections] = useState([{ title:"Section 1: AI Fundamentals", lessons:[{ title:"Introduction to AI Cinema", duration:"09:45", type:"Video", desc:"", thumbnail:"", isFree:true }] }]);
   const [activeL, setActiveL] = useState({ s:0, l:0 });
   const [saving, setSaving]         = useState(false);
   const [editCourse, setEditCourse] = useState(null);
@@ -2555,6 +2576,7 @@ function VideoCoursesAdmin({ token }) {
     ...(scheduledAt && { scheduledAt }),
     lessons: sections.flatMap((s,si)=>s.lessons.map((l,li)=>({
       title:l.title, duration:l.duration, videoUrl:l.videoUrl||"",
+      thumbnail:l.thumbnail||"", description:l.desc||"",
       order:si*100+li, isFree:l.isFree||false, type:"Video"
     }))),
     isPublished,
@@ -2801,6 +2823,29 @@ function VideoCoursesAdmin({ token }) {
                       )}
                     </div>
                     <Fld label="Lesson Title" value={les.title} onChange={v=>updLesson("title",v)}/>
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
+                      {les.thumbnail ? (
+                        <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2" style={{aspectRatio:"16/9"}}>
+                          <img src={les.thumbnail} alt="thumbnail" className="w-full h-full object-cover"/>
+                          <button onClick={()=>updLesson("thumbnail","")} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
+                        </div>
+                      ) : (
+                        <>
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
+                            <input type="file" accept="image/*" className="hidden" onChange={e=>{
+                              const file=e.target.files?.[0]; if(!file) return;
+                              const reader=new FileReader();
+                              reader.onload=ev=>updLesson("thumbnail",ev.target.result);
+                              reader.readAsDataURL(file); e.target.value="";
+                            }}/>
+                            <I name="upload" size={16} className="text-gray-500 mb-1"/>
+                            <p className="text-[10px] text-gray-400">Click to upload</p>
+                          </label>
+                          <input value={les.thumbnail||""} onChange={e=>updLesson("thumbnail",e.target.value)} placeholder="or paste image URL..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                        </>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <Fld label="Duration (auto-filled)" value={les.duration} onChange={v=>updLesson("duration",v)} placeholder="e.g. 9:45"/>
                       <div>
@@ -2978,7 +3023,7 @@ function VideoCoursesAdmin({ token }) {
                   </button>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={()=>window.open(`/courses/${c._id}/watch`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
+                  <button onClick={()=>window.open(`/courses/${c.slug || c._id}`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
                   <button onClick={()=>{ setEditCourse(c); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
                   <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={11}/></button>
                 </div>
@@ -7507,8 +7552,8 @@ function ServiceRequestAdmin({ token }) {
 
         {/* Table */}
         <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-[1.6fr_1.2fr_1.8fr_0.9fr_1.1fr_1.1fr_1fr_90px] px-5 py-3.5 border-b border-white/10">
-            {["User","Request Type","Subject","Priority","Status","Assigned To","Created","Actions"].map(h => (
+          <div className="grid grid-cols-[1.6fr_1.2fr_0.9fr_1.1fr_90px] px-5 py-3.5 border-b border-white/10">
+            {["User","Request Type","Priority","Status","Actions"].map(h => (
               <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
             ))}
           </div>
@@ -7522,7 +7567,7 @@ function ServiceRequestAdmin({ token }) {
                 const pri  = getPriority(r);
                 const stat = getStatus(r);
                 return (
-                  <div key={r._id||i} className="grid grid-cols-[1.6fr_1.2fr_1.8fr_0.9fr_1.1fr_1.1fr_1fr_90px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+                  <div key={r._id||i} className="grid grid-cols-[1.6fr_1.2fr_0.9fr_1.1fr_90px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
                     {/* User */}
                     <div className="flex items-center gap-2.5">
                       {r.avatar || r.user?.avatar
@@ -7533,16 +7578,10 @@ function ServiceRequestAdmin({ token }) {
                     </div>
                     {/* Request Type */}
                     <span className="text-sm text-gray-300 truncate pr-2">{getRequestType(r)}</span>
-                    {/* Subject */}
-                    <span className="text-sm text-gray-300 line-clamp-2 pr-2">{getSubject(r)}</span>
                     {/* Priority */}
                     <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-md w-fit ${SR_PRIORITY_BADGE[pri]||"bg-white/10 text-gray-300"}`}>{pri}</span>
                     {/* Status */}
                     <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-md w-fit ${SR_STATUS_BADGE[stat]||"bg-white/10 text-gray-300"}`}>{stat}</span>
-                    {/* Assigned To */}
-                    <span className="text-sm text-gray-300 truncate">{getAssigned(r)}</span>
-                    {/* Created */}
-                    <span className="text-xs text-gray-400">{fmtCreated(r)}</span>
                     {/* Actions */}
                     <div className="flex items-center gap-1">
                       <button onClick={() => setSelectedReq(r)} className="border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">View</button>
@@ -7862,6 +7901,8 @@ function SalesConsultAdmin({ token }) {
   const [search, setSearch]           = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [priorityFilter, setPriorityFilter] = useState("All Priorities");
+  const [page, setPage]               = useState(1);
+  const PAGE_SIZE = 10;
 
   /* modals */
   const [viewLead, setViewLead]       = useState(null);   // details modal
@@ -7935,6 +7976,8 @@ function SalesConsultAdmin({ token }) {
     const matchP = priorityFilter === "All Priorities" || l.priority === priorityFilter;
     return matchQ && matchS && matchP;
   });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const initials = (name) => (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
@@ -7969,18 +8012,19 @@ function SalesConsultAdmin({ token }) {
       <div className="flex items-center gap-3 my-5">
         <div className="flex-1 relative">
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email or..."
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by name, email or..."
             className="w-full bg-[#111315] border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/40"/>
         </div>
         <div className="relative">
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
             className="appearance-none bg-[#111315] border border-white/10 rounded-xl pl-4 pr-9 py-3 text-sm text-gray-300 outline-none focus:border-[#C7E36B]/40">
             {["All Status","New","Contacted","Booked","Follow up","Converted","Lost"].map(s => <option key={s}>{s}</option>)}
           </select>
+
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div className="relative">
-          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+          <select value={priorityFilter} onChange={e => { setPriorityFilter(e.target.value); setPage(1); }}
             className="appearance-none bg-[#111315] border border-white/10 rounded-xl pl-4 pr-9 py-3 text-sm text-gray-300 outline-none focus:border-[#C7E36B]/40">
             {["All Priorities","High","Normal","Low"].map(p => <option key={p}>{p}</option>)}
           </select>
@@ -7991,8 +8035,8 @@ function SalesConsultAdmin({ token }) {
       {/* Table */}
       <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-[1.6fr_1.8fr_1.4fr_1fr_1fr_1.1fr_100px] px-5 py-3.5 border-b border-white/10">
-          {["LEAD","CONTACT","CONSULTATION TYPE","STATUS","PRIORITY","DATE","ACTIONS"].map(h => (
+        <div className="grid grid-cols-[40px_2fr_2fr_1.2fr_1.4fr_100px] px-5 py-3.5 border-b border-white/10">
+          {["#","LEAD","CONTACT","STATUS","DATE","ACTIONS"].map(h => (
             <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
           ))}
         </div>
@@ -8006,17 +8050,19 @@ function SalesConsultAdmin({ token }) {
           </div>
         ) : (
           <div className="divide-y divide-white/5">
-            {filtered.map((l, i) => (
-              <div key={l._id||i} className="grid grid-cols-[1.6fr_1.8fr_1.4fr_1fr_1fr_1.1fr_100px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+            {paginated.map((l, i) => (
+              <div key={l._id||i} className="grid grid-cols-[40px_2fr_2fr_1.2fr_1.4fr_100px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+                <span className="text-xs text-gray-500 font-semibold">{(page - 1) * PAGE_SIZE + i + 1}</span>
                 <span className="text-sm font-semibold text-white">{l.name}</span>
                 <div>
                   <p className="text-sm text-gray-300">{l.phone}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{l.email}</p>
                 </div>
-                <span className="text-sm text-gray-300">{l.consultType}</span>
                 <span className={`inline-flex items-center justify-center text-[11px] font-bold px-3 py-1 rounded-md w-fit ${SC_STATUS[l.status] || "bg-white/10 text-gray-300"}`}>{l.status}</span>
-                <span className={`inline-flex items-center justify-center text-[11px] font-bold px-3 py-1 rounded-md w-fit ${SC_PRIORITY[l.priority] || "bg-white/10 text-gray-300"}`}>{l.priority}</span>
-                <span className="text-sm text-gray-300">{l.date}</span>
+                <div>
+                  <p className="text-sm text-gray-300">{l.preferredDate || l.date || "—"}</p>
+                  {l.preferredTime && <p className="text-xs text-gray-500 mt-0.5">{l.preferredTime}</p>}
+                </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => setViewLead(l)} title="View" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-all">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -8033,6 +8079,42 @@ function SalesConsultAdmin({ token }) {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {!loading && filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-4 px-1">
+          <p className="text-xs text-gray-500">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                  p === page ? "bg-[#C7E36B] text-black" : "border border-white/10 text-gray-400 hover:bg-white/5"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── VIEW DETAILS MODAL ── */}
       {viewLead && (
@@ -8056,16 +8138,25 @@ function SalesConsultAdmin({ token }) {
             {/* Detail rows */}
             <div className="divide-y divide-white/5">
               {[
-                { label:"Consultation Type", value: viewLead.consultType },
-                { label:"Assigned To",       value: viewLead.assignedTo || "—" },
-                { label:"Date",              value: viewLead.date || "—" },
-                { label:"Note",              value: viewLead.note || "—" },
+                { label: "Date",    value: viewLead.preferredDate || viewLead.date || "—" },
+                { label: "Time",    value: viewLead.preferredTime || "—" },
+                { label: "Status",  value: viewLead.status || "—" },
+                { label: "Topic",   value: viewLead.topic || "—" },
               ].map(r => (
                 <div key={r.label} className="grid grid-cols-2 gap-2 px-5 py-3.5">
                   <span className="text-xs text-gray-500">{r.label}</span>
-                  <span className="text-xs font-semibold text-white">{r.value}</span>
+                  <span className="text-xs font-semibold text-white text-right">{r.value}</span>
                 </div>
               ))}
+              {viewLead.meetLink && (
+                <div className="px-5 py-3.5">
+                  <span className="text-xs text-gray-500 block mb-2">Zoom Link</span>
+                  <a href={viewLead.meetLink} target="_blank" rel="noopener noreferrer"
+                    className="inline-block bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-lg hover:bg-lime-300 transition-all">
+                    Join Meeting →
+                  </a>
+                </div>
+              )}
             </div>
             {/* Actions */}
             <div className="flex border-t border-white/10">
@@ -8134,7 +8225,7 @@ function SalesConsultAdmin({ token }) {
       {/* ── ADD NEW LEAD MODAL ── */}
       {showAdd && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setShowAdd(false)}>
-          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#111315] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="flex items-start justify-between px-6 py-5 border-b border-white/10">
               <div>
                 <h2 className="text-lg font-bold text-white">Add New Lead</h2>

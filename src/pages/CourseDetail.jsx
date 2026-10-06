@@ -1,15 +1,32 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
+const DEFAULT_FAQS = [
+  { q: "Who is this course for?", a: "This course is designed for beginners and intermediate learners who want to master the subject at their own pace. No prior experience is required." },
+  { q: "How long do I have access to the course?", a: "Once purchased, you have lifetime access to the course content including any future updates we add." },
+  { q: "Will I get a certificate?", a: "Yes! Upon completing the course, you will receive a digital certificate of completion that you can share on LinkedIn or add to your resume." },
+  { q: "Can I watch on mobile?", a: "Absolutely. The course is fully responsive and accessible on any device — desktop, tablet, or mobile." },
+  { q: "What if I am not satisfied?", a: "We offer a 7-day refund policy. If you are not satisfied within the first 7 days of purchase, contact us for a full refund." },
+];
+
+const YOU_GET = [
+  "Lifetime Course Access",
+  "HD Video Lessons",
+  "Digital Certificate",
+  "Step-by-step lessons",
+  "Downloadable resources",
+];
+
 export default function CourseDetail() {
-  const { id } = useParams();
+  const { slug: id } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
   const [enrollLoading, setEnrollLoading] = useState(false);
+  const [showEnrollments, setShowEnrollments] = useState(false);
 
   const token = localStorage.getItem("aifa_token");
   const userRaw = localStorage.getItem("aifa_user");
@@ -23,221 +40,392 @@ export default function CourseDetail() {
       .then(data => {
         if (data.message) { navigate("/courses"); return; }
         setCourse(data);
-        setIsEnrolled(Array.isArray(data.lessons) && data.lessons.length > 0);
+        setIsEnrolled(!!data.isEnrolled);
         setLoading(false);
       })
       .catch(() => navigate("/courses"));
   }, [id, token]);
 
   useEffect(() => {
-    if (activeTab !== "enrollments" || !isAdmin || !token) return;
+    if (!showEnrollments || !isAdmin || !token) return;
     setEnrollLoading(true);
     fetch(`/api/courses/${id}/enrollments`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => { setEnrollments(Array.isArray(data) ? data : []); setEnrollLoading(false); })
       .catch(() => setEnrollLoading(false));
-  }, [activeTab, id, isAdmin, token]);
+  }, [showEnrollments, id, isAdmin, token]);
 
   if (loading) return (
     <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center">
-      <p className="text-white">Loading...</p>
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-400 text-sm">Loading course...</p>
+      </div>
     </div>
   );
   if (!course) return null;
 
-  const tabs = [
-    { key: "overview", label: "Overview" },
-    { key: "curriculum", label: "Curriculum" },
-    ...(isAdmin ? [{ key: "enrollments", label: "Enrollments" }] : []),
-  ];
+  const lessons = Array.isArray(course.lessons) ? course.lessons : [];
+  const faqs = Array.isArray(course.faqs) && course.faqs.length > 0 ? course.faqs : DEFAULT_FAQS;
+  const youGet = Array.isArray(course.benefits) && course.benefits.length > 0 ? course.benefits : YOU_GET;
+  const discountPct = course.originalPrice && course.originalPrice > course.price
+    ? Math.round((1 - course.price / course.originalPrice) * 100)
+    : null;
+
+  const handlePurchase = () => {
+    if (isEnrolled) navigate(`/courses/${id}/watch`);
+    else if (token) navigate(`/courses/${id}/pay`);
+    else navigate("/login");
+  };
 
   return (
-    <div className="min-h-screen bg-[#0B0F10] text-white">
-      {/* BREADCRUMB */}
-      <div className="max-w-[1200px] mx-auto px-6 pt-6 pb-2">
+    <div className="min-h-screen bg-[#0B0F10] text-white font-[Montserrat]">
+
+      {/* ── BREADCRUMB ── */}
+      <div className="max-w-[1200px] mx-auto px-6 pt-6 pb-4">
         <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Link to="/" className="hover:text-white">Home</Link>
-          <span>›</span>
-          <Link to="/courses" className="hover:text-white">Video Courses</Link>
-          <span>›</span>
-          <span className="text-[#C7E36B]">{course.title}</span>
+          <Link to="/" className="hover:text-white transition-colors">Home</Link>
+          <span className="text-gray-600">›</span>
+          <Link to="/courses" className="hover:text-white transition-colors">Video Courses</Link>
+          <span className="text-gray-600">›</span>
+          <span className="text-[#C7E36B] truncate max-w-[300px]">{course.title}</span>
         </div>
       </div>
 
-      {/* HERO */}
-      <div className="relative w-full overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${course.image})`, filter: "brightness(0.2)" }}
-        />
-        <div className="relative max-w-[1200px] mx-auto px-6 py-10 flex flex-col md:flex-row gap-8 items-center">
-          <div className="w-full md:w-[300px] shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-            <img src={course.image} alt={course.title} className="w-full h-[200px] object-cover" />
+      {/* ── HERO ── */}
+      <section className="max-w-[1200px] mx-auto px-6 pb-10">
+        <div className="flex flex-col lg:flex-row gap-10 items-start">
+
+          {/* Thumbnail */}
+          <div className="relative w-full lg:w-[480px] shrink-0 rounded-2xl overflow-hidden shadow-2xl">
+            <img
+              src={course.image}
+              alt={course.title}
+              className="w-full h-[300px] lg:h-[340px] object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute top-4 left-4">
+              <span className="bg-[#C7E36B] text-black text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                INCLUDED IN ALL-ACCESS
+              </span>
+            </div>
+            {course.duration && (
+              <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
+                {course.duration}
+              </div>
+            )}
           </div>
-          <div className="flex-1">
-            <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest mb-2">{course.category || "Video Course"}</p>
-            <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">{course.title}</h1>
-            <p className="text-gray-300 text-sm mb-5 leading-relaxed line-clamp-3">{course.description}</p>
-            <div className="flex flex-wrap gap-3">
-              {isEnrolled ? (
-                <button
-                  onClick={() => navigate(`/courses/${id}/watch`)}
-                  className="px-6 py-3 bg-[#C7E36B] text-black font-bold rounded-lg text-sm hover:bg-lime-300 transition-all"
-                >
-                  Watch Now →
-                </button>
-              ) : (
-                <button
-                  onClick={() => token ? navigate(`/courses/${id}/pay`) : navigate("/login")}
-                  className="px-6 py-3 bg-[#C7E36B] text-black font-bold rounded-lg text-sm hover:bg-lime-300 transition-all"
-                >
-                  Purchase Now
-                </button>
+
+          {/* Course Info */}
+          <div className="flex-1 flex flex-col gap-5">
+            <div>
+              <p className="text-[#C7E36B] text-xs font-bold uppercase tracking-widest mb-2">
+                {course.category || "Video Course"}
+              </p>
+              <h1 className="text-3xl lg:text-4xl font-bold leading-tight mb-4">
+                {course.title}
+              </h1>
+              <p className="text-gray-300 text-[15px] leading-relaxed">
+                {course.description}
+              </p>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-center gap-3">
+              <span className="text-3xl font-bold text-white">₹{course.price}</span>
+              {course.originalPrice && course.originalPrice > course.price && (
+                <>
+                  <span className="text-lg text-gray-500 line-through">₹{course.originalPrice}</span>
+                  <span className="bg-[#C7E36B]/20 text-[#C7E36B] text-xs font-bold px-2.5 py-1 rounded-full">
+                    {discountPct}% OFF
+                  </span>
+                </>
               )}
+            </div>
+
+            {/* CTA Button */}
+            <button
+              onClick={handlePurchase}
+              className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#C7E36B] text-black font-bold text-base rounded-xl hover:bg-lime-300 transition-all duration-200 shadow-lg shadow-[#C7E36B]/20"
+            >
+              {isEnrolled ? "WATCH NOW →" : "PURCHASE NOW →"}
+            </button>
+
+            {/* Feature Pills */}
+            <div className="flex flex-wrap gap-3 pt-1">
+              <span className="flex items-center gap-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-full px-4 py-2">
+                <span className="text-[#C7E36B]">◷</span>
+                Learn On Your Own Schedule
+              </span>
+              {course.duration && (
+                <span className="flex items-center gap-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-full px-4 py-2">
+                  <span className="text-[#C7E36B]">▶</span>
+                  {course.duration} of content
+                </span>
+              )}
+              <span className="flex items-center gap-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-full px-4 py-2">
+                <span className="text-[#C7E36B]">✦</span>
+                {course.level || "Beginner"}-Friendly
+              </span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* TABS */}
-      <div className="border-b border-white/10 bg-[#0B0F10] sticky top-0 z-10">
-        <div className="max-w-[1200px] mx-auto px-6 flex gap-1">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`px-5 py-4 text-sm font-semibold uppercase tracking-wide transition-all border-b-2 ${
-                activeTab === t.key
-                  ? "border-[#C7E36B] text-[#C7E36B]"
-                  : "border-transparent text-gray-400 hover:text-white"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* ── OVERVIEW ── */}
+      <section className="bg-[#0D1113] border-y border-white/5 py-16">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="flex flex-col lg:flex-row gap-12">
 
-      {/* TAB CONTENT */}
-      <div className="max-w-[1200px] mx-auto px-6 py-10">
-
-        {/* OVERVIEW TAB */}
-        {activeTab === "overview" && (
-          <div className="flex flex-col gap-10">
-            <div className="flex flex-col md:flex-row gap-10">
-              <div className="flex-1">
-                <h2 className="text-xl font-bold mb-4 uppercase tracking-wide">Course Overview</h2>
-                <p className="text-gray-300 leading-relaxed text-sm">
-                  {course.description || "Master the skills in this comprehensive course designed to take you from beginner to professional."}
-                </p>
-                {course.longDescription && (
-                  <p className="text-gray-400 leading-relaxed text-sm mt-4">{course.longDescription}</p>
+            {/* Description */}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-6 uppercase tracking-wide">Course Overview</h2>
+              <div className="text-gray-300 text-[15px] leading-relaxed space-y-4">
+                <p>{course.description}</p>
+                {course.longDescription && <p className="text-gray-400">{course.longDescription}</p>}
+                {!course.longDescription && (
+                  <p className="text-gray-400">
+                    This course is built to be hands-on and practical. Every lesson is crafted to build your skills step-by-step, with real-world examples and projects that you can add to your portfolio.
+                  </p>
                 )}
               </div>
-              <div className="w-full md:w-[280px] shrink-0 border border-white/10 rounded-2xl p-6 bg-[#111417]">
-                <h3 className="text-base font-bold mb-4">Course Details</h3>
-                <div className="flex flex-col gap-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Duration</span>
-                    <span className="text-white font-medium">{course.duration || "—"}</span>
+
+              {/* What You'll Learn */}
+              {Array.isArray(course.whatYouLearn) && course.whatYouLearn.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-bold mb-4">What You'll Learn</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {course.whatYouLearn.map((item, i) => (
+                      <div key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                        <span className="text-[#C7E36B] mt-0.5 shrink-0">✓</span>
+                        {item}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Level</span>
-                    <span className="text-white font-medium">{course.level || "Beginner"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Lessons</span>
-                    <span className="text-white font-medium">{Array.isArray(course.lessons) ? course.lessons.length : 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Price</span>
-                    <span className="text-[#C7E36B] font-bold">₹{course.price}</span>
-                  </div>
-                  {course.language && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Language</span>
-                      <span className="text-white font-medium">{course.language}</span>
-                    </div>
-                  )}
                 </div>
-                <hr className="border-white/10 my-4" />
-                <h4 className="text-sm font-bold mb-3">You Get:</h4>
-                <ul className="flex flex-col gap-2">
-                  {["HD video lessons", "Downloadable assets", "Lifetime access", "Certificate on completion", "Community access"].map(item => (
-                    <li key={item} className="flex items-center gap-2 text-xs text-gray-300">
-                      <span className="text-[#C7E36B]">✓</span> {item}
+              )}
+            </div>
+
+            {/* You Get Checklist */}
+            <div className="w-full lg:w-[320px] shrink-0">
+              <div className="border border-white/10 rounded-2xl p-6 bg-[#111417]">
+                <h3 className="text-lg font-bold mb-5">You Get:</h3>
+                <ul className="flex flex-col gap-3">
+                  {youGet.map((item, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-200">
+                      <span className="w-5 h-5 rounded-full bg-[#C7E36B]/15 flex items-center justify-center shrink-0">
+                        <span className="text-[#C7E36B] text-xs font-bold">✓</span>
+                      </span>
+                      {item}
                     </li>
                   ))}
                 </ul>
-              </div>
-            </div>
-
-            {/* What you'll learn */}
-            {Array.isArray(course.whatYouLearn) && course.whatYouLearn.length > 0 && (
-              <div className="border border-white/10 rounded-2xl p-6 bg-[#111417]">
-                <h2 className="text-lg font-bold mb-4">What You'll Learn</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {course.whatYouLearn.map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                      <span className="text-[#C7E36B] mt-0.5">✓</span> {item}
+                <div className="mt-6 pt-6 border-t border-white/10 flex flex-col gap-2 text-sm">
+                  {course.language && (
+                    <div className="flex justify-between text-gray-400">
+                      <span>Language</span>
+                      <span className="text-white font-medium">{course.language}</span>
                     </div>
-                  ))}
+                  )}
+                  <div className="flex justify-between text-gray-400">
+                    <span>Level</span>
+                    <span className="text-white font-medium">{course.level || "Beginner"}</span>
+                  </div>
+                  {lessons.length > 0 && (
+                    <div className="flex justify-between text-gray-400">
+                      <span>Lessons</span>
+                      <span className="text-white font-medium">{lessons.length}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* CURRICULUM TAB */}
-        {activeTab === "curriculum" && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold uppercase tracking-wide">Course Curriculum</h2>
-              <p className="text-sm text-gray-400">{Array.isArray(course.lessons) ? course.lessons.length : 0} lessons</p>
             </div>
-            {Array.isArray(course.lessons) && course.lessons.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {course.lessons.map((lesson, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-4 border border-white/10 rounded-xl p-4 bg-[#111417] hover:bg-[#151A1B] transition-all cursor-pointer"
-                    onClick={() => isEnrolled && navigate(`/courses/${id}/watch`)}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#1A1D1E] flex items-center justify-center shrink-0 text-sm font-bold text-gray-400">
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{lesson.title || `Lesson ${i + 1}`}</p>
-                      {lesson.description && <p className="text-xs text-gray-500 mt-0.5 truncate">{lesson.description}</p>}
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      {lesson.duration && <span className="text-xs text-gray-500">{lesson.duration}</span>}
-                      {isEnrolled ? (
-                        <span className="text-[#C7E36B] text-xs font-medium">▶ Play</span>
-                      ) : (
-                        <span className="text-gray-600 text-xs">🔒</span>
-                      )}
-                    </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── SYLLABUS ── */}
+      {lessons.length > 0 && (
+        <section
+          className="w-full py-14 px-6 lg:px-16"
+          style={{
+            background: "repeating-linear-gradient(90deg, #080a0b 0px, #080a0b 28px, #0e1214 28px, #0e1214 29px)",
+          }}
+        >
+          <div className="max-w-[1200px] mx-auto">
+            {/* Heading */}
+            <div className="flex items-end justify-between mb-10">
+              <h2 className="text-[56px] lg:text-[72px] font-black uppercase leading-[0.9] tracking-tight text-white">
+                COURSE SYLLABUS
+              </h2>
+              <span className="text-xs text-gray-600 font-semibold uppercase tracking-wider mb-2">
+                {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {/* Card grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+              {lessons.map((lesson, i) => (
+                <div
+                  key={i}
+                  className="group cursor-pointer"
+                  onClick={() => isEnrolled && navigate(`/courses/${id}/watch`)}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative w-full overflow-hidden mb-3" style={{ aspectRatio: "16/9" }}>
+                    {lesson.thumbnail ? (
+                      <>
+                        <img
+                          src={lesson.thumbnail}
+                          alt={lesson.title}
+                          className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-300"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className={`w-12 h-12 rounded-full flex items-center justify-center shadow-xl ${isEnrolled ? "bg-[#C7E36B]" : "bg-black/70 border border-white/40"}`}>
+                            <span className={`text-lg ${isEnrolled ? "text-black" : "text-white"}`}>{isEnrolled ? "▶" : "🔒"}</span>
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-[#151A1B] flex items-center justify-center">
+                        <span className={`w-12 h-12 rounded-full flex items-center justify-center ${isEnrolled ? "bg-[#C7E36B]/15 border border-[#C7E36B]/30" : "bg-white/5 border border-white/10"}`}>
+                          <span className={`text-lg ${isEnrolled ? "text-[#C7E36B]" : "text-gray-600"}`}>{isEnrolled ? "▶" : "🔒"}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 text-gray-500">
-                <p className="text-4xl mb-3">📚</p>
-                <p className="font-medium">No lessons added yet</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ENROLLMENTS TAB (admin only) */}
-        {activeTab === "enrollments" && isAdmin && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold uppercase tracking-wide">Enrolled Students</h2>
-              {!enrollLoading && <p className="text-sm text-gray-400">{enrollments.length} students</p>}
+                  {/* Info */}
+                  <p className="text-[14px] font-bold text-white group-hover:text-[#C7E36B] transition-colors leading-snug line-clamp-2 mb-1">
+                    {lesson.title || `Lesson ${i + 1}`}
+                  </p>
+                  {(lesson.description || lesson.desc) && (
+                    <p className="text-[12px] text-gray-500 line-clamp-3 leading-relaxed">
+                      {lesson.description || lesson.desc}
+                    </p>
+                  )}
+                  {lesson.duration && (
+                    <p className="text-[11px] text-gray-700 mt-1.5 font-medium">⏱ {lesson.duration}</p>
+                  )}
+                </div>
+              ))}
             </div>
-            {enrollLoading ? (
+          </div>
+        </section>
+      )}
+
+      {/* ── PRICING ── */}
+      <section className="bg-[#0D1113] border-y border-white/5 py-16">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h2 className="text-2xl font-bold uppercase tracking-wide text-center mb-10">
+            Choose How You Want To Learn
+          </h2>
+
+          <div className="flex flex-col lg:flex-row gap-6 max-w-[860px] mx-auto">
+
+            {/* Buy This Course */}
+            <div className="flex-1 border border-white/15 rounded-2xl p-7 bg-[#111417] flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Individual Course</p>
+                <h3 className="text-xl font-bold text-white mb-1">Buy this Course</h3>
+                <div className="flex items-end gap-2 mt-3">
+                  <span className="text-4xl font-bold text-white">₹{course.price}</span>
+                  {course.originalPrice && course.originalPrice > course.price && (
+                    <span className="text-lg text-gray-500 line-through mb-1">₹{course.originalPrice}</span>
+                  )}
+                </div>
+              </div>
+              <ul className="flex flex-col gap-2.5 flex-1">
+                {["Lifetime access to this course", "HD video lessons", "Digital certificate", "Downloadable resources", "Mobile & desktop access"].map(item => (
+                  <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300">
+                    <span className="text-[#C7E36B] shrink-0">✓</span> {item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={handlePurchase}
+                className="w-full py-3.5 bg-[#C7E36B] text-black font-bold rounded-xl text-sm hover:bg-lime-300 transition-all duration-200"
+              >
+                {isEnrolled ? "WATCH NOW →" : "BUY THIS COURSE →"}
+              </button>
+            </div>
+
+            {/* Pro Membership */}
+            <div className="flex-1 border border-[#C7E36B]/40 rounded-2xl p-7 bg-[#111A0D] flex flex-col gap-5 relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-[#C7E36B] text-black text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                BEST VALUE
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest mb-2">All Courses Unlocked</p>
+                <h3 className="text-xl font-bold text-white mb-1">Unlock Pro Membership</h3>
+                <div className="flex items-end gap-2 mt-3">
+                  <span className="text-4xl font-bold text-white">₹6,999</span>
+                  <span className="text-lg text-gray-500 line-through mb-1">₹15,000</span>
+                </div>
+              </div>
+              <ul className="flex flex-col gap-2.5 flex-1">
+                {["Access to ALL courses", "New courses added monthly", "HD video lessons for every course", "Digital certificates for all courses", "Priority support", "Exclusive community access"].map(item => (
+                  <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300">
+                    <span className="text-[#C7E36B] shrink-0">✓</span> {item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => navigate("/workshops")}
+                className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all duration-200"
+              >
+                GET PRO MEMBERSHIP →
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="py-16 max-w-[800px] mx-auto px-6">
+        <h2 className="text-2xl font-bold uppercase tracking-wide text-center mb-10">
+          Frequently Asked Questions
+        </h2>
+        <div className="flex flex-col gap-3">
+          {faqs.map((item, i) => (
+            <div
+              key={i}
+              className="border border-white/10 rounded-xl overflow-hidden bg-[#0D1113] transition-all duration-200"
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
+              >
+                <span className="text-sm font-semibold text-white">{item.q}</span>
+                <span className={`shrink-0 text-[#C7E36B] font-bold text-lg transition-transform duration-200 ${openFaq === i ? "rotate-45" : ""}`}>
+                  +
+                </span>
+              </button>
+              {openFaq === i && (
+                <div className="px-6 pb-5">
+                  <p className="text-sm text-gray-400 leading-relaxed">{item.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── ADMIN: ENROLLED STUDENTS ── */}
+      {isAdmin && (
+        <section className="border-t border-white/5 py-10 max-w-[1200px] mx-auto px-6">
+          <button
+            onClick={() => setShowEnrollments(p => !p)}
+            className="flex items-center gap-3 text-sm font-semibold text-gray-400 hover:text-white transition-colors mb-6"
+          >
+            <span className="w-6 h-6 rounded border border-gray-600 flex items-center justify-center text-xs">
+              {showEnrollments ? "▲" : "▼"}
+            </span>
+            Admin: View Enrolled Students
+          </button>
+          {showEnrollments && (
+            enrollLoading ? (
               <p className="text-gray-400 text-sm">Loading...</p>
             ) : enrollments.length > 0 ? (
               <div className="border border-white/10 rounded-2xl overflow-hidden">
@@ -267,15 +455,12 @@ export default function CourseDetail() {
                 </table>
               </div>
             ) : (
-              <div className="text-center py-20 text-gray-500">
-                <p className="text-4xl mb-3">👥</p>
-                <p className="font-medium">No students enrolled yet</p>
-              </div>
-            )}
-          </div>
-        )}
+              <p className="text-gray-500 text-sm py-4">No students enrolled yet.</p>
+            )
+          )}
+        </section>
+      )}
 
-      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 export default function CoursePlayer() {
-  const { id } = useParams();
+  const { slug: id } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
@@ -64,17 +64,30 @@ export default function CoursePlayer() {
   };
 
   const getVimeoEmbed = (lesson) => {
+    const raw = lesson.videoUrl?.trim() || "";
+
+    // Already a proper player embed URL
+    if (raw.includes("player.vimeo.com/video/")) {
+      return raw.includes("?") ? raw : `${raw}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
+    }
+
+    // vimeoId field
     if (lesson.vimeoId) {
       return `https://player.vimeo.com/video/${lesson.vimeoId}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
     }
-    if (lesson.videoUrl) {
-      if (lesson.videoUrl.includes("vimeo.com")) {
-        const match = lesson.videoUrl.match(/vimeo\.com\/(\d+)/);
-        if (match) return `https://player.vimeo.com/video/${match[1]}?autoplay=1&color=C7E36B`;
-      }
-      return lesson.videoUrl;
+
+    // Standard vimeo.com/ID or vimeo.com/ID/hash
+    if (raw.includes("vimeo.com")) {
+      const match = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if (match) return `https://player.vimeo.com/video/${match[1]}?autoplay=1&color=C7E36B&title=0&byline=0&portrait=0`;
     }
-    return null;
+
+    // YouTube embed URL
+    if (raw.includes("youtube.com/embed/") || raw.includes("youtu.be/")) {
+      return raw;
+    }
+
+    return raw || null;
   };
 
   return (
