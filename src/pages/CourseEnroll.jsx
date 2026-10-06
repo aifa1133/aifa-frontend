@@ -109,7 +109,7 @@ export default function CourseEnroll() {
         if (sd.token) {
           tok = sd.token;
           localStorage.setItem("aifa_token", tok);
-          localStorage.setItem("aifa_user", JSON.stringify({ _id: sd._id, name: sd.name, role: sd.role || "student" }));
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: sd._id, name: sd.name, role: sd.role || "student", emailVerified: !!sd.emailVerified }));
           setAuthToken(tok);
           setTempPw(pw);
         } else {

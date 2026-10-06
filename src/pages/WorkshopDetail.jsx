@@ -576,15 +576,31 @@ export default function WorkshopDetail() {
             onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
           />
         )}
-        {/* TOP BAR — logo + breadcrumb */}
-        <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center gap-4">
+        {/* TOP BAR — logo + user profile */}
+        <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
+          {storedUser?.name ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#C7E36B]/20 border border-[#C7E36B]/40 flex items-center justify-center text-[#C7E36B] text-xs font-bold shrink-0 overflow-hidden">
+                {storedUser.avatar
+                  ? <img src={storedUser.avatar} alt="" className="w-full h-full object-cover" />
+                  : (storedUser.name?.[0] || "U").toUpperCase()}
+              </div>
+              <span className="text-sm text-gray-300 font-medium hidden sm:block">{storedUser.name}</span>
+            </div>
+          ) : (
+            <Link to="/login" className="text-xs text-[#C7E36B] font-semibold hover:underline">Login</Link>
+          )}
+        </div>
+
+        {/* BREADCRUMB — below top bar */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-1">
           <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <span>›</span>
             <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
             <span>›</span>
-            <span className="text-[#C7E36B]">{workshop.title}</span>
+            <span className="text-[#C7E36B] truncate max-w-[240px]">{workshop.title}</span>
           </div>
         </div>
 
@@ -758,15 +774,31 @@ export default function WorkshopDetail() {
           onSuccess={() => { setShowSetPassword(false); window.location.reload(); }}
         />
       )}
-      {/* TOP BAR — logo + breadcrumb */}
-      <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center gap-4">
+      {/* TOP BAR — logo + user profile */}
+      <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between">
         <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
+        {storedUser?.name ? (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#C7E36B]/20 border border-[#C7E36B]/40 flex items-center justify-center text-[#C7E36B] text-xs font-bold shrink-0 overflow-hidden">
+              {storedUser.avatar
+                ? <img src={storedUser.avatar} alt="" className="w-full h-full object-cover" />
+                : (storedUser.name?.[0] || "U").toUpperCase()}
+            </div>
+            <span className="text-sm text-gray-300 font-medium hidden sm:block">{storedUser.name}</span>
+          </div>
+        ) : (
+          <Link to="/login" className="text-xs text-[#C7E36B] font-semibold hover:underline">Login</Link>
+        )}
+      </div>
+
+      {/* BREADCRUMB — below top bar, inside page content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-1">
         <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
           <Link to="/" className="hover:text-white transition-colors">Home</Link>
           <span>›</span>
           <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
           <span>›</span>
-          <span className="text-[#C7E36B]">{workshop.title}</span>
+          <span className="text-[#C7E36B] truncate max-w-[240px]">{workshop.title}</span>
         </div>
       </div>
 

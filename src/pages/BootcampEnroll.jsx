@@ -156,7 +156,7 @@ export default function BootcampEnroll() {
         if (sd.token) {
           token = sd.token;
           localStorage.setItem("aifa_token", token);
-          localStorage.setItem("aifa_user", JSON.stringify({ _id: sd._id, name: sd.name, role: sd.role || "student" }));
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: sd._id, name: sd.name, role: sd.role || "student", emailVerified: !!sd.emailVerified }));
           setAuthToken(token);
           setTempPw(pw);
         } else if (sd.message && sd.message.includes("already exists")) {
@@ -282,7 +282,7 @@ export default function BootcampEnroll() {
         if (!res.ok) { setPwError(data.message || "Account creation failed."); setPwSaving(false); return; }
         if (data.token) {
           localStorage.setItem("aifa_token", data.token);
-          localStorage.setItem("aifa_user", JSON.stringify({ _id: data._id, name: data.name, role: data.role || "student" }));
+          localStorage.setItem("aifa_user", JSON.stringify({ _id: data._id, name: data.name, role: data.role || "student", emailVerified: !!data.emailVerified }));
         }
       }
     } catch { setPwError("Network error. Please try again."); setPwSaving(false); return; }

@@ -25,9 +25,10 @@ export default function SetPasswordModal({ email, token, itemType, itemId, onSuc
       const data = await res.json();
       if (!res.ok) { setError(data.message || "Failed to set password"); setLoading(false); return; }
 
-      // Upgrade guest to real user — remove isGuest flag
+      // Upgrade guest to real user — mark email verified, remove isGuest flag
       try {
         const u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+        u.emailVerified = true;
         delete u.isGuest;
         localStorage.setItem("aifa_user", JSON.stringify(u));
         window.dispatchEvent(new Event("storage"));

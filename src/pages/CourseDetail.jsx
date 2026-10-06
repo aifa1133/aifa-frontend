@@ -151,24 +151,50 @@ export default function CourseDetail() {
               {isEnrolled ? "WATCH NOW →" : "PURCHASE NOW →"}
             </button>
 
-            {/* Feature Pills */}
-            <div className="flex flex-wrap gap-3 pt-1">
-              <span className="flex items-center gap-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-full px-4 py-2">
-                <span className="text-[#C7E36B]">◷</span>
-                Learn On Your Own Schedule
-              </span>
-              {course.duration && (
-                <span className="flex items-center gap-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-full px-4 py-2">
-                  <span className="text-[#C7E36B]">▶</span>
-                  {course.duration} of content
-                </span>
-              )}
-              <span className="flex items-center gap-2 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-full px-4 py-2">
-                <span className="text-[#C7E36B]">✦</span>
-                {course.level || "Beginner"}-Friendly
-              </span>
-            </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── FEATURE METRICS ── */}
+      <section className="max-w-[1200px] mx-auto px-6 pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            {
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+              ),
+              label: "Learn On Your Own Schedule",
+              desc: "Build your skills at your own pace. All lessons and project files are available 24/7.",
+            },
+            {
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+              ),
+              label: course.duration ? `${course.duration} of content` : "Structured Lessons",
+              desc: `${course.duration || "Hours"} of structured, practical lessons focused on real-world skills.`,
+            },
+            {
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              ),
+              label: `${course.level || "Beginner"}-Friendly`,
+              desc: `Designed for ${(course.level || "Beginner").toLowerCase()} learners — no prior experience required.`,
+            },
+          ].map((m, i) => (
+            <div key={i} className="flex items-start gap-4 border border-white/10 rounded-xl px-5 py-5 bg-[#0D1113]">
+              <span className="text-[#C7E36B] shrink-0 mt-0.5">{m.icon}</span>
+              <div>
+                <p className="text-sm font-bold text-white mb-1">{m.label}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -317,9 +343,10 @@ export default function CourseDetail() {
       {/* ── PRICING ── */}
       <section className="bg-[#0D1113] border-y border-white/5 py-16">
         <div className="max-w-[1200px] mx-auto px-6">
-          <h2 className="text-2xl font-bold uppercase tracking-wide text-center mb-10">
+          <h2 className="text-2xl font-bold uppercase tracking-wide text-center mb-2">
             Choose How You Want To Learn
           </h2>
+          <p className="text-sm text-gray-400 text-center mb-10">Buy this course or unlock lifetime access to all courses with Pro</p>
 
           <div className="flex flex-col lg:flex-row gap-6 max-w-[860px] mx-auto">
 
@@ -336,7 +363,7 @@ export default function CourseDetail() {
                 </div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">
-                {["Lifetime access to this course", "HD video lessons", "Digital certificate", "Downloadable resources", "Mobile & desktop access"].map(item => (
+                {[`${course.duration || "Hours"} of HD video`, "Step-by-step lessons", "Lifetime access to this course", "English captions", "Certificate of completion"].map(item => (
                   <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300">
                     <span className="text-[#C7E36B] shrink-0">✓</span> {item}
                   </li>
@@ -364,7 +391,7 @@ export default function CourseDetail() {
                 </div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">
-                {["Access to ALL courses", "New courses added monthly", "HD video lessons for every course", "Digital certificates for all courses", "Priority support", "Exclusive community access"].map(item => (
+                {["Access to all current courses", "All future courses included", "Lifetime access (one-time payment)", "Access to resources", "Community access", "Career & Job Opportunities", "Priority support & updates"].map(item => (
                   <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300">
                     <span className="text-[#C7E36B] shrink-0">✓</span> {item}
                   </li>
@@ -384,6 +411,7 @@ export default function CourseDetail() {
 
       {/* ── FAQ ── */}
       <section className="py-16 max-w-[800px] mx-auto px-6">
+        <p className="text-[#C7E36B] text-xs font-bold uppercase tracking-widest text-center mb-2">Need More Details?</p>
         <h2 className="text-2xl font-bold uppercase tracking-wide text-center mb-10">
           Frequently Asked Questions
         </h2>
