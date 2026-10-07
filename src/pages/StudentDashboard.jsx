@@ -2336,7 +2336,7 @@ function JobsSection({ token }) {
   }, []);
 
   useEffect(() => {
-    fetch("/api/jobs")
+    fetch("/api/jobs/external")
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setJobs(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -2454,27 +2454,20 @@ function JobsSection({ token }) {
               {detailJob.budget && <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center flex-1"><p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Budget</p><p className="text-sm font-bold text-white">{detailJob.budget}</p></div>}
               {detailJob.timeline && <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center flex-1"><p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Timeline</p><p className="text-sm font-bold text-white">{detailJob.timeline}</p></div>}
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
-              <p className="text-xs font-bold text-gray-300 mb-1">How to Apply</p>
-              <p className="text-xs text-gray-500">Submit your portfolio and a brief introduction via the AIFA platform. Shortlisted candidates will be contacted within 5 business days.</p>
-            </div>
-            {applied ? (
-              <div className="w-full bg-[#C7E36B]/10 border border-[#C7E36B]/30 rounded-xl py-4 text-center">
-                <p className="text-[#C7E36B] font-bold text-sm">Application Submitted!</p>
-                <p className="text-gray-400 text-xs mt-1">We'll contact you within 5 business days.</p>
+            {detailJob.company && (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+                <p className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Company</p>
+                <p className="text-sm font-bold text-white">{detailJob.company}</p>
+                {detailJob.location && <p className="text-xs text-gray-400 mt-0.5">{detailJob.location}</p>}
               </div>
-            ) : (
-              <button onClick={async () => {
-                const token = localStorage.getItem("aifa_token");
-                if (!token) { alert("Please log in to apply."); return; }
-                try {
-                  const r = await fetch(`/api/jobs/${detailJob._id}/apply`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-                  const d = await r.json();
-                  if (r.ok || d.message === "Already applied") setApplied(true);
-                  else alert(d.message || "Failed to apply. Try again.");
-                } catch { alert("Network error. Please try again."); }
-              }} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all text-sm">Apply Now</button>
             )}
+            <button
+              onClick={() => window.open(detailJob.redirect_url || detailJob.applyUrl || "https://www.adzuna.com", "_blank")}
+              className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all text-sm flex items-center justify-center gap-2"
+            >
+              Apply Now
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            </button>
           </div>
         </div>
       )}
