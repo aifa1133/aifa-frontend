@@ -2327,20 +2327,28 @@ function JobsSection({ token }) {
   const [budgetFilter, setBudget]   = useState("All");
   const [timelineFilter, setTimeline] = useState("All");
   const [detailJob, setDetailJob]   = useState(null);
-  const [applied, setApplied]       = useState(false);
+  const [page, setPage]             = useState(1);
+  const [totalJobs, setTotalJobs]   = useState(0);
+  const PER_PAGE = 20;
 
   useEffect(() => {
-    const onEsc = (e) => { if (e.key === "Escape") { setDetailJob(null); setApplied(false); } };
+    const onEsc = (e) => { if (e.key === "Escape") setDetailJob(null); };
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
   }, []);
 
   useEffect(() => {
-    fetch("/api/jobs/external")
-      .then(r => r.ok ? r.json() : [])
-      .then(d => { if (Array.isArray(d)) setJobs(d); setLoading(false); })
+    setLoading(true);
+    fetch(`/api/jobs/external?page=${page}`)
+      .then(r => r.ok ? r.json() : { jobs: [], total: 0 })
+      .then(d => {
+        const list = Array.isArray(d) ? d : (d.jobs || []);
+        setJobs(list);
+        setTotalJobs(d.total || list.length);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
-  }, []);
+  }, [page]);
 
   const allTags     = ["All", ...Array.from(new Set(jobs.map(j => j.tag).filter(Boolean)))];
   const allBudgets  = ["All", ...Array.from(new Set(jobs.map(j => j.budget).filter(Boolean)))];
@@ -2396,6 +2404,7 @@ function JobsSection({ token }) {
           <p className="text-xs">Try changing your filters or check back later.</p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((j) => (
             <div key={j._id} className="bg-[#111315] border border-white/8 rounded-2xl p-5 hover:border-white/18 transition-all flex flex-col">
@@ -2410,7 +2419,7 @@ function JobsSection({ token }) {
               <p className="text-sm text-gray-400 flex-1 mb-4 line-clamp-3 leading-relaxed">{j.description}</p>
               {/* View Details */}
               <button
-                onClick={() => { setDetailJob(j); setApplied(false); }}
+                onClick={() => setDetailJob(j)}
                 className="text-sm text-[#C7E36B] font-semibold hover:underline text-left mb-4"
               >View Details</button>
               {/* Footer */}
@@ -2425,6 +2434,43 @@ function JobsSection({ token }) {
             </div>
           ))}
         </div>
+
+        {/* Pagination */}
+        {totalJobs > PER_PAGE && (() => {
+          const totalPages = Math.ceil(totalJobs / PER_PAGE);
+          const pages = [];
+          const start = Math.max(1, page - 2);
+          const end   = Math.min(totalPages, page + 2);
+          for (let i = start; i <= end; i++) pages.push(i);
+          return (
+            <div className="flex items-center justify-center gap-2 mt-10">
+              <button
+                onClick={() => { setPage(p => Math.max(1, p-1)); window.scrollTo(0,0); }}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-xl border border-white/15 text-sm text-gray-400 hover:text-white hover:border-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >← Prev</button>
+              {start > 1 && <>
+                <button onClick={() => { setPage(1); window.scrollTo(0,0); }} className="w-9 h-9 rounded-xl border border-white/15 text-sm text-gray-400 hover:text-white hover:border-white/30 transition-all">1</button>
+                {start > 2 && <span className="text-gray-600 text-sm px-1">…</span>}
+              </>}
+              {pages.map(p => (
+                <button key={p} onClick={() => { setPage(p); window.scrollTo(0,0); }}
+                  className={`w-9 h-9 rounded-xl border text-sm font-semibold transition-all ${p === page ? "bg-[#C7E36B] border-[#C7E36B] text-black" : "border-white/15 text-gray-400 hover:text-white hover:border-white/30"}`}
+                >{p}</button>
+              ))}
+              {end < totalPages && <>
+                {end < totalPages - 1 && <span className="text-gray-600 text-sm px-1">…</span>}
+                <button onClick={() => { setPage(totalPages); window.scrollTo(0,0); }} className="w-9 h-9 rounded-xl border border-white/15 text-sm text-gray-400 hover:text-white hover:border-white/30 transition-all">{totalPages}</button>
+              </>}
+              <button
+                onClick={() => { setPage(p => Math.min(totalPages, p+1)); window.scrollTo(0,0); }}
+                disabled={page === totalPages}
+                className="px-4 py-2 rounded-xl border border-white/15 text-sm text-gray-400 hover:text-white hover:border-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >Next →</button>
+            </div>
+          );
+        })()}
+        </>
       )}
 
       {/* Detail Modal */}
@@ -2462,7 +2508,7 @@ function JobsSection({ token }) {
               </div>
             )}
             <button
-              onClick={() => window.open(detailJob.redirect_url || detailJob.applyUrl || "https://www.adzuna.com", "_blank")}
+              onClick={() => window.open(detailJob.link || detailJob.redirect_url || detailJob.applyUrl || "https://www.adzuna.com", "_blank")}
               className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:brightness-105 transition-all text-sm flex items-center justify-center gap-2"
             >
               Apply Now
