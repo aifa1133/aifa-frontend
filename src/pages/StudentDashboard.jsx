@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 
+// Module-level flag prevents StrictMode double-fetch without persisting across reloads
+let _infTokenFetched = false;
+
 
 /* ─── ICONS (inline SVG keeps bundle tiny) ─── */
 const Icon = ({ d, size = 18, className = "" }) => (
@@ -96,6 +99,7 @@ export default function StudentDashboard() {
     const u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
     return u.emailVerified !== false;
   });
+  const [hasInfluencerAccess, setHasInfluencerAccess] = useState(!!localStorage.getItem("influencer_token"));
   const token = localStorage.getItem("aifa_token");
   const notifRef = useRef(null);
   const userRef = useRef(null);
@@ -113,14 +117,16 @@ export default function StudentDashboard() {
         setProfile(d);
         setEmailVerified(!!d.emailVerified);
         setLoading(false);
-        // Auto-refresh influencer token for students whose influencer account was created after login
-        if (!localStorage.getItem("influencer_token")) {
+        // Auto-refresh influencer token once per page load (module flag prevents StrictMode double-fetch)
+        if (!localStorage.getItem("influencer_token") && !_infTokenFetched) {
+          _infTokenFetched = true;
           fetch("/api/auth/influencer-token", { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.ok ? r.json() : null)
             .then(data => {
               if (data?.influencerToken) {
                 localStorage.setItem("influencer_token", data.influencerToken);
                 if (data.influencer) localStorage.setItem("influencer_user", JSON.stringify(data.influencer));
+                setHasInfluencerAccess(true);
               }
             })
             .catch(() => {});
@@ -214,7 +220,7 @@ export default function StudentDashboard() {
                 item.soon
                   ? "text-gray-600 cursor-not-allowed"
                   : activePage === item.id
-                  ? "bg-[#FBBF24]/15 text-[#FBBF24]"
+                  ? "bg-[#C7E36B]/15 text-[#C7E36B]"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
@@ -226,20 +232,17 @@ export default function StudentDashboard() {
             </button>
           ))}
         </nav>
-        {/* Influencer Portal shortcut — only shown when user has influencer access */}
-        {localStorage.getItem("influencer_token") && (
-          <div className="border-t border-white/5 p-3">
-            <button
-              onClick={() => navigate("/influencer/dashboard")}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C7E36B]/10 hover:bg-[#C7E36B]/20 transition-colors text-[#C7E36B] text-[11px] font-bold"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-              </svg>
-              Influencer Portal
-            </button>
-          </div>
-        )}
+        <div className="border-t border-white/5 p-3">
+          <button
+            onClick={() => navigate("/influencer/dashboard")}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C7E36B]/10 hover:bg-[#C7E36B]/20 transition-colors text-[#C7E36B] text-[11px] font-bold"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+            </svg>
+            Influencer Portal
+          </button>
+        </div>
         {/* Website link */}
         <div className="border-t border-white/5 p-3">
           <a
@@ -375,6 +378,12 @@ export default function StudentDashboard() {
             window.dispatchEvent(new Event("storage"));
             if (profile) setProfile({ ...profile, emailVerified: true });
           }} />}
+          {/* Phone verification banner — shown when phone is set but not verified */}
+          {emailVerified && profile?.phone && !profile?.phoneVerified && !invoiceItem && (
+            <PhoneVerifyBanner phone={profile.phone} token={token} onVerified={() => {
+              if (profile) setProfile({ ...profile, phoneVerified: true });
+            }} />
+          )}
 
           {invoiceItem ? (
             <InvoiceView item={invoiceItem} onBack={() => setInvoiceItem(null)} profile={profile} />
@@ -448,56 +457,45 @@ function timeAgoNotif(dateStr) {
 
 function NotificationDropdown({ notifs, onClose, onMarkRead, onViewAll }) {
   const list = notifs || [];
-  const style = t => NOTIF_STYLE[t] || NOTIF_STYLE.general;
   return (
-    <div className="absolute right-0 top-full mt-2 w-[360px] bg-[#111315] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+    <div className="absolute right-0 top-full mt-2 w-[380px] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-gray-100">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-        <span className="font-bold text-white text-sm">Notifications</span>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <span className="font-black text-gray-900 text-base">Notifications</span>
+        <div className="flex items-center gap-4">
           {list.some(n => !n.isRead) && (
-            <button onClick={onMarkRead} className="text-[#C7E36B] text-xs font-semibold hover:underline">Mark all as read</button>
+            <button onClick={onMarkRead} className="text-gray-500 text-sm hover:text-gray-800 transition-colors">Mark all as read</button>
           )}
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
       {/* List */}
-      <div className="divide-y divide-white/5 max-h-[420px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="divide-y divide-gray-100 max-h-[440px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {list.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <svg className="w-10 h-10 text-gray-700 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <p className="text-gray-500 text-sm font-medium">No notifications yet</p>
-            <p className="text-gray-600 text-xs mt-1">You're all caught up!</p>
+            <svg className="w-10 h-10 text-gray-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <p className="text-gray-400 text-sm font-medium">No notifications yet</p>
+            <p className="text-gray-300 text-xs mt-1">You're all caught up!</p>
           </div>
-        ) : list.map((n, i) => {
-          const s = style(n.type);
-          return (
-            <div key={n._id || i} className={`px-5 py-4 hover:bg-white/5 transition-all cursor-pointer ${!n.isRead ? "bg-[#C7E36B]/3" : ""}`}>
-              <div className="flex gap-3">
-                <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
-                  {s.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-0.5">
-                    <p className={`text-sm leading-snug ${!n.isRead ? "font-bold text-white" : "font-medium text-gray-200"}`}>{n.title}</p>
-                    <span className="text-[10px] text-gray-500 shrink-0 mt-0.5 whitespace-nowrap">{timeAgoNotif(n.createdAt)}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-snug">{n.message}</p>
-                  {!n.isRead && <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C7E36B] mt-1.5"/>}
-                </div>
-              </div>
+        ) : list.map((n, i) => (
+          <div key={n._id || i} className={`px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer ${!n.isRead ? "bg-orange-50/40" : ""}`}>
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <p className={`text-sm leading-snug ${!n.isRead ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>{n.title}</p>
+              <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap mt-0.5">{timeAgoNotif(n.createdAt)}</span>
             </div>
-          );
-        })}
+            <p className="text-sm text-gray-500 leading-snug">{n.message}</p>
+          </div>
+        ))}
       </div>
       {/* Footer */}
-      {list.length > 0 && (
-        <div className="px-5 py-3 border-t border-white/5 text-center">
-          <button onClick={() => { onViewAll?.(); onClose?.(); }} className="text-xs text-[#C7E36B] font-semibold hover:underline">View all notifications →</button>
-        </div>
-      )}
+      <div className="px-5 py-3.5 border-t border-gray-100 text-center">
+        <button onClick={() => { onViewAll?.(); onClose?.(); }} className="text-sm text-[#E07B39] font-semibold hover:underline flex items-center gap-1.5 mx-auto">
+          View all notifications
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -583,6 +581,92 @@ function EmailVerifyBanner({ email, token, onVerified }) {
             {timer > 0 ? `Resend in ${timer}s` : "Resend"}
           </button>
           {error && <span className="text-red-400 text-xs w-full">{error}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────── PHONE VERIFY BANNER ────── */
+function PhoneVerifyBanner({ phone, token, onVerified }) {
+  const [otpSent, setOtpSent]     = useState(false);
+  const [otpCode, setOtpCode]     = useState("");
+  const [sending, setSending]     = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [error, setError]         = useState("");
+  const [timer, setTimer]         = useState(0);
+
+  useEffect(() => {
+    if (timer <= 0) return;
+    const id = setTimeout(() => setTimer(t => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timer]);
+
+  const sendOtp = async () => {
+    setSending(true); setError("");
+    try {
+      const res = await fetch("/api/users/send-verify-phone-otp", {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.message);
+      else { setOtpSent(true); setTimer(30); }
+    } catch { setError("Network error. Try again."); }
+    setSending(false);
+  };
+
+  const verifyOtp = async () => {
+    if (otpCode.length !== 6) { setError("Enter the 6-digit code"); return; }
+    setVerifying(true); setError("");
+    try {
+      const res = await fetch("/api/users/verify-phone-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ otp: otpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.message);
+      else onVerified();
+    } catch { setError("Network error. Try again."); }
+    setVerifying(false);
+  };
+
+  return (
+    <div className="mx-4 mt-4 mb-0 bg-yellow-950/40 border border-yellow-500/30 rounded-xl px-5 py-3.5 flex flex-col gap-2.5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0 animate-pulse" />
+          <div>
+            <span className="text-yellow-400 font-bold text-sm">Mobile number not verified — </span>
+            <span className="text-gray-400 text-sm">Verify <strong className="text-white">{phone}</strong> to secure your account</span>
+          </div>
+        </div>
+        {!otpSent && (
+          <button onClick={sendOtp} disabled={sending}
+            className="shrink-0 bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-60">
+            {sending ? "Sending..." : "Verify Now"}
+          </button>
+        )}
+      </div>
+      {otpSent && (
+        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-yellow-500/20">
+          <span className="text-xs text-gray-400">Enter the 6-digit code sent to your mobile:</span>
+          <input
+            type="text" inputMode="numeric" maxLength={6}
+            value={otpCode}
+            onChange={e => { setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6)); setError(""); }}
+            placeholder="000000"
+            className="w-32 bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm font-mono outline-none focus:border-[#C7E36B]/50 tracking-widest"
+          />
+          <button onClick={verifyOtp} disabled={verifying || otpCode.length !== 6}
+            className="bg-[#C7E36B] text-black font-black text-xs px-4 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all">
+            {verifying ? "Verifying..." : "Confirm"}
+          </button>
+          <button onClick={sendOtp} disabled={timer > 0 || sending}
+            className="text-xs text-gray-400 hover:text-white disabled:opacity-40 transition-all">
+            {timer > 0 ? `Resend in ${timer}s` : "Resend"}
+          </button>
+          {error && <span className="text-yellow-400 text-xs w-full">{error}</span>}
         </div>
       )}
     </div>
@@ -800,37 +884,6 @@ function DashboardHome({ profile, token, onNavigate }) {
 /* ════════════════════════════════════════════
    BOOTCAMP SECTION
 ════════════════════════════════════════════ */
-const BC_SESSION_LIST = [
-  { no:1, title:"Introduction to AI Filmmaking", tag:"Foundation", locked:false },
-  { no:2, title:"Storyboarding with Midjourney", tag:"Visual Dev", locked:false },
-  { no:3, title:"Generative Video Fundamentals", tag:"Video AI", locked:false },
-  { no:4, title:"Prompt Engineering for Video", tag:"Prompting", locked:false },
-  { no:5, title:"Cinematic Camera Movements", tag:"Cinematography", locked:false },
-  { no:6, title:"AI Audio & Soundscapes", tag:"Audio", locked:false },
-  { no:7, title:"Color Grading with AI Tools", tag:"Post-Prod", locked:false },
-  { no:8, title:"Character Consistency in AI", tag:"Visual Dev", locked:false },
-  { no:9, title:"Editing Workflows for AI Film", tag:"Editing", locked:false },
-  { no:10, title:"VFX Compositing Basics", tag:"VFX", locked:false },
-  { no:11, title:"Narrative Structure in AI Cinema", tag:"Storytelling", locked:true },
-  { no:12, title:"Generative Video with Sora & Midjourney", tag:"Advanced", locked:true },
-];
-const BC_PROJECT_LIST = [
-  { no:"PROJECT 01", title:"AI-Generated Cinematic Storyboard", desc:"Create a 10-frame storyboard using Midjourney or DALL-E 3.", req:[{done:true,text:"10 story frames minimum"},{done:true,text:"Consistent character design"},{done:false,text:"Export as high-resolution PDF"},{done:false,text:"Include prompt annotations"}], res:["Storyboard_Template.pdf","Reference_Guide.zip","Style_Board.pdf","Prompt_Sheet.pdf"] },
-  { no:"PROJECT 02", title:"Generative Video Short (30s)", desc:"Produce a 30-second short film using Runway Gen-2 or Pika Labs.", req:[{done:true,text:"30 seconds minimum runtime"},{done:false,text:"At least 3 distinct scenes"},{done:false,text:"Original AI-generated audio"},{done:false,text:"Submit as MP4 1080p"}], res:["Video_Spec_Sheet.pdf","Audio_Guidelines.pdf","Shot_List.pdf","Export_Guide.zip"] },
-  { no:"PROJECT 03", title:"AI Soundscapes & Scoring", desc:"Compose an original score for your short film using Udio or Suno AI.", req:[{done:false,text:"Minimum 2-minute composition"},{done:false,text:"3 distinct emotional shifts"},{done:false,text:"MP3 or WAV (320kbps)"},{done:false,text:"Sync to video timeline"}], res:["Music_Brief.pdf","Suno_Guide.pdf","Udio_Prompts.pdf","Audio_Template.zip"] },
-  { no:"PROJECT 04", title:"Character Arc Visual Narrative", desc:"Create a character visual narrative using AI image generation.", req:[{done:false,text:"5 character state images"},{done:false,text:"Consistent visual style"},{done:false,text:"Clear story progression"},{done:false,text:"Include mood board"}], res:["Character_Sheet.pdf","Style_Reference.zip","Midjourney_Tips.pdf","Mood_Board.pdf"] },
-  { no:"PROJECT 05", title:"Final AI Film Portfolio", desc:"A 3-minute capstone film integrating all bootcamp skills.", req:[{done:false,text:"Minimum 3 minutes runtime"},{done:false,text:"All techniques integrated"},{done:false,text:"Original score required"},{done:false,text:"Professional color grade"}], res:["Portfolio_Rubric.pdf","Submission_Guide.pdf","Color_LUTs.zip","Final_Checklist.pdf"] },
-];
-
-const BC_FILES = [
-  { icon: "📄", color: "text-red-400",    name: "Bootcamp Broucher.pdf",          meta: "1.2 MB • PDF",       type: "download" },
-  { icon: "📦", color: "text-blue-400",   name: "Prompt Engineering...",          meta: "45 MB • ZIP",        type: "download" },
-  { icon: "📄", color: "text-red-400",    name: "Filmmaking Syllabu...",          meta: "1.2 MB • PDF",       type: "download" },
-  { icon: "🔗", color: "text-purple-400", name: "Discord Community Server",       meta: "EXTERNAL LINK",      type: "link"     },
-  { icon: "📦", color: "text-blue-400",   name: "Session 03 Assets.zip",          meta: "45 MB • ZIP",        type: "download" },
-  { icon: "🔗", color: "text-purple-400", name: "Weekly Reading List",            meta: "EXTERNAL LINK",      type: "link"     },
-  { icon: "📦", color: "text-blue-400",   name: "Midjourney Guide.pdf",           meta: "45 MB • ZIP",        type: "download" },
-];
 
 function timeAgo(dateStr) {
   const d = new Date(dateStr); const now = new Date();
@@ -862,7 +915,8 @@ function BootcampSection({ token, profile }) {
   const [sessions, setSessions]         = useState([]);
   const [projects, setProjects]         = useState([]);
   const [announcements, setAnnouncements] = useState([]);
-  const [drawerFiles, setDrawerFiles]   = useState(BC_FILES);
+  const [drawerFiles, setDrawerFiles]   = useState([]);
+  const [bcResources, setBcResources]   = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [activeProject, setActiveProject] = useState(null);
   const [sessFilter, setSessFilter] = useState("All Sessions");
@@ -877,11 +931,13 @@ function BootcampSection({ token, profile }) {
       .catch(() => setAllBootcamps([]));
   }, []);
 
-  /* Auto-select enrolled bootcamp */
+  /* Auto-select: enrolled bootcamp first, else first published one */
   useEffect(() => {
     if (!allBootcamps || viewBootcamp) return;
     const enrolledOne = allBootcamps.find(bc => bc.enrollments?.some(id => String(id) === String(userId)));
-    if (enrolledOne) setViewBootcamp(enrolledOne);
+    const firstActive = allBootcamps.find(bc => bc.isPublished);
+    const pick = enrolledOne || firstActive || allBootcamps[0];
+    if (pick) setViewBootcamp(pick);
   }, [allBootcamps, userId]);
 
   /* Aliases for compatibility with existing enrolled-view code */
@@ -901,25 +957,37 @@ function BootcampSection({ token, profile }) {
         if (Array.isArray(d) && d.length > 0) {
           const mapped = d.map(s => ({ ...s, title: s.title || s.name || "", tag: s.tag || "" }));
           setSessions(mapped); setActiveSession(mapped[0]);
-        } else { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); }
+        } else { setSessions([]); }
       })
-      .catch(() => { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); });
+      .catch(() => { setSessions([]); });
     fetch(`/api/bootcamps/${id}/projects`, { headers: h })
       .then(r => r.ok ? r.json() : [])
       .then(d => {
         if (Array.isArray(d) && d.length > 0) {
           const mapped = d.map(p => ({ ...p, req: (p.requirements||[]).map(r => ({ done:false, text:r })), res: (p.resources||[]).map(r => r.name||r) }));
           setProjects(mapped); setActiveProject(mapped[0]);
-        } else { setProjects(BC_PROJECT_LIST); setActiveProject(BC_PROJECT_LIST[0]); }
+        } else { setProjects([]); }
       })
-      .catch(() => { setProjects(BC_PROJECT_LIST); setActiveProject(BC_PROJECT_LIST[0]); });
+      .catch(() => { setProjects([]); });
     fetch(`/api/bootcamps/${id}/announcements`, { headers: h })
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setAnnouncements(d); })
       .catch(() => {});
-    fetch("/api/resources", { headers: h })
+    fetch(`/api/bootcamps/${id}/resources`, { headers: h })
       .then(r => r.ok ? r.json() : [])
-      .then(d => { if (Array.isArray(d) && d.length > 0) setDrawerFiles(d.map(r => ({ icon:"📄", color:"text-gray-400", name:r.title||r.name, meta:`${r.fileSize||"—"} • ${r.type||"PDF"}`, type:r.type==="LINK"?"link":"download" }))); })
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          setBcResources(d);
+          setDrawerFiles(d.map(r => ({
+            icon: r.fileType?.includes("ZIP") ? "📦" : r.link ? "🔗" : "📄",
+            color: r.fileType?.includes("ZIP") ? "text-blue-400" : r.link ? "text-purple-400" : "text-red-400",
+            name: r.name,
+            meta: r.fileSize ? `${r.fileSize} • ${r.fileType||"PDF"}` : r.fileType || "PDF",
+            type: r.link ? "link" : "download",
+            url: r.fileUrl || r.link || "",
+          })));
+        }
+      })
       .catch(() => {});
   }, [enrolled, bootcampData?._id, token]);
 
@@ -932,450 +1000,470 @@ function BootcampSection({ token, profile }) {
     </div>
   );
 
-  /* ── All Bootcamps Grid (when no bootcamp is selected / not enrolled) ── */
+  /* No bootcamp available at all */
   if (!viewBootcamp) return (
-    <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-black text-white mb-1">Bootcamps</h1>
-          <p className="text-gray-400 text-sm">Explore all AIFA bootcamp programs and enroll to get started.</p>
-        </div>
-        {allBootcamps?.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
-            <p className="text-4xl mb-3">🎬</p>
-            <p className="font-semibold text-white">No bootcamps available yet</p>
-            <p className="text-sm mt-1">Check back soon!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {allBootcamps?.map(bc => {
-              const isEnrolled = bc.enrollments?.some(id => String(id) === String(userId));
-              const isActive = bc.isPublished;
-              return (
-                <div key={bc._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden flex flex-col hover:border-white/18 transition-all">
-                  {/* Thumbnail / batch code */}
-                  <div className="h-36 bg-gradient-to-br from-[#1a1040] to-[#0d1117] flex items-center justify-center relative">
-                    {bc.image
-                      ? <img src={bc.image} alt={bc.title} className="w-full h-full object-cover"/>
-                      : <span className="text-5xl font-black text-white/10 tracking-widest">{bc.batchCode || "BC"}</span>
-                    }
-                    <span className={`absolute top-3 right-3 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-widest ${isActive ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-400"}`}>
-                      {isActive ? "ACTIVE" : "COMING SOON"}
-                    </span>
-                    {isEnrolled && (
-                      <span className="absolute top-3 left-3 text-[9px] font-bold bg-[#7C3AED] text-white px-2 py-1 rounded uppercase tracking-widest">Enrolled</span>
-                    )}
-                  </div>
-                  <div className="p-4 flex flex-col flex-1">
-                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-2">{bc.title}</h3>
-                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">{bc.description || "AI-powered filmmaking bootcamp"}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-gray-500 mb-4">
-                      {bc.duration && <span>⏱ {bc.duration}</span>}
-                      {bc.seats && <span>👥 {bc.enrollments?.length || 0}/{bc.seats} seats</span>}
-                    </div>
-                    <div className="mt-auto">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-lg font-black text-white">₹{(bc.price || 0).toLocaleString("en-IN")}</span>
-                        {bc.originalPrice > bc.price && <span className="text-gray-500 line-through text-xs">₹{bc.originalPrice?.toLocaleString("en-IN")}</span>}
-                      </div>
-                      {isEnrolled ? (
-                        <button onClick={() => setViewBootcamp(bc)} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all">
-                          Continue Learning →
-                        </button>
-                      ) : isActive ? (
-                        <button onClick={() => setViewBootcamp(bc)} className="w-full bg-[#C7E36B] !text-black text-xs font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">
-                          View & Enroll →
-                        </button>
-                      ) : (
-                        <button disabled className="w-full bg-white/5 text-gray-500 text-xs font-bold py-2.5 rounded-xl cursor-not-allowed">
-                          Coming Soon
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+    <div className="flex-1 flex items-center justify-center bg-[#0B0F10]">
+      <div className="text-center">
+        <p className="text-4xl mb-3">🎬</p>
+        <p className="font-semibold text-white">No bootcamps available yet</p>
+        <p className="text-sm text-white/40 mt-1">Check back soon!</p>
       </div>
     </div>
   );
 
   if (!enrolled) return (
     <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <button onClick={() => setViewBootcamp(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-6">
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-          All Bootcamps
-        </button>
-        {/* Header */}
-        <div className="mb-8">
-          <span className="text-[10px] bg-[#7C3AED] text-white font-bold px-3 py-1 rounded-full tracking-wider">{bootcampData?.batchLabel || "Batch 2024"}</span>
-          <h1 className="text-3xl font-black text-white mt-4 mb-2 leading-tight">{bootcampData?.title || "Build AI-Powered Films"}<br/>from Script to Screen</h1>
-          <p className="text-gray-400 text-sm leading-relaxed max-w-lg">Transform your storytelling with cutting-edge AI tools. No prior filmmaking experience needed — just your imagination.</p>
-        </div>
+      <div className="max-w-5xl mx-auto px-6 py-8">
 
-        <div className="grid md:grid-cols-[1fr_320px] gap-6">
-          {/* Left: bullets + CTA */}
-          <div>
-            <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5 mb-5">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">What's Included</p>
-              <div className="space-y-3">
-                {[
-                  ["🎯", "Beginner Friendly — No prior experience needed"],
-                  ["⏱", "22 Hours of live + recorded content"],
-                  ["📋", "20 Hands-on Assignments"],
-                  ["🎬", "5 Full Project builds"],
-                  ["📥", "Downloadable Resources & Prompt Packs"],
-                  ["🎓", "Certificate of Completion"],
-                  ["👥", "Lifetime AIFA Community Access"],
-                  ["🤝", "1-on-1 Portfolio Mentorship sessions"],
-                  ["🔴", "Session Recordings — rewatch anytime"],
-                ].map(([icon, text]) => (
-                  <div key={text} className="flex items-start gap-3">
-                    <span className="text-lg shrink-0 mt-0.5">{icon}</span>
-                    <p className="text-sm text-gray-300">{text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Video preview */}
-            {bootcampData?.previewVideoUrl ? (
-              <div className="rounded-2xl overflow-hidden aspect-video border border-white/10">
-                <iframe
-                  src={bootcampData.previewVideoUrl.includes("watch?v=") ? bootcampData.previewVideoUrl.replace("watch?v=","embed/") : bootcampData.previewVideoUrl}
-                  className="w-full h-full"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  title="Bootcamp Preview"
-                />
-              </div>
-            ) : (
-              <div className="relative bg-black rounded-2xl overflow-hidden aspect-video border border-white/10 cursor-pointer group" onClick={()=>{setVideoMsg("Preview video coming soon. Join a live session to get started!");setTimeout(()=>setVideoMsg(""),4000);}}>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#4C1D95]/60 via-[#7C3AED]/40 to-[#1e1b4b]/80 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Ic name="play" size={28} className="text-white ml-1"/>
-                  </div>
-                </div>
-                <div className="absolute bottom-4 left-4">
-                  <p className="text-white font-bold text-sm">Watch Bootcamp Preview</p>
-                  <p className="text-white/60 text-xs">2 min overview</p>
-                </div>
-                {videoMsg&&<div className="absolute inset-x-4 top-4 bg-black/80 text-white text-xs rounded-lg px-3 py-2 text-center">{videoMsg}</div>}
-              </div>
-            )}
-          </div>
-
-          {/* Right: price card + CTA */}
-          <div>
-            <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5 sticky top-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-3xl font-black text-white">₹{(bootcampData?.price||14000).toLocaleString("en-IN")}</span>
-                <span className="text-gray-400 line-through text-base">₹{(bootcampData?.originalPrice||19000).toLocaleString("en-IN")}</span>
-              </div>
-              <p className="text-[#C7E36B] text-xs font-bold mb-4">Save ₹{((bootcampData?.originalPrice||19000)-(bootcampData?.price||14000)).toLocaleString("en-IN")} — Limited seats</p>
-              <div className="space-y-2 mb-5 text-xs text-gray-400">
-                {["1 Month Intensive Program","Lifetime AIFA Membership (Worth ₹40,000)","Certificate of Completion","20 Assignments + 5 Projects"].map(t=>(
-                  <div key={t} className="flex items-center gap-2"><span className="text-[#C7E36B] font-bold">✓</span>{t}</div>
-                ))}
-              </div>
-              <button onClick={()=>navigate("/bootcamp/enroll", { state: { from: "/dashboard", fromPage: "bootcamp" } })} className="w-full bg-[#7C3AED] hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-sm transition-all mb-3">
-                ENROLL NOW →
+        {/* ── Hero card ── */}
+        <div className="bg-[#161B1F] border border-white/8 rounded-[24px] overflow-hidden mb-6">
+          <div className="grid md:grid-cols-2">
+            {/* Left */}
+            <div className="p-8 flex flex-col justify-center">
+              <p className="text-[#C7E36B] text-sm font-bold mb-4">{bootcampData?.tagline || "A Course You'll Actually Finish"}</p>
+              <h1 className="text-3xl font-black text-white leading-tight mb-4">
+                {bootcampData?.title || "Build AI-Powered Films – An AI Fellowship for Creators"}
+              </h1>
+              <p className="text-white/50 text-sm leading-relaxed mb-8">
+                {bootcampData?.description || "Learn how to integrate AI into your creative workflow — no technical or coding background required."}
+              </p>
+              <button
+                onClick={()=>navigate("/bootcamp/enroll", { state: { from: "/dashboard", fromPage: "bootcamp" } })}
+                className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-xl hover:bg-lime-300 transition-all w-fit"
+              >
+                ENROLL NOW
               </button>
-              <p className="text-center text-gray-500 text-[11px]">🔒 Secure payment via Razorpay</p>
+            </div>
+            {/* Right: feature list */}
+            <div className="p-8 border-l border-white/8 flex flex-col justify-center">
+              <div className="space-y-4">
+                {[
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="18" y="3" width="3" height="18" rx="1"/><rect x="11" y="8" width="3" height="13" rx="1"/><rect x="4" y="13" width="3" height="8" rx="1"/></svg>, label:"Beginner"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"22 Hours"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>, label:"20 Assignments"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, label:"Downloadable Content"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2A8 8 0 0 1 2 14v-1a2 2 0 1 1 4 0v4"/></svg>, label:"Hands-on Exercises"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01"/><path d="M2 5V3h20v2"/></svg>, label:"English Captions"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>, label:"Certificate of Completion"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17.5 5.5C19 7 20 9 20 11c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8c.6 0 1.1.1 1.6.2"/><circle cx="12" cy="11" r="3"/><path d="M20 4 12 12"/></svg>, label:"Class Recordings"},
+                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"1 month duration"},
+                ].map(({icon,label})=>(
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-white/60 shrink-0">{icon}</span>
+                    <span className="text-white text-sm">{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* ── Video preview ── */}
+        {bootcampData?.previewVideoUrl ? (
+          <div className="rounded-[24px] overflow-hidden aspect-video border border-white/10">
+            <iframe
+              src={bootcampData.previewVideoUrl.includes("watch?v=") ? bootcampData.previewVideoUrl.replace("watch?v=","embed/") : bootcampData.previewVideoUrl}
+              className="w-full h-full"
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              title="Bootcamp Preview"
+            />
+          </div>
+        ) : (
+          <div
+            className="relative rounded-[24px] overflow-hidden border border-white/10 cursor-pointer group"
+            style={{aspectRatio:"16/9"}}
+            onClick={()=>{setVideoMsg("Preview video coming soon.");setTimeout(()=>setVideoMsg(""),4000);}}
+          >
+            <img
+              src={bootcampData?.image || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80"}
+              alt="Bootcamp preview"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full bg-[#E67E22] flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xl">
+                <Ic name="play" size={32} className="text-white ml-1.5"/>
+              </div>
+            </div>
+            {videoMsg && <div className="absolute inset-x-4 top-4 bg-black/80 text-white text-xs rounded-lg px-3 py-2 text-center">{videoMsg}</div>}
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
     <>
-    <div className="flex flex-col h-full">
-      <div className="relative bg-gradient-to-r from-[#0B0F1A] via-[#1a1040] to-[#0B0F1A] shrink-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80')] bg-cover bg-center opacity-20"/>
-        <div className="relative px-6 py-5">
-          <div className="flex items-center gap-2 mb-2 text-[10px] text-white/60">
-            <button onClick={()=>setViewBootcamp(null)} className="hover:text-white transition-colors">← All Bootcamps</button>
+    <div className="flex flex-col h-full overflow-hidden">
+
+      {/* ── Cinematic Hero Banner ── */}
+      <div className="relative h-[220px] shrink-0 overflow-hidden">
+        <img
+          src={bootcampData?.image || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80"}
+          alt={bootcampData?.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-[#0B0F1A]/40" />
+        <div className="absolute bottom-0 left-0 px-6 py-5">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-[#C7E36B] text-black text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wide">IN PROGRESS</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white/40"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span className="text-white/50 text-[11px]">{bootcampData?.batchLabel || "Batch 2024"}</span>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">IN PROGRESS</span>
-            <span className="text-[10px] text-white/60">{bootcampData?.batchLabel || "Batch 2024"}</span>
-          </div>
-          <h1 className="text-2xl font-black text-white mb-1">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h1>
-          <div className="flex items-center gap-4 text-[11px] text-white/60">
-            <span>📅 {bootcampData?.duration || "12 Weeks"} • {bootcampData?.schedule || "Mon & Wed"}</span>
-            {bootcampData?.mentor && <span>👤 Mentor: <span className="text-white/80 font-medium">{bootcampData.mentor}</span></span>}
-          </div>
+          <h1 className="text-[26px] font-black text-white leading-tight">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h1>
         </div>
       </div>
-      <div className="flex border-b border-gray-100 bg-white px-6 shrink-0">
-        {["overview","sessions","projects"].map(t=>(
-          <button key={t} onClick={()=>setTab(t)} className={`capitalize text-sm font-medium px-4 py-3 border-b-2 transition-all ${tab===t?"border-[#7C3AED] text-[#7C3AED]":"border-transparent text-gray-400 hover:text-gray-900"}`}>{t}</button>
+
+      {/* ── Tab bar ── */}
+      <div className="flex border-b border-white/5 bg-[#0B0F10] px-6 shrink-0">
+        {["overview","sessions","projects"].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`capitalize text-sm font-semibold px-5 py-3 border-b-2 transition-all ${tab===t ? "border-white text-white" : "border-transparent text-white/40 hover:text-white/70"}`}>{t}</button>
         ))}
       </div>
-      <div className="flex-1 overflow-hidden">
 
-        {tab==="overview"&&(
-          <div className="flex gap-5 p-6 h-full overflow-y-auto bg-gray-50">
-            <div className="flex-1 space-y-4 min-w-0">
+      {/* ── Overview ── */}
+      {tab === "overview" && <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_268px] gap-5">
+
+            {/* Left column */}
+            <div className="space-y-4">
+
+              {/* Next Live Session card */}
               <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-5">
                 <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full w-fit mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>NEXT LIVE
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>
+                  NEXT LIVE : SESSION {String(sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1).padStart(2,"0")}
                 </span>
-                <h3 className="text-xl font-bold text-white mb-1">{bootcampData?.nextSessionName || "Upcoming Session"}</h3>
-                <div className="flex items-center gap-4 text-white/80 text-xs mb-4">
-                  <span>📅 {bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt).toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "TBA"}</span>
+                <h3 className="text-xl font-bold text-white mb-2">{bootcampData?.nextSessionName || "Upcoming Session"}</h3>
+                <div className="flex flex-wrap items-center gap-4 text-white/80 text-xs mb-4">
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                    {bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt).toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Today, 7:00 PM IST"}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                    Starts soon
+                  </span>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={()=>window.open(bootcampData?.zoomLink||"https://zoom.us","_blank")} className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2 rounded-xl hover:bg-gray-100">Join Session Now →</button>
-                </div>
+                <button
+                  onClick={() => window.open(bootcampData?.zoomLink || "https://zoom.us", "_blank")}
+                  className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2"
+                >
+                  Join Session Now
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
               </div>
-              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Bootcamp Progress</h3>
-                {(() => {
-                  const totalSessions = sessions.length || 0;
-                  const doneSessions  = sessions.filter(s => s.recordingUrl).length;
-                  const totalProjects = projects.length || 0;
-                  const doneProjects  = projects.filter(p => p.status === "submitted" || p.status === "completed").length;
-                  const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0;
-                  return (
+
+              {/* Progress stats */}
+              {(() => {
+                const totalSessions = sessions.length || 0;
+                const doneSessions  = sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length;
+                const totalProjects = projects.length || 0;
+                const doneProjects  = projects.filter(p => p.status === "submitted" || p.status === "completed").length;
+                const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0;
+                return (
+                  <div className="bg-[#0F1112] border border-white/8 rounded-2xl p-5">
+                    <h3 className="text-sm font-semibold text-white mb-4">Your Bootcamp Progress</h3>
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="border border-gray-200 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Overall Completed</p><p className="text-lg font-black text-gray-900">{pct}%</p></div>
-                      <div className="border border-gray-200 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Sessions Completed</p><p className="text-lg font-black text-gray-900">{String(doneSessions).padStart(2,"0")}/{totalSessions}</p></div>
-                      <div className="border border-gray-200 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Projects</p><p className="text-lg font-black text-gray-900">{String(doneProjects).padStart(2,"0")}/{totalProjects}</p></div>
+                      <div className="border border-white/10 rounded-xl p-4 text-center">
+                        <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-2">OVERALL COMPLETED</p>
+                        <p className="text-2xl font-black text-white">{pct}%</p>
+                      </div>
+                      <div className="border border-white/10 rounded-xl p-4 text-center">
+                        <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-2">SESSIONS COMPLETED</p>
+                        <p className="text-2xl font-black text-white">{String(doneSessions).padStart(2,"0")}/{String(totalSessions).padStart(2,"0")}</p>
+                      </div>
+                      <div className="border border-white/10 rounded-xl p-4 text-center">
+                        <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-2">PROJECTS</p>
+                        <p className="text-2xl font-black text-white">{String(doneProjects).padStart(2,"0")}/{String(totalProjects).padStart(2,"0")}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Announcements */}
+              {announcements.length > 0 && (
+                <div className="bg-[#0F1112] border border-white/8 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-white">Announcements</h3>
+                    {announcements.length > 2 && <button onClick={()=>setShowAllAnn(v=>!v)} className="text-xs text-[#7C3AED] hover:underline">{showAllAnn?"Show Less":"View All"}</button>}
+                  </div>
+                  {(showAllAnn ? announcements : announcements.slice(0,2)).map((a,i)=>(
+                    <div key={i} className="border-b border-white/10 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
+                      <div className="flex items-center justify-between"><p className="text-xs font-semibold text-white">{a.title}</p><span className="text-[10px] text-white/40 shrink-0 ml-2">{a.createdAt?timeAgo(a.createdAt):a.time}</span></div>
+                      <p className="text-[11px] text-white/60 mt-1">{a.content||a.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right column */}
+            <div className="space-y-4">
+
+              {/* Bootcamp Resources */}
+              <div className="bg-[#0F1112] border border-white/8 rounded-2xl p-4">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-white/60"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.51 15.5 0 12.36 0c-1.73 0-3.24.87-4.16 2.16L12 6.55l3.8-3.8c.4.4.7.86.9 1.37L13.13 8H20v12H4V8h3.13L5.97 6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+                  Bootcamp Resources
+                </h3>
+                {bcResources.length === 0 ? (
+                  <p className="text-xs text-white/30 py-3 text-center">No resources added yet.</p>
+                ) : bcResources.slice(0,3).map((r,i)=>{
+                  const isLink = !!(r.link);
+                  const isZip  = r.fileType?.toUpperCase().includes("ZIP");
+                  return (
+                    <div key={r._id||i} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isLink ? "bg-purple-500/20" : isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className={isLink ? "text-purple-400" : isZip ? "text-blue-400" : "text-red-400"}>
+                            {isLink ? <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/> : <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>}
+                          </svg>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-white truncate">{r.name}</p>
+                          <p className="text-[10px] text-white/40">{r.fileSize ? `${r.fileSize} • ${r.fileType||"PDF"}` : isLink ? "EXTERNAL LINK" : r.fileType || "PDF"}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => (r.fileUrl||r.link) ? window.open(r.fileUrl||r.link,"_blank") : null}
+                        className={`shrink-0 ml-2 ${(r.fileUrl||r.link) ? "text-white/50 hover:text-white cursor-pointer" : "text-white/20 cursor-not-allowed"}`}
+                        title={isLink ? "Open link" : "Download"}
+                      >
+                        {isLink
+                          ? <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                          : <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        }
+                      </button>
                     </div>
                   );
-                })()}
+                })}
+                <button
+                  onClick={() => setShowDrawer(true)}
+                  className="w-full mt-3 border border-dashed border-white/20 rounded-xl py-2.5 text-xs text-white/50 hover:text-white hover:border-white/40 transition-colors"
+                >
+                  View All Files {bcResources.length > 3 ? `(${bcResources.length})` : ""}
+                </button>
               </div>
-              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Announcements</h3>
-                  {announcements.length > 2 && <button onClick={()=>setShowAllAnn(v=>!v)} className="text-xs text-[#7C3AED] hover:underline">{showAllAnn?"Show Less":"View All"}</button>}
-                </div>
-                {announcements.length === 0 ? (
-                  <div className="text-center py-4"><p className="text-xs text-gray-400">No announcements yet.</p></div>
-                ) : null}
-                {(showAllAnn ? announcements : announcements.slice(0,2)).map((a,i)=>(
-                  <div key={i} className="border-b border-gray-100 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
-                    <div className="flex items-center justify-between"><p className="text-xs font-semibold text-gray-900">{a.title}</p><span className="text-[10px] text-gray-400 shrink-0 ml-2">{a.createdAt?timeAgo(a.createdAt):a.time}</span></div>
-                    <p className="text-[11px] text-gray-500 mt-1">{a.content||a.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="w-[210px] shrink-0 space-y-4">
-              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                <h3 className="text-xs font-semibold text-gray-900 mb-3">Bootcamp Resources</h3>
-                {(bootcampData?.resources?.slice(0,3)||[{name:"Filmmaking Syllabus.pdf"},{name:"Resource Engineering.zip"},{name:"Weekly Reading List.pdf"}]).map((r,i)=>(
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                    <span className="text-[10px] text-gray-600 truncate flex-1 mr-1">📄 {r.name||r}</span>
-                    <button onClick={()=>r.fileUrl?window.open(r.fileUrl,"_blank"):null} className={`text-gray-400 shrink-0 ${r.fileUrl?"hover:text-[#7C3AED] cursor-pointer":"opacity-40 cursor-not-allowed"}`} title={r.fileUrl?"Download":"No file available"}><Ic name="download" size={13}/></button>
-                  </div>
-                ))}
-                <button onClick={() => setShowDrawer(true)} className="text-xs text-[#7C3AED] hover:underline mt-2">View All Files</button>
-              </div>
-              <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                <h3 className="text-xs font-semibold text-gray-900 mb-3">Your Mentors</h3>
-                {bootcampData?.mentors?.length > 0 ? bootcampData.mentors.map((m,i)=>(
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-bold">{m.name[0]}</div>
-                      <div><p className="text-[10px] font-semibold text-gray-900">{m.name}</p><p className="text-[9px] text-gray-400">{m.role}</p></div>
-                    </div>
-                    <button onClick={()=>m.email?window.open(`mailto:${m.email}`,"_blank"):window.open("https://discord.gg/aifa","_blank")} title={m.email||"Contact via Discord"} className="text-gray-400 hover:text-[#7C3AED]"><Ic name="message" size={13}/></button>
-                  </div>
-                )) : <p className="text-[11px] text-gray-400 py-2">No mentors assigned yet.</p>}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {tab==="sessions"&&(
-          <div className="flex h-full bg-gray-50">
-            <div className="w-[270px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
-              <div className="px-4 py-3 border-b border-gray-100 shrink-0">
-                <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Course Sessions</h3>
+              {/* Your Mentors */}
+              <div className="bg-[#0F1112] border border-white/8 rounded-2xl p-4">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-white/60"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                  Your Mentors
+                </h3>
+                {bootcampData?.mentors?.length > 0 ? bootcampData.mentors.map((m,i)=>(
+                  <div key={i} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+                    <div className="flex items-center gap-3">
+                      {m.photo
+                        ? <img src={m.photo} alt={m.name} className="w-9 h-9 rounded-full object-cover shrink-0"/>
+                        : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] flex items-center justify-center text-white text-sm font-bold shrink-0">{m.name?.[0]}</div>
+                      }
+                      <div>
+                        <p className="text-xs font-semibold text-white">{m.name}</p>
+                        <p className="text-[10px] text-white/40">{m.role}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => m.email ? window.open(`mailto:${m.email}`,"_blank") : window.open("https://discord.gg/aifa","_blank")}
+                      title={m.email || "Contact via Discord"}
+                      className="text-white/40 hover:text-white transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    </button>
+                  </div>
+                )) : (
+                  <p className="text-xs text-white/40 py-3 text-center">No mentors assigned yet.</p>
+                )}
               </div>
-              <div className="flex-1 overflow-y-auto">
-              {(sessions.length > 0 ? sessions : BC_SESSION_LIST).map((s,i)=>(
-                <button key={i} onClick={()=>!s.locked&&setActiveSession(s)} disabled={s.locked} className={`w-full flex items-center gap-3 px-4 py-3 border-b border-gray-100 text-left transition-all ${activeSession?.no===s.no&&!s.locked?"bg-[#7C3AED]/5 border-l-2 border-l-[#7C3AED]":"hover:bg-gray-50"} ${s.locked?"opacity-40 cursor-not-allowed":""}`}>
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${s.locked?"bg-gray-100":s.recordingUrl||s.status==="COMPLETED"?"bg-green-100":"bg-[#7C3AED]/10"}`}>
-                    {s.locked?<Ic name="lock" size={11} className="text-gray-400"/>:s.recordingUrl||s.status==="COMPLETED"?<Ic name="check" size={11} className="text-green-600"/>:<Ic name="play" size={11} className="text-[#7C3AED] ml-0.5"/>}
+            </div>
+
+          </div>
+        </div>
+      </div>}
+
+      {/* ── Sessions tab ── */}
+      {tab === "sessions" && (
+        <div className="flex flex-1 overflow-hidden bg-[#0B0F10]">
+          {/* Left: session list */}
+          <div className="w-[280px] shrink-0 border-r border-white/5 flex flex-col bg-[#0F1112]">
+            <div className="px-4 py-3 border-b border-white/5 shrink-0">
+              <h3 className="text-[11px] font-black text-white/40 uppercase tracking-widest">Course Sessions</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {sessions.length === 0 && <p className="text-white/30 text-xs text-center py-8 px-4">No sessions added yet.</p>}
+              {sessions.map((s,i) => (
+                <button key={i} onClick={() => !s.locked && setActiveSession(s)} disabled={s.locked}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-white/5 text-left transition-all ${activeSession?.no===s.no && !s.locked ? "bg-white/8 border-l-2 border-l-white" : "hover:bg-white/5"} ${s.locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${s.locked ? "border-white/10 bg-transparent" : s.recordingUrl || s.status==="COMPLETED" ? "border-white/20 bg-white/10" : "border-white/20 bg-white/5"}`}>
+                    {s.locked ? <Ic name="lock" size={11} className="text-white/30"/> : s.recordingUrl || s.status==="COMPLETED" ? <Ic name="check" size={11} className="text-white/80"/> : <Ic name="play" size={11} className="text-white/70 ml-0.5"/>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[11px] font-semibold truncate ${activeSession?.no===s.no&&!s.locked?"text-[#7C3AED]":"text-gray-900"}`}>Session {s.no}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{s.title}</p>
+                    <p className="text-xs font-bold text-white truncate">Session {s.no}</p>
+                    <p className="text-[10px] text-white/40 truncate uppercase tracking-wide mt-0.5">{s.title || s.tag || "Screen Writing"}</p>
                   </div>
                 </button>
               ))}
-              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-200">
-                {activeSession?.recordingUrl ? (
-                  <iframe
-                    src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=", "embed/") : activeSession.recordingUrl}
-                    className="w-full h-full"
-                    allowFullScreen
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    title={activeSession.title}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center cursor-pointer group" onClick={()=>{
-                    if(activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink){
-                      window.open(bootcampData.zoomLink,"_blank");
-                    } else {
-                      setVideoMsg("Recording not yet available for this session. Check back after the live class.");
-                      setTimeout(()=>setVideoMsg(""),4000);
-                    }
-                  }}>
-                    <div className="text-center">
-                      <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
-                        <Ic name="play" size={28} className="text-white ml-1"/>
-                      </div>
-                      <p className="text-xs text-gray-300 max-w-[200px]">{activeSession?.title}</p>
-                      {videoMsg ? (
-                        <p className="text-[11px] text-yellow-400 mt-1 max-w-[220px]">{videoMsg}</p>
-                      ) : (
-                        <p className="text-[10px] text-gray-500 mt-1">{activeSession?.status==="ACTIVE"&&bootcampData?.zoomLink?"Click to join live session":"Recording not yet available"}</p>
-                      )}
+          </div>
+          {/* Right: video + details */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative">
+              {activeSession?.recordingUrl ? (
+                <iframe src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=","embed/") : activeSession.recordingUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.title}/>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center cursor-pointer group"
+                  onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
+                  {activeSession?.thumbnail ? <img src={activeSession.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60"/> : null}
+                  <div className="text-center relative z-10">
+                    <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
+                      <Ic name="play" size={28} className="text-white ml-1"/>
                     </div>
+                    {videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{activeSession?.status==="ACTIVE" && bootcampData?.zoomLink ? "Click to join live session" : "Recording not yet available"}</p>}
                   </div>
-                )}
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-wider">Session {String(activeSession?.no||1).padStart(2,"0")}</p>
-                <h2 className="text-lg font-bold text-gray-900 mb-2">{activeSession?.title}</h2>
-                <p className="text-sm text-gray-500 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Lesson Attachments</h4>
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">SESSION {String(activeSession?.no||1).padStart(2,"0")}</p>
+              <h2 className="text-xl font-black text-white mb-2">{activeSession?.title}</h2>
+              <p className="text-sm text-white/60 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
+            </div>
+            {/* Lesson Attachments */}
+            <div>
+              <h4 className="text-xs font-black text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+                Lesson Attachments
+              </h4>
+              {activeSession?.resources?.length > 0 ? (
                 <div className="space-y-2">
-                  {(activeSession?.resources?.length > 0 ? activeSession.resources.map(r=>r.name||r) : ["Lesson_Notes.pdf","Reference_Materials.zip","Exercise_Files.pdf"]).map((f,i)=>(
-                    <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm cursor-pointer hover:border-[#7C3AED]/30 transition-all">
-                      <span className={`text-xl shrink-0 ${typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"text-blue-500":"text-red-500"}`}>{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"📦":"📄"}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{f}</p>
-                        <p className="text-[10px] text-gray-400">{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"ZIP Archive":"PDF Document"}</p>
+                  {activeSession.resources.map((r,i) => {
+                    const f = r.name || r;
+                    const isZip = typeof f==="string" && f.toLowerCase().endsWith(".zip");
+                    return (
+                      <div key={i} className="flex items-center gap-3 bg-[#0F1112] border border-white/8 rounded-xl px-4 py-3 cursor-pointer hover:border-white/20 transition-all" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={isZip ? "text-blue-400" : "text-red-400"}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{f}</p>
+                          <p className="text-[10px] text-white/40">{isZip ? "ZIP Archive" : "PDF Document"}</p>
+                        </div>
+                        <Ic name="download" size={14} className="text-white/30 hover:text-white shrink-0"/>
                       </div>
-                      <Ic name="download" size={14} className="text-gray-400 hover:text-[#7C3AED] shrink-0"/>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-white/30 text-xs py-2">No attachments for this session.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Projects tab ── */}
+      {tab === "projects" && (
+        <div className="flex flex-1 overflow-hidden bg-[#0B0F10]">
+          <div className="w-[260px] shrink-0 border-r border-white/5 flex flex-col bg-[#0F1112]">
+            <div className="px-4 py-3 border-b border-white/5 shrink-0">
+              <h3 className="text-[11px] font-black text-white/40 uppercase tracking-widest">Bootcamp Projects</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+              {projects.length === 0 && <p className="text-white/30 text-xs text-center py-8 px-4">No projects added yet.</p>}
+              {projects.map((p,i) => (
+                <div key={i} onClick={() => setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no ? "border-white/30 bg-white/8" : "border-white/8 hover:border-white/20 bg-[#0B0F10]"}`}>
+                  <p className="text-[10px] text-white/50 font-bold uppercase mb-0.5">{p.no || `Project ${i+1}`}</p>
+                  <p className="text-xs font-bold text-white">{p.title}</p>
+                  <p className="text-[10px] text-white/40 mt-1 line-clamp-2">{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          {activeProject ? (
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              <div>
+                <p className="text-[10px] text-white/40 font-bold uppercase mb-1">{activeProject.no || "Project"}</p>
+                <h2 className="text-xl font-black text-white mb-2">{activeProject.title}</h2>
+                <p className="text-sm text-white/60 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-white/40 uppercase tracking-wider mb-3">Requirements</h4>
+                <div className="space-y-2">
+                  {activeProject.req.map((r,i) => (
+                    <div key={i} className="flex items-center gap-3 bg-[#0F1112] border border-white/8 rounded-xl px-4 py-3">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${r.done ? "bg-white" : "border-2 border-white/20"}`}>{r.done && <Ic name="check" size={10} className="text-black"/>}</div>
+                      <p className={`text-sm ${r.done ? "text-white/30 line-through" : "text-white/80"}`}>{r.text}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {tab==="projects"&&(
-          <div className="flex h-full bg-gray-50">
-            <div className="w-[260px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
-              <div className="px-4 pt-4 pb-3 shrink-0 border-b border-gray-100">
-                <h3 className="text-sm font-bold text-gray-900">Bootcamp Projects</h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">Select a project to view resources.</p>
-              </div>
-              <div className="flex-1 overflow-y-auto px-3 pb-3 pt-2 space-y-2">
-              {(projects.length > 0 ? projects : BC_PROJECT_LIST).map((p,i)=>(
-                <div key={i} onClick={()=>setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no?"border-[#7C3AED]/40 bg-[#7C3AED]/5":"border-gray-100 hover:border-gray-200 bg-white"}`}>
-                  <p className="text-[10px] text-[#7C3AED] font-bold uppercase">{p.no || `Project ${i+1}`}</p>
-                  <p className="text-xs font-bold text-gray-900 mt-0.5">{p.title}</p>
-                  <p className="text-[10px] text-gray-400 mt-1 line-clamp-2">{p.desc}</p>
-                </div>
-              ))}
-              </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-center p-8">
+              <p className="text-white/30 text-sm">Select a project from the list</p>
             </div>
-            {activeProject ? (
-              <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                <div>
-                  <p className="text-[10px] text-[#7C3AED] font-bold uppercase mb-1">{activeProject.no || "Project"}</p>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">{activeProject.title}</h2>
-                  <p className="text-sm text-gray-500 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Requirements</h4>
-                  <div className="space-y-2">
-                    {activeProject.req.map((r,i)=>(
-                      <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3">
-                        <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 transition-all ${r.done?"bg-[#7C3AED]":"border-2 border-gray-300"}`}>
-                          {r.done&&<Ic name="check" size={10} className="text-white"/>}
-                        </div>
-                        <p className={`text-sm ${r.done?"text-gray-400 line-through":"text-gray-700"}`}>{r.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Project Resources</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {activeProject.res.map((f,i)=>(
-                      <div key={i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-3 py-3 cursor-pointer hover:border-[#7C3AED]/40 shadow-sm transition-all">
-                        <span className={`text-xl shrink-0 ${typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"text-blue-500":"text-red-500"}`}>{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"📦":"📄"}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-900 font-medium truncate">{f}</p>
-                          <p className="text-[10px] text-gray-400">{typeof f==="string"&&f.toLowerCase().endsWith(".zip")?"ZIP Archive":"PDF Document"}</p>
-                        </div>
-                        <Ic name="download" size={14} className="text-gray-400 hover:text-[#7C3AED] shrink-0"/>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-center p-8">
-                <div>
-                  <p className="text-gray-500 text-sm mb-1">Select a project from the list</p>
-                  <p className="text-gray-400 text-xs">Complete assignments to unlock more projects.</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-      </div>
-    </div>
+    </div>{/* end flex flex-col h-full */}
 
     {/* ── VIEW ALL FILES DRAWER ── */}
     <div>
       {/* Overlay */}
       {showDrawer && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowDrawer(false)} />}
       {/* Drawer */}
-      <div className={`fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
-        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between">
+      <div className={`fixed right-0 top-0 h-full w-[340px] bg-[#0F1112] shadow-2xl z-50 flex flex-col transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
+        <div className="px-5 py-4 border-b border-white/8 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">📁</span>
+            <div className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-white/70"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+            </div>
             <div>
-              <p className="text-gray-900 font-bold text-base">Bootcamp Resources</p>
-              <p className="text-gray-400 text-xs mt-0.5">Access all files, guides, and templates.</p>
+              <p className="text-white font-bold text-sm">Bootcamp Resources</p>
+              <p className="text-white/40 text-[11px] mt-0.5">Access all files, guides, and templates.</p>
             </div>
           </div>
-          <button onClick={() => setShowDrawer(false)} className="text-gray-400 hover:text-gray-700 text-xl mt-0.5 leading-none">✕</button>
+          <button onClick={() => setShowDrawer(false)} className="text-white/40 hover:text-white transition-colors mt-0.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-          {drawerFiles.map((f, i) => (
-            <div key={i} className="bg-white border border-gray-100 rounded-xl px-3 py-3 flex items-center gap-3 shadow-sm hover:border-gray-200 transition-all">
-              <span className={`text-xl shrink-0 ${f.color}`}>{f.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-gray-900 font-semibold text-xs truncate">{f.name}</p>
-                <p className="text-gray-400 text-[10px] mt-0.5">{f.meta}</p>
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {drawerFiles.length === 0 ? (
+            <p className="text-white/30 text-sm text-center py-8">No resources added yet.</p>
+          ) : drawerFiles.map((f, i) => {
+            const isLink = f.type === "link";
+            const isZip  = f.meta?.toUpperCase().includes("ZIP") || f.name?.toLowerCase().endsWith(".zip");
+            return (
+              <div key={i} className="bg-[#0B0F10] border border-white/8 rounded-xl px-3.5 py-3 flex items-center gap-3 hover:border-white/20 transition-all cursor-pointer" onClick={() => (f.url||f.fileUrl) ? window.open(f.url||f.fileUrl,"_blank") : null}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLink ? "bg-purple-500/20" : isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className={isLink ? "text-purple-400" : isZip ? "text-blue-400" : "text-red-400"}>
+                    {isLink ? <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/> : <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>}
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold text-xs truncate">{f.name}</p>
+                  <p className="text-white/40 text-[10px] mt-0.5">{f.meta || (isLink ? "EXTERNAL LINK" : "PDF")}</p>
+                </div>
+                <div className={`shrink-0 ${(f.url||f.fileUrl) ? "text-white/40" : "text-white/20 opacity-40"}`}>
+                  {isLink
+                    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                    : <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  }
+                </div>
               </div>
-              <button
-                onClick={() => f.url ? window.open(f.url, "_blank") : f.fileUrl ? window.open(f.fileUrl, "_blank") : null}
-                className={`shrink-0 transition-all ${f.url||f.fileUrl?"text-gray-400 hover:text-[#7C3AED] cursor-pointer":"text-gray-600 opacity-40 cursor-not-allowed"}`}
-                title={f.type === "link" ? "Open link" : (f.url||f.fileUrl ? "Download" : "No file available")}
-              >
-                {f.type === "link" ? "↗" : "↓"}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="px-4 py-4 border-t border-gray-100">
-          <button onClick={() => drawerFiles.filter(f=>f.url||f.fileUrl).forEach(f=>window.open(f.url||f.fileUrl,"_blank"))} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
+        <div className="px-4 py-4 border-t border-white/8">
+          <button onClick={() => drawerFiles.filter(f=>f.url||f.fileUrl).forEach(f=>window.open(f.url||f.fileUrl,"_blank"))} className="w-full bg-[#C7E36B] text-black font-black py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Download All
           </button>
         </div>

@@ -573,7 +573,7 @@ function ListBootcampAdmin({ onSelect, token }) {
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
   const [createSuccess, setCreateSuccess]     = useState(false);
-  const [newBC, setNewBC] = useState({name:"",code:"",price:"",duration:"",status:"ACTIVE"});
+  const [newBC, setNewBC] = useState({name:"",code:"",price:"",duration:"",status:"ACTIVE",previewVideoUrl:""});
   const [bootcamps, setBootcamps] = useState([]);
   const [loadingBC, setLoadingBC] = useState(true);
 
@@ -615,6 +615,7 @@ function ListBootcampAdmin({ onSelect, token }) {
                 <Fld label="Price in ₹" value={newBC.price} onChange={v=>setNewBC(b=>({...b,price:v}))} placeholder="₹6,499"/>
               </div>
               <Fld label="Duration" value={newBC.duration} onChange={v=>setNewBC(b=>({...b,duration:v}))} placeholder="12 Weeks"/>
+              <Fld label="Preview Video URL (optional)" value={newBC.previewVideoUrl} onChange={v=>setNewBC(b=>({...b,previewVideoUrl:v}))} placeholder="https://www.youtube.com/watch?v=..."/>
               <div>
                 <p className="text-[10px] text-gray-400 uppercase font-semibold mb-2">Status</p>
                 <div className="flex gap-2">
@@ -639,6 +640,7 @@ function ListBootcampAdmin({ onSelect, token }) {
                       duration: newBC.duration,
                       isPublished: newBC.status === "ACTIVE",
                       description: "",
+                      ...(newBC.previewVideoUrl.trim() && { previewVideoUrl: newBC.previewVideoUrl.trim() }),
                     }),
                   });
                   if (res.ok) {
@@ -647,7 +649,7 @@ function ListBootcampAdmin({ onSelect, token }) {
                     setShowCreateModal(false);
                     setCreateSuccess(true);
                     setTimeout(() => setCreateSuccess(false), 3000);
-                    setNewBC({ name:"", code:"", price:"", duration:"", status:"ACTIVE" });
+                    setNewBC({ name:"", code:"", price:"", duration:"", status:"ACTIVE", previewVideoUrl:"" });
                     setStatusFilter("All"); // reset filter so new bootcamp is visible
                   } else {
                     const d = await res.json();
