@@ -894,7 +894,8 @@ function BootcampSection({ token, profile }) {
   useEffect(() => {
     if (!enrolled || !bootcampData?._id) return;
     const id = bootcampData._id;
-    fetch(`/api/bootcamps/${id}/sessions`)
+    const h = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`/api/bootcamps/${id}/sessions`, { headers: h })
       .then(r => r.ok ? r.json() : [])
       .then(d => {
         if (Array.isArray(d) && d.length > 0) {
@@ -903,7 +904,7 @@ function BootcampSection({ token, profile }) {
         } else { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); }
       })
       .catch(() => { setSessions(BC_SESSION_LIST); setActiveSession(BC_SESSION_LIST[0]); });
-    fetch(`/api/bootcamps/${id}/projects`)
+    fetch(`/api/bootcamps/${id}/projects`, { headers: h })
       .then(r => r.ok ? r.json() : [])
       .then(d => {
         if (Array.isArray(d) && d.length > 0) {
@@ -912,15 +913,15 @@ function BootcampSection({ token, profile }) {
         } else { setProjects(BC_PROJECT_LIST); setActiveProject(BC_PROJECT_LIST[0]); }
       })
       .catch(() => { setProjects(BC_PROJECT_LIST); setActiveProject(BC_PROJECT_LIST[0]); });
-    fetch(`/api/bootcamps/${id}/announcements`)
+    fetch(`/api/bootcamps/${id}/announcements`, { headers: h })
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d)) setAnnouncements(d); })
       .catch(() => {});
-    fetch("/api/resources")
+    fetch("/api/resources", { headers: h })
       .then(r => r.ok ? r.json() : [])
       .then(d => { if (Array.isArray(d) && d.length > 0) setDrawerFiles(d.map(r => ({ icon:"📄", color:"text-gray-400", name:r.title||r.name, meta:`${r.fileSize||"—"} • ${r.type||"PDF"}`, type:r.type==="LINK"?"link":"download" }))); })
       .catch(() => {});
-  }, [enrolled, bootcampData?._id]);
+  }, [enrolled, bootcampData?._id, token]);
 
   if (!bcLoaded) return (
     <div className="flex-1 flex items-center justify-center bg-[#0B0F10]">
