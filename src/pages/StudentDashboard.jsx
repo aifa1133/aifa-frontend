@@ -1314,13 +1314,13 @@ function BootcampSection({ token, profile }) {
 
       {/* ── Sessions tab ── */}
       {tab === "sessions" && (
-        <div className="flex overflow-hidden bg-[#0B0F10]" style={{height:"calc(100vh - 260px)"}}>
+        <div className="flex bg-[#0B0F10] min-h-0">
           {/* Left: session list */}
           <div className="w-[280px] shrink-0 border-r border-white/5 flex flex-col bg-[#0F1112]">
             <div className="px-4 py-3 border-b border-white/5 shrink-0">
               <h3 className="text-[11px] font-black text-white/40 uppercase tracking-widest">Course Sessions</h3>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div>
               {sessions.length === 0 && <p className="text-white/30 text-xs text-center py-8 px-4">No sessions added yet.</p>}
               {sessions.map((s,i) => (
                 <button key={i} onClick={() => !s.locked && setActiveSession(s)} disabled={s.locked}
@@ -1338,7 +1338,7 @@ function BootcampSection({ token, profile }) {
             </div>
           </div>
           {/* Right: video + details */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          <div className="flex-1 p-5 space-y-5 min-w-0">
             <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative">
               {activeSession?.recordingUrl ? (
                 <iframe src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=","embed/") : activeSession.recordingUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.title}/>
@@ -1395,12 +1395,12 @@ function BootcampSection({ token, profile }) {
 
       {/* ── Projects tab ── */}
       {tab === "projects" && (
-        <div className="flex overflow-hidden bg-[#0B0F10]" style={{height:"calc(100vh - 260px)"}}>
+        <div className="flex bg-[#0B0F10] min-h-0">
           <div className="w-[260px] shrink-0 border-r border-white/5 flex flex-col bg-[#0F1112]">
             <div className="px-4 py-3 border-b border-white/5 shrink-0">
               <h3 className="text-[11px] font-black text-white/40 uppercase tracking-widest">Bootcamp Projects</h3>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+            <div className="px-3 py-3 space-y-2">
               {projects.length === 0 && <p className="text-white/30 text-xs text-center py-8 px-4">No projects added yet.</p>}
               {projects.map((p,i) => (
                 <div key={i} onClick={() => setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no ? "border-white/30 bg-white/8" : "border-white/8 hover:border-white/20 bg-[#0B0F10]"}`}>
@@ -1412,7 +1412,7 @@ function BootcampSection({ token, profile }) {
             </div>
           </div>
           {activeProject ? (
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="flex-1 p-6 space-y-5 min-w-0">
               <div>
                 <p className="text-[10px] text-white/40 font-bold uppercase mb-1">{activeProject.no || "Project"}</p>
                 <h2 className="text-xl font-black text-white mb-2">{activeProject.title}</h2>
