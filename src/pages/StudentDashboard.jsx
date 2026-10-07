@@ -1131,30 +1131,57 @@ function BootcampSection({ token, profile }) {
             <div className="space-y-4">
 
               {/* Next Live Session card */}
-              <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-5">
-                <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full w-fit mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>
-                  NEXT LIVE : SESSION {String(sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1).padStart(2,"0")}
-                </span>
-                <h3 className="text-xl font-bold text-white mb-2">{bootcampData?.nextSessionName || "Upcoming Session"}</h3>
-                <div className="flex flex-wrap items-center gap-4 text-white/80 text-xs mb-4">
-                  <span className="flex items-center gap-1.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-                    {bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt).toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Today, 7:00 PM IST"}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                    Starts soon
-                  </span>
-                </div>
-                <button
-                  onClick={() => window.open(bootcampData?.zoomLink || "https://zoom.us", "_blank")}
-                  className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2"
-                >
-                  Join Session Now
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                </button>
-              </div>
+              {(() => {
+                const nextAt = bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt) : null;
+                const now = new Date();
+                let timeLabel = "TBA";
+                let countdownLabel = null;
+                if (nextAt) {
+                  timeLabel = nextAt.toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+                  const diffMs = nextAt - now;
+                  if (diffMs > 0) {
+                    const h = Math.floor(diffMs/3600000), m = Math.floor((diffMs%3600000)/60000);
+                    countdownLabel = h > 0 ? `Starts in ${h}h ${m}m` : `Starts in ${m}m`;
+                  } else {
+                    countdownLabel = "Live now";
+                  }
+                }
+                const nextSessionNo = sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1;
+                return (
+                  <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-5 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full w-fit mb-3">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>
+                        NEXT LIVE · SESSION {String(nextSessionNo).padStart(2,"0")}
+                      </span>
+                      <h3 className="text-xl font-bold text-white mb-2 leading-tight">{bootcampData?.nextSessionName || "Upcoming Session"}</h3>
+                      <div className="flex flex-wrap items-center gap-4 text-white/80 text-xs mb-4">
+                        <span className="flex items-center gap-1.5">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                          {timeLabel}
+                        </span>
+                        {countdownLabel && (
+                          <span className="flex items-center gap-1.5">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                            {countdownLabel}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => window.open(bootcampData?.zoomLink || "https://zoom.us", "_blank")}
+                        className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2 w-fit"
+                      >
+                        Join Session Now
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      </button>
+                    </div>
+                    {/* Camera placeholder circle */}
+                    <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-white/60"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Progress stats */}
               {(() => {
@@ -1164,18 +1191,18 @@ function BootcampSection({ token, profile }) {
                 const doneProjects  = projects.filter(p => p.status === "submitted" || p.status === "completed").length;
                 const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0;
                 return (
-                  <div className="bg-[#0F1112] border border-white/8 rounded-2xl p-5">
+                  <div className="border border-dashed border-white/20 rounded-2xl p-5">
                     <h3 className="text-sm font-semibold text-white mb-4">Your Bootcamp Progress</h3>
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="border border-white/10 rounded-xl p-4 text-center">
+                      <div className="border border-dashed border-white/20 rounded-xl p-4 text-center">
                         <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-2">OVERALL COMPLETED</p>
                         <p className="text-2xl font-black text-white">{pct}%</p>
                       </div>
-                      <div className="border border-white/10 rounded-xl p-4 text-center">
+                      <div className="border border-dashed border-white/20 rounded-xl p-4 text-center">
                         <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-2">SESSIONS COMPLETED</p>
                         <p className="text-2xl font-black text-white">{String(doneSessions).padStart(2,"0")}/{String(totalSessions).padStart(2,"0")}</p>
                       </div>
-                      <div className="border border-white/10 rounded-xl p-4 text-center">
+                      <div className="border border-dashed border-white/20 rounded-xl p-4 text-center">
                         <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-2">PROJECTS</p>
                         <p className="text-2xl font-black text-white">{String(doneProjects).padStart(2,"0")}/{String(totalProjects).padStart(2,"0")}</p>
                       </div>
