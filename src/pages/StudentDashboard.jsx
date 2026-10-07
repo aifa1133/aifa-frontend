@@ -1094,7 +1094,7 @@ function BootcampSection({ token, profile }) {
 
   return (
     <>
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col">
 
       {/* ── Cinematic Hero Banner ── */}
       <div className="relative h-[220px] shrink-0 overflow-hidden">
@@ -1123,7 +1123,7 @@ function BootcampSection({ token, profile }) {
       </div>
 
       {/* ── Overview ── */}
-      {tab === "overview" && <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
+      {tab === "overview" && <div className="bg-[#0B0F10]">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_268px] gap-5">
 
@@ -1314,7 +1314,7 @@ function BootcampSection({ token, profile }) {
 
       {/* ── Sessions tab ── */}
       {tab === "sessions" && (
-        <div className="flex flex-1 overflow-hidden bg-[#0B0F10]">
+        <div className="flex overflow-hidden bg-[#0B0F10]" style={{height:"calc(100vh - 260px)"}}>
           {/* Left: session list */}
           <div className="w-[280px] shrink-0 border-r border-white/5 flex flex-col bg-[#0F1112]">
             <div className="px-4 py-3 border-b border-white/5 shrink-0">
@@ -1395,7 +1395,7 @@ function BootcampSection({ token, profile }) {
 
       {/* ── Projects tab ── */}
       {tab === "projects" && (
-        <div className="flex flex-1 overflow-hidden bg-[#0B0F10]">
+        <div className="flex overflow-hidden bg-[#0B0F10]" style={{height:"calc(100vh - 260px)"}}>
           <div className="w-[260px] shrink-0 border-r border-white/5 flex flex-col bg-[#0F1112]">
             <div className="px-4 py-3 border-b border-white/5 shrink-0">
               <h3 className="text-[11px] font-black text-white/40 uppercase tracking-widest">Bootcamp Projects</h3>
