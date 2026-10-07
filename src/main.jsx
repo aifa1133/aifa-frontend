@@ -15,9 +15,21 @@ window.fetch = async (...args) => {
   if (res.status === 401 && localStorage.getItem("aifa_token")) {
     const url = typeof args[0] === "string" ? args[0] : (args[0]?.url || "");
     if (!url.includes("/api/auth/")) {
-      localStorage.removeItem("aifa_token");
-      localStorage.removeItem("aifa_user");
-      window.location.href = "/";
+      // Confirm the token is genuinely invalid before forcing logout.
+      // A 401 from a DB/infra hiccup should not log the user out.
+      try {
+        const check = await _fetch("/api/users/me", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("aifa_token")}` },
+          signal: AbortSignal.timeout(4000),
+        });
+        if (check.status === 401) {
+          localStorage.removeItem("aifa_token");
+          localStorage.removeItem("aifa_user");
+          window.location.href = "/";
+        }
+      } catch {
+        // Network/timeout — don't log out; let the user retry
+      }
     }
   }
   return res;
