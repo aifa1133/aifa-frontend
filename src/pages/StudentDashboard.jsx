@@ -343,9 +343,9 @@ export default function StudentDashboard() {
               >
                 <span className="w-8 h-8 rounded-full overflow-hidden block">
                   {profile?.profilePicture
-                    ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-                    : <span className="w-full h-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center">{userInitial}</span>
-                  }
+                    ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display="none"; e.currentTarget.nextSibling.style.display="flex"; }} />
+                    : null}
+                  <span className="w-full h-full bg-[#C7E36B] text-black font-bold text-sm flex items-center justify-center" style={{display: profile?.profilePicture ? "none" : "flex"}}>{userInitial}</span>
                 </span>
                 {!emailVerified && (
                   <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-[#0F1112] z-10" />
