@@ -1445,43 +1445,38 @@ function BootcampSection({ token, profile }) {
       {/* Overlay */}
       {showDrawer && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowDrawer(false)} />}
       {/* Drawer */}
-      <div className={`fixed right-0 top-0 h-full w-[340px] bg-[#0F1112] shadow-2xl z-50 flex flex-col transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
-        <div className="px-5 py-4 border-b border-white/8 flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-white/70"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
-            </div>
-            <div>
-              <p className="text-white font-bold text-sm">Bootcamp Resources</p>
-              <p className="text-white/40 text-[11px] mt-0.5">Access all files, guides, and templates.</p>
-            </div>
+      <div className={`fixed right-0 top-0 h-full w-[340px] bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between">
+          <div>
+            <p className="text-gray-900 font-bold text-base">Bootcamp Resources</p>
+            <p className="text-gray-400 text-xs mt-0.5">Access all files, guides, and templates.</p>
           </div>
-          <button onClick={() => setShowDrawer(false)} className="text-white/40 hover:text-white transition-colors mt-0.5">
+          <button onClick={() => setShowDrawer(false)} className="text-gray-400 hover:text-gray-700 transition-colors mt-0.5">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {drawerFiles.length === 0 ? (
-            <p className="text-white/30 text-sm text-center py-8">No resources added yet.</p>
+            <p className="text-gray-400 text-sm text-center py-8">No resources added yet.</p>
           ) : drawerFiles.map((f, i) => {
             const isLink = f.type === "link";
             const isZip  = f.meta?.toUpperCase().includes("ZIP") || f.name?.toLowerCase().endsWith(".zip");
             return (
-              <div key={i} className="bg-[#0B0F10] border border-white/8 rounded-xl px-3.5 py-3 flex items-center gap-3 hover:border-white/20 transition-all cursor-pointer" onClick={() => (f.url||f.fileUrl) ? window.open(f.url||f.fileUrl,"_blank") : null}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLink ? "bg-purple-500/20" : isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className={isLink ? "text-purple-400" : isZip ? "text-blue-400" : "text-red-400"}>
+              <div key={i} className="bg-white border border-gray-100 rounded-xl px-3.5 py-3 flex items-center gap-3 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer" onClick={() => (f.url||f.fileUrl) ? window.open(f.url||f.fileUrl,"_blank") : null}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLink ? "bg-purple-50" : isZip ? "bg-blue-50" : "bg-red-50"}`}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={isLink ? "text-purple-500" : isZip ? "text-blue-500" : "text-red-500"}>
                     {isLink ? <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/> : <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>}
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-semibold text-xs truncate">{f.name}</p>
-                  <p className="text-white/40 text-[10px] mt-0.5">{f.meta || (isLink ? "EXTERNAL LINK" : "PDF")}</p>
+                  <p className="text-gray-900 font-semibold text-sm truncate">{f.name}</p>
+                  <p className="text-gray-400 text-xs mt-0.5">{f.meta || (isLink ? "EXTERNAL LINK" : "PDF")}</p>
                 </div>
-                <div className={`shrink-0 ${(f.url||f.fileUrl) ? "text-white/40" : "text-white/20 opacity-40"}`}>
+                <div className={`shrink-0 ${(f.url||f.fileUrl) ? "text-gray-400" : "text-gray-200"}`}>
                   {isLink
-                    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                    : <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                   }
                 </div>
               </div>
@@ -1489,7 +1484,7 @@ function BootcampSection({ token, profile }) {
           })}
         </div>
 
-        <div className="px-4 py-4 border-t border-white/8">
+        <div className="px-4 py-4 border-t border-gray-100">
           <button onClick={() => drawerFiles.filter(f=>f.url||f.fileUrl).forEach(f=>window.open(f.url||f.fileUrl,"_blank"))} className="w-full bg-[#C7E36B] text-black font-black py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Download All
           </button>
