@@ -409,6 +409,7 @@ function AdminOverview({ token, onNavigate }) {
 /* ── PROJECTS TAB (extracted to avoid hook-inside-render issues) ── */
 function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setProjSaved, projFileRef, projects, setProjects, bootcampId, token }) {
   const h = { Authorization:`Bearer ${token}` };
+  const [projResUploading,setProjResUploading]=useState(false);
   /* Map DB field names (requirements/resources) to local keys (req/res) */
   useEffect(() => {
     if (!selProj) { setLocalProj(null); return; }
@@ -492,10 +493,16 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
       {localProj&&(
         <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5 overflow-y-auto">
           <input type="file" ref={projFileRef} className="hidden" multiple
-            onChange={e=>{
+            onChange={async e=>{
               const files=Array.from(e.target.files||[]);
               if(!files.length) return;
-              setLocalProj(p=>({...p,res:[...(p.res||[]),...files.map(f=>({name:f.name,size:Math.round(f.size/1024)+"KB",fileType:f.name.split(".").pop().toUpperCase()}))]}));
+              setProjResUploading(true);
+              for(const f of files){
+                let fileUrl="";
+                try{const fd=new FormData();fd.append("file",f);const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});if(up.ok){const ud=await up.json();fileUrl=ud.url||"";}}catch{}
+                setLocalProj(p=>({...p,res:[...(p.res||[]),{name:f.name,size:(f.size/1024/1024).toFixed(1)+" MB",fileType:f.name.split(".").pop().toUpperCase(),fileUrl}]}));
+              }
+              setProjResUploading(false);
               e.target.value="";
             }}/>
           <div className="grid grid-cols-2 gap-4">
@@ -526,7 +533,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] text-gray-400 font-semibold uppercase">Project Downloads</p>
-              <button onClick={()=>projFileRef.current?.click()} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="upload" size={11}/>Upload File</button>
+              <button onClick={()=>!projResUploading&&projFileRef.current?.click()} disabled={projResUploading} className="text-[10px] text-[#C7E36B] flex items-center gap-1 disabled:opacity-50"><I name="upload" size={11}/>{projResUploading?"Uploading...":"Upload File"}</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {(localProj.res||[]).length===0&&(
@@ -541,7 +548,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
                   <span className="text-lg">📄</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-white truncate">{typeof f==="string"?f:f.name||f}</p>
-                    {(f.size||f.fileType)&&<p className="text-[10px] text-gray-500">{f.fileType||""} {f.size||""}</p>}
+                    {(f.size||f.fileType)&&<p className="text-[10px] text-gray-500">{f.fileType||""} {f.size||""}{f.fileUrl?" · ✓":""}</p>}
                   </div>
                   <button onClick={()=>setLocalProj(p=>({...p,res:(p.res||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
                 </div>
@@ -731,7 +738,7 @@ function BootcampAdmin({ token }) {
   const [selProj,setSelProj]=useState(null);
   const [selAnn,setSelAnn]=useState(null);
   const [annF,setAnnF]=useState({title:"",content:""});
-  const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",price:"",originalPrice:"",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true});
+  const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",price:"",originalPrice:"",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true,nextSessionAt:"",nextSessionName:"",image:""});
   const [mentors,setMentors]=useState([]);
   const [newMentor,setNewMentor]=useState("");
   /* Feature 5: sessions modal + search */
@@ -774,6 +781,7 @@ function BootcampAdmin({ token }) {
   const [annsLoading,setAnnsLoading]=useState(false);
   /* G: Edit Details modal resources + recording + status */
   const [modalResources,setModalResources]=useState([]);
+  const [modalResUploading,setModalResUploading]=useState(false);
   const [modalRecordingUrl,setModalRecordingUrl]=useState("");
   const [modalStatus,setModalStatus]=useState("COMING SOON");
   /* H: View Student */
@@ -808,7 +816,7 @@ function BootcampAdmin({ token }) {
     if (editSession) {
       setModalStatus(editSession.status || "COMING SOON");
       setModalRecordingUrl(editSession.recordingUrl || "");
-      setModalResources((editSession.resources || []).map(r => r.name || r));
+      setModalResources((editSession.resources || []).map(r => typeof r === "string" ? {name:r,size:"—",fileUrl:""} : r));
     }
   }, [editSession?._id]);
 
@@ -864,6 +872,9 @@ function BootcampAdmin({ token }) {
         zoomId: sel.zoomId || "",
         zoomPass: sel.zoomPass || "",
         autoRecord: true, reminders: true, chat: true,
+        nextSessionAt: sel.nextSessionAt ? sel.nextSessionAt.slice(0,16) : "",
+        nextSessionName: sel.nextSessionName || "",
+        image: sel.image || "",
       });
       setMentors(sel.mentors || []);
     }
@@ -877,7 +888,7 @@ function BootcampAdmin({ token }) {
       return;
     }
     setBatchErr("");
-    const body = { batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0 };
+    const body = { batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, nextSessionAt:stgs.nextSessionAt||null, nextSessionName:stgs.nextSessionName||"", image:stgs.image||"" };
     try {
       const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
       if (r.ok) {
@@ -1013,13 +1024,31 @@ function BootcampAdmin({ token }) {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-[10px] text-white uppercase font-bold">Session Resources</p>
-                        <button onClick={()=>setModalResources(prev=>[...prev,"New_File.pdf"])} className="text-xs text-[#C7E36B] flex items-center gap-1"><I name="plus" size={11}/>Add Resource</button>
+                        <label className={`text-xs text-[#C7E36B] flex items-center gap-1 cursor-pointer ${modalResUploading?"opacity-50 pointer-events-none":""}`}>
+                          <I name="upload" size={11}/>{modalResUploading?"Uploading...":"Upload File"}
+                          <input type="file" multiple className="hidden" onChange={async e=>{
+                            const files=Array.from(e.target.files||[]);
+                            if(!files.length) return;
+                            setModalResUploading(true);
+                            for(const f of files){
+                              let fileUrl="";
+                              try{const fd=new FormData();fd.append("file",f);const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});if(up.ok){const ud=await up.json();fileUrl=ud.url||"";}}catch{}
+                              setModalResources(prev=>[...prev,{name:f.name,size:(f.size/1024/1024).toFixed(1)+" MB",fileUrl}]);
+                            }
+                            setModalResUploading(false);
+                            e.target.value="";
+                          }}/>
+                        </label>
                       </div>
                       <div className="space-y-2">
+                        {modalResources.length===0&&<p className="text-gray-600 text-xs text-center py-3">No files attached yet.</p>}
                         {modalResources.map((f,idx)=>(
-                          <div key={idx} className={`flex items-center gap-3 border rounded-lg px-3 py-2.5 ${idx===0?"border-[#C7E36B]/40 bg-[#C7E36B]/5":"border-white/10 bg-white/[0.03]"}`}>
+                          <div key={idx} className="flex items-center gap-3 border border-white/10 bg-white/[0.03] rounded-lg px-3 py-2.5">
                             <I name="resources" size={14} className="text-gray-400"/>
-                            <span className="text-white text-xs flex-1">{f}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-xs truncate">{f.name||f}</p>
+                              {f.size&&<p className="text-[10px] text-gray-500">{f.size}{f.fileUrl?" · ✓ Uploaded":""}</p>}
+                            </div>
                             <button onClick={()=>setModalResources(prev=>prev.filter((_,j)=>j!==idx))} className="text-gray-500 hover:text-red-400"><I name="trash" size={12}/></button>
                           </div>
                         ))}
@@ -1033,7 +1062,7 @@ function BootcampAdmin({ token }) {
                         const payload = {
                           status: modalStatus,
                           recordingUrl: modalRecordingUrl,
-                          resources: modalResources.map(n=>({name:n,size:"—"})),
+                          resources: modalResources.map(r=>typeof r==="string"?{name:r,size:"—",fileUrl:""}:r),
                         };
                         await fetch(`/api/bootcamps/${sel._id}/sessions/${editSession._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(payload) });
                         setSessions(prev=>prev.map(s=>s._id===editSession._id?{...s,...payload}:s));
@@ -1100,11 +1129,11 @@ function BootcampAdmin({ token }) {
               <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
                   <thead><tr className="border-b border-white/10 text-gray-400">
-                    {["No.","Session Name","Status","Edit Details","View Recording"].map(hd=><th key={hd} className="text-left px-4 py-3 font-semibold">{hd}</th>)}
+                    {["No.","Session Name","Status","Edit Details","View Recording",""].map(hd=><th key={hd} className="text-left px-4 py-3 font-semibold">{hd}</th>)}
                   </tr></thead>
                   <tbody>
                     {sessions.length === 0 ? (
-                      <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-xs">No sessions yet. Click '+ Add Session' to create the first one.</td></tr>
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-xs">No sessions yet. Click '+ Add Session' to create the first one.</td></tr>
                     ) : sessions.filter(s=>
                       (!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())) &&
                       (sessStatusFilter==="All Status"||s.status===sessStatusFilter)
@@ -1115,6 +1144,7 @@ function BootcampAdmin({ token }) {
                         <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
                         <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="flex items-center gap-1 text-[#C7E36B] hover:underline text-xs"><I name="edit" size={12}/>Edit Details</button></td>
                         <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>s.recordingUrl?window.open(s.recordingUrl,"_blank"):alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
+                        <td className="px-4 py-3"><button onClick={async()=>{if(!confirm(`Delete session "${s.name}"?`))return;const res=await fetch(`/api/bootcamps/${sel._id}/sessions/${s._id}`,{method:"DELETE",headers:h});if(res.ok)setSessions(prev=>prev.filter(x=>x._id!==s._id));}} className="text-gray-500 hover:text-red-400 transition-colors"><I name="trash" size={13}/></button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1520,6 +1550,24 @@ function BootcampAdmin({ token }) {
                 <Fld label="End Date" type="date" value={stgs.endDate} onChange={v=>setStgs(p=>({...p,endDate:v}))} />
                 <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs(p=>({...p,price:v}))} placeholder="e.g. 14000" />
                 <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs(p=>({...p,originalPrice:v}))} placeholder="e.g. 19000" />
+                <Fld label="Next Session Name" value={stgs.nextSessionName} onChange={v=>setStgs(p=>({...p,nextSessionName:v}))} placeholder="e.g. Generative Video with Sora" />
+                <Fld label="Next Session Date & Time" type="datetime-local" value={stgs.nextSessionAt} onChange={v=>setStgs(p=>({...p,nextSessionAt:v}))} />
+              </div>
+              <div className="col-span-2">
+                <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Cover Image</p>
+                <div className="flex items-center gap-3">
+                  {stgs.image&&<img src={stgs.image} alt="cover" className="w-16 h-10 object-cover rounded-lg border border-white/10"/>}
+                  <label className="text-xs border border-white/20 text-gray-300 px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5 cursor-pointer">
+                    <I name="upload" size={12}/>{stgs.image?"Replace Image":"Upload Cover"}
+                    <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                      const f=e.target.files?.[0]; if(!f) return;
+                      const fd=new FormData(); fd.append("image",f);
+                      try{const r=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});if(r.ok){const d=await r.json();setStgs(p=>({...p,image:d.url||""}));}}catch{}
+                      e.target.value="";
+                    }}/>
+                  </label>
+                  {stgs.image&&<button onClick={()=>setStgs(p=>({...p,image:""}))} className="text-xs text-gray-500 hover:text-red-400">Remove</button>}
+                </div>
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Batch Status</p>
