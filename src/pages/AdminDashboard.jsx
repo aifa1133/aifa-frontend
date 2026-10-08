@@ -944,7 +944,7 @@ function BootcampAdmin({ token }) {
   const [anns,setAnns]=useState([]);
   const [projects,setProjects]=useState([]);
 
-  const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings","Messages"];
+  const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings"];
 
   if(view==="list") return(
     <ListBootcampAdmin token={token} onSelect={(b)=>{setSel(b);setTab("overview");setView("detail");}} />
@@ -1004,8 +1004,9 @@ function BootcampAdmin({ token }) {
               ))}
             </div>
             {(()=>{
-              const nextSess = sessions.find(s => s.status === "COMING SOON") ||
-                (sel?.nextSessionAt && new Date(sel.nextSessionAt) > new Date() ? { name: sel.nextSessionName || "Upcoming Session", no: null, scheduledAt: sel.nextSessionAt } : null);
+              const nextAtDate = sel?.nextSessionAt ? new Date(sel.nextSessionAt) : null;
+              const nextSessionValid = nextAtDate && nextAtDate > new Date();
+              const nextSess = nextSessionValid ? sessions.find(s => s.status === "COMING SOON") : null;
               if (!nextSess) return (
                 <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
                   <div className="text-center">
@@ -1140,7 +1141,7 @@ function BootcampAdmin({ token }) {
                     <div>
                       <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Status</p>
                       <select value={newSess.status} onChange={e=>setNewSess({...newSess,status:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
-                        {["Completed","Active","Coming Soon","Cancelled"].map(o=><option key={o}>{o}</option>)}
+                        {["COMING SOON","ACTIVE","COMPLETED","CANCELLED"].map(o=><option key={o}>{o}</option>)}
                       </select>
                     </div>
                   </div>
@@ -1677,8 +1678,6 @@ function BootcampAdmin({ token }) {
           </div>
         )}
 
-        {/* ── Messages Tab ── */}
-        {tab==="Messages"&&sel&&<MessagesTab bootcampId={sel._id} token={token} h={h}/>}
 
       </div>
     </div>
