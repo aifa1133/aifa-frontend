@@ -915,12 +915,13 @@ function BootcampAdmin({ token }) {
       return;
     }
     setBatchErr("");
-    const body = { batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, nextSessionAt:stgs.nextSessionAt||null, nextSessionName:stgs.nextSessionName||"", image:stgs.image||"" };
+    const body = { title:stgs.name, batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, nextSessionAt:stgs.nextSessionAt||null, nextSessionName:stgs.nextSessionName||"", image:stgs.image||"" };
     try {
       const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
       if (r.ok) {
         const updated = await r.json();
         setSel(prev=>({...prev,...updated}));
+        setBootcamps(prev => prev.map(b => b._id === updated._id ? {...b,...updated} : b));
         save(setSavedBatch);
       } else {
         const data = await r.json();
