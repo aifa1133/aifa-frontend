@@ -147,30 +147,15 @@ export default function JobsSection() {
   const [showModal, setShowModal] = useState(false);
   const isPro = useIsPro();
 
-  const STATIC_JOBS = [
-    { tag: "AI Film",    title: "A 2-minute short AI film needed",          type: "PART-TIME",  description: "Create an AI-driven cinematic ad emphasizing clarity and strong user engagement.", budget: "< ₹50/hr",    timeline: "Immediate",     category: "Cinematography",    createdAt: new Date() },
-    { tag: "AI Ads",     title: "Build high-converting AI video ads",       type: "FULL-TIME",  description: "Create an AI-driven cinematic ad focused on brand clarity and user engagement.",  budget: "₹200+/hr",    timeline: "Within 2 Weeks", category: "Video Editing",      createdAt: new Date() },
-    { tag: "AI Story",   title: "AI short film with strong storytelling",   type: "PART-TIME",  description: "Create an AI-driven cinematic short film with strong storytelling.",              budget: "₹50–100/hr",  timeline: "1 Month+",       category: "Directing",          createdAt: new Date() },
-    { tag: "AI Editing", title: "AI post-production editing needed",        type: "CONTRACT",   description: "Professional video editing for AI-generated film sequences.",                     budget: "₹100–200/hr", timeline: "Flexible",       category: "Video Editing",      createdAt: new Date() },
-    { tag: "AI Music",   title: "AI sound design for short film",           type: "PART-TIME",  description: "Compose and design AI-driven sound for a 5-minute short film.",                  budget: "₹50–100/hr",  timeline: "Immediate",      category: "Sound Design",       createdAt: new Date() },
-    { tag: "AI Film",    title: "Production design for AI sci-fi project",  type: "FULL-TIME",  description: "Design visual language and production design for an AI science fiction short.",   budget: "₹100–200/hr", timeline: "Within 2 Weeks", category: "Production Design",  createdAt: new Date() },
-  ];
-
   useEffect(() => {
-    Promise.all([
-      fetch("/api/jobs").then(r => r.json()).catch(() => []),
-      fetch("/api/jobs/external?page=1").then(r => r.json()).catch(() => ({})),
-    ]).then(([internal, extResp]) => {
-      const extJobs = extResp?.jobs || (Array.isArray(extResp) ? extResp : []);
-      const combined = [
-        ...(Array.isArray(internal) ? internal : []),
-        ...extJobs,
-      ];
-      setAllJobs(combined.length > 0 ? combined : STATIC_JOBS);
-      setExtTotal(extResp?.total || 0);
-      setExtPage(1);
-      setLoading(false);
-    });
+    fetch("/api/jobs/external?page=1").then(r => r.json()).catch(() => ({}))
+      .then(extResp => {
+        const extJobs = extResp?.jobs || (Array.isArray(extResp) ? extResp : []);
+        setAllJobs(extJobs);
+        setExtTotal(extResp?.total || 0);
+        setExtPage(1);
+        setLoading(false);
+      });
   }, []);
 
   const handleLoadMore = async () => {
