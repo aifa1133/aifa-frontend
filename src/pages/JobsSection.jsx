@@ -137,12 +137,14 @@ function JobCard({ job, timeAgo, onSelect, locked, onLockedClick }) {
 export default function JobsSection() {
   const [allJobs, setAllJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [extPage, setExtPage] = useState(1);
+  const [extTotal, setExtTotal] = useState(0);
   const [catFilter, setCatFilter]   = useState([]);
   const [budgetFilter, setBudgetFilter] = useState([]);
   const [timelineFilter, setTimelineFilter] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(9);
   const isPro = useIsPro();
 
   const STATIC_JOBS = [
@@ -157,16 +159,36 @@ export default function JobsSection() {
   useEffect(() => {
     Promise.all([
       fetch("/api/jobs").then(r => r.json()).catch(() => []),
-      fetch("/api/jobs/external").then(r => r.json()).catch(() => []),
-    ]).then(([internal, external]) => {
+      fetch("/api/jobs/external?page=1").then(r => r.json()).catch(() => ({})),
+    ]).then(([internal, extResp]) => {
+      const extJobs = extResp?.jobs || (Array.isArray(extResp) ? extResp : []);
       const combined = [
         ...(Array.isArray(internal) ? internal : []),
-        ...(Array.isArray(external) ? external : []),
+        ...extJobs,
       ];
       setAllJobs(combined.length > 0 ? combined : STATIC_JOBS);
+      setExtTotal(extResp?.total || 0);
+      setExtPage(1);
       setLoading(false);
     });
   }, []);
+
+  const handleLoadMore = async () => {
+    if (!isPro) { setShowModal(true); return; }
+    setLoadingMore(true);
+    const nextPage = extPage + 1;
+    try {
+      const res = await fetch(`/api/jobs/external?page=${nextPage}`);
+      const data = await res.json();
+      const newJobs = data?.jobs || [];
+      if (newJobs.length > 0) {
+        setAllJobs(prev => [...prev, ...newJobs]);
+        setExtPage(nextPage);
+        setExtTotal(data.total || extTotal);
+      }
+    } catch {}
+    setLoadingMore(false);
+  };
 
   const toggle = (setter) => (val) => setter(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
 
@@ -177,7 +199,7 @@ export default function JobsSection() {
     return true;
   });
 
-  const clearAll = () => { setCatFilter([]); setBudgetFilter([]); setTimelineFilter([]); setVisibleCount(9); };
+  const clearAll = () => { setCatFilter([]); setBudgetFilter([]); setTimelineFilter([]); };
   const hasFilters = catFilter.length + budgetFilter.length + timelineFilter.length > 0;
 
   const timeAgo = (date) => {
@@ -233,7 +255,7 @@ export default function JobsSection() {
         {/* Job grid — first card always open, rest locked for non-Pro */}
         {!loading && filtered.length > 0 && (
           <div className="grid md:grid-cols-3 gap-6">
-            {filtered.slice(0, visibleCount).map((job, i) => (
+            {filtered.map((job, i) => (
               <JobCard
                 key={job._id || i}
                 job={job}
@@ -247,13 +269,14 @@ export default function JobsSection() {
         )}
 
         {/* Load more */}
-        {!loading && filtered.length > visibleCount && (
+        {!loading && (extTotal === 0 || allJobs.length < extTotal) && (
           <div className="flex justify-center mt-12">
             <button
-              onClick={() => isPro ? setVisibleCount(c => c + 9) : setShowModal(true)}
-              className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-60"
             >
-              + Load more jobs →
+              {loadingMore ? "Loading…" : "+ Load more jobs →"}
             </button>
           </div>
         )}
