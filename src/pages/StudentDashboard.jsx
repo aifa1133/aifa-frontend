@@ -1116,9 +1116,9 @@ function BootcampSection({ token, profile }) {
       </div>
 
       {/* ── Tab bar ── */}
-      <div className="flex border-b border-gray-200 bg-white px-6 shrink-0">
+      <div className={`flex border-b px-6 shrink-0 ${tab==="sessions" ? "border-white/10 bg-[#0B0F10]" : "border-gray-200 bg-white"}`}>
         {["overview","sessions","projects"].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`capitalize text-sm font-semibold px-5 py-3 border-b-2 transition-all ${tab===t ? "border-gray-900 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-700"}`}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={`capitalize text-sm font-semibold px-5 py-3 border-b-2 transition-all ${tab===t ? (tab==="sessions" ? "border-white text-white" : "border-gray-900 text-gray-900") : (tab==="sessions" ? "border-transparent text-white/40 hover:text-white/70" : "border-transparent text-gray-400 hover:text-gray-700")}`}>{t}</button>
         ))}
       </div>
 
@@ -1314,11 +1314,11 @@ function BootcampSection({ token, profile }) {
 
       {/* ── Sessions tab ── */}
       {tab === "sessions" && (
-        <div className="flex bg-white min-h-0">
+        <div className="flex bg-[#0B0F10] min-h-0">
           {/* Left: session list */}
-          <div className="w-[280px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
-            <div className="px-4 py-3 border-b border-gray-100 shrink-0">
-              <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Course Sessions</h3>
+          <div className="w-[280px] shrink-0 border-r border-white/8 flex flex-col bg-[#0B0F10]">
+            <div className="px-4 py-3 border-b border-white/8 shrink-0">
+              <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Course Sessions</h3>
             </div>
             <div className="px-3 py-3 space-y-2">
               {sessions.length === 0 && <p className="text-gray-400 text-xs text-center py-8 px-4">No sessions added yet.</p>}
@@ -1356,13 +1356,13 @@ function BootcampSection({ token, profile }) {
               )}
             </div>
             <div>
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">SESSION {String(activeSession?.no||1).padStart(2,"0")}</p>
-              <h2 className="text-xl font-black text-gray-900 mb-2">{activeSession?.title}</h2>
-              <p className="text-sm text-gray-500 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">SESSION {String(activeSession?.no||1).padStart(2,"0")}</p>
+              <h2 className="text-xl font-black text-white mb-2">{activeSession?.title}</h2>
+              <p className="text-sm text-white/50 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
             </div>
             {/* Lesson Attachments */}
-            <div>
-              <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <div className="border border-white/10 rounded-2xl p-4">
+              <h4 className="text-xs font-black text-white/60 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
                 Lesson Attachments
               </h4>
@@ -1372,21 +1372,21 @@ function BootcampSection({ token, profile }) {
                     const f = r.name || r;
                     const isZip = typeof f==="string" && f.toLowerCase().endsWith(".zip");
                     return (
-                      <div key={i} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 cursor-pointer hover:border-gray-300 transition-all" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isZip ? "bg-blue-100" : "bg-red-100"}`}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={isZip ? "text-blue-500" : "text-red-500"}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                      <div key={i} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:border-white/25 transition-all" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={isZip ? "text-blue-400" : "text-red-400"}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{f}</p>
-                          <p className="text-[10px] text-gray-400">{isZip ? "ZIP Archive" : "PDF Document"}</p>
+                          <p className="text-sm font-semibold text-white truncate">{f}</p>
+                          <p className="text-[10px] text-white/40">{isZip ? "ZIP Archive" : "PDF Document"}</p>
                         </div>
-                        <Ic name="download" size={14} className="text-gray-400 hover:text-gray-700 shrink-0"/>
+                        <Ic name="download" size={14} className="text-white/40 shrink-0"/>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-xs py-2">No attachments for this session.</p>
+                <p className="text-white/30 text-xs py-2">No attachments for this session.</p>
               )}
             </div>
           </div>
