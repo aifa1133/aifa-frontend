@@ -1003,26 +1003,46 @@ function BootcampAdmin({ token }) {
                 </div>
               ))}
             </div>
-            <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-6 flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400"/>NEXT LIVE : SESSION 12
-                  </span>
+            {(()=>{
+              const nextSess = sessions.find(s => s.status === "COMING SOON") ||
+                (sel?.nextSessionAt && new Date(sel.nextSessionAt) > new Date() ? { name: sel.nextSessionName || "Upcoming Session", no: null, scheduledAt: sel.nextSessionAt } : null);
+              if (!nextSess) return (
+                <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
+                  <div className="text-center">
+                    <I name="videocam" size={32} className="text-gray-600 mx-auto mb-3"/>
+                    <p className="text-white font-semibold text-base">No session is scheduled right now</p>
+                    <p className="text-gray-500 text-xs mt-1">Mark a session as "Coming Soon" in the Sessions tab to show it here.</p>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Generative Video with Sora &amp; Midjourney</h2>
-                <div className="flex items-center gap-5 text-white/80 text-sm mb-4">
-                  <span>📅 Today, 7:00 PM EST</span><span>⏳ Starts in 2h 45m</span>
+              );
+              const sessionDate = nextSess.scheduledAt ? new Date(nextSess.scheduledAt) : null;
+              return (
+                <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-6 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>
+                        NEXT LIVE{nextSess.no ? ` : SESSION ${nextSess.no}` : ""}
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">{nextSess.name}</h2>
+                    {sessionDate && (
+                      <div className="flex items-center gap-5 text-white/80 text-sm mb-4">
+                        <span>📅 {sessionDate.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})}</span>
+                        <span>🕐 {sessionDate.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>
+                      </div>
+                    )}
+                    <div className="flex gap-3 mt-4">
+                      <button onClick={()=>{if(stgs.zoomLink){window.open(stgs.zoomLink,"_blank")}else{alert("No Zoom link configured. Please add it in Settings → Zoom Configuration.")}}} className="bg-[#C7E36B] text-black text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-lime-300">Join Session Now →</button>
+                      <button onClick={()=>setTab("sessions")} className="bg-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/30">Edit Session</button>
+                    </div>
+                  </div>
+                  <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center ml-6 shrink-0">
+                    <I name="videocam" size={36} className="text-white"/>
+                  </div>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={()=>{if(stgs.zoomLink){window.open(stgs.zoomLink,"_blank")}else{alert("No Zoom link configured. Please add it in Settings → Zoom Configuration.")}}} className="bg-[#C7E36B] text-black text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-lime-300">Join Session Now →</button>
-                  <button onClick={()=>setTab("sessions")} className="bg-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/30">Edit Session</button>
-                </div>
-              </div>
-              <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center ml-6 shrink-0">
-                <I name="videocam" size={36} className="text-white"/>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         )}
 
