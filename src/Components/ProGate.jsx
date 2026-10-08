@@ -1,15 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export function useIsPro() {
+function readIsPro() {
   try {
     const user = JSON.parse(localStorage.getItem("aifa_user") || "null");
     return !!(user?.isPro || user?.role === "admin");
   } catch {
     return false;
   }
+}
+
+export function useIsPro() {
+  const [isPro, setIsPro] = useState(readIsPro);
+  useEffect(() => {
+    const refresh = () => setIsPro(readIsPro());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("aifa_user_updated", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("aifa_user_updated", refresh);
+    };
+  }, []);
+  return isPro;
 }
 
 export function ProUpgradeModal({ onClose }) {

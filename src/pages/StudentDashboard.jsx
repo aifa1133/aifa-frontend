@@ -118,6 +118,12 @@ export default function StudentDashboard() {
         setProfile(d);
         setEmailVerified(!!d.emailVerified);
         setLoading(false);
+        // Sync isPro so ProGate works correctly
+        const _u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+        _u.isPro = !!d.isPro;
+        _u.proExpiry = d.proExpiry || null;
+        localStorage.setItem("aifa_user", JSON.stringify(_u));
+        window.dispatchEvent(new Event("aifa_user_updated"));
         // Auto-refresh influencer token once per page load (module flag prevents StrictMode double-fetch)
         if (!localStorage.getItem("influencer_token") && !_infTokenFetched) {
           _infTokenFetched = true;
@@ -3012,7 +3018,7 @@ function ProfileSection({ profile, token, onUpdated }) {
     const data = await res.json();
     if (res.ok) {
       onUpdated(data);
-      localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role, profilePicture: data.profilePicture || "", emailVerified: !!data.emailVerified }));
+      localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role, profilePicture: data.profilePicture || "", emailVerified: !!data.emailVerified, isPro: !!data.isPro, proExpiry: data.proExpiry || null }));
       setMsg("Saved!"); setEditing(false);
     } else setMsg(data.message || "Failed.");
     setSaving(false);

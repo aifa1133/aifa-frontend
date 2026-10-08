@@ -8750,6 +8750,8 @@ function MembershipAdmin({ token }) {
   const [showExport, setShowExport]     = useState(false);
   const [exportFmt, setExportFmt]       = useState("xlsx");
   const [page, setPage]           = useState(1);
+  const [proSaving, setProSaving]       = useState(false);
+  const [proDays, setProDays]           = useState("365");
   const PER_PAGE = 5;
 
   useEffect(() => {
@@ -8804,6 +8806,23 @@ function MembershipAdmin({ token }) {
     Expired: "bg-red-500 text-white",
     Pending: "bg-orange-500 text-white",
     Paused:  "bg-gray-600 text-white",
+  };
+
+  const handleProToggle = async (memberId, activate) => {
+    setProSaving(true);
+    try {
+      const body = activate ? { isPro: true, durationDays: Number(proDays) || 365 } : { isPro: false };
+      const res = await fetch(`/api/membership/activate/${memberId}`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMembers(prev => prev.map(m => m._id === memberId ? { ...m, isPro: !!data.user?.isPro, proExpiry: data.user?.proExpiry } : m));
+        setViewMember(prev => prev ? { ...prev, isPro: !!data.user?.isPro, proExpiry: data.user?.proExpiry } : prev);
+      }
+    } catch {}
+    setProSaving(false);
   };
 
   const handleExport = () => {
@@ -9025,7 +9044,39 @@ function MembershipAdmin({ token }) {
                 </div>
               ))}
             </div>
-            <div className="h-4"/>
+            {/* Pro membership toggle */}
+            <div className="px-4 pb-4">
+              <div className="bg-[#0F1112] border border-white/5 rounded-xl px-4 py-3.5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.8" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span className="text-sm text-white">Pro Membership</span>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-lg ${viewMember.isPro ? "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30" : "bg-white/10 text-gray-400"}`}>
+                    {viewMember.isPro ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                {viewMember.isPro ? (
+                  <div className="space-y-2">
+                    {viewMember.proExpiry && <p className="text-xs text-gray-400">Expires: {new Date(viewMember.proExpiry).toLocaleDateString("en",{month:"short",day:"2-digit",year:"numeric"})}</p>}
+                    <button onClick={() => handleProToggle(viewMember._id, false)} disabled={proSaving}
+                      className="w-full py-2 text-xs font-bold border border-red-500/40 text-red-400 rounded-lg hover:bg-red-500/10 transition disabled:opacity-50">
+                      {proSaving ? "Saving…" : "Deactivate Pro"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="number" min="1" value={proDays} onChange={e => setProDays(e.target.value)}
+                      className="w-20 bg-transparent border border-white/20 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-[#C7E36B]" placeholder="Days"/>
+                    <span className="text-xs text-gray-400">days</span>
+                    <button onClick={() => handleProToggle(viewMember._id, true)} disabled={proSaving}
+                      className="flex-1 py-2 text-xs font-bold bg-[#C7E36B] text-black rounded-lg hover:opacity-90 transition disabled:opacity-50">
+                      {proSaving ? "Saving…" : "Activate Pro"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
