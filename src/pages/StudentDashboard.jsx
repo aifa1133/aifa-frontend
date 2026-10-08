@@ -1316,22 +1316,22 @@ function BootcampSection({ token, profile }) {
       {tab === "sessions" && (
         <div className="flex bg-white min-h-0">
           {/* Left: session list */}
-          <div className="w-[280px] shrink-0 border-r border-gray-100 flex flex-col bg-gray-50">
+          <div className="w-[280px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
             <div className="px-4 py-3 border-b border-gray-100 shrink-0">
               <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Course Sessions</h3>
             </div>
-            <div>
+            <div className="px-3 py-3 space-y-2">
               {sessions.length === 0 && <p className="text-gray-400 text-xs text-center py-8 px-4">No sessions added yet.</p>}
               {sessions.map((s,i) => (
                 <button key={i} onClick={() => !s.locked && setActiveSession(s)} disabled={s.locked}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 text-left transition-all ${activeSession?.no===s.no && !s.locked ? "bg-white border-l-2 border-l-gray-900" : "hover:bg-white"} ${s.locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                  className={`w-full flex items-center gap-3 px-3 py-3.5 rounded-xl text-left transition-all border ${activeSession?.no===s.no && !s.locked ? "bg-gray-900 border-gray-700" : "bg-gray-900 border-gray-800 hover:border-gray-600"} ${s.locked ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${s.locked ? "border-gray-200 bg-transparent" : s.recordingUrl || s.status==="COMPLETED" ? "border-gray-300 bg-gray-100" : "border-gray-300 bg-white"}`}>
-                    {s.locked ? <Ic name="lock" size={11} className="text-gray-300"/> : s.recordingUrl || s.status==="COMPLETED" ? <Ic name="check" size={11} className="text-gray-600"/> : <Ic name="play" size={11} className="text-gray-500 ml-0.5"/>}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-gray-600`}>
+                    {s.locked ? <Ic name="lock" size={11} className="text-gray-500"/> : s.recordingUrl || s.status==="COMPLETED" ? <Ic name="check" size={11} className="text-gray-400"/> : <Ic name="play" size={11} className="text-gray-400 ml-0.5"/>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-900 truncate">Session {s.no}</p>
-                    <p className="text-[10px] text-gray-400 truncate uppercase tracking-wide mt-0.5">{s.title || s.tag || "Screen Writing"}</p>
+                    <p className="text-xs font-bold text-white truncate">Session {s.no}</p>
+                    <p className="text-[10px] text-gray-500 truncate uppercase tracking-wide mt-0.5">{s.title || s.tag || "Screen Writing"}</p>
                   </div>
                 </button>
               ))}
@@ -1386,7 +1386,7 @@ function BootcampSection({ token, profile }) {
                   })}
                 </div>
               ) : (
-                <p className="text-white/30 text-xs py-2">No attachments for this session.</p>
+                <p className="text-gray-400 text-xs py-2">No attachments for this session.</p>
               )}
             </div>
           </div>
@@ -1396,39 +1396,68 @@ function BootcampSection({ token, profile }) {
       {/* ── Projects tab ── */}
       {tab === "projects" && (
         <div className="flex bg-white min-h-0">
-          <div className="w-[260px] shrink-0 border-r border-gray-100 flex flex-col bg-gray-50">
-            <div className="px-4 py-3 border-b border-gray-100 shrink-0">
-              <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Bootcamp Projects</h3>
+          <div className="w-[260px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
+            <div className="px-4 py-4 border-b border-gray-100 shrink-0">
+              <h3 className="text-sm font-black text-gray-900">Bootcamp Projects</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Select a project to view resources.</p>
             </div>
             <div className="px-3 py-3 space-y-2">
               {projects.length === 0 && <p className="text-gray-400 text-xs text-center py-8 px-4">No projects added yet.</p>}
               {projects.map((p,i) => (
-                <div key={i} onClick={() => setActiveProject(p)} className={`p-3 border rounded-xl cursor-pointer transition-all ${activeProject?.no===p.no ? "border-gray-300 bg-white shadow-sm" : "border-gray-200 hover:border-gray-300 bg-white"}`}>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">{p.no || `Project ${i+1}`}</p>
-                  <p className="text-xs font-bold text-gray-900">{p.title}</p>
-                  <p className="text-[10px] text-gray-400 mt-1 line-clamp-2">{p.desc}</p>
+                <div key={i} onClick={() => setActiveProject(p)} className={`p-3 rounded-xl cursor-pointer transition-all border ${activeProject?.no===p.no ? "bg-gray-900 border-gray-700" : "bg-gray-900 border-gray-800 hover:border-gray-600"}`}>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">{p.no || `Project ${i+1}`}</p>
+                  <p className="text-xs font-bold text-white">{p.title}</p>
+                  <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{p.desc}</p>
                 </div>
               ))}
             </div>
           </div>
           {activeProject ? (
-            <div className="flex-1 p-6 space-y-5 min-w-0">
+            <div className="flex-1 p-6 space-y-5 min-w-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">{activeProject.no || "Project"}</p>
-                <h2 className="text-xl font-black text-gray-900 mb-2">{activeProject.title}</h2>
-                <p className="text-sm text-gray-500 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
+                <span className="inline-flex items-center px-2.5 py-1 bg-gray-900 rounded-md text-[10px] font-black text-white uppercase tracking-wider mb-3">{activeProject.no || "Project"}</span>
+                <h2 className="text-3xl font-black text-gray-900 mb-3">{activeProject.title}</h2>
+                <p className="text-base text-gray-500 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
               </div>
-              <div>
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Requirements</h4>
-                <div className="space-y-2">
-                  {activeProject.req.map((r,i) => (
-                    <div key={i} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
-                      <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${r.done ? "bg-gray-900" : "border-2 border-gray-300"}`}>{r.done && <Ic name="check" size={10} className="text-white"/>}</div>
-                      <p className={`text-sm ${r.done ? "text-gray-300 line-through" : "text-gray-700"}`}>{r.text}</p>
+              <hr className="border-gray-100"/>
+              {(() => {
+                const reqs = activeProject.requirements || activeProject.req || [];
+                return reqs.length > 0 ? (
+                  <div>
+                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Requirements</h4>
+                    <div className="space-y-3">
+                      {reqs.map((r,i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-900 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                          <p className="text-sm text-gray-700">{typeof r === "string" ? r : r.text}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                ) : null;
+              })()}
+              {(() => {
+                const res = activeProject.resources || [];
+                return res.length > 0 ? (
+                  <div>
+                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Project Resources</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {res.map((r,i) => {
+                        const isZip = r.fileType?.toUpperCase().includes("ZIP") || r.name?.toLowerCase().endsWith(".zip");
+                        return (
+                          <div key={i} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-3 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-gray-900 truncate">{r.name}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{isZip ? "ZIP Archive" : "PDF Document"}{r.size ? ` · ${r.size}` : ""}</p>
+                            </div>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 shrink-0 ml-2"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-center p-8">
