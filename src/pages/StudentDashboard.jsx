@@ -1116,9 +1116,9 @@ function BootcampSection({ token, profile }) {
       </div>
 
       {/* ── Tab bar ── */}
-      <div className={`flex border-b px-6 shrink-0 ${tab==="sessions" ? "border-white/10 bg-[#0B0F10]" : "border-gray-200 bg-white"}`}>
+      <div className={`flex border-b px-6 shrink-0 ${tab==="sessions"||tab==="projects" ? "border-white/10 bg-[#0B0F10]" : "border-gray-200 bg-white"}`}>
         {["overview","sessions","projects"].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`capitalize text-sm font-semibold px-5 py-3 border-b-2 transition-all ${tab===t ? (tab==="sessions" ? "border-white text-white" : "border-gray-900 text-gray-900") : (tab==="sessions" ? "border-transparent text-white/40 hover:text-white/70" : "border-transparent text-gray-400 hover:text-gray-700")}`}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={`capitalize text-sm font-semibold px-5 py-3 border-b-2 transition-all ${tab===t ? (tab==="sessions"||tab==="projects" ? "border-white text-white" : "border-gray-900 text-gray-900") : (tab==="sessions"||tab==="projects" ? "border-transparent text-white/40 hover:text-white/70" : "border-transparent text-gray-400 hover:text-gray-700")}`}>{t}</button>
         ))}
       </div>
 
@@ -1395,19 +1395,19 @@ function BootcampSection({ token, profile }) {
 
       {/* ── Projects tab ── */}
       {tab === "projects" && (
-        <div className="flex bg-white min-h-0">
-          <div className="w-[260px] shrink-0 border-r border-gray-100 flex flex-col bg-white">
-            <div className="px-4 py-4 border-b border-gray-100 shrink-0">
-              <h3 className="text-sm font-black text-gray-900">Bootcamp Projects</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Select a project to view resources.</p>
+        <div className="flex bg-[#0B0F10] min-h-0">
+          <div className="w-[260px] shrink-0 border-r border-white/8 flex flex-col bg-[#0B0F10]">
+            <div className="px-4 py-4 border-b border-white/8 shrink-0">
+              <h3 className="text-sm font-black text-white">Bootcamp Projects</h3>
+              <p className="text-xs text-white/40 mt-0.5">Select a project to view resources.</p>
             </div>
             <div className="px-3 py-3 space-y-2">
-              {projects.length === 0 && <p className="text-gray-400 text-xs text-center py-8 px-4">No projects added yet.</p>}
+              {projects.length === 0 && <p className="text-white/30 text-xs text-center py-8 px-4">No projects added yet.</p>}
               {projects.map((p,i) => (
-                <div key={i} onClick={() => setActiveProject(p)} className={`p-3 rounded-xl cursor-pointer transition-all border ${activeProject?.no===p.no ? "bg-gray-900 border-gray-700" : "bg-gray-900 border-gray-800 hover:border-gray-600"}`}>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">{p.no || `Project ${i+1}`}</p>
+                <div key={i} onClick={() => setActiveProject(p)} className={`p-3 rounded-xl cursor-pointer transition-all border ${activeProject?.no===p.no ? "bg-white/10 border-white/20" : "bg-white/5 border-white/8 hover:border-white/20"}`}>
+                  <p className="text-[10px] text-white/40 font-bold uppercase mb-0.5">{p.no || `Project ${i+1}`}</p>
                   <p className="text-xs font-bold text-white">{p.title}</p>
-                  <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{p.desc}</p>
+                  <p className="text-[10px] text-white/40 mt-1 line-clamp-2">{p.desc}</p>
                 </div>
               ))}
             </div>
@@ -1415,21 +1415,21 @@ function BootcampSection({ token, profile }) {
           {activeProject ? (
             <div className="flex-1 p-6 space-y-5 min-w-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <div>
-                <span className="inline-flex items-center px-2.5 py-1 bg-gray-900 rounded-md text-[10px] font-black text-white uppercase tracking-wider mb-3">{activeProject.no || "Project"}</span>
-                <h2 className="text-3xl font-black text-gray-900 mb-3">{activeProject.title}</h2>
-                <p className="text-base text-gray-500 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
+                <span className="inline-flex items-center px-2.5 py-1 bg-white/10 rounded-md text-[10px] font-black text-white/60 uppercase tracking-wider mb-3">{activeProject.no || "Project"}</span>
+                <h2 className="text-3xl font-black text-white mb-3">{activeProject.title}</h2>
+                <p className="text-base text-white/50 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
               </div>
-              <hr className="border-gray-100"/>
+              <hr className="border-white/10"/>
               {(() => {
                 const reqs = activeProject.requirements || activeProject.req || [];
                 return reqs.length > 0 ? (
                   <div>
-                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Requirements</h4>
+                    <h4 className="text-[11px] font-black text-white/40 uppercase tracking-widest mb-4">Requirements</h4>
                     <div className="space-y-3">
                       {reqs.map((r,i) => (
                         <div key={i} className="flex items-center gap-3">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-900 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
-                          <p className="text-sm text-gray-700">{typeof r === "string" ? r : r.text}</p>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/60 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                          <p className="text-sm text-white/70">{typeof r === "string" ? r : r.text}</p>
                         </div>
                       ))}
                     </div>
@@ -1440,17 +1440,17 @@ function BootcampSection({ token, profile }) {
                 const res = activeProject.resources || [];
                 return res.length > 0 ? (
                   <div>
-                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Project Resources</h4>
+                    <h4 className="text-[11px] font-black text-white/40 uppercase tracking-widest mb-4">Project Resources</h4>
                     <div className="grid grid-cols-2 gap-3">
                       {res.map((r,i) => {
                         const isZip = r.fileType?.toUpperCase().includes("ZIP") || r.name?.toLowerCase().endsWith(".zip");
                         return (
-                          <div key={i} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-3 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
+                          <div key={i} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-3 hover:border-white/25 transition-all cursor-pointer" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-gray-900 truncate">{r.name}</p>
-                              <p className="text-[10px] text-gray-400 mt-0.5">{isZip ? "ZIP Archive" : "PDF Document"}{r.size ? ` · ${r.size}` : ""}</p>
+                              <p className="text-xs font-bold text-white truncate">{r.name}</p>
+                              <p className="text-[10px] text-white/40 mt-0.5">{isZip ? "ZIP Archive" : "PDF Document"}{r.size ? ` · ${r.size}` : ""}</p>
                             </div>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 shrink-0 ml-2"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white/40 shrink-0 ml-2"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                           </div>
                         );
                       })}
@@ -1461,7 +1461,7 @@ function BootcampSection({ token, profile }) {
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-center p-8">
-              <p className="text-gray-400 text-sm">Select a project from the list</p>
+              <p className="text-white/30 text-sm">Select a project from the list</p>
             </div>
           )}
         </div>
