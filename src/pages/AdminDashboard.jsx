@@ -44,6 +44,8 @@ const ICONS = {
   checkCircle: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z",
   clipboardCheck: "M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z",
   clock: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
+  chat: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z",
+  send: "M2.01 21L23 12 2.01 3 2 10l15 2-15 2z",
 };
 const I = ({ name, size = 16, className = "" }) => <Ic d={ICONS[name] || ICONS.dashboard} size={size} className={className} />;
 
@@ -583,6 +585,7 @@ function ListBootcampAdmin({ onSelect, token }) {
   const [newBC, setNewBC] = useState({name:"",code:"",price:"",duration:"",status:"ACTIVE",previewVideoUrl:""});
   const [bootcamps, setBootcamps] = useState([]);
   const [loadingBC, setLoadingBC] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null); // {_id, title}
 
   const loadBCs = () => {
     fetch("/api/bootcamps/all", { headers:{ Authorization:`Bearer ${token}` } })
@@ -668,6 +671,24 @@ function ListBootcampAdmin({ onSelect, token }) {
           </div>
         </div>
       )}
+      {/* Delete Confirmation Modal */}
+      {deleteTarget&&(
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4" onClick={()=>setDeleteTarget(null)}>
+          <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 w-full max-w-sm" onClick={e=>e.stopPropagation()}>
+            <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+              <I name="trash" size={22} className="text-red-400"/>
+            </div>
+            <h3 className="text-white font-bold text-center mb-1">Delete Bootcamp?</h3>
+            <p className="text-gray-400 text-xs text-center mb-1">You're about to delete</p>
+            <p className="text-white text-sm font-semibold text-center mb-4">"{deleteTarget.title}"</p>
+            <p className="text-[11px] text-red-400/80 text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-5">This will permanently remove all sessions, projects, announcements, and student data.</p>
+            <div className="flex gap-3">
+              <button onClick={()=>setDeleteTarget(null)} className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 font-semibold">Cancel</button>
+              <button onClick={async()=>{const id=deleteTarget._id;setDeleteTarget(null);const res=await fetch(`/api/bootcamps/${id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});if(res.ok){setBootcamps(prev=>prev.filter(x=>x._id!==id));}else{alert("Failed to delete bootcamp.");}}} className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold transition-colors">Delete Permanently</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="px-6 pt-5 pb-4 border-b border-white/5 flex items-center justify-between">
         <div><h1 className="text-xl font-bold text-white">Bootcamps</h1><p className="text-xs text-gray-400">Manage and monitor all bootcamp programs.</p></div>
         <button onClick={()=>setShowCreateModal(true)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="plus" size={14}/>Create Bootcamp</button>
@@ -705,10 +726,16 @@ function ListBootcampAdmin({ onSelect, token }) {
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {filtered.map(b=>(
-              <div key={b._id} onClick={()=>onSelect(b.raw || b)} className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-                <div className="relative h-[110px] bg-white/5 flex items-center justify-center">
-                  <span className="text-5xl font-black text-white/20 tracking-wider">{b.code}</span>
+              <div key={b._id} onClick={()=>onSelect(b.raw || b)} className="group bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-all relative">
+                <div className="relative h-[110px] bg-white/5 flex items-center justify-center overflow-hidden">
+                  {b.raw?.image ? (
+                    <img src={b.raw.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover"/>
+                  ) : (
+                    <span className="text-5xl font-black text-white/20 tracking-wider">{b.code}</span>
+                  )}
+                  <div className="absolute inset-0 bg-black/20"/>
                   <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${BC_ST[b.status]||"bg-gray-500/20 text-gray-400"}`}>{b.status}</span>
+                  <button onClick={e=>{e.stopPropagation();setDeleteTarget({_id:b._id,title:b.title});}} className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-lg p-1.5"><I name="trash" size={12}/></button>
                 </div>
                 <div className="p-4">
                   <h3 className="text-sm font-bold text-white mb-1">{b.title}</h3>
@@ -909,13 +936,14 @@ function BootcampAdmin({ token }) {
   };
   const saveMentors = async (updated) => {
     setMentors(updated);
-    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ mentors:updated }) });
+    const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ mentors:updated }) });
+    if (r.ok) setSel(prev => ({...prev, mentors: updated}));
   };
 
   const [anns,setAnns]=useState([]);
   const [projects,setProjects]=useState([]);
 
-  const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings"];
+  const TABS=["Overview","Sessions","Students","Projects","Announcement","Resources","Settings","Messages"];
 
   if(view==="list") return(
     <ListBootcampAdmin token={token} onSelect={(b)=>{setSel(b);setTab("overview");setView("detail");}} />
@@ -1617,17 +1645,126 @@ function BootcampAdmin({ token }) {
                 ))}
               </div>
               <div className="flex gap-2">
-                <input value={newMentor} onChange={e=>setNewMentor(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newMentor.trim()){setMentors(ms=>[...ms,{name:newMentor.trim(),role:"Mentor"}]);setNewMentor("");}}} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600" placeholder="Mentor name..." />
+                <input value={newMentor} onChange={e=>setNewMentor(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newMentor.trim()){const updated=[...mentors,{name:newMentor.trim(),role:"Mentor"}];saveMentors(updated);setNewMentor("");}}} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600" placeholder="Mentor name..." />
                 <button onClick={()=>{if(newMentor.trim()){const updated=[...mentors,{name:newMentor.trim(),role:"Mentor"}];saveMentors(updated);setNewMentor("");}}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Mentor</button>
               </div>
             </Sect>
             <div className="flex justify-end gap-2">
               <button onClick={()=>setStgs(s=>({...s,name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE"}))} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Discard Changes</button>
-              <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Settings</button>
+              <button onClick={saveBatchInfo} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Settings</button>
             </div>
           </div>
         )}
 
+        {/* ── Messages Tab ── */}
+        {tab==="Messages"&&sel&&<MessagesTab bootcampId={sel._id} token={token} h={h}/>}
+
+      </div>
+    </div>
+  );
+}
+
+/* ── MESSAGES TAB ── */
+function MessagesTab({ bootcampId, token, h }) {
+  const [convos, setConvos] = useState([]);
+  const [selStudent, setSelStudent] = useState(null);
+  const [msgs, setMsgs] = useState([]);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const [adminUnread, setAdminUnread] = useState(0);
+  const msgsEndRef = useRef(null);
+
+  const loadConvos = () =>
+    fetch(`/api/messages/${bootcampId}/conversations`, { headers: h })
+      .then(r => r.ok ? r.json() : []).then(setConvos).catch(() => {});
+
+  const loadThread = (studentId) =>
+    fetch(`/api/messages/${bootcampId}/student/${studentId}`, { headers: h })
+      .then(r => r.ok ? r.json() : []).then(d => { setMsgs(d); setConvos(prev => prev.map(c => String(c.studentId) === String(studentId) ? {...c, unread: 0} : c)); }).catch(() => {});
+
+  useEffect(() => { loadConvos(); const t = setInterval(loadConvos, 6000); return () => clearInterval(t); }, [bootcampId]);
+  useEffect(() => { if (!selStudent) return; loadThread(selStudent.studentId); const t = setInterval(() => loadThread(selStudent.studentId), 5000); return () => clearInterval(t); }, [selStudent?.studentId]);
+  useEffect(() => { msgsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  const sendReply = async () => {
+    if (!reply.trim() || sending || !selStudent) return;
+    setSending(true);
+    try {
+      const r = await fetch(`/api/messages/${bootcampId}/reply/${selStudent.studentId}`, {
+        method: "POST", headers: { ...h, "Content-Type": "application/json" },
+        body: JSON.stringify({ content: reply.trim() }),
+      });
+      if (r.ok) { const m = await r.json(); setMsgs(prev => [...prev, m]); setReply(""); }
+    } finally { setSending(false); }
+  };
+
+  const totalUnread = convos.reduce((s, c) => s + (c.unread || 0), 0);
+
+  return (
+    <div className="flex h-[calc(100vh-160px)] min-h-[500px]">
+      {/* Left: conversation list */}
+      <div className="w-72 border-r border-white/10 flex flex-col shrink-0">
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <p className="text-sm font-bold text-white">Student Messages</p>
+          {totalUnread > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{totalUnread}</span>}
+        </div>
+        {convos.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-gray-500 text-xs text-center px-4">No messages yet.<br/>Students will appear here when they chat.</div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            {convos.map(c => (
+              <div key={String(c.studentId)} onClick={() => setSelStudent(c)} className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-white/5 hover:bg-white/5 transition-colors ${selStudent && String(selStudent.studentId) === String(c.studentId) ? "bg-white/8 border-l-2 border-l-[#C7E36B]" : ""}`}>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] flex items-center justify-center text-white text-sm font-bold shrink-0">{c.student?.name?.[0] || "?"}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-white truncate">{c.student?.name || "Unknown"}</p>
+                    <p className="text-[10px] text-gray-500 shrink-0 ml-1">{c.lastMessage?.createdAt ? new Date(c.lastMessage.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) : ""}</p>
+                  </div>
+                  <p className="text-[11px] text-gray-400 truncate">{c.lastMessage?.content || ""}</p>
+                </div>
+                {c.unread > 0 && <span className="w-5 h-5 bg-[#C7E36B] rounded-full text-[10px] text-black font-bold flex items-center justify-center shrink-0">{c.unread}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Right: conversation thread */}
+      <div className="flex-1 flex flex-col">
+        {!selStudent ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 text-sm gap-2">
+            <I name="chat" size={36} className="text-gray-700"/>
+            <p>Select a conversation to view messages</p>
+          </div>
+        ) : (
+          <>
+            {/* Thread header */}
+            <div className="px-5 py-3 border-b border-white/10 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] flex items-center justify-center text-white font-bold text-sm">{selStudent.student?.name?.[0] || "?"}</div>
+              <div><p className="text-sm font-semibold text-white">{selStudent.student?.name}</p><p className="text-[11px] text-gray-400">{selStudent.student?.email}</p></div>
+            </div>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+              {msgs.length === 0 && <p className="text-center text-gray-600 text-xs mt-8">No messages yet.</p>}
+              {msgs.map((m, i) => (
+                <div key={i} className={`flex ${m.isAdminReply ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[70%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${m.isAdminReply ? "bg-[#C7E36B] text-[#0F1112] font-medium rounded-tr-sm" : "bg-white/8 text-gray-100 rounded-tl-sm"}`}>
+                    {m.content}
+                    <p className={`text-[10px] mt-1 text-right ${m.isAdminReply ? "text-[#5a6b1f]" : "text-gray-500"}`}>{new Date(m.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</p>
+                  </div>
+                </div>
+              ))}
+              <div ref={msgsEndRef}/>
+            </div>
+            {/* Reply input */}
+            <div className="px-4 py-3 border-t border-white/10 flex items-center gap-2">
+              <input value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendReply();}}} placeholder="Type a reply..." className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"/>
+              <button onClick={sendReply} disabled={sending||!reply.trim()} className="w-9 h-9 bg-[#C7E36B] rounded-xl flex items-center justify-center disabled:opacity-50 hover:bg-lime-300 shrink-0">
+                <I name="send" size={14} className="text-black rotate-0"/>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

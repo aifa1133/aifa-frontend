@@ -33,54 +33,97 @@ function PasswordStrength({ password }) {
 }
 
 export default function SignUpModal({ onClose, onSwitchToLogin }) {
-  const [name, setName]       = useState("");
-  const [email, setEmail]     = useState("");
-  const [phone, setPhone]     = useState("");
-  const [otp, setOtp]         = useState("");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
+  const [phone, setPhone]       = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
   const [password, setPassword] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
+  const [showPwd, setShowPwd]   = useState(false);
   const [showPwdStrength, setShowPwdStrength] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
-  const [error, setError]     = useState("");
-  const [msg, setMsg]         = useState("");
-  const [loading, setLoading] = useState(false);
-  const [step, setStep]       = useState(1); // 1 = info, 2 = email-otp, 3 = password
+  const [error, setError]       = useState("");
+  const [msg, setMsg]           = useState("");
+  const [loading, setLoading]   = useState(false);
+  // 1=info, 2=mobile-otp, 3=email-otp, 4=password
+  const [step, setStep]         = useState(1);
   const pwdRef = useRef(null);
 
+  // Step 1 → send mobile OTP
   const handleContinue = async () => {
     setError("");
     if (!name || !email || !phone) { setError("Please fill in all fields."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Please enter a valid email."); return; }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/send-email-otp", {
+      const res = await fetch("/api/auth/send-signup-phone-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ phone }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.message || "Failed to send OTP.");
-      else { setStep(2); setMsg("We've emailed you a 6-digit code."); }
+      else { setStep(2); setMsg(""); }
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   };
 
-  const handleVerifyOtp = async () => {
+  // Step 2 → verify mobile OTP, then send email OTP
+  const handleVerifyPhoneOtp = async () => {
     setError("");
-    if (!otp || otp.length < 6) { setError("Enter the 6-digit code."); return; }
+    if (!phoneOtp || phoneOtp.length < 6) { setError("Enter the 6-digit code."); return; }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-email-otp", {
+      const res = await fetch("/api/auth/verify-signup-phone-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ phone, otp: phoneOtp }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.message || "Invalid code.");
-      else { setStep(3); setMsg(""); }
+      if (!res.ok) { setError(data.message || "Invalid code."); return; }
+
+      // Mobile verified — now send email OTP
+      const emailRes = await fetch("/api/auth/send-email-otp", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const emailData = await emailRes.json();
+      if (!emailRes.ok) { setError(emailData.message || "Failed to send email OTP."); return; }
+
+      setStep(3); setMsg("");
     } catch { setError("Network error."); }
     finally { setLoading(false); }
   };
 
-  const handleResendOtp = async () => {
+  // Step 3 → verify email OTP
+  const handleVerifyEmailOtp = async () => {
+    setError("");
+    if (!emailOtp || emailOtp.length < 6) { setError("Enter the 6-digit code."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/verify-email-otp", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: emailOtp }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.message || "Invalid code.");
+      else { setStep(4); setMsg(""); }
+    } catch { setError("Network error."); }
+    finally { setLoading(false); }
+  };
+
+  const handleResendPhoneOtp = async () => {
+    setError(""); setMsg("");
+    setLoading(true);
+    try {
+      await fetch("/api/auth/send-signup-phone-otp", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      setMsg("OTP resent! Check your phone.");
+    } catch {}
+    finally { setLoading(false); }
+  };
+
+  const handleResendEmailOtp = async () => {
     setError(""); setMsg("");
     setLoading(true);
     try {
@@ -93,6 +136,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
     finally { setLoading(false); }
   };
 
+  // Step 4 → create account
   const handleSignup = async () => {
     setError("");
     const allPassed = PWD_RULES.every(r => r.test(password));
@@ -116,7 +160,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
     finally { setLoading(false); }
   };
 
-  const stepLabel = step === 1 ? "Step 1 Of 3" : step === 2 ? "Step 2 Of 3" : "Step 3 Of 3";
+  const stepLabel = `Step ${step} Of 4`;
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
@@ -145,32 +189,56 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
           </>
         )}
 
-        {/* ── STEP 2: Email OTP ── */}
+        {/* ── STEP 2: Mobile OTP ── */}
         {step === 2 && (
           <>
             <p className="text-gray-400 text-sm mb-6">
-              We've emailed a 6-digit code to <strong className="text-white">{email}</strong>
+              We've sent a 6-digit code to <strong className="text-white">+91 {phone}</strong>
             </p>
             {msg && <p className="text-green-400 text-sm mb-3">{msg}</p>}
-            <input type="text" maxLength={6} placeholder="Enter 6-digit code" value={otp}
-              onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
-              onKeyDown={e => e.key === "Enter" && handleVerifyOtp()}
+            <input type="text" maxLength={6} placeholder="Enter 6-digit code" value={phoneOtp}
+              onChange={e => setPhoneOtp(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={e => e.key === "Enter" && handleVerifyPhoneOtp()}
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-6 text-center text-2xl tracking-widest outline-none focus:border-[#C7E36B]"/>
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-            <button onClick={handleVerifyOtp} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60 mb-3">
+            <button onClick={handleVerifyPhoneOtp} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60 mb-3">
               {loading ? "Verifying..." : "+ CONTINUE"}
             </button>
-            <p onClick={handleResendOtp} className="text-center text-gray-400 text-sm cursor-pointer hover:text-white">
+            <p onClick={handleResendPhoneOtp} className="text-center text-gray-400 text-sm cursor-pointer hover:text-white">
               Did not get the code? <span className="text-blue-400">Click to resend</span>
             </p>
-            <button onClick={() => { setStep(1); setOtp(""); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
+            <button onClick={() => { setStep(1); setPhoneOtp(""); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
               Back
             </button>
           </>
         )}
 
-        {/* ── STEP 3: Password ── */}
+        {/* ── STEP 3: Email OTP ── */}
         {step === 3 && (
+          <>
+            <p className="text-gray-400 text-sm mb-6">
+              We've emailed a 6-digit code to <strong className="text-white">{email}</strong>
+            </p>
+            {msg && <p className="text-green-400 text-sm mb-3">{msg}</p>}
+            <input type="text" maxLength={6} placeholder="Enter 6-digit code" value={emailOtp}
+              onChange={e => setEmailOtp(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={e => e.key === "Enter" && handleVerifyEmailOtp()}
+              className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-6 text-center text-2xl tracking-widest outline-none focus:border-[#C7E36B]"/>
+            {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+            <button onClick={handleVerifyEmailOtp} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60 mb-3">
+              {loading ? "Verifying..." : "+ CONTINUE"}
+            </button>
+            <p onClick={handleResendEmailOtp} className="text-center text-gray-400 text-sm cursor-pointer hover:text-white">
+              Did not get the code? <span className="text-blue-400">Click to resend</span>
+            </p>
+            <button onClick={() => { setStep(2); setEmailOtp(""); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
+              Back
+            </button>
+          </>
+        )}
+
+        {/* ── STEP 4: Password ── */}
+        {step === 4 && (
           <>
             <p className="text-gray-400 text-sm mb-4">Create a strong password for your account</p>
             <div className="relative mb-2" ref={pwdRef}>
@@ -208,7 +276,7 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
             <button onClick={handleSignup} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
               {loading ? "Creating Account..." : "+ CREATE ACCOUNT"}
             </button>
-            <button onClick={() => { setStep(2); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
+            <button onClick={() => { setStep(3); setError(""); }} className="w-full mt-3 text-gray-400 text-sm underline cursor-pointer hover:text-white transition">
               Back
             </button>
           </>

@@ -102,6 +102,7 @@ export default function StudentDashboard() {
   const [hasInfluencerAccess, setHasInfluencerAccess] = useState(!!localStorage.getItem("influencer_token"));
   const token = localStorage.getItem("aifa_token");
   const notifRef = useRef(null);
+
   const userRef = useRef(null);
 
   // activePage is now derived from the URL — no sessionStorage needed
@@ -940,6 +941,48 @@ function BootcampSection({ token, profile }) {
     if (pick) setViewBootcamp(pick);
   }, [allBootcamps, userId]);
 
+  /* ── Mentor Chat ── */
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMentor, setChatMentor] = useState(null);
+  const [chatMsgs, setChatMsgs] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+  const chatEndRef = useRef(null);
+
+  const openChat = (mentor) => { setChatMentor(mentor); setChatOpen(true); };
+
+  useEffect(() => {
+    if (!chatOpen || !viewBootcamp?._id || !token) return;
+    const load = () =>
+      fetch(`/api/messages/${viewBootcamp._id}/mine`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : []).then(setChatMsgs).catch(() => {});
+    load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [chatOpen, viewBootcamp?._id, token]);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMsgs]);
+
+  useEffect(() => {
+    if (!viewBootcamp?._id || !token || chatOpen) return;
+    fetch(`/api/messages/${viewBootcamp._id}/unread`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : { count: 0 }).then(d => setChatUnread(d.count || 0)).catch(() => {});
+  }, [viewBootcamp?._id, token, chatOpen]);
+
+  const sendChatMsg = async () => {
+    if (!chatInput.trim() || chatSending || !viewBootcamp?._id) return;
+    setChatSending(true);
+    try {
+      const r = await fetch(`/api/messages/${viewBootcamp._id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: chatInput.trim() }),
+      });
+      if (r.ok) { const m = await r.json(); setChatMsgs(prev => [...prev, m]); setChatInput(""); }
+    } finally { setChatSending(false); }
+  };
+
   /* Aliases for compatibility with existing enrolled-view code */
   const bootcampData = viewBootcamp;
   const bcLoaded  = allBootcamps !== null;
@@ -1244,7 +1287,7 @@ function BootcampSection({ token, profile }) {
                   const isZip  = r.fileType?.toUpperCase().includes("ZIP");
                   return (
                     <div key={r._id||i} className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isLink ? "bg-purple-100" : isZip ? "bg-blue-100" : "bg-red-100"}`}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className={isLink ? "text-purple-500" : isZip ? "text-blue-500" : "text-red-500"}>
                             {isLink ? <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/> : <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>}
@@ -1291,19 +1334,73 @@ function BootcampSection({ token, profile }) {
                       }
                       <div>
                         <p className="text-xs font-semibold text-gray-900">{m.name}</p>
-                        <p className="text-[10px] text-gray-400">{m.role}</p>
+                        <p className="text-[10px] text-gray-400">{m.role || "Mentor"}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => m.email ? window.open(`mailto:${m.email}`,"_blank") : window.open("https://discord.gg/aifa","_blank")}
-                      title={m.email || "Contact via Discord"}
-                      className="text-gray-400 hover:text-gray-700 transition-colors"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                    </button>
                   </div>
                 )) : (
                   <p className="text-xs text-gray-400 py-3 text-center">No mentors assigned yet.</p>
+                )}
+
+                {/* ── Chat Popup ── */}
+                {chatOpen && chatMentor && (
+                  <div className="fixed bottom-6 right-6 z-50 w-[340px] shadow-2xl rounded-2xl overflow-hidden flex flex-col" style={{height:"480px"}}>
+                    {/* Header */}
+                    <div className="bg-[#111] px-4 py-3 flex items-center gap-3">
+                      {chatMentor.photo
+                        ? <img src={chatMentor.photo} alt={chatMentor.name} className="w-10 h-10 rounded-full object-cover shrink-0 border-2 border-[#C7E36B]"/>
+                        : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] flex items-center justify-center text-white font-bold text-sm shrink-0">{chatMentor.name?.[0]}</div>
+                      }
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{chatMentor.name}</p>
+                        <p className="text-[10px] text-gray-400">{chatMentor.role || "Mentor"}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" className="cursor-pointer hover:stroke-white"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                        <button onClick={()=>setChatOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto bg-[#1A1A1A] px-4 py-4 flex flex-col gap-3">
+                      {chatMsgs.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="1.5" className="mb-3"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                          <p className="text-gray-500 text-xs">This is the beginning of your</p>
+                          <p className="text-gray-500 text-xs">conversation with {chatMentor.name}.</p>
+                          <p className="text-gray-600 text-[11px] mt-1">Send a message to start chatting.</p>
+                        </div>
+                      )}
+                      {chatMsgs.map((msg, i) => (
+                        <div key={i} className={`flex ${msg.isAdminReply ? "justify-start" : "justify-end"}`}>
+                          <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.isAdminReply ? "bg-[#2A2A2A] text-gray-100 rounded-tl-sm" : "bg-[#C7E36B] text-[#0F1112] font-medium rounded-tr-sm"}`}>
+                            {msg.content}
+                            <p className={`text-[10px] mt-1 ${msg.isAdminReply ? "text-gray-500" : "text-[#5a6b1f]"} text-right`}>
+                              {new Date(msg.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+                              {!msg.isAdminReply && <span className="ml-1">{msg.readByAdmin ? "✓✓" : "✓"}</span>}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={chatEndRef}/>
+                    </div>
+
+                    {/* Input */}
+                    <div className="bg-[#111] px-3 py-3 flex items-center gap-2 border-t border-white/10">
+                      <input
+                        value={chatInput}
+                        onChange={e=>setChatInput(e.target.value)}
+                        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChatMsg();}}}
+                        placeholder="Type your message..."
+                        className="flex-1 bg-[#1F1F1F] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/40"
+                      />
+                      <button onClick={sendChatMsg} disabled={chatSending||!chatInput.trim()} className="w-9 h-9 rounded-xl bg-[#C7E36B] flex items-center justify-center shrink-0 disabled:opacity-50 hover:bg-lime-300 transition-colors">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#0F1112"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
