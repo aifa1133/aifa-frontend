@@ -4112,7 +4112,7 @@ function UsersAdmin({ token }) {
 
   const filtered = users.filter(u => {
     const q = uSearch.toLowerCase();
-    const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q);
+    const matchSearch = !q || (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q) || (u.phone||"").includes(q);
     const matchStatus = uStatus === "All" || (uStatus === "Active" ? u.isActive !== false : u.isActive === false);
     const matchRole   = uRoleTab === "All" || u.role?.toLowerCase() === uRoleTab.toLowerCase();
     return matchSearch && matchStatus && matchRole;
