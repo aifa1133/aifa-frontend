@@ -1177,19 +1177,31 @@ function BootcampSection({ token, profile }) {
               {(() => {
                 const nextAt = bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt) : null;
                 const now = new Date();
-                let timeLabel = "TBA";
+                let dateLabel = "TBA";
+                let timeLabel = null;
                 let countdownLabel = null;
-                if (nextAt) {
-                  timeLabel = nextAt.toLocaleString("en-IN",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+                if (nextAt && !isNaN(nextAt.getTime())) {
+                  dateLabel = nextAt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+                  timeLabel = nextAt.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true});
                   const diffMs = nextAt - now;
                   if (diffMs > 0) {
                     const h = Math.floor(diffMs/3600000), m = Math.floor((diffMs%3600000)/60000);
                     countdownLabel = h > 0 ? `Starts in ${h}h ${m}m` : `Starts in ${m}m`;
                   } else {
-                    countdownLabel = "Live now";
+                    countdownLabel = "Session ended";
                   }
                 }
                 const nextSessionNo = sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1;
+                const hasUpcoming = nextAt && !isNaN(nextAt.getTime()) && (nextAt - now) > 0;
+                if (!bootcampData?.nextSessionAt || !hasUpcoming) return (
+                  <div className="bg-[#111] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
+                    <div className="text-center">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-gray-600 mx-auto mb-3"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                      <p className="text-white font-semibold text-sm">No session is scheduled right now</p>
+                      <p className="text-gray-500 text-xs mt-1">Check back soon for the next live session.</p>
+                    </div>
+                  </div>
+                );
                 return (
                   <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-5 flex items-start gap-4">
                     <div className="flex-1 min-w-0">
@@ -1201,13 +1213,16 @@ function BootcampSection({ token, profile }) {
                       <div className="flex flex-wrap items-center gap-4 text-white/80 text-xs mb-4">
                         <span className="flex items-center gap-1.5">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-                          {timeLabel}
+                          {dateLabel}
                         </span>
-                        {countdownLabel && (
+                        {timeLabel && (
                           <span className="flex items-center gap-1.5">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                            {countdownLabel}
+                            {timeLabel}
                           </span>
+                        )}
+                        {countdownLabel && (
+                          <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">{countdownLabel}</span>
                         )}
                       </div>
                       <button
@@ -1218,7 +1233,6 @@ function BootcampSection({ token, profile }) {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                       </button>
                     </div>
-                    {/* Camera placeholder circle */}
                     <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-white/60"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
                     </div>
