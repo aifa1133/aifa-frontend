@@ -191,6 +191,25 @@ function AppShell() {
     return () => clearInterval(id);
   }, []);
 
+  // Sync isPro from server on every page load so ProGate works on all routes
+  useEffect(() => {
+    const token = localStorage.getItem("aifa_token");
+    if (!token) return;
+    fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        const u = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+        if (u.isPro !== !!d.isPro || u.proExpiry !== (d.proExpiry || null)) {
+          u.isPro = !!d.isPro;
+          u.proExpiry = d.proExpiry || null;
+          localStorage.setItem("aifa_user", JSON.stringify(u));
+          window.dispatchEvent(new Event("aifa_user_updated"));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Auto-open signup when ?ref= is in the URL (influencer referral link)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
