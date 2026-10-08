@@ -142,6 +142,7 @@ export default function JobsSection() {
   const [timelineFilter, setTimelineFilter] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(9);
   const isPro = useIsPro();
 
   const STATIC_JOBS = [
@@ -176,7 +177,7 @@ export default function JobsSection() {
     return true;
   });
 
-  const clearAll = () => { setCatFilter([]); setBudgetFilter([]); setTimelineFilter([]); };
+  const clearAll = () => { setCatFilter([]); setBudgetFilter([]); setTimelineFilter([]); setVisibleCount(9); };
   const hasFilters = catFilter.length + budgetFilter.length + timelineFilter.length > 0;
 
   const timeAgo = (date) => {
@@ -232,7 +233,7 @@ export default function JobsSection() {
         {/* Job grid — first card always open, rest locked for non-Pro */}
         {!loading && filtered.length > 0 && (
           <div className="grid md:grid-cols-3 gap-6">
-            {filtered.map((job, i) => (
+            {filtered.slice(0, visibleCount).map((job, i) => (
               <JobCard
                 key={job._id || i}
                 job={job}
@@ -246,10 +247,10 @@ export default function JobsSection() {
         )}
 
         {/* Load more */}
-        {!loading && filtered.length > 0 && (
+        {!loading && filtered.length > visibleCount && (
           <div className="flex justify-center mt-12">
             <button
-              onClick={() => !isPro && setShowModal(true)}
+              onClick={() => isPro ? setVisibleCount(c => c + 9) : setShowModal(true)}
               className="bg-[#C7E36B] text-black px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
             >
               + Load more jobs →
