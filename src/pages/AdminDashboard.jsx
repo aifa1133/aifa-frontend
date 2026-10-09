@@ -140,19 +140,6 @@ export default function AdminDashboard() {
             );
           })}
         </nav>
-        <div className="px-3 py-2 border-t border-white/5">
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-[11px] font-medium"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            Website Preview
-          </a>
-        </div>
         <div onClick={() => setPage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left cursor-pointer">
           <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
             {profile?.profilePicture
