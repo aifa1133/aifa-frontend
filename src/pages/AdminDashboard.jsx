@@ -852,6 +852,9 @@ function BootcampAdmin({ token }) {
       setSessLoading(true);
       fetch(`/api/bootcamps/${sel._id}/sessions`, { headers:h })
         .then(r=>r.ok?r.json():[]).then(d=>{ setSessions(Array.isArray(d)?d:[]); setSessLoading(false); }).catch(()=>setSessLoading(false));
+      fetch(`/api/bootcamps/${sel._id}/projects`, { headers:h })
+        .then(r=>r.ok?r.json():[])
+        .then(d=>{ const mapped=Array.isArray(d)?d.map(p=>({...p,req:p.requirements||p.req||[],res:p.resources||p.res||[]})):[];setProjects(mapped);if(mapped.length>0&&!selProj)setSelProj(mapped[0]); }).catch(()=>{});
     }
     if (tab === "students") {
       fetch(`/api/bootcamps/${sel._id}/students`, { headers:h })
