@@ -1483,7 +1483,7 @@ function BootcampSection({ token, profile }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-white truncate">Session {s.no}</p>
-                    <p className="text-[10px] text-gray-500 truncate uppercase tracking-wide mt-0.5">{s.title || s.tag || "Screen Writing"}</p>
+                    <p className="text-[10px] text-gray-500 truncate uppercase tracking-wide mt-0.5">{s.name}</p>
                   </div>
                 </button>
               ))}
@@ -1493,7 +1493,7 @@ function BootcampSection({ token, profile }) {
           <div className="flex-1 p-5 space-y-5 min-w-0">
             <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative">
               {activeSession?.recordingUrl ? (
-                <iframe src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=","embed/") : activeSession.recordingUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.title}/>
+                <iframe src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=","embed/") : activeSession.recordingUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.name}/>
               ) : (
                 <div className="w-full h-full flex items-center justify-center cursor-pointer group"
                   onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
@@ -1509,8 +1509,11 @@ function BootcampSection({ token, profile }) {
             </div>
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">SESSION {String(activeSession?.no||1).padStart(2,"0")}</p>
-              <h2 className="text-xl font-black text-white mb-2">{activeSession?.title}</h2>
-              <p className="text-sm text-white/50 leading-relaxed">In this session, we dive deep into the concepts and techniques needed to master {activeSession?.title?.toLowerCase()}. Follow along with hands-on exercises and real-world filmmaking examples.</p>
+              <h2 className="text-xl font-black text-white mb-2">{activeSession?.name}</h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                {activeSession?.scheduledAt && <span className="text-[11px] text-white/50">{new Date(activeSession.scheduledAt).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})} · {new Date(activeSession.scheduledAt).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true})}</span>}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${activeSession?.status==="COMPLETED"?"bg-green-500/20 text-green-400":activeSession?.status==="ACTIVE"?"bg-blue-500/20 text-blue-400":"bg-gray-500/20 text-gray-400"}`}>{activeSession?.status}</span>
+              </div>
             </div>
             {/* Lesson Attachments */}
             <div className="border border-white/10 rounded-2xl p-4">
