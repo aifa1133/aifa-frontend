@@ -2018,6 +2018,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (Array.isArray(d) && d.length > 0) {
+          const isPro        = !!profile?.isPro;
           const enrolledIds  = new Set((profile?.enrolledCourses  || []).map(x => String(x?._id || x)));
           const progressMap  = {};
           (profile?.courseProgress || []).forEach(p => {
@@ -2026,7 +2027,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
           setCourses(d.map(c => {
             const id       = String(c._id);
             const pct      = progressMap[id];
-            const enrolled = enrolledIds.has(id) || pct !== undefined;
+            const enrolled = isPro || enrolledIds.has(id) || pct !== undefined;
             const done     = pct === 100;
             return {
               ...c,
