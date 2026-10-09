@@ -57,13 +57,15 @@ export default function VideoSection({
           style={{ padding: "56.25% 0 0 0", position: "relative" }}
         >
           <iframe
-            src="https://player.vimeo.com/video/1229658722?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0"
+            src="https://player.vimeo.com/video/1229658722?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0&dnt=1"
             frameBorder="0"
             allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
             title="Bootcamp Preview"
           />
+          {/* Cover Vimeo watermark — cannot be removed without Vimeo Pro via API */}
+          <div style={{ position: "absolute", bottom: 0, right: 0, width: 110, height: 42, background: "#000", zIndex: 2, borderRadius: "14px 0 0 0" }} />
         </div>
       </div>
     </section>
