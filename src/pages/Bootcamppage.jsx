@@ -22,7 +22,7 @@ export default function Bootcamppage() {
   const userInitial = storedUser?.name?.[0]?.toUpperCase() || "";
 
   useEffect(() => {
-    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d[0]); }).catch(() => {});
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d.find(b => b.isPublished) || d[0]); }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function Bootcamppage() {
         )}
       </header>
       <div className="h-14" />{/* spacer for fixed header */}
-      <Hero />
+      <Hero bootcamp={bootcamp} />
       <VideoSection />
       <LearnSection />
       <BuildSection />
@@ -69,11 +69,11 @@ export default function Bootcamppage() {
         <div className="hidden md:flex items-center justify-between max-w-7xl mx-auto px-8 py-4">
           <div>
             <div className="flex items-center gap-4">
-              <p className="text-white font-bold text-base">AI Filmmaking Bootcamp</p>
-              <span className="text-[#C7E36B] font-bold text-2xl">₹{(bootcamp?.price||14000).toLocaleString("en-IN")}</span>
-              <span className="text-gray-400 line-through text-sm">₹{(bootcamp?.originalPrice||19000).toLocaleString("en-IN")}</span>
+              <p className="text-white font-bold text-base">{bootcamp?.title || "AI Filmmaking Bootcamp"}</p>
+              <span className="text-[#C7E36B] font-bold text-2xl">₹{(bootcamp?.price||0).toLocaleString("en-IN")}</span>
+              {bootcamp?.originalPrice > 0 && <span className="text-gray-400 line-through text-sm">₹{bootcamp.originalPrice.toLocaleString("en-IN")}</span>}
             </div>
-            <p className="text-gray-400 text-xs mt-0.5">1 month Program + Lifetime AIFA Membership (Worth ₹40,000)</p>
+            {bootcamp?.duration && <p className="text-gray-400 text-xs mt-0.5">{bootcamp.duration} Program</p>}
           </div>
           <button onClick={() => navigate("/bootcamp/enroll")} className="bg-[#C7E36B] text-black font-bold px-8 py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Book your seat →
@@ -82,10 +82,10 @@ export default function Bootcamppage() {
         {/* Mobile */}
         <div className="md:hidden px-4 py-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-white font-bold text-sm">AI Filmmaking Bootcamp</p>
-            <span className="text-gray-400 line-through text-xs">₹{(bootcamp?.originalPrice||19000).toLocaleString("en-IN")}</span>
+            <p className="text-white font-bold text-sm">{bootcamp?.title || "AI Filmmaking Bootcamp"}</p>
+            {bootcamp?.originalPrice > 0 && <span className="text-gray-400 line-through text-xs">₹{bootcamp.originalPrice.toLocaleString("en-IN")}</span>}
           </div>
-          <p className="text-[#C7E36B] font-bold text-2xl mb-3">₹{(bootcamp?.price||14000).toLocaleString("en-IN")}</p>
+          <p className="text-[#C7E36B] font-bold text-2xl mb-3">₹{(bootcamp?.price||0).toLocaleString("en-IN")}</p>
           <button onClick={() => navigate("/bootcamp/enroll")} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Book your seat →
           </button>

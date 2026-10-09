@@ -43,7 +43,7 @@ function Feature({ icon, text }) {
   );
 }
 
-export default function Hero() {
+export default function Hero({ bootcamp }) {
   return (
     <section
       className="
@@ -130,7 +130,7 @@ export default function Hero() {
                 max-sm:mb-[14px]
               "
             >
-              A COURSE YOU’LL ACTUALLY FINISH
+              {bootcamp?.tagline || "A COURSE YOU’LL ACTUALLY FINISH"}
             </p>
 
             <h1
@@ -151,11 +151,7 @@ export default function Hero() {
                 max-sm:mb-[24px]
               "
             >
-              Build AI-Powered
-              <br />
-              Films An AI
-              <br />
-              Fellowship for Creators
+              {bootcamp?.title || "Build AI-Powered Films — An AI Fellowship for Creators"}
             </h1>
 
             <Link
