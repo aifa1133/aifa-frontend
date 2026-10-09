@@ -874,7 +874,14 @@ function BootcampAdmin({ token }) {
     if (editSession) {
       setModalStatus(editSession.status || "COMING SOON");
       setModalRecordingUrl(editSession.recordingUrl || "");
-      setModalScheduledAt(editSession.scheduledAt ? new Date(editSession.scheduledAt).toISOString().slice(0,16) : "");
+      if (editSession.scheduledAt) {
+        const d = new Date(editSession.scheduledAt);
+        // datetime-local expects local time, not UTC
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+        setModalScheduledAt(local);
+      } else {
+        setModalScheduledAt("");
+      }
       setModalResources((editSession.resources || []).map(r => typeof r === "string" ? {name:r,size:"—",fileUrl:""} : r));
     }
   }, [editSession?._id]);
