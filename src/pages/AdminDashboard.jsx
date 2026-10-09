@@ -956,7 +956,7 @@ function BootcampAdmin({ token }) {
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
           <button onClick={()=>setView("list")} className="hover:text-white transition-all">Bootcamps</button>
           <span>›</span>
-          <span className="text-white font-medium">{sel?.title || "Bootcamp Details"}</span>
+          <span className="text-white font-medium">{sel?.batchName || sel?.title || "Bootcamp Details"}</span>
           {tab!=="overview"&&<><span>›</span><span className="text-gray-400 capitalize">{tab}</span></>}
         </div>
         <div className="flex items-center justify-between mb-4">
@@ -964,7 +964,7 @@ function BootcampAdmin({ token }) {
             <button onClick={()=>setView("list")} className="text-gray-400 hover:text-white p-1"><I name="back" size={18}/></button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-white">{sel?.title}</h1>
+                <h1 className="text-lg font-bold text-white">{sel?.batchName || sel?.title}</h1>
                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${BC_ST[sel?.status]||"bg-gray-500/20 text-gray-400"}`}>{sel?.status}</span>
               </div>
               <p className="text-xs text-gray-400">Manage structure, content, and student access for this program.</p>
