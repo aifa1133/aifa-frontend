@@ -46,6 +46,7 @@ const ICONS = {
   clock: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
   chat: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z",
   send: "M2.01 21L23 12 2.01 3 2 10l15 2-15 2z",
+  download: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z",
 };
 const I = ({ name, size = 16, className = "" }) => <Ic d={ICONS[name] || ICONS.dashboard} size={size} className={className} />;
 
@@ -825,6 +826,7 @@ function BootcampAdmin({ token }) {
   const [annSavedMsg,setAnnSavedMsg]=useState("");
   const [annImgUploading,setAnnImgUploading]=useState(false);
   /* O: Create Folder */
+  const [resCategoryFilter,setResCategoryFilter]=useState("All Category");
   const [showFolderInput,setShowFolderInput]=useState(false);
   const [folderName,setFolderName]=useState("");
   const [folderSaved,setFolderSaved]=useState(false);
@@ -892,10 +894,15 @@ function BootcampAdmin({ token }) {
         zoomLink: sel.zoomLink || "",
         zoomId: sel.zoomId || "",
         zoomPass: sel.zoomPass || "",
-        autoRecord: true, reminders: true, chat: true,
+        autoRecord: sel.autoRecord ?? true,
+        reminders: sel.reminders ?? true,
+        chat: sel.chatEnabled ?? true,
         nextSessionAt: sel.nextSessionAt ? sel.nextSessionAt.slice(0,16) : "",
         nextSessionName: sel.nextSessionName || "",
         image: sel.image || "",
+        tagline: sel.tagline || "",
+        batchLabel: sel.batchLabel || "",
+        previewVideoUrl: sel.previewVideoUrl || "",
       });
       setMentors(sel.mentors || []);
     }
@@ -909,7 +916,7 @@ function BootcampAdmin({ token }) {
       return;
     }
     setBatchErr("");
-    const body = { title:stgs.name, batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, image:stgs.image||"" };
+    const body = { title:stgs.name, batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, image:stgs.image||"", tagline:stgs.tagline||"", batchLabel:stgs.batchLabel||"", previewVideoUrl:stgs.previewVideoUrl||"" };
     try {
       const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
       if (r.ok) {
@@ -926,7 +933,7 @@ function BootcampAdmin({ token }) {
     }
   };
   const saveZoomSettings = async () => {
-    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink }) });
+    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink, zoomId:stgs.zoomId, zoomPass:stgs.zoomPass, autoRecord:stgs.autoRecord, reminders:stgs.reminders, chatEnabled:stgs.chat }) });
     save(setSavedZoom);
   };
   const saveMentors = async (updated) => {
@@ -967,7 +974,7 @@ function BootcampAdmin({ token }) {
           <div className="flex gap-2">
             {tab!=="announcement"&&(
               <button onClick={()=>{
-                if(tab==="settings") save(setSavedBatch);
+                if(tab==="settings") saveBatchInfo();
                 else alert("Use the tab-specific save button below (e.g. 'Save Project', 'Save Change', 'Publish Now') to save changes in the current tab.");
               }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>{savedBatch?"✓ SAVED":"SAVE CHANGES"}</button>
             )}
@@ -1145,7 +1152,7 @@ function BootcampAdmin({ token }) {
                     <button onClick={async()=>{
                       if (!newSess.name.trim()) return;
                       const no = (sessions.length || 0) + 1;
-                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({name:newSess.name,status:newSess.status,no}) });
+                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({name:newSess.name,status:newSess.status,no,scheduledAt:newSess.nextSessionAt||null}) });
                       if (res.ok) {
                         const d = await res.json();
                         setSessions(prev=>[...prev,d]);
@@ -1568,10 +1575,10 @@ function BootcampAdmin({ token }) {
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                 <p className="text-sm font-bold text-white">All Resources</p>
                 <div className="flex items-center gap-2">
-                  <select className="bg-[#1A1D1E] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">
-                    {["All Category","PDF Document","Compressed Archive","External URL","MP4 Video"].map(o=><option key={o}>{o}</option>)}
+                  <select value={resCategoryFilter} onChange={e=>setResCategoryFilter(e.target.value)} className="bg-[#1A1D1E] border border-white/10 text-gray-400 text-xs rounded-lg px-3 py-1.5 outline-none">
+                    {["All Category","PDF Document","Compressed Archive","External URL","MP4 Video","Folder"].map(o=><option key={o}>{o}</option>)}
                   </select>
-                  <button className="text-xs border border-white/20 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="search" size={12}/>Filter</button>
+                  {resCategoryFilter!=="All Category"&&<button onClick={()=>setResCategoryFilter("All Category")} className="text-xs text-gray-500 hover:text-white underline">Clear</button>}
                 </div>
               </div>
               <table className="w-full text-xs">
@@ -1580,7 +1587,7 @@ function BootcampAdmin({ token }) {
                 </tr></thead>
                 <tbody>
                   {resources.length===0&&<tr><td colSpan={6} className="px-4 py-8 text-center text-gray-600 text-xs">No resources uploaded yet. Click "Upload Assets" to add files.</td></tr>}
-                  {resources.map((r,i)=>(
+                  {resources.filter(r=>resCategoryFilter==="All Category"||r.fileType===resCategoryFilter||(resCategoryFilter==="External URL"&&r.link&&!r.fileUrl)).map((r,i)=>(
                     <tr key={r._id||i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
                       <td className="px-4 py-3">
                         <p className="text-white font-semibold">{r.name}</p>
@@ -1615,7 +1622,10 @@ function BootcampAdmin({ token }) {
                 <Fld label="End Date" type="date" value={stgs.endDate} onChange={v=>setStgs(p=>({...p,endDate:v}))} />
                 <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs(p=>({...p,price:v}))} placeholder="e.g. 14000" />
                 <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs(p=>({...p,originalPrice:v}))} placeholder="e.g. 19000" />
+                <Fld label="Batch Label (e.g. Batch 2024)" value={stgs.batchLabel} onChange={v=>setStgs(p=>({...p,batchLabel:v}))} placeholder="e.g. Batch 2024" />
+                <Fld label="Tagline" value={stgs.tagline} onChange={v=>setStgs(p=>({...p,tagline:v}))} placeholder="A Course You'll Actually Finish" />
               </div>
+              <Fld label="Preview Video URL (optional)" value={stgs.previewVideoUrl} onChange={v=>setStgs(p=>({...p,previewVideoUrl:v}))} placeholder="https://www.youtube.com/watch?v=..." />
               <div className="col-span-2">
                 <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Cover Image</p>
                 <div className="flex items-center gap-3">
