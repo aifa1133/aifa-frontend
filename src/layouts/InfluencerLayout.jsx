@@ -87,9 +87,11 @@ export default function InfluencerLayout() {
       <aside className="w-[200px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         {/* Logo — clean AIFA only */}
         <div className="px-5 py-5 border-b border-white/5 flex items-center gap-2">
-          <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6"
-            onError={e => { e.target.style.display = "none"; }} />
-          <p className="text-white font-black text-sm leading-none">AIFA</p>
+          <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+            <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6"
+              onError={e => { e.target.style.display = "none"; }} />
+            <p className="text-white font-black text-sm leading-none">AIFA</p>
+          </a>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3">

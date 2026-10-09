@@ -213,7 +213,9 @@ export default function StudentDashboard() {
       <aside className="w-[160px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         {/* Logo */}
         <div className="px-4 py-5 border-b border-white/5">
-          <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" />
+          <a href="/" target="_blank" rel="noopener noreferrer">
+            <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" />
+          </a>
         </div>
         {/* Nav */}
         <nav className="flex-1 py-3 px-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
