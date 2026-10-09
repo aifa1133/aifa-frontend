@@ -1476,15 +1476,16 @@ function BootcampSection({ token, profile }) {
               {sessions.length === 0 && <p className="text-gray-400 text-xs text-center py-8 px-4">No sessions added yet.</p>}
               {sessions.map((s,i) => (
                 <button key={i} onClick={() => !s.locked && setActiveSession(s)} disabled={s.locked}
-                  className={`w-full flex items-center gap-3 px-3 py-3.5 rounded-xl text-left transition-all border ${activeSession?.no===s.no && !s.locked ? "bg-gray-900 border-gray-700" : "bg-gray-900 border-gray-800 hover:border-gray-600"} ${s.locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                  className={`w-full flex items-center gap-3 px-3 py-3.5 rounded-xl text-left transition-all border ${activeSession?.no===s.no && !s.locked ? "bg-[#C7E36B]/10 border-[#C7E36B]/50" : "bg-gray-900 border-gray-800 hover:border-gray-600"} ${s.locked ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border border-gray-600`}>
-                    {s.locked ? <Ic name="lock" size={11} className="text-gray-500"/> : s.recordingUrl || s.status==="COMPLETED" ? <Ic name="check" size={11} className="text-gray-400"/> : <Ic name="play" size={11} className="text-gray-400 ml-0.5"/>}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${activeSession?.no===s.no && !s.locked ? "border-[#C7E36B] bg-[#C7E36B]/20" : "border-gray-600"}`}>
+                    {s.locked ? <Ic name="lock" size={11} className="text-gray-500"/> : s.recordingUrl || s.status==="COMPLETED" ? <Ic name="check" size={11} className={activeSession?.no===s.no ? "text-[#C7E36B]" : "text-gray-400"}/> : <Ic name="play" size={11} className={`${activeSession?.no===s.no ? "text-[#C7E36B]" : "text-gray-400"} ml-0.5`}/>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">Session {s.no}</p>
+                    <p className={`text-xs font-bold truncate ${activeSession?.no===s.no && !s.locked ? "text-[#C7E36B]" : "text-white"}`}>Session {s.no}</p>
                     <p className="text-[10px] text-gray-500 truncate uppercase tracking-wide mt-0.5">{s.name}</p>
                   </div>
+                  {activeSession?.no===s.no && !s.locked && <div className="w-1 h-6 rounded-full bg-[#C7E36B] shrink-0"/>}
                 </button>
               ))}
             </div>
