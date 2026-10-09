@@ -805,7 +805,7 @@ function BootcampAdmin({ token }) {
   const [students,setStudents]=useState([]);
   /* E: Add Session modal */
   const [showAddSession,setShowAddSession]=useState(false);
-  const [newSess,setNewSess]=useState({name:"",status:"COMING SOON"});
+  const [newSess,setNewSess]=useState({name:"",status:"COMING SOON",nextSessionName:"",nextSessionAt:""});
   const [sessAdded,setSessAdded]=useState(false);
   /* F: real announcements from API */
   const [annsLoading,setAnnsLoading]=useState(false);
@@ -918,7 +918,7 @@ function BootcampAdmin({ token }) {
       return;
     }
     setBatchErr("");
-    const body = { title:stgs.name, batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, nextSessionAt:stgs.nextSessionAt||null, nextSessionName:stgs.nextSessionName||"", image:stgs.image||"" };
+    const body = { title:stgs.name, batchName:stgs.name, batchCode:stgs.code, startDate:stgs.startDate, endDate:stgs.endDate, isPublished:stgs.status==="ACTIVE", price:Number(stgs.price)||0, originalPrice:Number(stgs.originalPrice)||0, image:stgs.image||"" };
     try {
       const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify(body) });
       if (r.ok) {
@@ -1147,15 +1147,25 @@ function BootcampAdmin({ token }) {
                         {["COMING SOON","ACTIVE","COMPLETED","CANCELLED"].map(o=><option key={o}>{o}</option>)}
                       </select>
                     </div>
+                    <Fld label="Next Session Name" value={newSess.nextSessionName} onChange={v=>setNewSess({...newSess,nextSessionName:v})} placeholder="e.g. Generative Video with Sora" />
+                    <Fld label="Next Session Date & Time" type="datetime-local" value={newSess.nextSessionAt} onChange={v=>setNewSess({...newSess,nextSessionAt:v})} />
                   </div>
                   <div className="flex justify-end gap-2 mt-6">
                     <button onClick={()=>setShowAddSession(false)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">CANCEL</button>
                     <button onClick={async()=>{
                       if (!newSess.name.trim()) return;
                       const no = (sessions.length || 0) + 1;
-                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({...newSess, no}) });
-                      if (res.ok) { const d = await res.json(); setSessions(prev=>[...prev,d]); }
-                      setShowAddSession(false); setSessAdded(true); setTimeout(()=>setSessAdded(false),2000); setNewSess({name:"",status:"COMING SOON"});
+                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({name:newSess.name,status:newSess.status,no}) });
+                      if (res.ok) {
+                        const d = await res.json();
+                        setSessions(prev=>[...prev,d]);
+                        // Save nextSessionName & nextSessionAt to the bootcamp
+                        if (newSess.nextSessionName || newSess.nextSessionAt) {
+                          const upd = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ nextSessionName:newSess.nextSessionName||"", nextSessionAt:newSess.nextSessionAt||null }) });
+                          if (upd.ok) { const ud = await upd.json(); setSel(prev=>({...prev,...ud})); }
+                        }
+                      }
+                      setShowAddSession(false); setSessAdded(true); setTimeout(()=>setSessAdded(false),2000); setNewSess({name:"",status:"COMING SOON",nextSessionName:"",nextSessionAt:""});
                     }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">ADD SESSION</button>
                   </div>
                 </div>
@@ -1603,8 +1613,6 @@ function BootcampAdmin({ token }) {
                 <Fld label="End Date" type="date" value={stgs.endDate} onChange={v=>setStgs(p=>({...p,endDate:v}))} />
                 <Fld label="Price (₹)" value={stgs.price} onChange={v=>setStgs(p=>({...p,price:v}))} placeholder="e.g. 14000" />
                 <Fld label="Original Price (₹) — strikethrough" value={stgs.originalPrice} onChange={v=>setStgs(p=>({...p,originalPrice:v}))} placeholder="e.g. 19000" />
-                <Fld label="Next Session Name" value={stgs.nextSessionName} onChange={v=>setStgs(p=>({...p,nextSessionName:v}))} placeholder="e.g. Generative Video with Sora" />
-                <Fld label="Next Session Date & Time" type="datetime-local" value={stgs.nextSessionAt} onChange={v=>setStgs(p=>({...p,nextSessionAt:v}))} />
               </div>
               <div className="col-span-2">
                 <p className="text-[10px] text-gray-400 mb-1.5 font-semibold uppercase">Cover Image</p>
