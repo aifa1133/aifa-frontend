@@ -801,7 +801,9 @@ function BootcampAdmin({ token }) {
   /* Feature 7C: per-section save feedback */
   const [savedBatch,setSavedBatch]=useState(false);
   const [savedZoom,setSavedZoom]=useState(false);
-  const save = (setter) => { setter(true); setTimeout(()=>setter(false),2000); };
+  const [toast,setToast]=useState(null);
+  const showToast=(msg="Changes saved!")=>{setToast(msg);setTimeout(()=>setToast(null),3000);};
+  const save = (setter) => { setter(true); setTimeout(()=>setter(false),2000); showToast(); };
   /* C: real sessions from API */
   const [sessions,setSessions]=useState([]);
   const [sessLoading,setSessLoading]=useState(false);
@@ -971,7 +973,16 @@ function BootcampAdmin({ token }) {
   );
 
   return(
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[9999] bg-[#1A1D1E] border border-[#C7E36B]/40 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 animate-fadeIn">
+          <span className="w-5 h-5 rounded-full bg-[#C7E36B] flex items-center justify-center shrink-0">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          {toast}
+        </div>
+      )}
       <div className="px-6 pt-5 pb-0 border-b border-white/5">
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
           <button onClick={()=>setView("list")} className="hover:text-white transition-all">Bootcamps</button>
