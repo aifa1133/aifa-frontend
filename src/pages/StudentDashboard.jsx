@@ -1187,7 +1187,7 @@ function BootcampSection({ token, profile }) {
               return <span className={`${cls} text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wide`}>{label}</span>;
             })()}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white/40"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            <span className="text-white/50 text-[11px]">{bootcampData?.batchLabel || bootcampData?.batchName || bootcampData?.batchCode || "Batch 2024"}</span>
+            <span className="text-white/50 text-[11px]">{bootcampData?.batchCode || bootcampData?.batchLabel || bootcampData?.batchName || "Batch 2024"}</span>
           </div>
           <h1 className="text-[26px] font-black text-white leading-tight">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h1>
         </div>
@@ -1216,11 +1216,9 @@ function BootcampSection({ token, profile }) {
                   .filter(s => s.scheduledAt && s.status !== "COMPLETED" && s.status !== "CANCELLED" && new Date(s.scheduledAt) > now)
                   .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))[0];
                 // Fall back to manually set bootcamp fields
-                const nextAt = autoNext
-                  ? new Date(autoNext.scheduledAt)
-                  : (bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt) : null);
-                const nextName = autoNext?.name || bootcampData?.nextSessionName || "Upcoming Session";
-                const nextNo   = autoNext?.no || (sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1);
+                const nextAt   = autoNext ? new Date(autoNext.scheduledAt) : null;
+                const nextName = autoNext?.name || "Upcoming Session";
+                const nextNo   = autoNext?.no ?? (sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1);
 
                 let dateLabel = "TBA", timeLabel = null, countdownLabel = null;
                 if (nextAt && !isNaN(nextAt.getTime())) {
