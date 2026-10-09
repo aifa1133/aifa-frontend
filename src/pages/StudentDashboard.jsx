@@ -1199,6 +1199,7 @@ function BootcampSection({ token, profile }) {
 
               {/* Next Live Session card — auto-picks next scheduled session, falls back to admin manual settings */}
               {(() => {
+                const now = new Date();
                 // Auto-detect: earliest scheduled session that isn't completed/cancelled
                 const autoNext = sessions
                   .filter(s => s.scheduledAt && s.status !== "COMPLETED" && s.status !== "CANCELLED")
