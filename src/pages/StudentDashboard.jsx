@@ -1221,7 +1221,7 @@ function BootcampSection({ token, profile }) {
                     countdownLabel = "Session ended";
                   }
                 }
-                const hasUpcoming = nextAt && !isNaN(nextAt.getTime()) && (nextAt - now) > 0;
+                const hasUpcoming = !!(autoNext && nextAt && !isNaN(nextAt.getTime()));
                 if (!hasUpcoming) return (
                   <div className="bg-[#111] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
                     <div className="text-center">
