@@ -1973,6 +1973,15 @@ const FALLBACK_COURSES = [
   { _id:"c6", title:"AI Face Enhancement Masterclass",  image:"/courses/v6.png", duration:"2h 15m", status:"completed" },
 ];
 
+const CD_DEFAULT_FAQS = [
+  { q: "Who is this course for?", a: "This course is designed for beginners and intermediate learners who want to master the subject at their own pace. No prior experience is required." },
+  { q: "How long do I have access to the course?", a: "Once purchased, you have lifetime access to the course content including any future updates we add." },
+  { q: "Will I get a certificate?", a: "Yes! Upon completing the course, you will receive a digital certificate of completion that you can share on LinkedIn or add to your resume." },
+  { q: "Can I watch on mobile?", a: "Absolutely. The course is fully responsive and accessible on any device — desktop, tablet, or mobile." },
+  { q: "What if I am not satisfied?", a: "We offer a 7-day refund policy. If you are not satisfied within the first 7 days of purchase, contact us for a full refund." },
+];
+const CD_YOU_GET = ["Lifetime Course Access", "HD Video Lessons", "Digital Certificate", "Step-by-step lessons", "Downloadable resources"];
+
 function VideoCoursesSection({ profile, onNavigate }) {
   const navigate   = useNavigate();
   const [courses, setCourses] = useState(FALLBACK_COURSES);
@@ -1982,6 +1991,8 @@ function VideoCoursesSection({ profile, onNavigate }) {
   const [sort, setSort]       = useState("Newest");
   const [sortOpen, setSortOpen] = useState(false);
   const [detailCourse, setDetailCourse] = useState(null);
+  const [fullCourse, setFullCourse]     = useState(null);
+  const [openFaq, setOpenFaq]           = useState(null);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -1990,6 +2001,17 @@ function VideoCoursesSection({ profile, onNavigate }) {
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
+
+  useEffect(() => {
+    if (!detailCourse) { setFullCourse(null); setOpenFaq(null); return; }
+    const id = detailCourse.slug || detailCourse._id;
+    const token = localStorage.getItem("aifa_token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`/api/courses/${id}`, { headers })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !d.message) setFullCourse(d); })
+      .catch(() => {});
+  }, [detailCourse]);
 
   useEffect(() => {
     fetch("/api/courses")
@@ -2046,70 +2068,197 @@ function VideoCoursesSection({ profile, onNavigate }) {
 
   /* ── Inline course detail view ── */
   if (detailCourse) {
-    const realId = detailCourse.slug || detailCourse._id;
-    const discount = detailCourse.originalPrice > detailCourse.price
-      ? Math.round((1 - detailCourse.price / detailCourse.originalPrice) * 100)
-      : null;
-    const lessonCount = detailCourse.lessons?.length || detailCourse.lessonCount || 12;
-    const level = detailCourse.level || "Beginner";
+    const c = fullCourse || detailCourse;
+    const realId = c.slug || c._id;
+    const token = localStorage.getItem("aifa_token");
+    const discount = c.originalPrice > c.price ? Math.round((1 - c.price / c.originalPrice) * 100) : null;
+    const lessons = Array.isArray(c.lessons) ? c.lessons : [];
+    const faqs = Array.isArray(c.faqs) && c.faqs.length > 0 ? c.faqs : CD_DEFAULT_FAQS;
+    const youGet = Array.isArray(c.benefits) && c.benefits.length > 0 ? c.benefits : CD_YOU_GET;
+    const level = c.level || "Beginner";
+
     return (
-      <div className="p-6">
-        <button onClick={() => setDetailCourse(null)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
-          <span>←</span> Back to Courses
-        </button>
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left: image */}
-          <div className="lg:w-[45%] shrink-0">
-            <div className="relative rounded-2xl overflow-hidden">
-              {detailCourse.proOnly && (
-                <div className="absolute top-3 left-3 z-10 bg-[#C7E36B] text-black text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Included in All-Access</div>
-              )}
-              <img src={detailCourse.image} alt={detailCourse.title} className="w-full h-[260px] lg:h-[320px] object-cover" />
-              <span className="absolute bottom-3 right-3 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-lg">{detailCourse.duration}</span>
+      <div className="text-white">
+        {/* Back */}
+        <div className="px-6 pt-6 pb-4">
+          <button onClick={() => setDetailCourse(null)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
+            ← Back to Courses
+          </button>
+        </div>
+
+        {/* Hero */}
+        <div className="px-6 pb-10">
+          <div className="flex flex-col lg:flex-row gap-10 items-start">
+            <div className="relative w-full lg:w-[480px] shrink-0 rounded-2xl overflow-hidden shadow-2xl">
+              <span className="absolute top-4 left-4 z-10 bg-[#C7E36B] text-black text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">INCLUDED IN ALL-ACCESS</span>
+              <img src={c.image} alt={c.title} className="w-full h-[280px] lg:h-[320px] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {c.duration && <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">{c.duration}</div>}
             </div>
-            {/* Feature highlights */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              {[["🗓️","Schedule","Self-paced"],["⏱️","Content",detailCourse.duration||"—"],["🎯","Level",level]].map(([ic,l,v])=>(
-                <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                  <div className="text-lg mb-1">{ic}</div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">{l}</p>
-                  <p className="text-xs font-bold text-white mt-0.5">{v}</p>
+            <div className="flex-1 flex flex-col gap-5">
+              <p className="text-[#C7E36B] text-xs font-bold uppercase tracking-widest">{c.category || "Video Course"}</p>
+              <h1 className="text-2xl lg:text-3xl font-bold leading-tight">{c.title}</h1>
+              <p className="text-gray-300 text-sm leading-relaxed">{c.description}</p>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold">₹{(c.price||0).toLocaleString("en-IN")}</span>
+                {c.originalPrice > c.price && (
+                  <>
+                    <span className="text-gray-500 line-through text-lg">₹{c.originalPrice.toLocaleString("en-IN")}</span>
+                    <span className="bg-[#C7E36B]/20 text-[#C7E36B] text-xs font-bold px-2.5 py-1 rounded-full">{discount}% OFF</span>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => realId && navigate(`/courses/${realId}/pay`, { state: { courseData: c } })}
+                className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#C7E36B] text-black font-bold text-base rounded-xl hover:bg-lime-300 transition-all shadow-lg shadow-[#C7E36B]/20"
+              >PURCHASE NOW →</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature metrics */}
+        <div className="px-6 pb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label:"Learn On Your Own Schedule", desc:"Build your skills at your own pace. All lessons and project files are available 24/7.", icon:"🗓️" },
+              { label:c.duration ? `${c.duration} of content` : "Structured Lessons", desc:`${c.duration||"Hours"} of structured, practical lessons focused on real-world skills.`, icon:"⏱️" },
+              { label:`${level}-Friendly`, desc:`Designed for ${level.toLowerCase()} learners — no prior experience required.`, icon:"⭐" },
+            ].map((m,i)=>(
+              <div key={i} className="flex items-start gap-4 border border-white/10 rounded-xl px-5 py-5 bg-white/3">
+                <span className="text-xl shrink-0 mt-0.5">{m.icon}</span>
+                <div><p className="text-sm font-bold text-white mb-1">{m.label}</p><p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Overview + You Get */}
+        <div className="bg-[#0D1113] border-y border-white/5 py-12 px-6">
+          <div className="flex flex-col lg:flex-row gap-12">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold mb-5 uppercase tracking-wide">Course Overview</h2>
+              <div className="text-gray-300 text-sm leading-relaxed space-y-4">
+                <p>{c.description}</p>
+                {c.longDescription
+                  ? <p className="text-gray-400">{c.longDescription}</p>
+                  : <p className="text-gray-400">This course is built to be hands-on and practical. Every lesson is crafted to build your skills step-by-step, with real-world examples and projects that you can add to your portfolio.</p>
+                }
+              </div>
+              {Array.isArray(c.whatYouLearn) && c.whatYouLearn.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-base font-bold mb-4">What You'll Learn</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {c.whatYouLearn.map((item,i)=>(
+                      <div key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                        <span className="text-[#C7E36B] mt-0.5 shrink-0">✓</span>{item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="w-full lg:w-[300px] shrink-0">
+              <div className="border border-white/10 rounded-2xl p-6 bg-[#111417]">
+                <h3 className="text-base font-bold mb-5">You Get:</h3>
+                <ul className="flex flex-col gap-3">
+                  {youGet.map((item,i)=>(
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-200">
+                      <span className="w-5 h-5 rounded-full bg-[#C7E36B]/15 flex items-center justify-center shrink-0 text-[#C7E36B] text-xs font-bold">✓</span>{item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-5 pt-5 border-t border-white/10 flex flex-col gap-2 text-sm">
+                  {c.language && <div className="flex justify-between text-gray-400"><span>Language</span><span className="text-white font-medium">{c.language}</span></div>}
+                  <div className="flex justify-between text-gray-400"><span>Level</span><span className="text-white font-medium">{level}</span></div>
+                  {lessons.length > 0 && <div className="flex justify-between text-gray-400"><span>Lessons</span><span className="text-white font-medium">{lessons.length}</span></div>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Syllabus */}
+        {lessons.length > 0 && (
+          <div className="py-12 px-6" style={{ background:"repeating-linear-gradient(90deg,#080a0b 0px,#080a0b 28px,#0e1214 28px,#0e1214 29px)" }}>
+            <div className="flex items-end justify-between mb-8">
+              <h2 className="text-3xl lg:text-4xl font-black uppercase leading-none tracking-tight">COURSE SYLLABUS</h2>
+              <span className="text-xs text-gray-600 font-semibold uppercase tracking-wider">{lessons.length} lesson{lessons.length!==1?"s":""}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+              {lessons.map((lesson,i)=>(
+                <div key={i} className="group">
+                  <div className="relative w-full overflow-hidden mb-3 rounded-lg" style={{aspectRatio:"16/9"}}>
+                    {lesson.thumbnail
+                      ? <img src={lesson.thumbnail} alt={lesson.title} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full bg-[#151A1B] flex items-center justify-center"><span className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-600 text-lg">🔒</span></div>
+                    }
+                  </div>
+                  <p className="text-sm font-bold text-white leading-snug line-clamp-2 mb-1">{lesson.title||`Lesson ${i+1}`}</p>
+                  {(lesson.description||lesson.desc) && <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{lesson.description||lesson.desc}</p>}
+                  {lesson.duration && <p className="text-[11px] text-gray-600 mt-1">⏱ {lesson.duration}</p>}
                 </div>
               ))}
             </div>
           </div>
-          {/* Right: info */}
-          <div className="flex-1 flex flex-col gap-5">
-            {detailCourse.category && (
-              <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest">{detailCourse.category}</p>
-            )}
-            <h1 className="text-2xl lg:text-3xl font-black text-white leading-tight">{detailCourse.title}</h1>
-            <p className="text-sm text-gray-400 leading-relaxed">{detailCourse.description || "Master cutting-edge AI filmmaking techniques in this comprehensive course designed for creative professionals."}</p>
-            {/* Stats row */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-300">
-              <span className="flex items-center gap-1.5"><span className="text-[#C7E36B]">📋</span> {lessonCount} Lessons</span>
-              <span className="flex items-center gap-1.5"><span className="text-[#C7E36B]">🎓</span> Certificate included</span>
-              <span className="flex items-center gap-1.5"><span className="text-[#C7E36B]">♾️</span> Lifetime access</span>
+        )}
+
+        {/* Pricing */}
+        <div className="bg-[#0D1113] border-y border-white/5 py-14 px-6">
+          <h2 className="text-xl font-bold uppercase tracking-wide text-center mb-2">Choose How You Want To Learn</h2>
+          <p className="text-sm text-gray-400 text-center mb-10">Buy this course or unlock lifetime access to all courses with Pro</p>
+          <div className="flex flex-col lg:flex-row gap-6 max-w-[820px] mx-auto">
+            {/* Individual */}
+            <div className="flex-1 border border-white/15 rounded-2xl p-7 bg-[#111417] flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Individual Course</p>
+                <h3 className="text-xl font-bold mb-1">Buy this Course</h3>
+                <div className="flex items-end gap-2 mt-3">
+                  <span className="text-4xl font-bold">₹{(c.price||0).toLocaleString("en-IN")}</span>
+                  {c.originalPrice > c.price && <span className="text-gray-500 line-through text-lg mb-1">₹{c.originalPrice.toLocaleString("en-IN")}</span>}
+                </div>
+              </div>
+              <ul className="flex flex-col gap-2.5 flex-1">
+                {[`${c.duration||"Hours"} of HD video`,"Step-by-step lessons","Lifetime access to this course","English captions","Certificate of completion"].map(item=>(
+                  <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300"><span className="text-[#C7E36B] shrink-0">✓</span>{item}</li>
+                ))}
+              </ul>
+              <button onClick={()=>realId&&navigate(`/courses/${realId}/pay`,{state:{courseData:c}})} className="w-full py-3.5 bg-[#C7E36B] text-black font-bold rounded-xl text-sm hover:bg-lime-300 transition-all">BUY THIS COURSE →</button>
             </div>
-            {/* Price */}
-            <div className="flex items-end gap-3 mt-2">
-              <span className="text-3xl font-black text-white">₹{(detailCourse.price || 0).toLocaleString("en-IN")}</span>
-              {detailCourse.originalPrice > detailCourse.price && (
-                <>
-                  <span className="text-gray-400 line-through text-base mb-1">₹{(detailCourse.originalPrice).toLocaleString("en-IN")}</span>
-                  <span className="bg-[#C7E36B] text-black text-xs font-bold px-2 py-0.5 rounded-full mb-1">{discount}% OFF</span>
-                </>
-              )}
+            {/* Pro */}
+            <div className="flex-1 border border-[#C7E36B]/40 rounded-2xl p-7 bg-[#111A0D] flex flex-col gap-5 relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-[#C7E36B] text-black text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">BEST VALUE</div>
+              <div>
+                <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest mb-2">All Courses Unlocked</p>
+                <h3 className="text-xl font-bold mb-1">Unlock Pro Membership</h3>
+                <div className="flex items-end gap-2 mt-3">
+                  <span className="text-4xl font-bold">₹6,999</span>
+                  <span className="text-gray-500 line-through text-lg mb-1">₹15,000</span>
+                </div>
+              </div>
+              <ul className="flex flex-col gap-2.5 flex-1">
+                {["Access to all current courses","All future courses included","Lifetime access (one-time payment)","Access to resources","Community access","Career & Job Opportunities","Priority support & updates"].map(item=>(
+                  <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300"><span className="text-[#C7E36B] shrink-0">✓</span>{item}</li>
+                ))}
+              </ul>
+              <button onClick={()=>token?navigate("/dashboard/billing"):navigate("/login")} className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all">GET PRO MEMBERSHIP →</button>
             </div>
-            <button
-              onClick={() => {
-                if (!realId) return;
-                navigate(`/courses/${realId}/pay`, { state: { courseData: detailCourse } });
-              }}
-              className="w-full bg-[#C7E36B] hover:bg-lime-300 text-black font-bold py-4 rounded-xl transition-all text-base"
-            >
-              PURCHASE NOW →
-            </button>
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="py-14 px-6 max-w-[800px] mx-auto w-full">
+          <p className="text-[#C7E36B] text-xs font-bold uppercase tracking-widest text-center mb-2">Need More Details?</p>
+          <h2 className="text-xl font-bold uppercase tracking-wide text-center mb-8">Frequently Asked Questions</h2>
+          <div className="flex flex-col gap-3">
+            {faqs.map((item,i)=>(
+              <div key={i} className="border border-white/10 rounded-xl overflow-hidden bg-[#0D1113]">
+                <button onClick={()=>setOpenFaq(openFaq===i?null:i)} className="w-full flex items-center justify-between px-6 py-5 text-left gap-4">
+                  <span className="text-sm font-semibold text-white">{item.q}</span>
+                  <span className={`shrink-0 text-[#C7E36B] font-bold text-lg transition-transform duration-200 ${openFaq===i?"rotate-45":""}`}>+</span>
+                </button>
+                {openFaq===i && <div className="px-6 pb-5"><p className="text-sm text-gray-400 leading-relaxed">{item.a}</p></div>}
+              </div>
+            ))}
           </div>
         </div>
       </div>
