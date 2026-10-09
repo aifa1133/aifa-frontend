@@ -935,7 +935,7 @@ function BootcampAdmin({ token }) {
     }
   };
   const saveZoomSettings = async () => {
-    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink, zoomId:stgs.zoomId, zoomPass:stgs.zoomPass }) });
+    await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink }) });
     save(setSavedZoom);
   };
   const saveMentors = async (updated) => {
@@ -1647,10 +1647,6 @@ function BootcampAdmin({ token }) {
             </Sect>
             <Sect icon="link" title="Zoom Configuration">
               <Fld label="Meeting Link" value={stgs.zoomLink} onChange={v=>setStgs({...stgs,zoomLink:v})} placeholder="https://zoom.us/j/..." />
-              <div className="grid grid-cols-2 gap-4">
-                <Fld label="Meeting ID" value={stgs.zoomId} onChange={v=>setStgs({...stgs,zoomId:v})} placeholder="000 0000 0000" />
-                <Fld label="Passcode" value={stgs.zoomPass} onChange={v=>setStgs({...stgs,zoomPass:v})} placeholder="••••••" />
-              </div>
               <div className="grid grid-cols-3 gap-3 mt-1">
                 {[["autoRecord","Record Automatically"],["reminders","Send Reminders"],["chat","Enable Chat"]].map(([k,l])=>(
                   <div key={k} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
