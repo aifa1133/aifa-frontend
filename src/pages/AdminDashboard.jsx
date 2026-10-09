@@ -3000,11 +3000,11 @@ function VideoCoursesAdmin({ token }) {
                 <div className="flex-1 h-[1px] bg-white/10"/>
               </div>
               <input
-                value={f.thumbnail&&f.thumbnail.startsWith("data:")?"":(f.thumbnail||"")}
+                value={(f.thumbnail&&f.thumbnail!=="uploading"&&!f.thumbnail.startsWith("http"))?"":(f.thumbnail==="uploading"?"":f.thumbnail||"")}
                 onChange={e=>setF(p=>({...p,thumbnail:e.target.value}))}
-                disabled={!!(f.thumbnail&&f.thumbnail.startsWith("data:"))}
-                placeholder={f.thumbnail&&f.thumbnail.startsWith("data:")?"Image uploaded — remove it to paste a URL instead":"https://... (paste image URL)"}
-                className={`w-full bg-[#1A1D1E] border rounded-lg px-3 py-2.5 text-sm placeholder-gray-600 outline-none transition-all ${f.thumbnail&&f.thumbnail.startsWith("data:")?"border-white/5 text-gray-600 cursor-not-allowed opacity-50":"border-white/10 text-white focus:border-[#C7E36B]/50"}`}
+                disabled={!!(f.thumbnail&&f.thumbnail!=="uploading"&&!f.thumbnail.startsWith("http"))}
+                placeholder="https://... (paste image URL)"
+                className={`w-full bg-[#1A1D1E] border rounded-lg px-3 py-2.5 text-sm placeholder-gray-600 outline-none transition-all ${(f.thumbnail&&f.thumbnail!=="uploading"&&!f.thumbnail.startsWith("http"))?"border-white/5 text-gray-600 cursor-not-allowed opacity-50":"border-white/10 text-white focus:border-[#C7E36B]/50"}`}
               />
             </div>
             <Fld label="Short Description" value={f.shortDesc} onChange={v=>setF({...f,shortDesc:v})} placeholder="A brief hook for your course..." />
@@ -3115,17 +3115,28 @@ function VideoCoursesAdmin({ token }) {
                         </div>
                       ) : (
                         <>
-                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
-                            <input type="file" accept="image/*" className="hidden" onChange={e=>{
-                              const file=e.target.files?.[0]; if(!file) return;
-                              const reader=new FileReader();
-                              reader.onload=ev=>updLesson("thumbnail",ev.target.result);
-                              reader.readAsDataURL(file); e.target.value="";
-                            }}/>
-                            <I name="upload" size={16} className="text-gray-500 mb-1"/>
-                            <p className="text-[10px] text-gray-400">Click to upload</p>
-                          </label>
-                          <input value={les.thumbnail||""} onChange={e=>updLesson("thumbnail",e.target.value)} placeholder="or paste image URL..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
+                          {les.thumbnail==="uploading"?(
+                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[80px] mb-2">
+                              <p className="text-[10px] text-[#C7E36B] animate-pulse">Uploading…</p>
+                            </div>
+                          ):(
+                            <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
+                              <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                                const file=e.target.files?.[0]; if(!file) return;
+                                e.target.value="";
+                                updLesson("thumbnail","uploading");
+                                try {
+                                  const fd=new FormData(); fd.append("file",file);
+                                  const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                                  if(up.ok){ const ud=await up.json(); updLesson("thumbnail",ud.url||""); }
+                                  else { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
+                                } catch { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
+                              }}/>
+                              <I name="upload" size={16} className="text-gray-500 mb-1"/>
+                              <p className="text-[10px] text-gray-400">Click to upload</p>
+                            </label>
+                          )}
+                          <input value={(les.thumbnail&&les.thumbnail!=="uploading")?les.thumbnail:""} onChange={e=>updLesson("thumbnail",e.target.value)} placeholder="or paste image URL..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
                         </>
                       )}
                     </div>
@@ -3185,9 +3196,9 @@ function VideoCoursesAdmin({ token }) {
           <div className="flex gap-6">
             <div className="flex-1 space-y-4">
               <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex gap-4">
-                <div className="w-[100px] h-[70px] bg-white/10 rounded-lg overflow-hidden shrink-0"><img src="/courses/v1.png" alt="" className="w-full h-full object-cover"/></div>
+                <div className="w-[100px] h-[70px] bg-white/10 rounded-lg overflow-hidden shrink-0">{f.thumbnail&&f.thumbnail!=="uploading"?<img src={f.thumbnail} alt="" className="w-full h-full object-cover"/>:<div className="w-full h-full flex items-center justify-center"><I name="video" size={22} className="text-gray-600"/></div>}</div>
                 <div>
-                  <div className="flex gap-2 mb-1"><span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded">DRAFT</span><span className="text-[10px] text-gray-400">AI Filmmaking</span></div>
+                  <div className="flex gap-2 mb-1"><span className="text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-bold px-2 py-0.5 rounded">DRAFT</span><span className="text-[10px] text-gray-400">{f.category||"AI Filmmaking"}</span></div>
                   <h3 className="text-base font-bold text-white">{f.title||"Master AI Filmmaking in 30 Days"}</h3>
                   <div className="flex gap-4 mt-2 text-[10px] text-gray-400">
                     <span>TOTAL SECTIONS: {sections.length}</span><span>LESSONS: {sections.reduce((a,s)=>a+s.lessons.length,0)}</span>
