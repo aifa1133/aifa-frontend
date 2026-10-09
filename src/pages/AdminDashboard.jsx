@@ -733,10 +733,24 @@ function ListBootcampAdmin({ onSelect, token }) {
                 <div className="p-4">
                   <h3 className="text-sm font-bold text-white mb-1">{b.title}</h3>
                   <p className="text-[11px] text-gray-400 mb-4 line-clamp-2">{b.desc}</p>
-                  <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
+                  <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3 items-end">
                     {[["Students",b.students],["Price",b.price],["Duration",b.duration]].map(([l,v])=>(
                       <div key={l}><p className="text-[10px] text-gray-500 uppercase">{l}</p><p className="text-xs font-bold text-white mt-0.5">{v}</p></div>
                     ))}
+                  </div>
+                  {/* Show to students radio */}
+                  <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">Show to Students</span>
+                    <label className="flex items-center gap-1.5 cursor-pointer" onClick={e=>e.stopPropagation()}>
+                      <input type="radio" name="active-bootcamp" checked={!!b.raw?.isPublished}
+                        onChange={async e=>{
+                          e.stopPropagation();
+                          await fetch(`/api/bootcamps/${b._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:true})});
+                          setBootcamps(prev=>prev.map(x=>({...x,isPublished:x._id===b._id})));
+                        }}
+                        className="accent-[#C7E36B] w-3.5 h-3.5"/>
+                      <span className={`text-[11px] font-bold ${b.raw?.isPublished?"text-[#C7E36B]":"text-gray-500"}`}>{b.raw?.isPublished?"Active":"Set Active"}</span>
+                    </label>
                   </div>
                 </div>
               </div>

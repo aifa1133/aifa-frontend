@@ -945,12 +945,15 @@ function BootcampSection({ token, profile }) {
       .catch(() => setAllBootcamps([]));
   }, []);
 
-  /* Auto-select: enrolled bootcamp first, else first published one */
+  /* Auto-select: admin-published bootcamp the student is enrolled in, else any enrolled one */
   useEffect(() => {
     if (!allBootcamps || viewBootcamp) return;
-    const enrolledOne = allBootcamps.find(bc => bc.enrollments?.some(id => String(id) === String(userId)));
-    const firstActive = allBootcamps.find(bc => bc.isPublished);
-    const pick = enrolledOne || firstActive || allBootcamps[0];
+    const enrolledIds = allBootcamps
+      .filter(bc => bc.enrollments?.some(id => String(id) === String(userId)))
+      .map(bc => bc._id);
+    const publishedEnrolled = allBootcamps.find(bc => bc.isPublished && enrolledIds.includes(bc._id));
+    const anyEnrolled = allBootcamps.find(bc => enrolledIds.includes(bc._id));
+    const pick = publishedEnrolled || anyEnrolled || allBootcamps.find(bc => bc.isPublished) || allBootcamps[0];
     if (pick) setViewBootcamp(pick);
   }, [allBootcamps, userId]);
 
@@ -1177,31 +1180,6 @@ function BootcampSection({ token, profile }) {
           </div>
           <h1 className="text-[26px] font-black text-white leading-tight">{bootcampData?.title}</h1>
         </div>
-        {/* Bootcamp switcher — only when enrolled in 2+ bootcamps */}
-        {(() => {
-          const myBootcamps = allBootcamps.filter(bc => bc.enrollments?.some(id => String(id) === String(userId)));
-          if (myBootcamps.length < 2) return null;
-          return (
-            <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-2.5 flex flex-col gap-1.5">
-              <p className="text-[9px] text-white/40 uppercase tracking-wider font-bold mb-0.5">My Bootcamps</p>
-              {myBootcamps.map(bc => (
-                <label key={bc._id} className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="bootcamp-switcher"
-                    checked={viewBootcamp?._id === bc._id}
-                    onChange={() => {
-                      setViewBootcamp(bc);
-                      setSessions([]); setProjects([]); setAnnouncements([]); setBcResources([]); setActiveSession(null); setTab("overview");
-                    }}
-                    className="accent-[#C7E36B] w-3 h-3 shrink-0"
-                  />
-                  <span className={`text-[11px] font-semibold truncate max-w-[140px] ${viewBootcamp?._id === bc._id ? "text-[#C7E36B]" : "text-white/70 group-hover:text-white"}`}>{bc.title}</span>
-                </label>
-              ))}
-            </div>
-          );
-        })()}
       </div>
 
       {/* ── Tab bar ── */}
