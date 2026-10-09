@@ -1553,7 +1553,7 @@ function BootcampSection({ token, profile }) {
                     const f = r.name || r;
                     const isZip = typeof f==="string" && f.toLowerCase().endsWith(".zip");
                     return (
-                      <div key={i} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:border-white/25 transition-all" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
+                      <div key={i} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:border-white/25 transition-all" onClick={() => r.fileUrl ? triggerDownload(r.fileUrl, r.name || r) : null}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={isZip ? "text-blue-400" : "text-red-400"}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                         </div>
@@ -1626,7 +1626,7 @@ function BootcampSection({ token, profile }) {
                       {res.map((r,i) => {
                         const isZip = r.fileType?.toUpperCase().includes("ZIP") || r.name?.toLowerCase().endsWith(".zip");
                         return (
-                          <div key={i} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-3 hover:border-white/25 transition-all cursor-pointer" onClick={() => r.fileUrl ? window.open(r.fileUrl,"_blank") : null}>
+                          <div key={i} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-3 hover:border-white/25 transition-all cursor-pointer" onClick={() => r.fileUrl ? triggerDownload(r.fileUrl, r.name) : null}>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold text-white truncate">{r.name}</p>
                               <p className="text-[10px] text-white/40 mt-0.5">{isZip ? "ZIP Archive" : "PDF Document"}{r.size ? ` · ${r.size}` : ""}</p>
