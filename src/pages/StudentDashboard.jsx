@@ -1493,20 +1493,56 @@ function BootcampSection({ token, profile }) {
           {/* Right: video + details */}
           <div className="flex-1 p-5 space-y-5 min-w-0">
             <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 relative">
-              {activeSession?.recordingUrl ? (
-                <iframe src={activeSession.recordingUrl.includes("watch?v=") ? activeSession.recordingUrl.replace("watch?v=","embed/") : activeSession.recordingUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.name}/>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center cursor-pointer group"
-                  onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
-                  {activeSession?.thumbnail ? <img src={activeSession.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60"/> : null}
-                  <div className="text-center relative z-10">
-                    <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
-                      <Ic name="play" size={28} className="text-white ml-1"/>
+              {(() => {
+                const url = activeSession?.recordingUrl;
+                if (url) {
+                  // YouTube embed
+                  if (url.includes("youtube.com/watch") || url.includes("youtu.be/")) {
+                    const embedUrl = url.includes("watch?v=") ? url.replace("watch?v=","embed/").split("&")[0] : url.replace("youtu.be/","youtube.com/embed/");
+                    return <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.name}/>;
+                  }
+                  // Vimeo embed
+                  if (url.includes("vimeo.com/") && !url.includes("player.vimeo.com")) {
+                    const id = url.split("vimeo.com/")[1]?.split("?")[0];
+                    return <iframe src={`https://player.vimeo.com/video/${id}`} className="w-full h-full" allowFullScreen allow="autoplay; fullscreen; picture-in-picture" title={activeSession.name}/>;
+                  }
+                  // Already an embed URL (player.vimeo.com, youtube.com/embed, etc.)
+                  if (url.includes("/embed/") || url.includes("player.")) {
+                    return <iframe src={url} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={activeSession.name}/>;
+                  }
+                  // Anything else (Zoom, Drive, direct links) → open externally
+                  return (
+                    <div className="w-full h-full flex items-center justify-center bg-[#0B0F1A]">
+                      {activeSession?.thumbnail ? <img src={activeSession.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30"/> : null}
+                      <div className="text-center relative z-10 flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-[#C7E36B]/20 border border-[#C7E36B]/40 flex items-center justify-center">
+                          <Ic name="play" size={28} className="text-[#C7E36B] ml-1"/>
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-sm mb-1">Recording Available</p>
+                          <p className="text-white/40 text-xs mb-4">Opens in a new tab</p>
+                          <button onClick={() => window.open(url,"_blank")} className="bg-[#C7E36B] text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-[#d4f070] transition-colors">
+                            Watch Recording
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    {videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{activeSession?.status==="ACTIVE" && bootcampData?.zoomLink ? "Click to join live session" : "Recording not yet available"}</p>}
+                  );
+                }
+                // No recording URL
+                return (
+                  <div className="w-full h-full flex items-center justify-center cursor-pointer group"
+                    onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
+                    {activeSession?.thumbnail ? <img src={activeSession.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60"/> : null}
+                    <div className="text-center relative z-10">
+                      <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
+                        <Ic name="play" size={28} className="text-white ml-1"/>
+                      </div>
+                      {videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{activeSession?.status==="ACTIVE" && bootcampData?.zoomLink ? "Click to join live session" : "Recording not yet available"}</p>}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
             <div>
               <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">SESSION {String(activeSession?.no||1).padStart(2,"0")}</p>
