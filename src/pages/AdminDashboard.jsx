@@ -805,7 +805,7 @@ function BootcampAdmin({ token }) {
   const [students,setStudents]=useState([]);
   /* E: Add Session modal */
   const [showAddSession,setShowAddSession]=useState(false);
-  const [newSess,setNewSess]=useState({name:"",status:"COMING SOON",nextSessionName:"",nextSessionAt:""});
+  const [newSess,setNewSess]=useState({name:"",status:"COMING SOON",nextSessionAt:""});
   const [sessAdded,setSessAdded]=useState(false);
   /* F: real announcements from API */
   const [annsLoading,setAnnsLoading]=useState(false);
@@ -1019,7 +1019,7 @@ function BootcampAdmin({ token }) {
                   </div>
                 </div>
               );
-              const sessionDate = nextSess.scheduledAt ? new Date(nextSess.scheduledAt) : null;
+              const displayDate = nextAtDate || (nextSess.scheduledAt ? new Date(nextSess.scheduledAt) : null);
               return (
                 <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-6 flex items-center justify-between">
                   <div className="flex-1">
@@ -1030,10 +1030,10 @@ function BootcampAdmin({ token }) {
                       </span>
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">{nextSess.name}</h2>
-                    {sessionDate && (
+                    {displayDate && (
                       <div className="flex items-center gap-5 text-white/80 text-sm mb-4">
-                        <span>📅 {sessionDate.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})}</span>
-                        <span>🕐 {sessionDate.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>
+                        <span>📅 {displayDate.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</span>
+                        <span>🕐 {displayDate.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true})}</span>
                       </div>
                     )}
                     <div className="flex gap-3 mt-4">
@@ -1147,7 +1147,6 @@ function BootcampAdmin({ token }) {
                         {["COMING SOON","ACTIVE","COMPLETED","CANCELLED"].map(o=><option key={o}>{o}</option>)}
                       </select>
                     </div>
-                    <Fld label="Next Session Name" value={newSess.nextSessionName} onChange={v=>setNewSess({...newSess,nextSessionName:v})} placeholder="e.g. Generative Video with Sora" />
                     <Fld label="Next Session Date & Time" type="datetime-local" value={newSess.nextSessionAt} onChange={v=>setNewSess({...newSess,nextSessionAt:v})} />
                   </div>
                   <div className="flex justify-end gap-2 mt-6">
@@ -1160,12 +1159,12 @@ function BootcampAdmin({ token }) {
                         const d = await res.json();
                         setSessions(prev=>[...prev,d]);
                         // Save nextSessionName & nextSessionAt to the bootcamp
-                        if (newSess.nextSessionName || newSess.nextSessionAt) {
-                          const upd = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ nextSessionName:newSess.nextSessionName||"", nextSessionAt:newSess.nextSessionAt||null }) });
+                        if (newSess.nextSessionAt) {
+                          const upd = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ nextSessionName:newSess.name, nextSessionAt:newSess.nextSessionAt||null }) });
                           if (upd.ok) { const ud = await upd.json(); setSel(prev=>({...prev,...ud})); }
                         }
                       }
-                      setShowAddSession(false); setSessAdded(true); setTimeout(()=>setSessAdded(false),2000); setNewSess({name:"",status:"COMING SOON",nextSessionName:"",nextSessionAt:""});
+                      setShowAddSession(false); setSessAdded(true); setTimeout(()=>setSessAdded(false),2000); setNewSess({name:"",status:"COMING SOON",nextSessionAt:""});
                     }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">ADD SESSION</button>
                   </div>
                 </div>
