@@ -1106,7 +1106,7 @@ function BootcampAdmin({ token }) {
                     <div className="flex items-center gap-2"><I name="edit" size={16} className="text-[#C7E36B]"/><p className="text-white font-bold">Edit Details — Session {editSession.no}</p></div>
                     <button onClick={()=>setEditSession(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
                   </div>
-                  <div className="space-y-4 overflow-y-auto px-6 pb-2 flex-1">
+                  <div className="space-y-4 overflow-y-auto px-6 pb-2 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div>
                       <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Status</p>
                       <select value={modalStatus} onChange={e=>setModalStatus(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B]">
