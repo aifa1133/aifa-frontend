@@ -13,9 +13,9 @@ const CHECKLIST = [
 ];
 
 /* LeftCard receives all values as props — no closure references to outer component vars */
-function LeftCard({ step, couponApplied, subtotal, original, origPrice, couponCode }) {
+function LeftCard({ step, couponApplied, subtotal, original, origPrice, couponCode, title }) {
   const price    = original  || 14000;
-  const oldPrice = origPrice || 19000;
+  const oldPrice = origPrice || 0;
   return (
     <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 space-y-4">
       <p className="text-[#C7E36B] text-[10px] uppercase font-bold tracking-wider">
@@ -23,11 +23,11 @@ function LeftCard({ step, couponApplied, subtotal, original, origPrice, couponCo
       </p>
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-[#C7E36B]/10 rounded-xl flex items-center justify-center text-2xl">🎬</div>
-        <p className="text-white font-bold text-sm">AI Filmmaking Bootcamp</p>
+        <p className="text-white font-bold text-sm">{title || "AI Filmmaking Bootcamp"}</p>
       </div>
       <div className="flex items-baseline gap-3">
         <span className="text-3xl font-bold text-white">₹{price.toLocaleString("en-IN")}</span>
-        <span className="text-gray-400 line-through text-sm">₹{oldPrice.toLocaleString("en-IN")}</span>
+        {oldPrice > 0 && <span className="text-gray-400 line-through text-sm">₹{oldPrice.toLocaleString("en-IN")}</span>}
       </div>
       {step === 2 && couponApplied ? (
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
@@ -86,7 +86,7 @@ export default function BootcampEnroll() {
   useEffect(() => {
     fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(async d => {
       if (Array.isArray(d) && d.length > 0) {
-        const bc = d[0];
+        const bc = d.find(b => b.isPublished) || d[0];
         setBootcamp(bc);
 
         const token = localStorage.getItem("aifa_token");
@@ -302,11 +302,11 @@ export default function BootcampEnroll() {
       <div className="max-w-4xl mx-auto">
         <button onClick={()=>{ navigate(backPage ? `/dashboard/${backPage}` : backTo); }} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
         <div className="grid md:grid-cols-[320px_1fr] gap-6">
-          <LeftCard step={1} couponApplied={false} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
+          <LeftCard step={1} couponApplied={false} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} title={bootcamp?.title} />
 
           <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6">
             <h2 className="text-2xl font-bold text-white mb-1">Reserve Your Seat</h2>
-            <p className="text-gray-400 text-sm mb-6">You are one step away from joining the AI Filmmaking Bootcamp.</p>
+            <p className="text-gray-400 text-sm mb-6">You are one step away from joining {bootcamp?.title || "the Bootcamp"}.</p>
 
             <div className="space-y-4">
               {[
@@ -353,7 +353,7 @@ export default function BootcampEnroll() {
       <div className="max-w-4xl mx-auto">
         <button onClick={()=>{ navigate(backPage ? `/dashboard/${backPage}` : backTo); }} className="text-gray-400 text-sm hover:text-white flex items-center gap-1 mb-6 transition-all">← Back</button>
         <div className="grid md:grid-cols-[320px_1fr] gap-6">
-          <LeftCard step={2} couponApplied={couponApplied} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} />
+          <LeftCard step={2} couponApplied={couponApplied} subtotal={SUBTOTAL} original={ORIGINAL} origPrice={ORIG_PRICE} couponCode={couponData ? couponData.code : ""} title={bootcamp?.title} />
 
           <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-6 space-y-5">
             <h2 className="text-xl font-bold text-white">Complete Your Enrollment</h2>
@@ -448,7 +448,7 @@ export default function BootcampEnroll() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Seat Successfully Reserved</h2>
-          <p className="text-gray-400 text-sm">Welcome to the AI Filmmaking Bootcamp.</p>
+          <p className="text-gray-400 text-sm">Welcome to {bootcamp?.title || "the Bootcamp"}.</p>
         </div>
 
         <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5 mb-6">
@@ -458,7 +458,7 @@ export default function BootcampEnroll() {
           </div>
           <div className="space-y-3 text-sm divide-y divide-white/5">
             <div className="flex justify-between items-center py-2">
-              <span className="text-gray-300">AI Filmmaking Bootcamp</span>
+              <span className="text-gray-300">{bootcamp?.title || "AI Filmmaking Bootcamp"}</span>
               <span className="text-white font-bold">₹{ORIGINAL.toLocaleString("en-IN")}</span>
             </div>
             <div className="flex justify-between items-center py-2">
