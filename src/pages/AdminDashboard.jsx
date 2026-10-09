@@ -848,7 +848,7 @@ function BootcampAdmin({ token }) {
   /* Load tab-specific data when switching tabs */
   useEffect(() => {
     if (!sel?._id) return;
-    if (tab === "sessions") {
+    if (tab === "sessions" || tab === "overview") {
       setSessLoading(true);
       fetch(`/api/bootcamps/${sel._id}/sessions`, { headers:h })
         .then(r=>r.ok?r.json():[]).then(d=>{ setSessions(Array.isArray(d)?d:[]); setSessLoading(false); }).catch(()=>setSessLoading(false));
@@ -1007,19 +1007,21 @@ function BootcampAdmin({ token }) {
               ))}
             </div>
             {(()=>{
-              const nextAtDate = sel?.nextSessionAt ? new Date(sel.nextSessionAt) : null;
-              const nextSessionValid = nextAtDate && nextAtDate > new Date();
-              const nextSess = nextSessionValid ? sessions.find(s => s.status === "COMING SOON") : null;
+              const now = new Date();
+              // Auto-detect next session: earliest future scheduledAt that isn't COMPLETED/CANCELLED
+              const nextSess = sessions
+                .filter(s => s.scheduledAt && s.status !== "COMPLETED" && s.status !== "CANCELLED" && new Date(s.scheduledAt) > now)
+                .sort((a,b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))[0] || null;
               if (!nextSess) return (
                 <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
                   <div className="text-center">
                     <I name="videocam" size={32} className="text-gray-600 mx-auto mb-3"/>
                     <p className="text-white font-semibold text-base">No session is scheduled right now</p>
-                    <p className="text-gray-500 text-xs mt-1">Mark a session as "Coming Soon" in the Sessions tab to show it here.</p>
+                    <p className="text-gray-500 text-xs mt-1">Open a session in the Sessions tab and set a Scheduled Date & Time.</p>
                   </div>
                 </div>
               );
-              const displayDate = nextAtDate || (nextSess.scheduledAt ? new Date(nextSess.scheduledAt) : null);
+              const displayDate = new Date(nextSess.scheduledAt);
               return (
                 <div className="bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-2xl p-6 flex items-center justify-between">
                   <div className="flex-1">
