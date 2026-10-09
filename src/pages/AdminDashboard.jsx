@@ -943,7 +943,6 @@ function BootcampAdmin({ token }) {
       if (r.ok) {
         const updated = await r.json();
         setSel(prev=>({...prev,...updated}));
-        setBootcamps(prev => prev.map(b => b._id === updated._id ? {...b,...updated} : b));
         save(setSavedBatch);
       } else {
         const data = await r.json();
