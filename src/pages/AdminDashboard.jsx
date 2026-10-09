@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminInfluencers from "./admin/AdminInfluencers";
 
+/* ─── GLOBAL TOAST ─── */
+let _globalToastFn = null;
+const globalShowToast = (msg = "Changes saved!") => { if (_globalToastFn) _globalToastFn(msg); };
+
 /* ─── INLINE SVG ICON ─── */
 const Ic = ({ d, size = 16, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -117,10 +121,25 @@ export default function AdminDashboard() {
     navigate("/");
   };
 
+  const [globalToast, setGlobalToast] = useState(null);
+  useEffect(() => {
+    _globalToastFn = (msg) => { setGlobalToast(msg); setTimeout(() => setGlobalToast(null), 3000); };
+    return () => { _globalToastFn = null; };
+  }, []);
+
   const name = profile?.name || user?.name || "Alex Rivera";
 
   return (
     <div className="flex h-screen bg-[#0B0F10] text-white overflow-hidden">
+      {/* GLOBAL TOAST */}
+      {globalToast && (
+        <div className="fixed bottom-6 right-6 z-[9999] bg-[#1A1D1E] border border-[#C7E36B]/40 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 animate-fadeIn">
+          <span className="w-5 h-5 rounded-full bg-[#C7E36B] flex items-center justify-center shrink-0">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          {globalToast}
+        </div>
+      )}
       {/* SIDEBAR */}
       <aside className="w-[160px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         <div className="px-4 py-5 border-b border-white/5">
@@ -449,6 +468,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
     setProjects(prev => prev.map(p => p._id === localProj._id ? { ...localProj } : p));
     setProjSaved(true);
     setTimeout(() => setProjSaved(false), 2000);
+    globalShowToast("Project saved!");
   };
 
   const displayList = projects;
@@ -801,9 +821,7 @@ function BootcampAdmin({ token }) {
   /* Feature 7C: per-section save feedback */
   const [savedBatch,setSavedBatch]=useState(false);
   const [savedZoom,setSavedZoom]=useState(false);
-  const [toast,setToast]=useState(null);
-  const showToast=(msg="Changes saved!")=>{setToast(msg);setTimeout(()=>setToast(null),3000);};
-  const save = (setter) => { setter(true); setTimeout(()=>setter(false),2000); showToast(); };
+  const save = (setter) => { setter(true); setTimeout(()=>setter(false),2000); globalShowToast(); };
   /* C: real sessions from API */
   const [sessions,setSessions]=useState([]);
   const [sessLoading,setSessLoading]=useState(false);
@@ -956,6 +974,10 @@ function BootcampAdmin({ token }) {
     await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ zoomLink:stgs.zoomLink, zoomId:stgs.zoomId, zoomPass:stgs.zoomPass, autoRecord:stgs.autoRecord, reminders:stgs.reminders, chatEnabled:stgs.chat }) });
     save(setSavedZoom);
   };
+  const saveAllSettings = async () => {
+    await saveBatchInfo();
+    await saveZoomSettings();
+  };
   const saveMentors = async (updated) => {
     setMentors(updated);
     const r = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ mentors:updated }) });
@@ -973,15 +995,6 @@ function BootcampAdmin({ token }) {
 
   return(
     <div className="flex flex-col h-full relative">
-      {/* Toast notification */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-[9999] bg-[#1A1D1E] border border-[#C7E36B]/40 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 animate-fadeIn">
-          <span className="w-5 h-5 rounded-full bg-[#C7E36B] flex items-center justify-center shrink-0">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
-          {toast}
-        </div>
-      )}
       <div className="px-6 pt-5 pb-0 border-b border-white/5">
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
           <button onClick={()=>setView("list")} className="hover:text-white transition-all">Bootcamps</button>
@@ -1001,11 +1014,8 @@ function BootcampAdmin({ token }) {
             </div>
           </div>
           <div className="flex gap-2">
-            {tab!=="announcement"&&(
-              <button onClick={()=>{
-                if(tab==="settings") saveBatchInfo();
-                else alert("Use the tab-specific save button below (e.g. 'Save Project', 'Save Change', 'Publish Now') to save changes in the current tab.");
-              }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>{savedBatch?"✓ SAVED":"SAVE CHANGES"}</button>
+            {tab==="settings"&&(
+              <button onClick={saveAllSettings} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5"><I name="check" size={14}/>{savedBatch?"✓ SAVED":"SAVE CHANGES"}</button>
             )}
           </div>
         </div>
@@ -1516,7 +1526,7 @@ function BootcampAdmin({ token }) {
                         else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
                       };
                       const r=await saveBody("DRAFT");
-                      if(r?.ok){const d=await r.json();if(selAnn?._id)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...d}:a));else{setAnns(prev=>[d,...prev]);setSelAnn(d);}setAnnFiles([]);setAnnSavedMsg("Draft saved!");setTimeout(()=>setAnnSavedMsg(""),3000);}
+                      if(r?.ok){const d=await r.json();if(selAnn?._id)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...d}:a));else{setAnns(prev=>[d,...prev]);setSelAnn(d);}setAnnFiles([]);setAnnSavedMsg("Draft saved!");setTimeout(()=>setAnnSavedMsg(""),3000);globalShowToast("Draft saved!");}
                       setAnnSaving(false);
                     }} disabled={annSaving} className="border border-white/20 text-gray-300 text-xs font-semibold px-5 py-2 rounded-lg hover:bg-white/5 disabled:opacity-50">Save Draft</button>
                     <button onClick={async()=>{
@@ -1528,7 +1538,7 @@ function BootcampAdmin({ token }) {
                         else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
                       };
                       const r=await saveBody("PUBLISHED");
-                      if(r?.ok){const d=await r.json();if(selAnn?._id)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...d}:a));else{setAnns(prev=>[d,...prev]);setSelAnn(d);}setAnnFiles([]);setAnnSavedMsg("Published!");setTimeout(()=>setAnnSavedMsg(""),3000);fetch("/api/notifications/broadcast",{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({title:annF.title,message:annF.content||"New announcement from AIFA.",type:"announcement",bootcampId:sel._id})}).catch(()=>{});}
+                      if(r?.ok){const d=await r.json();if(selAnn?._id)setAnns(prev=>prev.map(a=>a._id===selAnn._id?{...a,...d}:a));else{setAnns(prev=>[d,...prev]);setSelAnn(d);}setAnnFiles([]);setAnnSavedMsg("Published!");setTimeout(()=>setAnnSavedMsg(""),3000);globalShowToast("Announcement published!");fetch("/api/notifications/broadcast",{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify({title:annF.title,message:annF.content||"New announcement from AIFA.",type:"announcement",bootcampId:sel._id})}).catch(()=>{});}
                       setAnnSaving(false);
                     }} disabled={annSaving} className="bg-[#C7E36B] text-black text-xs font-bold px-5 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-50">{annSaving?"Saving...":"Publish Now"}</button>
                   </div>
@@ -1688,12 +1698,7 @@ function BootcampAdmin({ token }) {
                 </div>
                 {stgs.status==="ACTIVE"&&<p className="text-[10px] text-yellow-400 mt-2">⚠ Only one bootcamp can be ACTIVE at a time. Saving will deactivate all other bootcamps on the website.</p>}
               </div>
-              {/* Feature 7C: per-section save */}
               {batchErr&&<p className="text-red-400 text-xs font-semibold">{batchErr}</p>}
-              <div className="flex justify-end items-center gap-3 pt-1">
-                {savedBatch&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
-                <button onClick={saveBatchInfo} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Change</button>
-              </div>
             </Sect>
             <Sect icon="link" title="Zoom Configuration">
               <Fld label="Meeting Link" value={stgs.zoomLink} onChange={v=>setStgs({...stgs,zoomLink:v})} placeholder="https://zoom.us/j/..." />
@@ -1705,11 +1710,8 @@ function BootcampAdmin({ token }) {
                   </div>
                 ))}
               </div>
-              {/* Feature 7C: per-section save */}
               <div className="flex justify-end items-center gap-2 pt-1">
-                {savedZoom&&<span className="text-[#C7E36B] text-xs font-semibold">✓ Saved!</span>}
                 <button onClick={()=>stgs.zoomLink?window.open(stgs.zoomLink,"_blank"):alert("No Zoom link set yet.")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Test Zoom Link →</button>
-                <button onClick={saveZoomSettings} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Update Zoom Settings</button>
               </div>
             </Sect>
             <Sect icon="users" title="Mentors">
@@ -1727,10 +1729,6 @@ function BootcampAdmin({ token }) {
                 <button onClick={()=>{if(newMentor.trim()){const updated=[...mentors,{name:newMentor.trim(),role:"Mentor"}];saveMentors(updated);setNewMentor("");}}} className="text-xs bg-[#C7E36B] text-black font-bold px-3 py-2 rounded-lg flex items-center gap-1"><I name="plus" size={12}/>Add Mentor</button>
               </div>
             </Sect>
-            <div className="flex justify-end gap-2">
-              <button onClick={()=>setStgs(s=>({...s,name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE"}))} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">Discard Changes</button>
-              <button onClick={saveBatchInfo} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Save Settings</button>
-            </div>
           </div>
         )}
 
@@ -1901,6 +1899,7 @@ function WorkshopsAdmin({ token }) {
         if(isEditing) setWorkshops(ws=>ws.map(w=>w._id===data._id?data:w));
         else { setWorkshops(ws=>[data,...ws]); }
         setIsEditing(false); setView("manage");
+        globalShowToast(isEditing?"Workshop updated!":"Workshop published!");
       }
     } catch(e){}
     setSaving(false);
@@ -1909,7 +1908,7 @@ function WorkshopsAdmin({ token }) {
   const doPublish = async (w) => {
     const res = await fetch(`/api/workshops/${w._id}`,{ method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ isPublished:true }) });
     const data = await res.json();
-    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop published!"); }
+    if(res.ok){ setSel(data); setWorkshops(ws=>ws.map(x=>x._id===data._id?data:x)); setSuccessMsg("Workshop published!"); globalShowToast("Workshop published!"); }
   };
 
   const doDelete = async (id) => {
@@ -2289,7 +2288,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
     });
-    if (res.ok) { const d = await res.json(); onSaved(d); setInfo({}); setMsg("Saved!"); }
+    if (res.ok) { const d = await res.json(); onSaved(d); setInfo({}); setMsg("Saved!"); globalShowToast("Course saved!"); }
     else setMsg("Save failed.");
     setSaving(false);
     setTimeout(() => setMsg(""), 3000);
@@ -2849,7 +2848,7 @@ function VideoCoursesAdmin({ token }) {
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false)) });
-      if(res.ok){ await loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); globalShowToast("Draft saved!"); }
     } catch(e){}
     setSaving(false);
   };
@@ -2858,7 +2857,7 @@ function VideoCoursesAdmin({ token }) {
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(true)) });
-      if(res.ok){ await loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); globalShowToast("Course published!"); }
     } catch(e){}
     setSaving(false);
   };
@@ -2868,7 +2867,7 @@ function VideoCoursesAdmin({ token }) {
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false, scheduleDate)) });
-      if(res.ok){ await loadCourses(); setView("list"); }
+      if(res.ok){ await loadCourses(); setView("list"); globalShowToast("Course scheduled!"); }
     } catch(e){}
     setSaving(false);
   };
@@ -3354,7 +3353,7 @@ function ResourcesAdmin({ token }) {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (res.ok) { setMsg("Saved!"); setShowForm(false); load(tab); }
+      if (res.ok) { setMsg("Saved!"); setShowForm(false); load(tab); globalShowToast("Resource saved!"); }
       else setMsg(data.message || "Failed.");
     } catch { setMsg("Network error."); }
     setSaving(false);
@@ -5695,6 +5694,7 @@ function CommunityAdmin({ token, adminName }) {
           setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"",description:"",link:"",location:"",openRSVP:true,featured:false});
           setThumbPreview(null);
           setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
+          globalShowToast(isEdit ? "Event updated!" : status === "draft" ? "Draft saved!" : "Event published!");
         } else alert(isEdit ? "Failed to update event." : "Failed to create event.");
       } catch { alert("Network error."); }
     };
@@ -8650,7 +8650,7 @@ function HireTalentAdmin({ token }) {
     const url = editTarget ? `/api/talent/${editTarget._id}` : "/api/talent";
     const method = editTarget ? "PUT" : "POST";
     const res = await fetch(url, { method, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(payload) });
-    if (res.ok) { setShowForm(false); load(); }
+    if (res.ok) { setShowForm(false); load(); globalShowToast("Talent profile saved!"); }
     setSaving(false);
   };
 
@@ -9222,6 +9222,7 @@ function PlatformSettings({ token }) {
         Object.keys(updates).forEach(k => { next[k] = { ...next[k], editing: "", hasValue: true }; });
         return next;
       });
+      globalShowToast("Settings saved!");
     } else setSaved("Save failed.");
     setSaving(false);
     setTimeout(() => setSaved(""), 3000);
@@ -9659,7 +9660,7 @@ function AdminProfile({ token, profile, onUpdated }) {
     setSaving(true); setMsg("");
     const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ name }) });
     const data = await res.json();
-    if (res.ok) { onUpdated(data); localStorage.setItem("aifa_user", JSON.stringify({ name:data.name, _id:data._id, role:data.role })); setMsg("Saved!"); setEditing(false); }
+    if (res.ok) { onUpdated(data); localStorage.setItem("aifa_user", JSON.stringify({ name:data.name, _id:data._id, role:data.role })); setMsg("Saved!"); setEditing(false); globalShowToast("Profile saved!"); }
     else setMsg(data.message || "Failed.");
     setSaving(false);
   };
@@ -9796,7 +9797,7 @@ function CertificatesAdmin({ token }) {
 
   const toggleAutoIssue = (val) => { setAutoIssue(val); saveSettings({ autoIssue: val }); };
   const toggleManualApproval = (val) => { setManualApproval(val); saveSettings({ manualApproval: val }); };
-  const saveIdFormat = () => { setEditingFormat(false); saveSettings({ idFormat }); };
+  const saveIdFormat = () => { setEditingFormat(false); saveSettings({ idFormat }); globalShowToast("ID format saved!"); };
 
   const handleIssue = async () => {
     if (!form.userId || !form.courseTitle) { setMsg("Select student and enter course title."); return; }
@@ -10561,6 +10562,7 @@ function JobsAdmin({ token }) {
       if(editJob) setJobs(js=>js.map(j=>j._id===data._id?data:j));
       else setJobs(js=>[data,...js]);
       setShowForm(false); setEditJob(null); setForm(BLANK_FORM);
+      globalShowToast(editJob ? "Job updated!" : "Job posted!");
     } else setMsg(data.message || "Failed.");
     setSaving(false);
   };
@@ -10708,6 +10710,7 @@ function PromptsAdmin({ token }) {
       if (editId) setPrompts(ps => ps.map(p => p._id === editId ? d : p));
       else setPrompts(ps => [d, ...ps]);
       setMsg(editId ? "Updated!" : "Added!"); cancelEdit();
+      globalShowToast(editId ? "Prompt updated!" : "Prompt added!");
     } else { setMsg(d.message || "Error"); }
     setSaving(false);
     setTimeout(() => setMsg(""), 2500);
