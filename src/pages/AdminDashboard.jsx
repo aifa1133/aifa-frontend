@@ -2851,30 +2851,36 @@ function VideoCoursesAdmin({ token }) {
   });
 
   const saveDraft = async () => {
+    if (!f.title.trim()) { globalShowToast("Please enter a course title first."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false)) });
       if(res.ok){ await loadCourses(); setView("list"); globalShowToast("Draft saved!"); }
-    } catch(e){}
+      else { const e = await res.json().catch(()=>{}); globalShowToast(e?.message || "Failed to save draft."); }
+    } catch(e){ globalShowToast("Network error. Please try again."); }
     setSaving(false);
   };
 
   const publish = async () => {
+    if (!f.title.trim()) { globalShowToast("Please enter a course title first."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(true)) });
       if(res.ok){ await loadCourses(); setView("list"); globalShowToast("Course published!"); }
-    } catch(e){}
+      else { const e = await res.json().catch(()=>{}); globalShowToast(e?.message || "Failed to publish course."); }
+    } catch(e){ globalShowToast("Network error. Please try again."); }
     setSaving(false);
   };
 
   const schedulePublish = async () => {
     if(!scheduleDate) return;
+    if (!f.title.trim()) { globalShowToast("Please enter a course title first."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/courses",{ method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(buildPayload(false, scheduleDate)) });
       if(res.ok){ await loadCourses(); setView("list"); globalShowToast("Course scheduled!"); }
-    } catch(e){}
+      else { const e = await res.json().catch(()=>{}); globalShowToast(e?.message || "Failed to schedule course."); }
+    } catch(e){ globalShowToast("Network error. Please try again."); }
     setSaving(false);
   };
 
