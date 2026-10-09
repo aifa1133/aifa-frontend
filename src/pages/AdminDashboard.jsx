@@ -483,7 +483,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
         {displayList.length === 0 ? (
           <p className="text-gray-600 text-xs text-center py-6">No projects yet. Click "+ Add" to create one.</p>
         ) : displayList.map((p,i)=>(
-          <div key={p._id||i} onClick={()=>setSelProj(p)} className={`p-3 border rounded-xl cursor-pointer transition-all relative group ${selProj?._id===p._id||selProj?.no===p.no?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
+          <div key={p._id||i} onClick={()=>setSelProj(p)} className={`p-3 border rounded-xl cursor-pointer transition-all relative group ${selProj?._id===p._id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
             <p className="text-[10px] text-gray-400 font-semibold uppercase">{p.no}</p>
             <p className="text-xs font-bold text-white mt-0.5 pr-6">{p.title}</p>
             <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{p.desc}</p>
