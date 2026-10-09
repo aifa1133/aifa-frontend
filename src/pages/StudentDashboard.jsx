@@ -1286,6 +1286,7 @@ function BootcampSection({ token, profile }) {
                   {(showAllAnn ? announcements : announcements.slice(0,2)).map((a,i)=>(
                     <div key={i} className="border-b border-gray-100 last:border-0 pb-3 last:pb-0 mb-3 last:mb-0">
                       <div className="flex items-center justify-between"><p className="text-xs font-semibold text-gray-900">{a.title}</p><span className="text-[10px] text-gray-400 shrink-0 ml-2">{a.createdAt?timeAgo(a.createdAt):a.time}</span></div>
+                      {a.imageUrl&&<img src={a.imageUrl} alt={a.title} className="mt-2 w-full rounded-xl object-cover max-h-48"/>}
                       <p className="text-[11px] text-gray-500 mt-1">{a.content||a.desc}</p>
                     </div>
                   ))}

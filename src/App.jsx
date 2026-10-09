@@ -182,13 +182,18 @@ function AppShell() {
     FULLSCREEN_PATTERNS.some(p => p.test(location.pathname));
 
   useEffect(() => {
+    let failCount = 0;
     const check = () =>
-      fetch("/api/courses", { signal: AbortSignal.timeout(6000) })
-        .then(r => { if (!r.ok && r.status >= 500) setServerDown(true); else setServerDown(false); })
-        .catch(() => setServerDown(true));
-    check();
+      fetch("/api/courses", { signal: AbortSignal.timeout(8000) })
+        .then(r => {
+          if (!r.ok && r.status >= 500) { failCount++; if (failCount >= 2) setServerDown(true); }
+          else { failCount = 0; setServerDown(false); }
+        })
+        .catch(() => { failCount++; if (failCount >= 2) setServerDown(true); });
+    // delay first check by 3s so backend has time to finish startup
+    const init = setTimeout(() => { check(); }, 3000);
     const id = setInterval(check, 30000);
-    return () => clearInterval(id);
+    return () => { clearTimeout(init); clearInterval(id); };
   }, []);
 
   // Sync isPro from server on every page load so ProGate works on all routes

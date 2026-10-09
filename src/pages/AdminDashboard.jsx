@@ -796,6 +796,7 @@ function BootcampAdmin({ token }) {
   const [showAddSession,setShowAddSession]=useState(false);
   const [newSess,setNewSess]=useState({name:"",status:"COMING SOON",nextSessionAt:""});
   const [sessAdded,setSessAdded]=useState(false);
+  const [viewRecordingSess,setViewRecordingSess]=useState(null);
   /* F: real announcements from API */
   const [annsLoading,setAnnsLoading]=useState(false);
   /* G: Edit Details modal resources + recording + status */
@@ -822,6 +823,7 @@ function BootcampAdmin({ token }) {
   const [annFiles,setAnnFiles]=useState([]);
   const [annSaving,setAnnSaving]=useState(false);
   const [annSavedMsg,setAnnSavedMsg]=useState("");
+  const [annImgUploading,setAnnImgUploading]=useState(false);
   /* O: Create Folder */
   const [showFolderInput,setShowFolderInput]=useState(false);
   const [folderName,setFolderName]=useState("");
@@ -855,7 +857,7 @@ function BootcampAdmin({ token }) {
       setAnnsLoading(true);
       fetch(`/api/bootcamps/${sel._id}/announcements/all`, { headers:h })
         .then(r=>r.ok?r.json():[]).then(d=>{
-          if (Array.isArray(d)) { setAnns(d); if(d.length>0){setSelAnn(d[0]);setAnnF({title:d[0].title,content:d[0].content,status:d[0].status});} }
+          if (Array.isArray(d)) { setAnns(d); if(d.length>0){setSelAnn(d[0]);setAnnF({title:d[0].title,content:d[0].content,status:d[0].status,imageUrl:d[0].imageUrl||""});} }
           setAnnsLoading(false);
         }).catch(()=>setAnnsLoading(false));
     }
@@ -1194,7 +1196,7 @@ function BootcampAdmin({ token }) {
                         <td className="px-4 py-3 text-white font-medium truncate max-w-xs" title={s.name}>{s.name}</td>
                         <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
                         <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="flex items-center gap-1 text-[#C7E36B] hover:underline text-xs"><I name="edit" size={12}/>Edit Details</button></td>
-                        <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>s.recordingUrl?window.open(s.recordingUrl,"_blank"):alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
+                        <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>s.recordingUrl?setViewRecordingSess(s):alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
                         <td className="px-4 py-3"><button onClick={async()=>{if(!confirm(`Delete session "${s.name}"?`))return;const res=await fetch(`/api/bootcamps/${sel._id}/sessions/${s._id}`,{method:"DELETE",headers:h});if(res.ok)setSessions(prev=>prev.filter(x=>x._id!==s._id));}} className="text-gray-500 hover:text-red-400 transition-colors"><I name="trash" size={13}/></button></td>
                       </tr>
                     ))}
@@ -1202,6 +1204,33 @@ function BootcampAdmin({ token }) {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Recording viewer modal */}
+        {viewRecordingSess && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={()=>setViewRecordingSess(null)}>
+            <div className="bg-[#0F1112] border border-white/10 rounded-2xl overflow-hidden w-full max-w-3xl" onClick={e=>e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+                <p className="text-white font-semibold text-sm">Session {String(viewRecordingSess.no).padStart(2,"0")} — {viewRecordingSess.name}</p>
+                <button onClick={()=>setViewRecordingSess(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+              </div>
+              <div className="aspect-video w-full bg-black">
+                {(()=>{
+                  const url = viewRecordingSess.recordingUrl || "";
+                  let src = url;
+                  const vimeo = url.match(/vimeo\.com\/(\d+)/);
+                  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+                  if (vimeo) src = `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1`;
+                  else if (yt) src = `https://www.youtube.com/embed/${yt[1]}?autoplay=1`;
+                  if (vimeo || yt) return <iframe src={src} className="w-full h-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title="Recording"/>;
+                  return <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-400 p-8 text-center">
+                    <p className="text-sm">This recording link can't be embedded directly.</p>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="bg-[#C7E36B] text-black text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90">Open Recording →</a>
+                  </div>;
+                })()}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1349,7 +1378,7 @@ function BootcampAdmin({ token }) {
                 <h2 className="text-xl font-bold text-white">Announcements</h2>
                 <p className="text-gray-400 text-xs mt-0.5">Create and manage announcements visible to students in this batch.</p>
               </div>
-              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});setAnnFiles([]);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 shrink-0"><I name="plus" size={13}/>Create Announcement</button>
+              <button onClick={()=>{setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT",imageUrl:""});setAnnFiles([]);}} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 shrink-0"><I name="plus" size={13}/>Create Announcement</button>
             </div>
           <div className="flex gap-5">
             {/* Left sidebar — list */}
@@ -1359,7 +1388,7 @@ function BootcampAdmin({ token }) {
                 <input value={annSearch} onChange={e=>setAnnSearch(e.target.value)} placeholder="Search Announcements..." className="w-full bg-[#0F1112] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none placeholder-gray-600"/>
               </div>
               {anns.filter(a=>!annSearch||a.title.toLowerCase().includes(annSearch.toLowerCase())).map(a=>(
-                <div key={a._id} onClick={()=>{setSelAnn(a);setAnnF({title:a.title,content:a.content,status:a.status});}} className={`p-3 border rounded-xl cursor-pointer transition-all ${selAnn?._id===a._id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
+                <div key={a._id} onClick={()=>{setSelAnn(a);setAnnF({title:a.title,content:a.content,status:a.status,imageUrl:a.imageUrl||""});}} className={`p-3 border rounded-xl cursor-pointer transition-all ${selAnn?._id===a._id?"border-[#C7E36B]/50 bg-[#C7E36B]/5":"border-white/10 bg-[#0F1112] hover:border-white/20"}`}>
                   <div className="flex items-center gap-1.5 mb-1">
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${BC_ST[a.status]||"bg-gray-500/20 text-gray-400"}`}>{a.status}</span>
                     <p className="text-[10px] text-gray-500">{a.createdAt?new Date(a.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):a.date||""}</p>
@@ -1395,34 +1424,33 @@ function BootcampAdmin({ token }) {
                     <textarea value={annF.content} onChange={e=>setAnnF({...annF,content:e.target.value})} className="w-full bg-transparent px-3 py-3 text-sm text-white outline-none resize-none" rows={8} placeholder="Write your announcement here..."/>
                   </div>
                 </div>
-                {/* File attachment */}
+                {/* Image attachment */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Announcements (Optional)</p>
-                    <p className="text-[10px] text-gray-600">{annFiles.length} / 3 FILES</p>
-                  </div>
-                  <label className="block border-2 border-dashed border-white/15 rounded-xl p-6 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-                    <input type="file" multiple accept=".pdf,.zip,.docx" className="hidden" onChange={e=>{
-                      const ALLOWED=["pdf","zip","docx"];
-                      const files=Array.from(e.target.files||[]);
-                      const bad=files.filter(f=>!ALLOWED.includes((f.name.split(".").pop()||"").toLowerCase()));
-                      if(bad.length){alert(`Unsupported file type: ${bad.map(f=>f.name).join(", ")}.\nAllowed: PDF, ZIP, DOCX only.`);e.target.value="";return;}
-                      if(files.length) setAnnFiles(prev=>[...prev,...files.map(f=>({file:f,name:f.name,size:(f.size/1024/1024).toFixed(1)+"MB"}))]);
-                      e.target.value="";
-                    }}/>
-                    <div className="text-2xl mb-2">⬆</div>
-                    <p className="text-sm font-semibold text-white mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">Supported: PDF, ZIP, DOCX (Max 50MB)</p>
-                  </label>
-                  {annFiles.length>0&&(
-                    <div className="mt-3 space-y-1.5">
-                      {annFiles.map((f,i)=>(
-                        <div key={i} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                          <span className="text-xs text-white truncate flex-1">📎 {f.name} <span className="text-gray-500 ml-1">{f.size}</span></span>
-                          <button onClick={()=>setAnnFiles(prev=>prev.filter((_,j)=>j!==i))} className="text-gray-500 hover:text-red-400 ml-2 text-sm leading-none">✕</button>
-                        </div>
-                      ))}
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Image (Optional)</p>
+                  {annF.imageUrl?(
+                    <div className="relative rounded-xl overflow-hidden border border-white/10">
+                      <img src={annF.imageUrl} alt="Announcement" className="w-full max-h-48 object-cover"/>
+                      <button onClick={()=>setAnnF(f=>({...f,imageUrl:""}))} className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500 transition-colors">✕</button>
                     </div>
+                  ):(
+                    <label className={`block border-2 border-dashed border-white/15 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all ${annImgUploading?"opacity-60 pointer-events-none":""}`}>
+                      <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                        const file=e.target.files?.[0]; if(!file) return;
+                        if(!file.type.startsWith("image/")) return;
+                        setAnnImgUploading(true);
+                        try{
+                          const fd=new FormData(); fd.append("image",file);
+                          const r=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                          const d=await r.json();
+                          if(d.url) setAnnF(f=>({...f,imageUrl:d.url}));
+                        }catch{}
+                        setAnnImgUploading(false);
+                        e.target.value="";
+                      }}/>
+                      <div className="text-xl mb-1">{annImgUploading?"⏳":"🖼"}</div>
+                      <p className="text-sm font-semibold text-white mb-0.5">{annImgUploading?"Uploading...":"Click to upload image"}</p>
+                      <p className="text-xs text-gray-500">JPG, PNG, GIF, WebP (Max 10MB)</p>
+                    </label>
                   )}
                 </div>
                 {/* Action buttons */}
@@ -1431,7 +1459,7 @@ function BootcampAdmin({ token }) {
                     if(!selAnn?._id)return;
                     if(!confirm("Delete this announcement?"))return;
                     const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"DELETE",headers:h});
-                    if(r.ok){setAnns(prev=>prev.filter(a=>a._id!==selAnn._id));setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT"});}
+                    if(r.ok){setAnns(prev=>prev.filter(a=>a._id!==selAnn._id));setSelAnn(null);setAnnF({title:"",content:"",status:"DRAFT",imageUrl:""});}
                   }} className="text-xs text-red-400 hover:text-red-300 font-semibold px-1 disabled:opacity-30" disabled={!selAnn?._id}>Delete</button>
                   <div className="flex items-center gap-2">
                     {annSavedMsg&&<span className="text-[10px] text-green-400 font-semibold">{annSavedMsg}</span>}
@@ -1439,14 +1467,7 @@ function BootcampAdmin({ token }) {
                       if(!annF.title.trim())return;
                       setAnnSaving(true);
                       const saveBody = async(status)=>{
-                        let body={title:annF.title,content:annF.content,status};
-                        if(annFiles.length>0){
-                          const fd=new FormData();
-                          fd.append("title",annF.title);fd.append("content",annF.content);fd.append("status",status);
-                          annFiles.forEach(f=>fd.append("files",f.file));
-                          if(selAnn?._id){const r=await fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:h,body:fd});return r;}
-                          else{const r=await fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:h,body:fd});return r;}
-                        }
+                        const body={title:annF.title,content:annF.content,status,imageUrl:annF.imageUrl||""};
                         if(selAnn?._id){return fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
                         else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
                       };
@@ -1458,14 +1479,7 @@ function BootcampAdmin({ token }) {
                       if(!annF.title.trim())return;
                       setAnnSaving(true);
                       const saveBody = async(status)=>{
-                        if(annFiles.length>0){
-                          const fd=new FormData();
-                          fd.append("title",annF.title);fd.append("content",annF.content);fd.append("status",status);
-                          annFiles.forEach(f=>fd.append("files",f.file));
-                          if(selAnn?._id){return fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:h,body:fd});}
-                          else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:h,body:fd});}
-                        }
-                        const body={title:annF.title,content:annF.content,status};
+                        const body={title:annF.title,content:annF.content,status,imageUrl:annF.imageUrl||""};
                         if(selAnn?._id){return fetch(`/api/bootcamps/${sel._id}/announcements/${selAnn._id}`,{method:"PUT",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
                         else{return fetch(`/api/bootcamps/${sel._id}/announcements`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(body)});}
                       };
