@@ -1051,10 +1051,9 @@ function BootcampAdmin({ token }) {
               ))}
             </div>
             {(()=>{
-              const now = new Date();
-              // Auto-detect next session: earliest future scheduledAt that isn't COMPLETED/CANCELLED
+              // Auto-detect next session: earliest scheduled that isn't COMPLETED/CANCELLED
               const nextSess = sessions
-                .filter(s => s.scheduledAt && s.status !== "COMPLETED" && s.status !== "CANCELLED" && new Date(s.scheduledAt) > now)
+                .filter(s => s.scheduledAt && s.status !== "COMPLETED" && s.status !== "CANCELLED")
                 .sort((a,b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))[0] || null;
               if (!nextSess) return (
                 <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
