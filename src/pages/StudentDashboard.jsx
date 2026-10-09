@@ -1177,9 +1177,17 @@ function BootcampSection({ token, profile }) {
         <div className="absolute inset-0 bg-[#0B0F1A]/40" />
         <div className="absolute bottom-0 left-0 px-6 py-5">
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-[#C7E36B] text-black text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wide">IN PROGRESS</span>
+            {(() => {
+              const now = new Date();
+              const start = bootcampData?.startDate ? new Date(bootcampData.startDate) : null;
+              const end   = bootcampData?.endDate   ? new Date(bootcampData.endDate)   : null;
+              let label = "IN PROGRESS", cls = "bg-[#C7E36B] text-black";
+              if (end && now > end)               { label = "COMPLETED"; cls = "bg-gray-500 text-white"; }
+              else if (start && now < start)      { label = "UPCOMING";  cls = "bg-blue-500 text-white"; }
+              return <span className={`${cls} text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wide`}>{label}</span>;
+            })()}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white/40"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            <span className="text-white/50 text-[11px]">{bootcampData?.batchLabel || "Batch 2024"}</span>
+            <span className="text-white/50 text-[11px]">{bootcampData?.batchLabel || bootcampData?.batchName || bootcampData?.batchCode || "Batch 2024"}</span>
           </div>
           <h1 className="text-[26px] font-black text-white leading-tight">{bootcampData?.title || "AI Filmmaking Bootcamp"}</h1>
         </div>
