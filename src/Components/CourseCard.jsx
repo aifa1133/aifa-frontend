@@ -1,9 +1,26 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import CourseCardMobile from "./CourseCardMobile";
 
 export default function CourseCard() {
   const navigate = useNavigate();
+  const [bootcamp, setBootcamp] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/bootcamps")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d) && d.length > 0) setBootcamp(d.find(b => b.isPublished) || d[0]); })
+      .catch(() => {});
+  }, []);
+
+  const title = bootcamp?.title || "AI Filmmaking Bootcamp";
+  const description = bootcamp?.description || bootcamp?.tagline || "Master AI-powered filmmaking from concept to final cut while learning how to create stunning, high-quality films faster using cutting-edge AI tools.";
+  const image = bootcamp?.image || "/courses/course.png";
+  const price = bootcamp?.price != null ? `₹${Number(bootcamp.price).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "₹14,000.00";
+  const duration = bootcamp?.duration || "1 Month";
+  const mode = bootcamp?.mode || "LIVE";
+  const level = bootcamp?.level || "BEGINNER";
+
   return (
     <section className="w-full bg-[#0F1112] flex justify-center py-[40px] sm:py-[64px]">
       {/* CONTAINER */}
@@ -39,8 +56,8 @@ rounded-tl-[10px]
       "
             >
               <img
-                src="/courses/course.png"
-                alt="course"
+                src={image}
+                alt={title}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -87,7 +104,7 @@ rounded-tr-[10px]
           tracking-wide
         "
               >
-                BEGINNER
+                {level}
               </p>
 
               <h2
@@ -106,7 +123,7 @@ rounded-tr-[10px]
           md:leading-[40px]
         "
               >
-                AI FILMMAKING BOOTCAMP
+                {title.toUpperCase()}
               </h2>
 
               <p
@@ -125,9 +142,7 @@ rounded-tr-[10px]
           sm:max-w-[520px]
         "
               >
-                Master AI-powered filmmaking from concept to final cut while
-                learning how to create stunning, high-quality films faster using
-                cutting-edge AI tools.
+                {description}
               </p>
             </div>
 
@@ -207,7 +222,7 @@ rounded-tr-[10px]
               </p>
             </div>
             <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[18px] font-bold">
-              1 MONTH
+              {duration.toUpperCase()}
             </p>
           </div>
 
@@ -234,7 +249,7 @@ rounded-tr-[10px]
               </p>
             </div>
             <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[18px] font-bold">
-              ₹14,000.00
+              {price}
             </p>
           </div>
 
@@ -269,7 +284,7 @@ rounded-tr-[10px]
               </p>
             </div>
             <p className="text-[#F0F0F0] font-montserrat text-[14px] sm:text-[18px] font-bold">
-              LIVE
+              {mode.toUpperCase()}
             </p>
           </div>
         </div>
