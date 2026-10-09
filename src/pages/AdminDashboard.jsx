@@ -123,7 +123,9 @@ export default function AdminDashboard() {
       {/* SIDEBAR */}
       <aside className="w-[160px] shrink-0 bg-[#0F1112] border-r border-white/5 flex flex-col">
         <div className="px-4 py-5 border-b border-white/5">
-          <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" onError={e => { e.target.style.display='none'; }} />
+          <a href="/" target="_blank" rel="noopener noreferrer">
+            <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-5" onError={e => { e.target.style.display='none'; }} />
+          </a>
         </div>
         <nav className="flex-1 overflow-y-auto py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {[...NAV_ITEMS, { _divider: true }, ...MGMT_ITEMS].map((item, idx) => {
