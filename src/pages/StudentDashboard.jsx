@@ -2044,52 +2044,80 @@ function VideoCoursesSection({ profile, onNavigate }) {
     c.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  return (
-    <div className="p-6">
-      {/* Course Detail Modal */}
-      {detailCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setDetailCourse(null)}>
-          <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative">
-              <img src={detailCourse.image} alt={detailCourse.title} className="w-full h-40 object-cover" />
-              <button onClick={() => setDetailCourse(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 text-lg">✕</button>
-              <span className="absolute bottom-3 left-3 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded">{detailCourse.duration}</span>
+  /* ── Inline course detail view ── */
+  if (detailCourse) {
+    const realId = detailCourse.slug || detailCourse._id;
+    const discount = detailCourse.originalPrice > detailCourse.price
+      ? Math.round((1 - detailCourse.price / detailCourse.originalPrice) * 100)
+      : null;
+    const lessonCount = detailCourse.lessons?.length || detailCourse.lessonCount || 12;
+    const level = detailCourse.level || "Beginner";
+    return (
+      <div className="p-6">
+        <button onClick={() => setDetailCourse(null)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
+          <span>←</span> Back to Courses
+        </button>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left: image */}
+          <div className="lg:w-[45%] shrink-0">
+            <div className="relative rounded-2xl overflow-hidden">
+              {detailCourse.proOnly && (
+                <div className="absolute top-3 left-3 z-10 bg-[#C7E36B] text-black text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Included in All-Access</div>
+              )}
+              <img src={detailCourse.image} alt={detailCourse.title} className="w-full h-[260px] lg:h-[320px] object-cover" />
+              <span className="absolute bottom-3 right-3 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-lg">{detailCourse.duration}</span>
             </div>
-            <div className="p-5 space-y-3">
-              <h2 className="text-lg font-bold text-white">{detailCourse.title}</h2>
-              <p className="text-sm text-gray-400 leading-relaxed">{detailCourse.description || "Master cutting-edge AI filmmaking techniques in this comprehensive course designed for creative professionals."}</p>
-              <div className="grid grid-cols-3 gap-2">
-                {[["🎯","Level","Beginner"],["📋","Lessons","12"],["🎓","Certificate","Yes"]].map(([ic,l,v])=>(
-                  <div key={l} className="bg-white/5 rounded-lg p-2 text-center">
-                    <div className="text-base">{ic}</div>
-                    <p className="text-[10px] text-gray-500">{l}</p>
-                    <p className="text-xs font-bold text-white">{v}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-black text-white">₹{(detailCourse.price || 0).toLocaleString("en-IN")}</span>
-                  {detailCourse.originalPrice > detailCourse.price && (
-                    <span className="text-gray-400 line-through text-sm">₹{(detailCourse.originalPrice).toLocaleString("en-IN")}</span>
-                  )}
+            {/* Feature highlights */}
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {[["🗓️","Schedule","Self-paced"],["⏱️","Content",detailCourse.duration||"—"],["🎯","Level",level]].map(([ic,l,v])=>(
+                <div key={l} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                  <div className="text-lg mb-1">{ic}</div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">{l}</p>
+                  <p className="text-xs font-bold text-white mt-0.5">{v}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    const realId = detailCourse.slug || detailCourse._id;
-                    if (!realId) { alert("Course details are still loading. Please wait a moment and try again."); return; }
-                    setDetailCourse(null);
-                    navigate(`/courses/${realId}/pay`, { state: { courseData: detailCourse } });
-                  }}
-                  className="w-full bg-[#C7E36B] hover:bg-lime-300 text-black font-bold py-3 rounded-xl transition-all text-sm"
-                >
-                  Buy & Enroll →
-                </button>
-              </div>
+              ))}
             </div>
           </div>
+          {/* Right: info */}
+          <div className="flex-1 flex flex-col gap-5">
+            {detailCourse.category && (
+              <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest">{detailCourse.category}</p>
+            )}
+            <h1 className="text-2xl lg:text-3xl font-black text-white leading-tight">{detailCourse.title}</h1>
+            <p className="text-sm text-gray-400 leading-relaxed">{detailCourse.description || "Master cutting-edge AI filmmaking techniques in this comprehensive course designed for creative professionals."}</p>
+            {/* Stats row */}
+            <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+              <span className="flex items-center gap-1.5"><span className="text-[#C7E36B]">📋</span> {lessonCount} Lessons</span>
+              <span className="flex items-center gap-1.5"><span className="text-[#C7E36B]">🎓</span> Certificate included</span>
+              <span className="flex items-center gap-1.5"><span className="text-[#C7E36B]">♾️</span> Lifetime access</span>
+            </div>
+            {/* Price */}
+            <div className="flex items-end gap-3 mt-2">
+              <span className="text-3xl font-black text-white">₹{(detailCourse.price || 0).toLocaleString("en-IN")}</span>
+              {detailCourse.originalPrice > detailCourse.price && (
+                <>
+                  <span className="text-gray-400 line-through text-base mb-1">₹{(detailCourse.originalPrice).toLocaleString("en-IN")}</span>
+                  <span className="bg-[#C7E36B] text-black text-xs font-bold px-2 py-0.5 rounded-full mb-1">{discount}% OFF</span>
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                if (!realId) return;
+                navigate(`/courses/${realId}/pay`, { state: { courseData: detailCourse } });
+              }}
+              className="w-full bg-[#C7E36B] hover:bg-lime-300 text-black font-bold py-4 rounded-xl transition-all text-base"
+            >
+              PURCHASE NOW →
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
 
       {/* Tabs + Search + Sort */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
