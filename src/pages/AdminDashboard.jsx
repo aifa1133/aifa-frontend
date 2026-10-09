@@ -599,7 +599,7 @@ function ListBootcampAdmin({ onSelect, token }) {
   useEffect(() => { loadBCs(); }, [token]);
 
   const cards = bootcamps.map(b => ({
-    _id: b._id, code: b.batchCode || "B??", title: b.title,
+    _id: b._id, code: b.batchCode || "B??", title: b.batchName || b.title,
     desc: b.description || "", students: b.enrollments?.length || b.enrolledCount || 0,
     price: b.price ? `₹${b.price.toLocaleString("en-IN")}` : "—",
     duration: b.duration || "—",
