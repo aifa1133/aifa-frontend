@@ -2240,7 +2240,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
                   <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300"><span className="text-[#C7E36B] shrink-0">✓</span>{item}</li>
                 ))}
               </ul>
-              <button onClick={()=>token?navigate("/dashboard/billing"):navigate("/login")} className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all">GET PRO MEMBERSHIP →</button>
+              <button onClick={()=>navigate("/membership/pay")} className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all">GET PRO MEMBERSHIP →</button>
             </div>
           </div>
         </div>

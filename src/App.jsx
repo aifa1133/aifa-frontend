@@ -117,6 +117,7 @@ import CourseDetail from "./pages/CourseDetail";
 import ResetPassword from "./pages/ResetPassword";
 import BootcampEnroll from "./pages/BootcampEnroll";
 import CourseEnroll from "./pages/CourseEnroll";
+import MembershipEnroll from "./pages/MembershipEnroll";
 import CourseSetup from "./pages/CourseSetup";
 
 /* Admin — influencer module */
@@ -280,6 +281,7 @@ function AppShell() {
           <Route path="/courses/:slug" element={<CourseDetail />} />
           <Route path="/courses/:slug/watch" element={<CoursePlayer />} />
           <Route path="/courses/:slug/pay"   element={<CourseEnroll />} />
+          <Route path="/membership/pay"      element={<MembershipEnroll />} />
           <Route path="/courses/:slug/setup" element={<CourseSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
