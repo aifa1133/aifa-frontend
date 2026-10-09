@@ -252,20 +252,6 @@ export default function StudentDashboard() {
             Influencer Portal
           </button>
         </div>
-        {/* Website link */}
-        <div className="border-t border-white/5 p-3">
-          <a
-            href="/"
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-[11px] font-medium"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-            Website
-          </a>
-        </div>
       </aside>
 
       {/* ── MAIN ── */}
