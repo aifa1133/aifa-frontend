@@ -1625,11 +1625,12 @@ function BootcampSection({ token, profile }) {
                     <div className="grid grid-cols-2 gap-3">
                       {res.map((r,i) => {
                         const isZip = r.fileType?.toUpperCase().includes("ZIP") || r.name?.toLowerCase().endsWith(".zip");
+                        const hasFile = !!r.fileUrl;
                         return (
-                          <div key={i} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-3 hover:border-white/25 transition-all cursor-pointer" onClick={() => r.fileUrl ? triggerDownload(r.fileUrl, r.name) : null}>
+                          <div key={i} className={`flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-3 transition-all ${hasFile ? "hover:border-white/25 cursor-pointer" : "opacity-40 cursor-not-allowed"}`} onClick={() => hasFile ? triggerDownload(r.fileUrl, r.name) : null} title={hasFile ? "Download" : "File not available"}>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold text-white truncate">{r.name}</p>
-                              <p className="text-[10px] text-white/40 mt-0.5">{isZip ? "ZIP Archive" : "PDF Document"}{r.size ? ` · ${r.size}` : ""}</p>
+                              <p className="text-[10px] text-white/40 mt-0.5">{isZip ? "ZIP Archive" : r.fileType || "PDF Document"}{r.size ? ` · ${r.size}` : ""}</p>
                             </div>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-white/40 shrink-0 ml-2"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                           </div>
