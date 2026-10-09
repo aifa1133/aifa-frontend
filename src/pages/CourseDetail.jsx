@@ -398,7 +398,7 @@ export default function CourseDetail() {
                 ))}
               </ul>
               <button
-                onClick={() => navigate("/workshops")}
+                onClick={() => navigate("/dashboard/billing")}
                 className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all duration-200"
               >
                 GET PRO MEMBERSHIP →
