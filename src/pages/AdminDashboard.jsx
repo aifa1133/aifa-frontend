@@ -2967,13 +2967,22 @@ function VideoCoursesAdmin({ token }) {
             </div>
             <div>
               <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Course Thumbnail (16:9)</p>
-              <input type="file" accept="image/*" className="hidden" id="thumbUpload" onChange={e=>{
+              <input type="file" accept="image/*" className="hidden" id="thumbUpload" onChange={async e=>{
                 const file=e.target.files?.[0]; if(!file) return;
-                const reader=new FileReader();
-                reader.onload=ev=>setF(p=>({...p,thumbnail:ev.target.result}));
-                reader.readAsDataURL(file); e.target.value="";
+                e.target.value="";
+                setF(p=>({...p,thumbnail:"uploading"}));
+                try {
+                  const fd=new FormData(); fd.append("file",file);
+                  const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                  if(up.ok){ const ud=await up.json(); setF(p=>({...p,thumbnail:ud.url||""})); }
+                  else { setF(p=>({...p,thumbnail:""})); globalShowToast("Image upload failed."); }
+                } catch { setF(p=>({...p,thumbnail:""})); globalShowToast("Image upload failed."); }
               }}/>
-              {f.thumbnail?(
+              {f.thumbnail==="uploading"?(
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[120px] mb-2">
+                  <p className="text-xs text-[#C7E36B] animate-pulse">Uploading image…</p>
+                </div>
+              ):f.thumbnail?(
                 <div className="relative rounded-xl overflow-hidden border border-white/10 w-full mb-2" style={{aspectRatio:"16/9"}}>
                   <img src={f.thumbnail} alt="Thumbnail" className="w-full h-full object-cover"/>
                   <button onClick={()=>setF(p=>({...p,thumbnail:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
@@ -3219,7 +3228,10 @@ function VideoCoursesAdmin({ token }) {
           <button onClick={()=>step>1?setStep(s=>s-1):setView("list")} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5">← Back</button>
           <div className="flex gap-2">
             <button onClick={saveDraft} disabled={saving} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 disabled:opacity-50">{saving?"Saving...":"SAVE DRAFT"}</button>
-            <button onClick={publish} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-50">{saving?"Publishing...":"Publish Course"}</button>
+            {step < 4
+              ? <button onClick={()=>setStep(s=>s+1)} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">Continue →</button>
+              : <button onClick={publish} disabled={saving} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-50">{saving?"Publishing...":"Publish Course"}</button>
+            }
           </div>
         </div>
       </div>
