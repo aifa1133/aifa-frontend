@@ -903,6 +903,25 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/86400)} days ago`;
 }
 
+function triggerDownload(url, filename) {
+  if (!url) return;
+  // Cloudinary: add fl_attachment to force browser download instead of inline view
+  if (url.includes("cloudinary.com")) {
+    const dlUrl = url.replace("/upload/", "/upload/fl_attachment/");
+    const a = document.createElement("a");
+    a.href = dlUrl; a.download = filename || "download"; a.target = "_blank";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    return;
+  }
+  // Other origins: fetch as blob
+  fetch(url).then(r => r.blob()).then(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename || "download";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }).catch(() => window.open(url, "_blank"));
+}
+
 function BootcampSection({ token, profile }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
@@ -1322,7 +1341,7 @@ function BootcampSection({ token, profile }) {
                         </div>
                       </div>
                       <button
-                        onClick={() => (r.fileUrl||r.link) ? window.open(r.fileUrl||r.link,"_blank") : null}
+                        onClick={() => isLink ? window.open(r.link,"_blank") : triggerDownload(r.fileUrl, r.name)}
                         className={`shrink-0 ml-2 ${(r.fileUrl||r.link) ? "text-gray-400 hover:text-gray-700 cursor-pointer" : "text-gray-200 cursor-not-allowed"}`}
                         title={isLink ? "Open link" : "Download"}
                       >
@@ -1612,7 +1631,7 @@ function BootcampSection({ token, profile }) {
             const isLink = f.type === "link";
             const isZip  = f.meta?.toUpperCase().includes("ZIP") || f.name?.toLowerCase().endsWith(".zip");
             return (
-              <div key={i} className="bg-white border border-gray-100 rounded-xl px-3.5 py-3 flex items-center gap-3 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer" onClick={() => (f.url||f.fileUrl) ? window.open(f.url||f.fileUrl,"_blank") : null}>
+              <div key={i} className="bg-white border border-gray-100 rounded-xl px-3.5 py-3 flex items-center gap-3 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer" onClick={() => isLink ? window.open(f.url||f.fileUrl,"_blank") : triggerDownload(f.url||f.fileUrl, f.name)}>
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLink ? "bg-purple-50" : isZip ? "bg-blue-50" : "bg-red-50"}`}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={isLink ? "text-purple-500" : isZip ? "text-blue-500" : "text-red-500"}>
                     {isLink ? <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/> : <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>}
@@ -1634,7 +1653,7 @@ function BootcampSection({ token, profile }) {
         </div>
 
         <div className="px-4 py-4 border-t border-gray-100">
-          <button onClick={() => drawerFiles.filter(f=>f.url||f.fileUrl).forEach(f=>window.open(f.url||f.fileUrl,"_blank"))} className="w-full bg-[#C7E36B] text-black font-black py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
+          <button onClick={() => drawerFiles.filter(f=>f.type!=="link"&&(f.url||f.fileUrl)).forEach((f,i)=>setTimeout(()=>triggerDownload(f.url||f.fileUrl,f.name),i*400))} className="w-full bg-[#C7E36B] text-black font-black py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
             Download All
           </button>
         </div>
