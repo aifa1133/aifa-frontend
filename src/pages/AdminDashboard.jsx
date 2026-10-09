@@ -805,6 +805,7 @@ function BootcampAdmin({ token }) {
   const [modalResUploading,setModalResUploading]=useState(false);
   const [modalRecordingUrl,setModalRecordingUrl]=useState("");
   const [modalStatus,setModalStatus]=useState("COMING SOON");
+  const [modalScheduledAt,setModalScheduledAt]=useState("");
   /* H: View Student */
   const [viewStudent,setViewStudent]=useState(null);
   /* I: Edit Student */
@@ -839,6 +840,7 @@ function BootcampAdmin({ token }) {
     if (editSession) {
       setModalStatus(editSession.status || "COMING SOON");
       setModalRecordingUrl(editSession.recordingUrl || "");
+      setModalScheduledAt(editSession.scheduledAt ? new Date(editSession.scheduledAt).toISOString().slice(0,16) : "");
       setModalResources((editSession.resources || []).map(r => typeof r === "string" ? {name:r,size:"—",fileUrl:""} : r));
     }
   }, [editSession?._id]);
@@ -1066,6 +1068,10 @@ function BootcampAdmin({ token }) {
                       </select>
                     </div>
                     <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Scheduled Date & Time</p>
+                      <input type="datetime-local" value={modalScheduledAt} onChange={e=>setModalScheduledAt(e.target.value)} className="w-full bg-[#1A1D1E] border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#C7E36B] [color-scheme:dark]"/>
+                    </div>
+                    <div>
                       <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1.5">Recording Link</p>
                       <div className="relative">
                         <I name="link" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
@@ -1112,6 +1118,7 @@ function BootcampAdmin({ token }) {
                       if (editSession?._id) {
                         const payload = {
                           status: modalStatus,
+                          scheduledAt: modalScheduledAt || null,
                           recordingUrl: modalRecordingUrl,
                           resources: modalResources.map(r=>typeof r==="string"?{name:r,size:"—",fileUrl:""}:r),
                         };
@@ -1189,11 +1196,11 @@ function BootcampAdmin({ token }) {
               <div className="bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
                   <thead><tr className="border-b border-white/10 text-gray-400">
-                    {["No.","Session Name","Status","Edit Details","View Recording",""].map(hd=><th key={hd} className="text-left px-4 py-3 font-semibold">{hd}</th>)}
+                    {["No.","Session Name","Status","Scheduled","Edit Details","View Recording",""].map(hd=><th key={hd} className="text-left px-4 py-3 font-semibold">{hd}</th>)}
                   </tr></thead>
                   <tbody>
                     {sessions.length === 0 ? (
-                      <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-xs">No sessions yet. Click '+ Add Session' to create the first one.</td></tr>
+                      <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-xs">No sessions yet. Click '+ Add Session' to create the first one.</td></tr>
                     ) : sessions.filter(s=>
                       (!sessSearch||s.name.toLowerCase().includes(sessSearch.toLowerCase())) &&
                       (sessStatusFilter==="All Status"||s.status===sessStatusFilter)
@@ -1202,6 +1209,7 @@ function BootcampAdmin({ token }) {
                         <td className="px-4 py-3 text-gray-400">{String(s.no).padStart(2,"0")}</td>
                         <td className="px-4 py-3 text-white font-medium truncate max-w-xs" title={s.name}>{s.name}</td>
                         <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${BC_ST[s.status]||"bg-gray-500/20 text-gray-400"}`}>{s.status}</span></td>
+                        <td className="px-4 py-3 text-gray-400 text-[11px]">{s.scheduledAt ? new Date(s.scheduledAt).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : <span className="text-gray-600">—</span>}</td>
                         <td className="px-4 py-3"><button onClick={()=>setEditSession(s)} className="flex items-center gap-1 text-[#C7E36B] hover:underline text-xs"><I name="edit" size={12}/>Edit Details</button></td>
                         <td className="px-4 py-3">{s.status==="COMING SOON"?<span className="text-gray-600">—</span>:<button onClick={()=>s.recordingUrl?setViewRecordingSess(s):alert("Recording URL not configured for this session. Use Edit Details to add one.")} className="text-blue-400 hover:underline text-xs">View Recording</button>}</td>
                         <td className="px-4 py-3"><button onClick={async()=>{if(!confirm(`Delete session "${s.name}"?`))return;const res=await fetch(`/api/bootcamps/${sel._id}/sessions/${s._id}`,{method:"DELETE",headers:h});if(res.ok)setSessions(prev=>prev.filter(x=>x._id!==s._id));}} className="text-gray-500 hover:text-red-400 transition-colors"><I name="trash" size={13}/></button></td>

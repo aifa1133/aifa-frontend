@@ -1200,13 +1200,21 @@ function BootcampSection({ token, profile }) {
             {/* Left column */}
             <div className="space-y-4">
 
-              {/* Next Live Session card */}
+              {/* Next Live Session card — auto-picks next scheduled session, falls back to admin manual settings */}
               {(() => {
-                const nextAt = bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt) : null;
                 const now = new Date();
-                let dateLabel = "TBA";
-                let timeLabel = null;
-                let countdownLabel = null;
+                // Auto-detect: find the earliest future session that isn't completed/cancelled
+                const autoNext = sessions
+                  .filter(s => s.scheduledAt && s.status !== "COMPLETED" && s.status !== "CANCELLED" && new Date(s.scheduledAt) > now)
+                  .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))[0];
+                // Fall back to manually set bootcamp fields
+                const nextAt = autoNext
+                  ? new Date(autoNext.scheduledAt)
+                  : (bootcampData?.nextSessionAt ? new Date(bootcampData.nextSessionAt) : null);
+                const nextName = autoNext?.name || bootcampData?.nextSessionName || "Upcoming Session";
+                const nextNo   = autoNext?.no || (sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1);
+
+                let dateLabel = "TBA", timeLabel = null, countdownLabel = null;
                 if (nextAt && !isNaN(nextAt.getTime())) {
                   dateLabel = nextAt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
                   timeLabel = nextAt.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true});
@@ -1218,9 +1226,8 @@ function BootcampSection({ token, profile }) {
                     countdownLabel = "Session ended";
                   }
                 }
-                const nextSessionNo = sessions.filter(s => s.recordingUrl || s.status === "COMPLETED").length + 1;
                 const hasUpcoming = nextAt && !isNaN(nextAt.getTime()) && (nextAt - now) > 0;
-                if (!bootcampData?.nextSessionAt || !hasUpcoming) return (
+                if (!hasUpcoming) return (
                   <div className="bg-[#111] border border-white/10 rounded-2xl p-8 flex items-center justify-center">
                     <div className="text-center">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-gray-600 mx-auto mb-3"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -1234,9 +1241,9 @@ function BootcampSection({ token, profile }) {
                     <div className="flex-1 min-w-0">
                       <span className="flex items-center gap-1.5 text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full w-fit mb-3">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"/>
-                        NEXT LIVE · SESSION {String(nextSessionNo).padStart(2,"0")}
+                        NEXT LIVE · SESSION {String(nextNo).padStart(2,"0")}
                       </span>
-                      <h3 className="text-xl font-bold text-white mb-2 leading-tight">{bootcampData?.nextSessionName || "Upcoming Session"}</h3>
+                      <h3 className="text-xl font-bold text-white mb-2 leading-tight">{nextName}</h3>
                       <div className="flex flex-wrap items-center gap-4 text-white/80 text-xs mb-4">
                         <span className="flex items-center gap-1.5">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
