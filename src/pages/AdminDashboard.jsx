@@ -235,7 +235,9 @@ export default function AdminDashboard() {
                 }
               </button>
               {showProfileMenu && (
-                <div className="absolute right-0 top-full mt-2 w-[200px] bg-[#0F1112] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-[200px] bg-[#0F1112] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
                   <div className="px-4 py-3 border-b border-white/10">
                     <p className="text-sm font-bold text-white">{name}</p>
                     <p className="text-[10px] text-gray-400">{profile?.email || user?.email}</p>
@@ -246,6 +248,7 @@ export default function AdminDashboard() {
                     <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
                   </div>
                 </div>
+                </>
               )}
             </div>
           </div>
