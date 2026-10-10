@@ -126,7 +126,7 @@ export default function ProPlanBanner() {
 
             {/* BUTTON */}
             <button
-              onClick={() => navigate("/bootcamp/enroll")}
+              onClick={() => navigate("/membership/pay")}
               className="
                 flex
                 justify-center

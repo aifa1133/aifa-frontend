@@ -765,6 +765,9 @@ function ListBootcampAdmin({ onSelect, token }) {
                       <input type="radio" name="active-bootcamp" checked={!!b.raw?.isPublished}
                         onChange={async e=>{
                           e.stopPropagation();
+                          // Deactivate all others, then activate selected
+                          const others = bootcamps.filter(x=>x._id!==b._id&&x.raw?.isPublished);
+                          await Promise.all(others.map(x=>fetch(`/api/bootcamps/${x._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:false})})));
                           await fetch(`/api/bootcamps/${b._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:true})});
                           setBootcamps(prev=>prev.map(x=>({...x,isPublished:x._id===b._id})));
                         }}

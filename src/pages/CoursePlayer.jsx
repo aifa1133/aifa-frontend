@@ -99,11 +99,9 @@ export default function CoursePlayer() {
 
         {/* BREADCRUMB */}
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
-          <Link to="/" className="hover:text-white">Home</Link>
+          <Link to="/dashboard" className="hover:text-white">Dashboard</Link>
           <span>›</span>
-          <Link to="/courses" className="hover:text-white">Video Courses</Link>
-          <span>›</span>
-          <Link to="/courses" className="hover:text-white">My Courses</Link>
+          <Link to="/dashboard/video-courses" className="hover:text-white">Video Courses</Link>
           <span>›</span>
           <span className="text-[#C7E36B]">{course.title}</span>
         </div>
