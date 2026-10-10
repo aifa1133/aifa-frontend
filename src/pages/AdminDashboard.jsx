@@ -2865,21 +2865,45 @@ function CourseEditor({ course, token, onBack, onSaved }) {
   );
 }
 
-/* ── XHR upload with progress ── */
+/* ── XHR upload with progress ──
+   Phase 1 (XHR upload):  0 → 70%  (scales real XHR upload progress)
+   Phase 2 (server work): ticks 70 → 95% slowly while waiting for response
+   Phase 3 (done):        snaps to 100% on resolve
+   This ensures the bar is always visibly animated even on fast local uploads. */
 const uploadXHR = (url, formData, authToken, onProgress) =>
   new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
+
+    let pct = 0;
+    let tickTimer = null;
+
+    const report = (v) => { pct = Math.min(v, 95); onProgress(pct); };
+
+    /* Phase 1: scale XHR upload bytes → 0-70% */
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) report(Math.round((e.loaded / e.total) * 70));
+    };
+
+    /* Phase 2: after upload bytes sent, tick toward 95% while server processes */
+    xhr.upload.onloadend = () => {
+      report(70);
+      tickTimer = setInterval(() => {
+        if (pct < 93) report(pct + 1);
+      }, 80);
+    };
+
     xhr.onload = () => {
+      clearInterval(tickTimer);
+      onProgress(100);
       if (xhr.status >= 200 && xhr.status < 300) {
         try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid JSON response")); }
       } else {
         try { reject(new Error(JSON.parse(xhr.responseText).message || "Upload failed")); } catch { reject(new Error("Upload failed")); }
       }
     };
-    xhr.onerror = () => reject(new Error("Network error"));
+    xhr.onerror = () => { clearInterval(tickTimer); reject(new Error("Network error")); };
     xhr.send(formData);
   });
 
