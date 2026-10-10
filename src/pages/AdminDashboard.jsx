@@ -10054,7 +10054,6 @@ function CertificatesAdmin({ token }) {
                 <p className="text-[10px] text-gray-400 mb-1 font-semibold uppercase">Type</p>
                 <select value={form.itemType} onChange={e=>setForm({...form,itemType:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
                   <option value="course">Course</option>
-                  <option value="workshop">Workshop</option>
                   <option value="bootcamp">Bootcamp</option>
                 </select>
               </div>
@@ -10078,11 +10077,10 @@ function CertificatesAdmin({ token }) {
                   </div>
                 </div>
                 <div className="min-w-[160px]">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Workshop</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Type</p>
                   <select value={certTypeFilter} onChange={e=>{setCertTypeFilter(e.target.value);setCertPage(1);}} className="w-full bg-white/5 border border-white/10 text-gray-300 text-sm rounded-lg px-3 py-2.5 outline-none">
-                    <option value="All">All Workshops</option>
+                    <option value="All">All Types</option>
                     <option value="course">Video Course</option>
-                    <option value="workshop">Workshop</option>
                     <option value="bootcamp">Bootcamp</option>
                   </select>
                 </div>
@@ -10414,7 +10412,7 @@ function CertificatesAdmin({ token }) {
                 <I name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500"/>
               </div>
               <select value={certTypeFilter} onChange={e=>setCertTypeFilter(e.target.value)} className="bg-white/5 border border-white/10 text-gray-400 text-sm rounded-lg px-3 py-2 outline-none">
-                {["All","course","bootcamp","workshop"].map(o=><option key={o} value={o}>{o==="All"?"All Types":o.charAt(0).toUpperCase()+o.slice(1)}</option>)}
+                {["All","course","bootcamp"].map(o=><option key={o} value={o}>{o==="All"?"All Types":o.charAt(0).toUpperCase()+o.slice(1)}</option>)}
               </select>
             </div>
           )}
@@ -10435,7 +10433,6 @@ function CertificatesAdmin({ token }) {
                 <p className="text-[10px] text-gray-400 mb-1 font-semibold">TYPE</p>
                 <select value={form.itemType} onChange={e=>setForm({...form,itemType:e.target.value})} className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50">
                   <option value="course">Course</option>
-                  <option value="workshop">Workshop</option>
                   <option value="bootcamp">Bootcamp</option>
                 </select>
               </div>

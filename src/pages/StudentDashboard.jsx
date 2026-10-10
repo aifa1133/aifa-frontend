@@ -2665,7 +2665,7 @@ function CertificatesSection({ token, profile }) {
     "border-green-400/40 text-green-400 bg-green-400/10";
 
   const filtered = certs
-    .filter(c => typeFilter === "all" || c.itemType === typeFilter)
+    .filter(c => c.itemType !== "workshop" && (typeFilter === "all" || c.itemType === typeFilter))
     .sort((a, b) => sortOrder === "Latest" ? new Date(b.issuedAt) - new Date(a.issuedAt) : new Date(a.issuedAt) - new Date(b.issuedAt));
 
   /* When a cert is selected, show full-page detail instead of grid */
@@ -2690,7 +2690,7 @@ function CertificatesSection({ token, profile }) {
             <Ic name="cert" size={28} className="text-gray-600" />
           </div>
           <p className="text-white font-semibold text-sm">No Certificates Yet</p>
-          <p className="text-gray-500 text-xs mt-1">Complete a course, workshop, or bootcamp to earn your first certificate.</p>
+          <p className="text-gray-500 text-xs mt-1">Complete a course or bootcamp to earn your first certificate.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
