@@ -1166,7 +1166,7 @@ function BootcampAdmin({ token }) {
                       if (editSession?._id) {
                         const payload = {
                           status: modalStatus,
-                          scheduledAt: modalScheduledAt || null,
+                          scheduledAt: modalScheduledAt ? new Date(modalScheduledAt).toISOString() : null,
                           recordingUrl: modalRecordingUrl,
                           resources: modalResources.map(r=>typeof r==="string"?{name:r,size:"—",fileUrl:""}:r),
                         };
@@ -1207,13 +1207,14 @@ function BootcampAdmin({ token }) {
                     <button onClick={async()=>{
                       if (!newSess.name.trim()) return;
                       const no = (sessions.length || 0) + 1;
-                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({name:newSess.name,status:newSess.status,no,scheduledAt:newSess.nextSessionAt||null}) });
+                      const schedISO = newSess.nextSessionAt ? new Date(newSess.nextSessionAt).toISOString() : null;
+                      const res = await fetch(`/api/bootcamps/${sel._id}/sessions`, { method:"POST", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({name:newSess.name,status:newSess.status,no,scheduledAt:schedISO}) });
                       if (res.ok) {
                         const d = await res.json();
                         setSessions(prev=>[...prev,d]);
                         // Save nextSessionName & nextSessionAt to the bootcamp
-                        if (newSess.nextSessionAt) {
-                          const upd = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ nextSessionName:newSess.name, nextSessionAt:newSess.nextSessionAt||null }) });
+                        if (schedISO) {
+                          const upd = await fetch(`/api/bootcamps/${sel._id}`, { method:"PUT", headers:{...h,"Content-Type":"application/json"}, body:JSON.stringify({ nextSessionName:newSess.name, nextSessionAt:schedISO }) });
                           if (upd.ok) { const ud = await upd.json(); setSel(prev=>({...prev,...ud})); }
                         }
                       }
