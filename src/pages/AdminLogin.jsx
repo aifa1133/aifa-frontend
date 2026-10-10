@@ -30,8 +30,8 @@ export default function AdminLogin() {
         setError("Access denied. Admin accounts only.");
         return;
       }
-      localStorage.setItem("aifa_token", data.token);
-      localStorage.setItem("aifa_user", JSON.stringify(data));
+      localStorage.setItem("aifa_admin_token", data.token);
+      localStorage.setItem("aifa_admin_user", JSON.stringify(data));
       navigate("/admin");
     } catch {
       setError("Network error. Please try again.");

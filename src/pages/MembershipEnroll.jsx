@@ -11,7 +11,7 @@ const loadRazorpay = () =>
     document.body.appendChild(s);
   });
 
-const PRICE     = 6999;
+const PRICE     = 1;
 const ORIG      = 15000;
 const FEATURES  = [
   "Access to all current courses",

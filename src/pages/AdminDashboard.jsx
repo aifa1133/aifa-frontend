@@ -87,8 +87,8 @@ export default function AdminDashboard() {
   const [adminNotifCount, setAdminNotifCount] = useState(0);
 
   const navigate = useNavigate();
-  const token = localStorage.getItem("aifa_token");
-  const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+  const token = localStorage.getItem("aifa_admin_token");
+  const user = JSON.parse(localStorage.getItem("aifa_admin_user") || "{}");
 
   useEffect(() => {
     if (!token || user.role !== "admin") return;
@@ -116,8 +116,8 @@ export default function AdminDashboard() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("aifa_token");
-    localStorage.removeItem("aifa_user");
+    localStorage.removeItem("aifa_admin_token");
+    localStorage.removeItem("aifa_admin_user");
     navigate("/");
   };
 
@@ -2737,7 +2737,11 @@ function CourseEditor({ course, token, onBack, onSaved }) {
               <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
-                {newLesson.thumbnail ? (
+                {newLesson.thumbnail === "uploading" ? (
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[80px] mb-2">
+                    <p className="text-[10px] text-[#C7E36B] animate-pulse">Uploading…</p>
+                  </div>
+                ) : newLesson.thumbnail ? (
                   <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2" style={{aspectRatio:"16/9"}}>
                     <img src={newLesson.thumbnail} alt="thumbnail" className="w-full h-full object-cover"/>
                     <button onClick={()=>setNewLesson(l=>({...l,thumbnail:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
@@ -2745,11 +2749,16 @@ function CourseEditor({ course, token, onBack, onSaved }) {
                 ) : (
                   <>
                     <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
-                      <input type="file" accept="image/*" className="hidden" onChange={e=>{
+                      <input type="file" accept="image/*" className="hidden" onChange={async e=>{
                         const file=e.target.files?.[0]; if(!file) return;
-                        const reader=new FileReader();
-                        reader.onload=ev=>setNewLesson(l=>({...l,thumbnail:ev.target.result}));
-                        reader.readAsDataURL(file); e.target.value="";
+                        e.target.value="";
+                        setNewLesson(l=>({...l,thumbnail:"uploading"}));
+                        try {
+                          const fd=new FormData(); fd.append("image",file);
+                          const up=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                          if(up.ok){ const ud=await up.json(); setNewLesson(l=>({...l,thumbnail:ud.url||""})); }
+                          else { setNewLesson(l=>({...l,thumbnail:""})); globalShowToast("Image upload failed."); }
+                        } catch { setNewLesson(l=>({...l,thumbnail:""})); globalShowToast("Image upload failed."); }
                       }}/>
                       <I name="upload" size={16} className="text-gray-500 mb-1"/>
                       <p className="text-[10px] text-gray-400">Click to upload</p>
@@ -2972,8 +2981,8 @@ function VideoCoursesAdmin({ token }) {
                 e.target.value="";
                 setF(p=>({...p,thumbnail:"uploading"}));
                 try {
-                  const fd=new FormData(); fd.append("file",file);
-                  const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                  const fd=new FormData(); fd.append("image",file);
+                  const up=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
                   if(up.ok){ const ud=await up.json(); setF(p=>({...p,thumbnail:ud.url||""})); }
                   else { setF(p=>({...p,thumbnail:""})); globalShowToast("Image upload failed."); }
                 } catch { setF(p=>({...p,thumbnail:""})); globalShowToast("Image upload failed."); }
@@ -3126,8 +3135,8 @@ function VideoCoursesAdmin({ token }) {
                                 e.target.value="";
                                 updLesson("thumbnail","uploading");
                                 try {
-                                  const fd=new FormData(); fd.append("file",file);
-                                  const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                                  const fd=new FormData(); fd.append("image",file);
+                                  const up=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
                                   if(up.ok){ const ud=await up.json(); updLesson("thumbnail",ud.url||""); }
                                   else { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
                                 } catch { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
@@ -9695,7 +9704,7 @@ function AdminProfile({ token, profile, onUpdated }) {
     setSaving(true); setMsg("");
     const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ name }) });
     const data = await res.json();
-    if (res.ok) { onUpdated(data); localStorage.setItem("aifa_user", JSON.stringify({ name:data.name, _id:data._id, role:data.role })); setMsg("Saved!"); setEditing(false); globalShowToast("Profile saved!"); }
+    if (res.ok) { onUpdated(data); localStorage.setItem("aifa_admin_user", JSON.stringify({ name:data.name, _id:data._id, role:data.role })); setMsg("Saved!"); setEditing(false); globalShowToast("Profile saved!"); }
     else setMsg(data.message || "Failed.");
     setSaving(false);
   };

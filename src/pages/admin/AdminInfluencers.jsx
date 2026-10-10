@@ -24,7 +24,7 @@ const I = ({ name, size = 16, className = "" }) => <Ic d={ICONS[name] || ICONS.u
 
 /* ─── Helpers ─── */
 const money = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-const authToken = (t) => t || localStorage.getItem("aifa_token") || "";
+const authToken = (t) => t || localStorage.getItem("aifa_admin_token") || "";
 
 function CopyBtn({ value, label = "Copy", className = "" }) {
   const [copied, setCopied] = useState(false);
