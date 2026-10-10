@@ -180,6 +180,7 @@ export default function BootcampEnroll() {
           itemType: "bootcamp",
           itemTitle: (bootcamp && bootcamp.title) ? bootcamp.title : "AI Filmmaking Bootcamp",
           itemId: bootcamp ? bootcamp._id : null,
+          ...(couponApplied && couponData ? { couponCode: couponData.code } : {}),
         }),
       });
       const orderData = await orderRes.json();
@@ -228,12 +229,14 @@ export default function BootcampEnroll() {
     setCouponMsg("");
     if (!coupon.trim()) return;
     try {
-      const res  = await fetch("/api/coupons/validate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ code: coupon.trim().toUpperCase() }) });
+      const code = coupon.trim().toUpperCase();
+      const res  = await fetch(`/api/payments/validate-coupon?code=${encodeURIComponent(code)}`);
       const data = await res.json();
       if (data.valid) {
-        setCouponApplied(true); setCouponData(data);
-        sessionStorage.setItem("aifa_enroll_coupon", JSON.stringify({ code: coupon.trim().toUpperCase(), applied: true, data }));
-      } else { setCouponMsg(data.message || "Invalid coupon code"); }
+        const normalized = { code, discountType: "percent", discountValue: data.discount, influencerId: data.influencerId };
+        setCouponApplied(true); setCouponData(normalized);
+        sessionStorage.setItem("aifa_enroll_coupon", JSON.stringify({ code, applied: true, data: normalized }));
+      } else { setCouponMsg(data.message || "Invalid or inactive coupon"); }
     } catch { setCouponMsg("Could not validate coupon. Try again."); }
   };
 
