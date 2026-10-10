@@ -23,11 +23,17 @@ const FEATURES  = [
   "Priority support & updates",
 ];
 
-export default function MembershipEnroll() {
+export default function MembershipEnroll({ inline = false, onBack, onSuccess }) {
   const navigate   = useNavigate();
   const token      = localStorage.getItem("aifa_token");
   const isLoggedIn = !!token;
   const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+
+  const handleBack = () => onBack ? onBack() : navigate(-1);
+  const handleSuccess = () => {
+    if (onSuccess) { onSuccess(); return; }
+    navigate("/dashboard/video-courses");
+  };
 
   const [step, setStep]       = useState(isLoggedIn ? 2 : 1);
   const [form, setForm]       = useState({ name: storedUser.name || "", email: "", phone: "" });
@@ -151,12 +157,12 @@ export default function MembershipEnroll() {
   /* ── Step 3: Success ── */
   if (step === 3) {
     return (
-      <div className="min-h-screen bg-[#0B0F10] text-white flex items-center justify-center p-6">
+      <div className={inline ? "py-16 text-white flex items-center justify-center p-6" : "min-h-screen bg-[#0B0F10] text-white flex items-center justify-center p-6"}>
         <div className="max-w-md w-full text-center space-y-6">
           <div className="w-20 h-20 rounded-full bg-[#C7E36B]/15 border-2 border-[#C7E36B] flex items-center justify-center mx-auto text-4xl">🎉</div>
           <h1 className="text-2xl font-black text-white">You're a Pro Member!</h1>
           <p className="text-gray-400 text-sm leading-relaxed">You now have lifetime access to all current and future AIFA courses, resources, and community.</p>
-          <button onClick={() => navigate("/dashboard/video-courses")} className="w-full bg-[#C7E36B] hover:bg-lime-300 text-black font-bold py-4 rounded-xl transition-all text-base">
+          <button onClick={handleSuccess} className="w-full bg-[#C7E36B] hover:bg-lime-300 text-black font-bold py-4 rounded-xl transition-all text-base">
             Start Learning →
           </button>
         </div>
@@ -165,11 +171,11 @@ export default function MembershipEnroll() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F10] text-white">
+    <div className={inline ? "text-white" : "min-h-screen bg-[#0B0F10] text-white"}>
       <div className="max-w-[900px] mx-auto px-6 py-10">
 
         {/* Back */}
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-8 transition-colors">← Back</button>
+        <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-8 transition-colors">← Back</button>
 
         <div className="flex flex-col lg:flex-row gap-8">
 
