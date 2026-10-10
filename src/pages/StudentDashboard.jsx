@@ -589,12 +589,17 @@ function EmailVerifyBanner({ email, token, onVerified }) {
 
 /* ────── PHONE VERIFY BANNER ────── */
 function PhoneVerifyBanner({ phone, token, onVerified }) {
+  const [dismissed, setDismissed] = useState(() => { try { return !!localStorage.getItem("aifa_phone_banner_dismissed"); } catch { return false; } });
   const [otpSent, setOtpSent]     = useState(false);
   const [otpCode, setOtpCode]     = useState("");
   const [sending, setSending]     = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError]         = useState("");
   const [timer, setTimer]         = useState(0);
+
+  if (dismissed) return null;
+
+  const dismiss = () => { try { localStorage.setItem("aifa_phone_banner_dismissed", "1"); } catch {} setDismissed(true); };
 
   useEffect(() => {
     if (timer <= 0) return;
@@ -641,12 +646,17 @@ function PhoneVerifyBanner({ phone, token, onVerified }) {
             <span className="text-gray-400 text-sm">Verify <strong className="text-white">{phone}</strong> to secure your account</span>
           </div>
         </div>
-        {!otpSent && (
-          <button onClick={sendOtp} disabled={sending}
-            className="shrink-0 bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-60">
-            {sending ? "Sending..." : "Verify Now"}
+        <div className="flex items-center gap-2 shrink-0">
+          {!otpSent && (
+            <button onClick={sendOtp} disabled={sending}
+              className="bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-60">
+              {sending ? "Sending..." : "Verify Now"}
+            </button>
+          )}
+          <button onClick={dismiss} className="text-gray-500 hover:text-gray-300 transition-colors p-1" title="Dismiss">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-        )}
+        </div>
       </div>
       {otpSent && (
         <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-yellow-500/20">
