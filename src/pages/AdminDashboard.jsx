@@ -529,7 +529,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
       </div>
       {localProj&&(
         <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5 overflow-y-auto">
-          <input type="file" ref={projFileRef} className="hidden" multiple
+          <input type="file" ref={projFileRef} className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden" multiple
             onChange={async e=>{
               const files=Array.from(e.target.files||[]);
               if(!files.length) return;
@@ -9955,7 +9955,7 @@ function AdminProfile({ token, profile, onUpdated }) {
             <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all" title="Change photo">
               <I name="edit" size={10} className="text-black" />
             </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            <input ref={fileRef} type="file" accept="image/*" className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden" onChange={handleAvatarChange} />
           </div>
           <div>
             <p className="text-sm font-bold text-white">{profile?.name}</p>

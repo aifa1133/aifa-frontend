@@ -3363,7 +3363,7 @@ function ProfileSection({ profile, token, onUpdated }) {
                     </span>
                 }
               </div>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              <input ref={fileRef} type="file" accept="image/*" className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden" onChange={handleAvatarChange} />
               <button onClick={() => fileRef.current?.click()} disabled={uploading} className="text-xs bg-[#C7E36B] text-black font-semibold px-4 py-2 rounded-lg hover:bg-lime-300 disabled:opacity-60">
                 {uploading ? "Uploading..." : "Change Picture"}
               </button>
