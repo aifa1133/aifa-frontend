@@ -9796,7 +9796,7 @@ const CERT_NAV = [
 ];
 
 function CertificatesAdmin({ token }) {
-  const [certTab, setCertTab]   = useState("templates");
+  const [certTab, setCertTab]   = useState("users");
   const [certs, setCerts]       = useState([]);
   const [users, setUsers]       = useState([]);
   const [loading, setLoading]   = useState(true);
