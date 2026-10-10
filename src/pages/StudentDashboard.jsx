@@ -2070,6 +2070,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
   /* ── Inline course detail view ── */
   if (detailCourse) {
     const c = fullCourse || detailCourse;
+    const enrollStatus = detailCourse.status; // always use client-computed status from card data
     const realId = c.slug || c._id;
     const token = localStorage.getItem("aifa_token");
     const discount = c.originalPrice > c.price ? Math.round((1 - c.price / c.originalPrice) * 100) : null;
@@ -2091,7 +2092,11 @@ function VideoCoursesSection({ profile, onNavigate }) {
         <div className="px-6 pb-10">
           <div className="flex flex-col lg:flex-row gap-10 items-start">
             <div className="relative w-full lg:w-[480px] shrink-0 rounded-2xl overflow-hidden shadow-2xl">
-              <span className="absolute top-4 left-4 z-10 bg-[#C7E36B] text-black text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">INCLUDED IN ALL-ACCESS</span>
+              {enrollStatus === "mine" || enrollStatus === "completed" ? (
+                <span className="absolute top-4 left-4 z-10 bg-green-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">ENROLLED</span>
+              ) : (
+                <span className="absolute top-4 left-4 z-10 bg-[#C7E36B] text-black text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">INCLUDED IN ALL-ACCESS</span>
+              )}
               <img src={c.image} alt={c.title} className="w-full h-[280px] lg:h-[320px] object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               {c.duration && <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">{c.duration}</div>}
@@ -2100,19 +2105,39 @@ function VideoCoursesSection({ profile, onNavigate }) {
               <p className="text-[#C7E36B] text-xs font-bold uppercase tracking-widest">{c.category || "Video Course"}</p>
               <h1 className="text-2xl lg:text-3xl font-bold leading-tight">{c.title}</h1>
               <p className="text-gray-300 text-sm leading-relaxed">{c.description}</p>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold">₹{(c.price||0).toLocaleString("en-IN")}</span>
-                {c.originalPrice > c.price && (
-                  <>
-                    <span className="text-gray-500 line-through text-lg">₹{c.originalPrice.toLocaleString("en-IN")}</span>
-                    <span className="bg-[#C7E36B]/20 text-[#C7E36B] text-xs font-bold px-2.5 py-1 rounded-full">{discount}% OFF</span>
-                  </>
-                )}
-              </div>
-              <button
-                onClick={() => realId && navigate(`/courses/${realId}/pay`, { state: { courseData: c } })}
-                className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#C7E36B] text-black font-bold text-base rounded-xl hover:bg-lime-300 transition-all shadow-lg shadow-[#C7E36B]/20"
-              >PURCHASE NOW →</button>
+              {(enrollStatus !== "mine" && enrollStatus !== "completed") && (
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-bold">₹{(c.price||0).toLocaleString("en-IN")}</span>
+                  {c.originalPrice > c.price && (
+                    <>
+                      <span className="text-gray-500 line-through text-lg">₹{c.originalPrice.toLocaleString("en-IN")}</span>
+                      <span className="bg-[#C7E36B]/20 text-[#C7E36B] text-xs font-bold px-2.5 py-1 rounded-full">{discount}% OFF</span>
+                    </>
+                  )}
+                </div>
+              )}
+              {enrollStatus === "completed" ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => onNavigate?.("certificates")}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 border border-[#C7E36B] text-[#C7E36B] font-bold text-base rounded-xl hover:bg-[#C7E36B]/10 transition-all"
+                  >View Certificate</button>
+                  <button
+                    onClick={() => realId && navigate(`/courses/${realId}/watch`)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#7C3AED] text-white font-bold text-base rounded-xl hover:bg-purple-700 transition-all"
+                  >Watch Again →</button>
+                </div>
+              ) : enrollStatus === "mine" ? (
+                <button
+                  onClick={() => realId && navigate(`/courses/${realId}/watch`)}
+                  className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#7C3AED] text-white font-bold text-base rounded-xl hover:bg-purple-700 transition-all shadow-lg"
+                >Continue Learning →</button>
+              ) : (
+                <button
+                  onClick={() => realId && navigate(`/courses/${realId}/pay`, { state: { courseData: c } })}
+                  className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#C7E36B] text-black font-bold text-base rounded-xl hover:bg-lime-300 transition-all shadow-lg shadow-[#C7E36B]/20"
+                >PURCHASE NOW →</button>
+              )}
             </div>
           </div>
         </div>

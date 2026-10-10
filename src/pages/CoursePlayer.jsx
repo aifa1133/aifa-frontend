@@ -22,6 +22,7 @@ export default function CoursePlayer() {
         if (data.message) { setError(data.message); }
         else {
           setCourse(data);
+          if (data.completedLessons?.length > 0) setCompletedLessons(data.completedLessons.map(String));
           if (data.lessons?.length > 0) setActiveLesson(data.lessons[0]);
         }
         setLoading(false);
