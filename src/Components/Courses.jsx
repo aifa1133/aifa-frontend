@@ -449,7 +449,7 @@ export default function Courses() {
             sm:gap-[24px]
 
             overflow-x-hidden
-            sm:overflow-x-auto
+            sm:overflow-x-hidden
 
             scroll-smooth
           "

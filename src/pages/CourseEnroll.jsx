@@ -37,6 +37,10 @@ export default function CourseEnroll() {
   const [orderId, setOrderId]   = useState("");
   const [txId, setTxId]         = useState("");
 
+  const [coupon, setCoupon]       = useState("");
+  const [couponMsg, setCouponMsg] = useState(null);
+  const [discount, setDiscount]   = useState(0);
+
   const [showSummary, setShowSummary] = useState(false);
 
   /* ── Fetch course ── */
@@ -79,6 +83,23 @@ export default function CourseEnroll() {
         .catch(() => {});
     }
   }, [id]);
+
+  /* ── Coupon ── */
+  const applyCoupon = async () => {
+    if (!coupon.trim()) return;
+    const r = await fetch(`/api/payments/validate-coupon?code=${coupon.trim().toUpperCase()}`).catch(() => null);
+    if (!r || !r.ok) { setCouponMsg({ ok: false, text: "Invalid or expired coupon." }); return; }
+    const d = await r.json();
+    if (d.valid) {
+      const disc = Math.round((course?.price || 0) * d.discount / 100);
+      setDiscount(disc);
+      setCouponMsg({ ok: true, text: `${d.discount}% off applied — you save ₹${disc.toLocaleString("en-IN")}` });
+    } else {
+      setDiscount(0); setCouponMsg({ ok: false, text: "Invalid or expired coupon." });
+    }
+  };
+
+  const finalPrice = Math.max(0, (course?.price || 0) - discount);
 
   /* ── Validation ── */
   const validate = () => {
@@ -130,8 +151,9 @@ export default function CourseEnroll() {
         body: JSON.stringify({
           itemType: "course",
           itemId: course._id || null,
-          amount: course.price,
+          amount: finalPrice,
           itemTitle: course.title,
+          couponCode: coupon.trim().toUpperCase() || undefined,
         }),
       });
       const orderData = await orderRes.json();
@@ -204,7 +226,7 @@ export default function CourseEnroll() {
     );
   }
 
-  const discount = course.originalPrice && course.originalPrice > course.price
+  const priceDiscount = course.originalPrice && course.originalPrice > course.price
     ? Math.round((1 - course.price / course.originalPrice) * 100) : 0;
 
   /* ── Step 3: Success ── */
@@ -356,19 +378,38 @@ export default function CourseEnroll() {
           {/* Price card */}
           <div className="bg-[#181C1E] border border-white/10 rounded-2xl p-6 space-y-4">
             <div className="flex items-baseline gap-3">
-              <span className="text-white text-4xl font-bold">₹{course.price}</span>
-              {discount > 0 && (
+              <span className="text-white text-4xl font-bold">₹{finalPrice.toLocaleString("en-IN")}</span>
+              {priceDiscount > 0 && (
                 <>
                   <span className="text-gray-400 line-through text-lg">₹{course.originalPrice}</span>
-                  <span className="text-[#C7E36B] text-sm font-bold">{discount}% off</span>
+                  <span className="text-[#C7E36B] text-sm font-bold">{priceDiscount}% off</span>
                 </>
               )}
             </div>
-            {discount > 0 && (
+            {priceDiscount > 0 && (
               <p className="text-[#C7E36B] text-xs font-semibold">
                 You save ₹{course.originalPrice - course.price}!
               </p>
             )}
+            {/* Coupon */}
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">Coupon Code</p>
+              <div className="flex gap-2">
+                <input
+                  value={coupon}
+                  onChange={e => { setCoupon(e.target.value); setCouponMsg(null); setDiscount(0); }}
+                  placeholder="Enter code"
+                  className="flex-1 bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"
+                />
+                <button
+                  onClick={applyCoupon}
+                  className="bg-[#C7E36B] text-black text-xs font-bold px-3 py-2 rounded-lg hover:bg-lime-300 transition-all"
+                >Apply</button>
+              </div>
+              {couponMsg && (
+                <p className={`text-xs mt-2 ${couponMsg.ok ? "text-[#C7E36B]" : "text-red-400"}`}>{couponMsg.text}</p>
+              )}
+            </div>
           </div>
 
           {/* Form — only for non-logged-in users */}
@@ -415,7 +456,7 @@ export default function CourseEnroll() {
             disabled={paying}
             className="w-full py-4 bg-[#C7E36B] text-black font-bold text-lg rounded-xl hover:bg-lime-300 transition-colors disabled:opacity-60"
           >
-            {paying ? "Processing payment..." : `Buy Now — ₹${course.price}`}
+            {paying ? "Processing payment..." : `Buy Now — ₹${finalPrice.toLocaleString("en-IN")}`}
           </button>
 
           <p className="text-gray-500 text-xs text-center">

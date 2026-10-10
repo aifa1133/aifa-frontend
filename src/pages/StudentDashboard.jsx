@@ -78,9 +78,11 @@ export default function StudentDashboard() {
   const { section } = useParams();
   const activePage = section || "dashboard";
   const navigate = useNavigate();
+  const mainRef = useRef(null);
 
   const navigateTo = (page) => {
     navigate(`/dashboard/${page}`);
+    setTimeout(() => mainRef.current?.scrollTo({ top: 0, behavior: "instant" }), 0);
   };
 
   const goBack = () => {
@@ -298,6 +300,7 @@ export default function StudentDashboard() {
               <input
                 type="text"
                 placeholder="Search courses..."
+                autoComplete="off"
                 className="bg-white/5 border border-white/10 rounded-full pl-9 pr-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 w-[220px]"
               />
               <Ic name="search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -364,7 +367,7 @@ export default function StudentDashboard() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-[#0B0F10]">
+        <main ref={mainRef} className="flex-1 overflow-y-auto bg-[#0B0F10]">
           {/* Email verification banner — shown on all pages until verified */}
           {!emailVerified && !invoiceItem && <EmailVerifyBanner email={profile?.email} token={token} onVerified={() => {
             setEmailVerified(true);
@@ -722,10 +725,6 @@ function UserMenuDropdown({ name, email, avatar, isGuest, onProfile, onSettings,
    DASHBOARD HOME
 ════════════════════════════════════════════ */
 
-const UPCOMING = [
-  { mode: "ONLINE", date: "AUG 24, 2024", title: "UX Research: Deep Dive into User Interviews", desc: "Expert-led session on conducting high-quality user interviews." },
-  { mode: "OFFLINE", date: "SEPT 02, 2024", title: "Full-Stack Career Accelerator: Intensive", desc: "A 12-week program designed to get you hired as a developer." },
-];
 
 function DashboardHome({ profile, token, onNavigate }) {
   const navigate = useNavigate();
@@ -1256,13 +1255,17 @@ function BootcampSection({ token, profile }) {
                           <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">{countdownLabel}</span>
                         )}
                       </div>
-                      <button
-                        onClick={() => window.open(bootcampData?.zoomLink || "https://zoom.us", "_blank")}
-                        className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2 w-fit"
-                      >
-                        Join Session Now
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                      </button>
+                      {bootcampData?.zoomLink ? (
+                        <button
+                          onClick={() => window.open(bootcampData.zoomLink, "_blank")}
+                          className="bg-white text-[#1D4ED8] text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2 w-fit"
+                        >
+                          Join Session Now
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                      ) : (
+                        <p className="text-white/60 text-xs">Session link will be shared before the class.</p>
+                      )}
                     </div>
                     <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-white/60"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -1711,18 +1714,11 @@ function BootcampSection({ token, profile }) {
 /* ════════════════════════════════════════════
    WORKSHOPS SECTION
 ════════════════════════════════════════════ */
-const WORKSHOP_DATA = [
-  { title: "AI Lego Animation Workshop", image: "/courses/v1.png", duration: "35 HOURS", price: "USD 999.00", mode: "ONLINE" },
-  { title: "AI Cinematic Workshop", image: "/courses/v2.png", duration: "35 HOURS", price: "USD 999.00", mode: "ONLINE" },
-  { title: "AI Sci-Fi Movie Creator", image: "/courses/v3.png", duration: "35 HOURS", price: "USD 999.00", mode: "ONLINE" },
-  { title: "AI Fantasy World Builder", image: "/courses/v4.png", duration: "35 HOURS", price: "USD 999.00", mode: "ONLINE" },
-];
-
 const FALLBACK_WS_IMAGES = ["/courses/v1.png","/courses/v2.png","/courses/v3.png","/courses/v4.png"];
 
 function WorkshopsSection({ token }) {
   const navigate = useNavigate();
-  const [workshops, setWorkshops] = useState(WORKSHOP_DATA);
+  const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [enrolling, setEnrolling] = useState(null);
   const [reserved, setReserved]   = useState(new Set());
@@ -1794,7 +1790,15 @@ function WorkshopsSection({ token }) {
         </div>
       ))}
 
-      {!loading && (
+      {!loading && workshops.length === 0 && (
+        <div className="text-center py-20 text-gray-500">
+          <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <p className="text-sm font-semibold text-white mb-1">No workshops available</p>
+          <p className="text-xs">Check back soon for upcoming workshops.</p>
+        </div>
+      )}
+
+      {!loading && workshops.length > 0 && (
         <div className="flex flex-col gap-[20px]">
           {workshops.map((w, i) => {
             const registered = w.registrations?.length || 0;
@@ -1966,15 +1970,6 @@ function WorkshopsSection({ token }) {
 /* ════════════════════════════════════════════
    VIDEO COURSES SECTION
 ════════════════════════════════════════════ */
-const FALLBACK_COURSES = [
-  { _id:"c1", title:"AI Script Writing Masterclass",    image:"/courses/v1.png", duration:"1h 10m", status:"all" },
-  { _id:"c2", title:"Animate Photos with AI",           image:"/courses/v2.png", duration:"1h 20m", status:"all" },
-  { _id:"c3", title:"AI Avatar Masterclass",            image:"/courses/v3.png", duration:"1h 10m", status:"all" },
-  { _id:"c4", title:"AI Fashion Model Creation",        image:"/courses/v4.png", duration:"2h 00m", status:"mine", progress:40 },
-  { _id:"c5", title:"Master AI Color Restoration",      image:"/courses/v5.png", duration:"1h 30m", status:"mine", progress:75 },
-  { _id:"c6", title:"AI Face Enhancement Masterclass",  image:"/courses/v6.png", duration:"2h 15m", status:"completed" },
-];
-
 const CD_DEFAULT_FAQS = [
   { q: "Who is this course for?", a: "This course is designed for beginners and intermediate learners who want to master the subject at their own pace. No prior experience is required." },
   { q: "How long do I have access to the course?", a: "Once purchased, you have lifetime access to the course content including any future updates we add." },
@@ -1986,7 +1981,7 @@ const CD_YOU_GET = ["Lifetime Course Access", "HD Video Lessons", "Digital Certi
 
 function VideoCoursesSection({ profile, onNavigate }) {
   const navigate   = useNavigate();
-  const [courses, setCourses] = useState(FALLBACK_COURSES);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab]         = useState("all");
   const [search, setSearch]   = useState("");
@@ -2268,7 +2263,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
                   <li key={item} className="flex items-center gap-2.5 text-sm text-gray-300"><span className="text-[#C7E36B] shrink-0">✓</span>{item}</li>
                 ))}
               </ul>
-              <button onClick={()=>navigateTo("membership")} className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all">GET PRO MEMBERSHIP →</button>
+              <button onClick={()=>onNavigate("membership")} className="w-full py-3.5 border-2 border-[#C7E36B] text-[#C7E36B] font-bold rounded-xl text-sm hover:bg-[#C7E36B] hover:text-black transition-all">GET PRO MEMBERSHIP →</button>
             </div>
           </div>
         </div>
@@ -4363,14 +4358,23 @@ function HireTalentSection({ token }) {
     if (!inqMsg.trim()) return;
     try {
       const user = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+      let studentEmail = user.email || "";
+      if (!studentEmail && token) {
+        try {
+          const meRes = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } });
+          if (meRes.ok) { const me = await meRes.json(); studentEmail = me.email || ""; }
+        } catch {}
+      }
       await fetch("/api/service-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
-          name: user.name || "Student",
-          email: user.email || "",
+          name: user.name || profile?.name || "Student",
+          email: studentEmail,
           service: "hire-talent",
-          message: `[Inquiry to ${inquiry.name}] ${inqMsg}`,
+          talentId: inquiry._id,
+          talentName: inquiry.name,
+          message: inqMsg,
         }),
       });
     } catch { /* show success anyway */ }

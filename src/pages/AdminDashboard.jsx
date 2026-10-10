@@ -5422,6 +5422,7 @@ function CommunityAdmin({ token, adminName }) {
   const [commStatusOpen, setCommStatusOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(new Set());
   const [openThreadMenu, setOpenThreadMenu] = useState(null);
+  const [expandedThread, setExpandedThread] = useState(null);
 
   useEffect(() => {
     fetch("/api/community/threads")
@@ -6172,10 +6173,13 @@ function CommunityAdmin({ token, adminName }) {
                           <span className="font-semibold text-gray-400">{t.author}</span>
                           <span>·</span><span>{fmtRelTime(t.createdAt)}</span>
                           <span>·</span>
-                          <span className="flex items-center gap-1">
+                          <button
+                            onClick={() => setExpandedThread(expandedThread === t._id ? null : t._id)}
+                            className="flex items-center gap-1 hover:text-[#C7E36B] transition-colors"
+                          >
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             {t.replyCount ?? t.replies?.length ?? 0} {(t.replyCount ?? t.replies?.length ?? 0) === 1 ? "reply" : "replies"}
-                          </span>
+                          </button>
                         </div>
                         {isReported && (
                           <div className="flex items-center gap-1 mt-1 text-[10px] text-red-400">
@@ -6218,6 +6222,29 @@ function CommunityAdmin({ token, adminName }) {
                         )}
                       </div>
                     </div>
+                    {/* Expanded replies */}
+                    {expandedThread === t._id && (
+                      <div className="mt-3 pt-3 border-t border-white/10">
+                        {!t.replies || t.replies.length === 0 ? (
+                          <p className="text-xs text-gray-500 italic">No replies yet.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {t.replies.map((r, ri) => (
+                              <div key={ri} className="flex gap-2 items-start">
+                                <div className="w-5 h-5 rounded-full bg-[#C7E36B]/20 text-[#C7E36B] text-[8px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                                  {(r.author||"?")[0].toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-[10px] font-semibold text-gray-300 mr-2">{r.author}</span>
+                                  <span className="text-[10px] text-gray-600">{fmtRelTime(r.createdAt)}</span>
+                                  <p className="text-xs text-gray-400 mt-0.5">{r.text}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -8838,7 +8865,7 @@ function HireTalentAdmin({ token }) {
                 const f=e.target.files?.[0]; if(!f) return;
                 setTalentAvatarUploading(true); setTalentAvatarPct(0);
                 const fd=new FormData(); fd.append("image",f);
-                try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setTalentAvatarPct(pct));if(d.url)setForm(prev=>({...prev,avatar:d.url}));}catch{}
+                try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setTalentAvatarPct(pct));if(d.url)setForm(prev=>({...prev,avatar:d.url}));else globalShowToast("Upload failed. Check server configuration.");}catch{globalShowToast("Upload failed. Check server configuration.");}
                 setTalentAvatarUploading(false); e.target.value="";
               }}/>
             </label>
@@ -8858,7 +8885,7 @@ function HireTalentAdmin({ token }) {
                     const f=e.target.files?.[0]; if(!f) return;
                     setTalentPortPct(p=>({...p,[key]:0}));
                     const fd=new FormData(); fd.append("image",f);
-                    try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setTalentPortPct(p=>({...p,[key]:pct})));if(d.url)setForm(prev=>({...prev,[key]:d.url}));}catch{}
+                    try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setTalentPortPct(p=>({...p,[key]:pct})));if(d.url)setForm(prev=>({...prev,[key]:d.url}));else globalShowToast("Upload failed. Check server configuration.");}catch{globalShowToast("Upload failed. Check server configuration.");}
                     setTalentPortPct(p=>{const n={...p};delete n[key];return n;}); e.target.value="";
                   }}/>
                 </label>
