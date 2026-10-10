@@ -1946,14 +1946,23 @@ function WorkshopsSection({ token }) {
                     </div>
                   </div>
                 ) : (
-                  <button
-                    onClick={(e) => handleReserve(w, e)}
-                    disabled={isFull}
-                    className={`flex justify-center items-center gap-1 px-6 py-3 w-full rounded-b-[20px] font-black text-base uppercase transition-all
-                      ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
-                  >
-                    {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-xl">→</span></>}
-                  </button>
+                  <div className="flex rounded-b-[20px] overflow-hidden">
+                    <a
+                      href={`/workshops/${w._id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="flex justify-center items-center gap-1 px-5 py-3 font-black text-sm uppercase bg-white/10 text-white hover:bg-white/20 transition-all border-r border-white/10 whitespace-nowrap"
+                    >
+                      View Details
+                    </a>
+                    <button
+                      onClick={(e) => handleReserve(w, e)}
+                      disabled={isFull}
+                      className={`flex justify-center items-center gap-1 px-6 py-3 flex-1 font-black text-base uppercase transition-all
+                        ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
+                    >
+                      {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-xl">→</span></>}
+                    </button>
+                  </div>
                 )}
               </div>
             );
