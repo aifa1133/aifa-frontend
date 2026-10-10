@@ -45,6 +45,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,15 +70,32 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
     localStorage.removeItem("aifa_token");
     localStorage.removeItem("aifa_user");
     setUser(null);
     setShowUserMenu(false);
+    setShowLogoutConfirm(false);
     navigate("/");
   };
 
   return (
+    <>
+    {showLogoutConfirm && (
+      <div className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4">
+        <div className="bg-[#0F1112] border border-white/10 rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+            <svg width="24" height="24" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </div>
+          <h3 className="text-white font-bold text-lg mb-1">Logout?</h3>
+          <p className="text-gray-400 text-sm mb-6">Are you sure you want to logout from your account?</p>
+          <div className="flex gap-3">
+            <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-white/15 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-all">Cancel</button>
+            <button onClick={confirmLogout} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold transition-all">Yes, Logout</button>
+          </div>
+        </div>
+      </div>
+    )}
     <header className="fixed top-0 w-full z-50 bg-[#0F1112] border-b border-white/10">
       <div
         className="
@@ -215,7 +233,7 @@ ${
                     My Dashboard
                   </Link>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => { setShowUserMenu(false); setShowLogoutConfirm(true); }}
                     className="w-full text-left px-4 py-3 text-red-400 text-sm hover:bg-[#C7E36B] hover:text-[#0F1112]"
                   >
                     Logout
@@ -384,7 +402,7 @@ h-[40px]
                   My Dashboard
                 </Link>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => { setOpen(false); setShowLogoutConfirm(true); }}
                   className="h-[48px] rounded-[10px] border border-red-400 text-red-400 text-[14px] font-bold"
                 >
                   Logout
@@ -410,5 +428,6 @@ h-[40px]
         </div>
       </div>
     </header>
+    </>
   );
 }
