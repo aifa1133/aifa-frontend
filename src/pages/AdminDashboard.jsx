@@ -703,9 +703,9 @@ function ListBootcampAdmin({ onSelect, token }) {
                     setStatusFilter("All"); // reset filter so new bootcamp is visible
                   } else {
                     const d = await res.json();
-                    alert(d.message || "Failed to create bootcamp.");
+                    globalShowToast(d.message || "Failed to create bootcamp.");
                   }
-                } catch { alert("Network error. Please try again."); }
+                } catch { globalShowToast("Network error. Please try again."); }
               }} className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300">CREATE BOOTCAMP</button>
             </div>
           </div>
@@ -724,7 +724,7 @@ function ListBootcampAdmin({ onSelect, token }) {
             <p className="text-[11px] text-red-400/80 text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-5">This will permanently remove all sessions, projects, announcements, and student data.</p>
             <div className="flex gap-3">
               <button onClick={()=>setDeleteTarget(null)} className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 font-semibold">Cancel</button>
-              <button onClick={async()=>{const id=deleteTarget._id;setDeleteTarget(null);const res=await fetch(`/api/bootcamps/${id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});if(res.ok){setBootcamps(prev=>prev.filter(x=>x._id!==id));}else{alert("Failed to delete bootcamp.");}}} className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold transition-colors">Delete Permanently</button>
+              <button onClick={async()=>{const id=deleteTarget._id;setDeleteTarget(null);const res=await fetch(`/api/bootcamps/${id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});if(res.ok){setBootcamps(prev=>prev.filter(x=>x._id!==id));}else{globalShowToast("Failed to delete bootcamp.");}}} className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold transition-colors">Delete Permanently</button>
             </div>
           </div>
         </div>
@@ -5853,8 +5853,8 @@ function CommunityAdmin({ token, adminName }) {
           setThumbPreview(null);
           setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
           globalShowToast(isEdit ? "Event updated!" : status === "draft" ? "Draft saved!" : "Event published!");
-        } else alert(isEdit ? "Failed to update event." : "Failed to create event.");
-      } catch { alert("Network error."); }
+        } else globalShowToast(isEdit ? "Failed to update event." : "Failed to create event.");
+      } catch { globalShowToast("Network error. Please try again."); }
     };
 
     return (
@@ -6373,7 +6373,7 @@ function CommunityAdmin({ token, adminName }) {
               if (!confirm(`Delete "${ev.title}"? This cannot be undone.`)) return;
               const r = await fetch(`/api/community/events/${ev._id}`, {method:"DELETE", headers:{Authorization:`Bearer ${token}`}});
               if (r.ok) { setEvents(prev => prev.filter(e => e._id !== ev._id)); setSelectedEvent(null); }
-              else alert("Failed to delete.");
+              else globalShowToast("Failed to delete event.");
             };
             return (
               <div>
@@ -9841,7 +9841,7 @@ function PlatformSettings({ token }) {
                   setNotifForm(f=>({...f,title:"",message:""}));
                   setNotifSent(true); setTimeout(()=>setNotifSent(false),2000);
                   fetch("/api/notifications",{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{if(Array.isArray(d))setRecentNotifs(d);}).catch(()=>{});
-                } catch { alert("Failed to send notification."); }
+                } catch { globalShowToast("Failed to send notification."); }
                 setNotifSending(false);
               }} disabled={notifSending || !notifForm.title.trim()} className="ml-auto text-xs bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-60">
                 {notifSending ? "Sending..." : "Send Notification"}

@@ -12,23 +12,20 @@ export const GOOGLE_OAUTH_ENABLED = Boolean(GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_I
 const _fetch = window.fetch.bind(window);
 window.fetch = async (...args) => {
   const res = await _fetch(...args);
-  if (res.status === 401 && localStorage.getItem("aifa_token")) {
+  if (res.status === 401) {
     const url = typeof args[0] === "string" ? args[0] : (args[0]?.url || "");
-    if (!url.includes("/api/auth/")) {
-      // Confirm the token is genuinely invalid before forcing logout.
-      // A 401 from a DB/infra hiccup should not log the user out.
-      try {
-        const check = await _fetch("/api/users/me", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("aifa_token")}` },
-          signal: AbortSignal.timeout(4000),
-        });
-        if (check.status === 401) {
-          localStorage.removeItem("aifa_token");
-          localStorage.removeItem("aifa_user");
-          window.location.href = "/";
-        }
-      } catch {
-        // Network/timeout — don't log out; let the user retry
+    // Don't intercept auth endpoints — they legitimately return 401 for wrong credentials
+    if (!url.includes("/api/auth/") && !url.includes("/api/admin/login")) {
+      const hasStudentToken = !!localStorage.getItem("aifa_token");
+      const hasAdminToken   = !!localStorage.getItem("aifa_admin_token");
+      if (hasStudentToken || hasAdminToken) {
+        localStorage.removeItem("aifa_token");
+        localStorage.removeItem("aifa_user");
+        localStorage.removeItem("aifa_admin_token");
+        localStorage.removeItem("aifa_admin_user");
+        // Redirect: admin goes to /adminlogin, students go to home
+        const isAdmin = window.location.pathname.startsWith("/admin");
+        window.location.href = isAdmin ? "/adminlogin" : "/";
       }
     }
   }
