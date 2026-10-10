@@ -802,6 +802,8 @@ function BootcampAdmin({ token }) {
   const [selAnn,setSelAnn]=useState(null);
   const [annF,setAnnF]=useState({title:"",content:""});
   const [stgs,setStgs]=useState({name:"AI Filmmaking Bootcamp",code:"B01",startDate:"2024-10-01",endDate:"2025-01-31",status:"ACTIVE",price:"",originalPrice:"",zoomLink:"",zoomId:"",zoomPass:"",autoRecord:true,reminders:true,chat:true,nextSessionAt:"",nextSessionName:"",image:""});
+  const [stgsImgUploading,setStgsImgUploading]=useState(false);
+  const [stgsImgPct,setStgsImgPct]=useState(0);
   const [mentors,setMentors]=useState([]);
   const [newMentor,setNewMentor]=useState("");
   /* Feature 5: sessions modal + search */
@@ -870,6 +872,7 @@ function BootcampAdmin({ token }) {
   const [annSaving,setAnnSaving]=useState(false);
   const [annSavedMsg,setAnnSavedMsg]=useState("");
   const [annImgUploading,setAnnImgUploading]=useState(false);
+  const [annImgPct,setAnnImgPct]=useState(0);
   /* O: Create Folder */
   const [resCategoryFilter,setResCategoryFilter]=useState("All Category");
   const [showFolderInput,setShowFolderInput]=useState(false);
@@ -1515,19 +1518,25 @@ function BootcampAdmin({ token }) {
                       <input type="file" accept="image/*" className="hidden" onChange={async e=>{
                         const file=e.target.files?.[0]; if(!file) return;
                         if(!file.type.startsWith("image/")) return;
-                        setAnnImgUploading(true);
+                        setAnnImgUploading(true); setAnnImgPct(0);
                         try{
                           const fd=new FormData(); fd.append("image",file);
-                          const r=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                          const d=await r.json();
+                          const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setAnnImgPct(pct));
                           if(d.url) setAnnF(f=>({...f,imageUrl:d.url}));
                         }catch{}
                         setAnnImgUploading(false);
                         e.target.value="";
                       }}/>
-                      <div className="text-xl mb-1">{annImgUploading?"⏳":"🖼"}</div>
-                      <p className="text-sm font-semibold text-white mb-0.5">{annImgUploading?"Uploading...":"Click to upload image"}</p>
-                      <p className="text-xs text-gray-500">JPG, PNG, GIF, WebP (Max 10MB)</p>
+                      {annImgUploading?(
+                        <div className="w-full px-4">
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-1"><div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${annImgPct}%`}}/></div>
+                          <p className="text-xs text-[#C7E36B] font-bold text-center">{annImgPct}%</p>
+                        </div>
+                      ):(
+                        <>
+                      <div className="text-xl mb-1">🖼</div>
+                      <p className="text-sm font-semibold text-white mb-0.5">Click to upload image</p>
+                      <p className="text-xs text-gray-500">JPG, PNG, GIF, WebP (Max 10MB)</p></>)}
                     </label>
                   )}
                 </div>
@@ -1705,12 +1714,14 @@ function BootcampAdmin({ token }) {
                 <div className="flex items-center gap-3">
                   {stgs.image&&<img src={stgs.image} alt="cover" className="w-16 h-10 object-cover rounded-lg border border-white/10"/>}
                   <label className="text-xs border border-white/20 text-gray-300 px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5 cursor-pointer">
-                    <I name="upload" size={12}/>{stgs.image?"Replace Image":"Upload Cover"}
+                    <I name="upload" size={12}/>
+                    {stgsImgUploading?`Uploading ${stgsImgPct}%`:(stgs.image?"Replace Image":"Upload Cover")}
                     <input type="file" accept="image/*" className="hidden" onChange={async e=>{
                       const f=e.target.files?.[0]; if(!f) return;
+                      setStgsImgUploading(true); setStgsImgPct(0);
                       const fd=new FormData(); fd.append("image",f);
-                      try{const r=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});if(r.ok){const d=await r.json();setStgs(p=>({...p,image:d.url||""}));}}catch{}
-                      e.target.value="";
+                      try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setStgsImgPct(pct));if(d.url)setStgs(p=>({...p,image:d.url}));}catch{}
+                      setStgsImgUploading(false); e.target.value="";
                     }}/>
                   </label>
                   {stgs.image&&<button onClick={()=>setStgs(p=>({...p,image:""}))} className="text-xs text-gray-500 hover:text-red-400">Remove</button>}
@@ -1893,6 +1904,8 @@ function WorkshopsAdmin({ token }) {
   const [manageTab, setManageTab] = useState("overview");
   const [wsStudents, setWsStudents] = useState([]);
   const [wsStudentsLoading, setWsStudentsLoading] = useState(false);
+  const [wsCoverUploading, setWsCoverUploading] = useState(false);
+  const [wsCoverPct, setWsCoverPct] = useState(0);
 
   const startEdit = (w) => {
     let dateStr = "", timeStr = "";
@@ -1964,14 +1977,20 @@ function WorkshopsAdmin({ token }) {
             <label className="border-2 border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all block">
               <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async e => {
                 const file = e.target.files?.[0]; if (!file) return;
+                setWsCoverUploading(true); setWsCoverPct(0);
                 const fd = new FormData(); fd.append("image", file);
                 try {
-                  const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
-                  const data = await res.json();
+                  const data = await uploadXHR("/api/uploads/image", fd, token, pct => setWsCoverPct(pct));
                   if (data.url) setCf(p => ({...p, image: data.url}));
                 } catch {}
+                setWsCoverUploading(false); e.target.value="";
               }}/>
-              {cf.image
+              {wsCoverUploading ? (
+                <div className="flex flex-col items-center justify-center py-4 gap-2">
+                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden"><div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${wsCoverPct}%`}}/></div>
+                  <p className="text-xs text-[#C7E36B] font-bold">{wsCoverPct}%</p>
+                </div>
+              ) : cf.image
                 ? <img src={cf.image} alt="Preview" className="w-full h-32 object-cover rounded-lg mb-2"/>
                 : <><I name="upload" size={20} className="mx-auto text-gray-500 mb-1"/><p className="text-[11px] text-gray-400">Click to upload or drag and drop</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP (Max 5MB)</p></>
               }
@@ -2271,6 +2290,8 @@ function CourseEditor({ course, token, onBack, onSaved }) {
   const [info, setInfo]     = useState({});
   const [saving, setSaving] = useState(false);
   const [msg, setMsg]       = useState("");
+  const [editThumbUploading, setEditThumbUploading] = useState(false);
+  const [editThumbPct, setEditThumbPct] = useState(0);
 
   // Curriculum state — group lessons into modules
   const groupLessons = (lessons) => {
@@ -2354,15 +2375,20 @@ function CourseEditor({ course, token, onBack, onSaved }) {
             <p className="text-[10px] text-gray-400 font-semibold uppercase mb-2">Thumbnail (16:9)</p>
             <input type="file" accept="image/*" id="editThumbUpload" className="hidden" onChange={async e => {
               const file = e.target.files?.[0]; if (!file) return;
+              setEditThumbUploading(true); setEditThumbPct(0);
               const fd = new FormData(); fd.append("image", file);
               try {
-                const r = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
-                const d = await r.json();
+                const d = await uploadXHR("/api/uploads/image", fd, token, pct => setEditThumbPct(pct));
                 if (d.url) setInfo(i => ({...i, image: d.url}));
               } catch {}
-              e.target.value = "";
+              setEditThumbUploading(false); e.target.value = "";
             }}/>
-            {(info.image ?? course.image) ? (
+            {editThumbUploading ? (
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[100px] mb-2 gap-2 px-6">
+                <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden"><div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${editThumbPct}%`}}/></div>
+                <p className="text-xs text-[#C7E36B] font-bold">{editThumbPct}%</p>
+              </div>
+            ) : (info.image ?? course.image) ? (
               <div className="relative rounded-xl overflow-hidden border border-white/10 w-full mb-2" style={{aspectRatio:"16/9"}}>
                 <img src={info.image ?? course.image} alt="Thumbnail" className="w-full h-full object-cover"/>
                 <button onClick={()=>setInfo(i=>({...i,image:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80">✕ Remove</button>
@@ -2759,8 +2785,9 @@ function CourseEditor({ course, token, onBack, onSaved }) {
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
                 {newLesson.thumbnail === "uploading" ? (
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[80px] mb-2">
-                    <p className="text-[10px] text-[#C7E36B] animate-pulse">Uploading…</p>
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[80px] mb-2 gap-2 px-4">
+                    <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden"><div className="h-1.5 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${newLesson._thumbPct||0}%`}}/></div>
+                    <p className="text-[10px] text-[#C7E36B] font-bold">{newLesson._thumbPct||0}%</p>
                   </div>
                 ) : newLesson.thumbnail ? (
                   <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2 h-[100px]">
@@ -2773,12 +2800,11 @@ function CourseEditor({ course, token, onBack, onSaved }) {
                       <input type="file" accept="image/*" className="hidden" onChange={async e=>{
                         const file=e.target.files?.[0]; if(!file) return;
                         e.target.value="";
-                        setNewLesson(l=>({...l,thumbnail:"uploading"}));
+                        setNewLesson(l=>({...l,thumbnail:"uploading",_thumbPct:0}));
                         try {
                           const fd=new FormData(); fd.append("image",file);
-                          const up=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                          if(up.ok){ const ud=await up.json(); setNewLesson(l=>({...l,thumbnail:ud.url||""})); }
-                          else { setNewLesson(l=>({...l,thumbnail:""})); globalShowToast("Image upload failed."); }
+                          const ud=await uploadXHR("/api/uploads/image",fd,token,pct=>setNewLesson(l=>({...l,_thumbPct:pct})));
+                          setNewLesson(l=>({...l,thumbnail:ud.url||"",_thumbPct:0}));
                         } catch { setNewLesson(l=>({...l,thumbnail:""})); globalShowToast("Image upload failed."); }
                       }}/>
                       <I name="upload" size={16} className="text-gray-500 mb-1"/>
@@ -3159,34 +3185,32 @@ function VideoCoursesAdmin({ token }) {
                     <Fld label="Lesson Title" value={les.title} onChange={v=>updLesson("title",v)}/>
                     <div>
                       <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
-                      {les.thumbnail ? (
+                      {les.thumbnail === "uploading" ? (
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[80px] mb-2 gap-2 px-4">
+                          <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden"><div className="h-1.5 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${les._thumbPct||0}%`}}/></div>
+                          <p className="text-[10px] text-[#C7E36B] font-bold">{les._thumbPct||0}%</p>
+                        </div>
+                      ) : les.thumbnail ? (
                         <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2" style={{aspectRatio:"16/9"}}>
                           <img src={les.thumbnail} alt="thumbnail" className="w-full h-full object-cover"/>
                           <button onClick={()=>updLesson("thumbnail","")} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
                         </div>
                       ) : (
                         <>
-                          {les.thumbnail==="uploading"?(
-                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[80px] mb-2">
-                              <p className="text-[10px] text-[#C7E36B] animate-pulse">Uploading…</p>
-                            </div>
-                          ):(
-                            <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
-                              <input type="file" accept="image/*" className="hidden" onChange={async e=>{
-                                const file=e.target.files?.[0]; if(!file) return;
-                                e.target.value="";
-                                updLesson("thumbnail","uploading");
-                                try {
-                                  const fd=new FormData(); fd.append("image",file);
-                                  const up=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                                  if(up.ok){ const ud=await up.json(); updLesson("thumbnail",ud.url||""); }
-                                  else { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
-                                } catch { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
-                              }}/>
-                              <I name="upload" size={16} className="text-gray-500 mb-1"/>
-                              <p className="text-[10px] text-gray-400">Click to upload</p>
-                            </label>
-                          )}
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl h-[80px] cursor-pointer hover:border-[#C7E36B]/50 transition-all mb-2">
+                            <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                              const file=e.target.files?.[0]; if(!file) return;
+                              e.target.value="";
+                              updLesson("thumbnail","uploading"); updLesson("_thumbPct",0);
+                              try {
+                                const fd=new FormData(); fd.append("image",file);
+                                const ud=await uploadXHR("/api/uploads/image",fd,token,pct=>updLesson("_thumbPct",pct));
+                                updLesson("thumbnail",ud.url||"");
+                              } catch { updLesson("thumbnail",""); globalShowToast("Image upload failed."); }
+                            }}/>
+                            <I name="upload" size={16} className="text-gray-500 mb-1"/>
+                            <p className="text-[10px] text-gray-400">Click to upload</p>
+                          </label>
                           <input value={(les.thumbnail&&les.thumbnail!=="uploading")?les.thumbnail:""} onChange={e=>updLesson("thumbnail",e.target.value)} placeholder="or paste image URL..." className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/50"/>
                         </>
                       )}
@@ -8717,6 +8741,9 @@ function HireTalentAdmin({ token }) {
   const [editTarget, setEditTarget] = useState(null);
   const [saving, setSaving]     = useState(false);
   const [form, setForm] = useState({ name:"", location:"", category:"All", bio:"", contactEmail:"", skills:"", avatar:"", work1:"", work2:"", work3:"" });
+  const [talentAvatarUploading, setTalentAvatarUploading] = useState(false);
+  const [talentAvatarPct, setTalentAvatarPct] = useState(0);
+  const [talentPortPct, setTalentPortPct] = useState({});
 
   const load = () => {
     setLoading(true);
@@ -8782,12 +8809,13 @@ function HireTalentAdmin({ token }) {
             {form.avatar && <img src={form.avatar} alt="avatar" className="w-12 h-12 rounded-full object-cover border border-white/20"/>}
             <label className="flex items-center gap-2 cursor-pointer bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 hover:border-[#C7E36B]/50 transition">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              {form.avatar ? "Change Avatar" : "Upload Avatar"}
+              {talentAvatarUploading ? `Uploading ${talentAvatarPct}%` : (form.avatar ? "Change Avatar" : "Upload Avatar")}
               <input type="file" accept="image/*" className="hidden" onChange={async e=>{
                 const f=e.target.files?.[0]; if(!f) return;
+                setTalentAvatarUploading(true); setTalentAvatarPct(0);
                 const fd=new FormData(); fd.append("image",f);
-                const res=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                if(res.ok){const d=await res.json(); setForm(prev=>({...prev,avatar:d.url||""}));}
+                try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setTalentAvatarPct(pct));if(d.url)setForm(prev=>({...prev,avatar:d.url}));}catch{}
+                setTalentAvatarUploading(false); e.target.value="";
               }}/>
             </label>
           </div>
@@ -8801,12 +8829,13 @@ function HireTalentAdmin({ token }) {
                 {form[key] && <img src={form[key]} alt={label} className="w-full h-20 object-cover rounded-lg border border-white/10"/>}
                 <label className="flex items-center justify-center gap-1 cursor-pointer bg-[#1A1D1E] border border-white/10 rounded-lg px-2 py-2 text-[11px] text-gray-300 hover:border-[#C7E36B]/50 transition">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  {form[key] ? "Change" : label}
+                  {talentPortPct[key]!=null ? `${talentPortPct[key]}%` : (form[key] ? "Change" : label)}
                   <input type="file" accept="image/*" className="hidden" onChange={async e=>{
                     const f=e.target.files?.[0]; if(!f) return;
+                    setTalentPortPct(p=>({...p,[key]:0}));
                     const fd=new FormData(); fd.append("image",f);
-                    const res=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                    if(res.ok){const d=await res.json(); setForm(prev=>({...prev,[key]:d.url||""}));}
+                    try{const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setTalentPortPct(p=>({...p,[key]:pct})));if(d.url)setForm(prev=>({...prev,[key]:d.url}));}catch{}
+                    setTalentPortPct(p=>{const n={...p};delete n[key];return n;}); e.target.value="";
                   }}/>
                 </label>
               </div>
@@ -10767,6 +10796,7 @@ function PromptsAdmin({ token }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
 
   const load = () => {
     setLoading(true);
@@ -10780,11 +10810,12 @@ function PromptsAdmin({ token }) {
   const cancelEdit = () => { setEditId(null); setForm(EMPTY_PROMPT); };
 
   const uploadImage = async (file) => {
-    setUploading(true);
+    setUploading(true); setUploadPct(0);
     const fd = new FormData(); fd.append("image", file);
-    const r = await fetch("/api/uploads/image", { method: "POST", headers: h, body: fd });
-    const d = await r.json(); setUploading(false);
-    return d.url || "";
+    try {
+      const d = await uploadXHR("/api/uploads/image", fd, token, pct => setUploadPct(pct));
+      setUploading(false); return d.url || "";
+    } catch { setUploading(false); return ""; }
   };
 
   const save = async () => {
@@ -10841,7 +10872,7 @@ function PromptsAdmin({ token }) {
           <div className="flex items-center gap-3">
             {form.image && <img src={form.image} alt="" className="w-16 h-16 object-cover rounded-lg border border-white/10" />}
             <label className="cursor-pointer bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-300 hover:border-[#C7E36B]/50 transition">
-              {uploading ? "Uploading…" : "Upload Image"}
+              {uploading ? `Uploading ${uploadPct}%` : "Upload Image"}
               <input type="file" accept="image/*" className="hidden" onChange={async e=>{ if(e.target.files[0]){ const url=await uploadImage(e.target.files[0]); setForm(f=>({...f,image:url})); }}} />
             </label>
             {form.image && <button onClick={()=>setForm(f=>({...f,image:""}))} className="text-xs text-red-400 hover:text-red-300">Remove</button>}
