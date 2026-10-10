@@ -121,6 +121,8 @@ export default function AdminDashboard() {
     setShowLogoutConfirm(false);
     localStorage.removeItem("aifa_admin_token");
     localStorage.removeItem("aifa_admin_user");
+    localStorage.removeItem("aifa_token");
+    localStorage.removeItem("aifa_user");
     navigate("/");
   };
 
