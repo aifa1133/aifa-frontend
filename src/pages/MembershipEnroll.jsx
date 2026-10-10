@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMembershipPrice } from "../hooks/useMembershipPrice";
 
 const loadRazorpay = () =>
   new Promise(resolve => {
@@ -11,8 +12,6 @@ const loadRazorpay = () =>
     document.body.appendChild(s);
   });
 
-const PRICE     = 6999;
-const ORIG      = 15000;
 const FEATURES  = [
   "Access to all current courses",
   "All future courses included",
@@ -25,6 +24,7 @@ const FEATURES  = [
 
 export default function MembershipEnroll({ inline = false, onBack, onSuccess }) {
   const navigate   = useNavigate();
+  const { price: PRICE, originalPrice: ORIG } = useMembershipPrice();
   const token      = localStorage.getItem("aifa_token");
   const isLoggedIn = !!token;
   const storedUser = JSON.parse(localStorage.getItem("aifa_user") || "{}");

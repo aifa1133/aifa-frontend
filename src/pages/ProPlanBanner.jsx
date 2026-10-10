@@ -1,9 +1,11 @@
 "use client";
 
 import { useNavigate } from "react-router-dom";
+import { useMembershipPrice } from "../hooks/useMembershipPrice";
 
 export default function ProPlanBanner() {
   const navigate = useNavigate();
+  const { price } = useMembershipPrice();
   return (
     <section className="w-full bg-[#0B0F10] py-10 md:py-16 flex justify-center px-4">
       <div
@@ -120,7 +122,7 @@ export default function ProPlanBanner() {
                   text-[#0F1112]
                 "
               >
-                just ₹6,999
+                just ₹{price.toLocaleString("en-IN")}
               </span>
             </p>
 

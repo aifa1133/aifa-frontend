@@ -8999,6 +8999,36 @@ function MembershipAdmin({ token }) {
   const [proDays, setProDays]           = useState("365");
   const PER_PAGE = 5;
 
+  /* ── Pricing state ── */
+  const [priceEdit, setPriceEdit]       = useState({ price: "", orig: "" });
+  const [priceSaving, setPriceSaving]   = useState(false);
+  const [priceLoaded, setPriceLoaded]   = useState(false);
+  const [priceMsg, setPriceMsg]         = useState(null);
+
+  useEffect(() => {
+    fetch("/api/settings/membership-price")
+      .then(r => r.json())
+      .then(d => { setPriceEdit({ price: String(d.price), orig: String(d.originalPrice) }); setPriceLoaded(true); })
+      .catch(() => { setPriceEdit({ price: "6999", orig: "15000" }); setPriceLoaded(true); });
+  }, []);
+
+  const savePricing = async () => {
+    const p = parseInt(priceEdit.price);
+    const o = parseInt(priceEdit.orig);
+    if (!p || p <= 0) { setPriceMsg({ ok: false, text: "Enter a valid price." }); return; }
+    setPriceSaving(true);
+    try {
+      await fetch("/api/admin/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ MEMBERSHIP_PRICE: String(p), MEMBERSHIP_ORIGINAL_PRICE: String(o || 15000) }),
+      });
+      setPriceMsg({ ok: true, text: "Price saved! Changes will apply across the app." });
+      setTimeout(() => setPriceMsg(null), 4000);
+    } catch { setPriceMsg({ ok: false, text: "Failed to save. Try again." }); }
+    setPriceSaving(false);
+  };
+
   useEffect(() => {
     fetch("/api/membership/members", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.json())
@@ -9112,6 +9142,47 @@ function MembershipAdmin({ token }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Pricing Settings */}
+      <div className="bg-[#111315] border border-[#C7E36B]/20 rounded-2xl p-5 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <h3 className="text-sm font-bold text-white">Pro Membership Pricing</h3>
+          <span className="text-[10px] text-gray-500 ml-1">— updates everywhere in the app</span>
+        </div>
+        <div className="flex items-end gap-4 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-gray-400 font-semibold uppercase">Selling Price (₹)</label>
+            <input
+              type="number" min="1"
+              value={priceEdit.price}
+              onChange={e => setPriceEdit(p => ({ ...p, price: e.target.value }))}
+              disabled={!priceLoaded}
+              className="w-36 bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none focus:border-[#C7E36B]/50 transition-all"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-gray-400 font-semibold uppercase">Original Price (₹) <span className="text-gray-600 normal-case">(strikethrough)</span></label>
+            <input
+              type="number" min="1"
+              value={priceEdit.orig}
+              onChange={e => setPriceEdit(p => ({ ...p, orig: e.target.value }))}
+              disabled={!priceLoaded}
+              className="w-36 bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none focus:border-[#C7E36B]/50 transition-all"
+            />
+          </div>
+          <button
+            onClick={savePricing}
+            disabled={priceSaving || !priceLoaded}
+            className="px-6 py-2.5 bg-[#C7E36B] text-black text-sm font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {priceSaving ? "Saving…" : "Save Price"}
+          </button>
+          {priceMsg && (
+            <span className={`text-xs font-semibold ${priceMsg.ok ? "text-[#C7E36B]" : "text-red-400"}`}>{priceMsg.text}</span>
+          )}
+        </div>
       </div>
 
       {/* Filters */}

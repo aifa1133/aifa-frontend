@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useMembershipPrice } from "../hooks/useMembershipPrice";
 
 const DEFAULT_FAQS = [
   { q: "Who is this course for?", a: "This course is designed for beginners and intermediate learners who want to master the subject at their own pace. No prior experience is required." },
@@ -20,6 +21,7 @@ const YOU_GET = [
 export default function CourseDetail() {
   const { slug: id } = useParams();
   const navigate = useNavigate();
+  const { price: membershipPrice, originalPrice: membershipOrig } = useMembershipPrice();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -386,8 +388,8 @@ export default function CourseDetail() {
                 <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest mb-2">All Courses Unlocked</p>
                 <h3 className="text-xl font-bold text-white mb-1">Unlock Pro Membership</h3>
                 <div className="flex items-end gap-2 mt-3">
-                  <span className="text-4xl font-bold text-white">₹6,999</span>
-                  <span className="text-lg text-gray-500 line-through mb-1">₹15,000</span>
+                  <span className="text-4xl font-bold text-white">₹{membershipPrice.toLocaleString("en-IN")}</span>
+                  <span className="text-lg text-gray-500 line-through mb-1">₹{membershipOrig.toLocaleString("en-IN")}</span>
                 </div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">

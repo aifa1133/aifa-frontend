@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import MembershipEnroll from "./MembershipEnroll";
+import { useMembershipPrice } from "../hooks/useMembershipPrice";
 
 // Module-level flag prevents StrictMode double-fetch without persisting across reloads
 let _infTokenFetched = false;
@@ -79,6 +80,7 @@ export default function StudentDashboard() {
   const activePage = section || "dashboard";
   const navigate = useNavigate();
   const mainRef = useRef(null);
+  const { price: membershipPrice, originalPrice: membershipOrig } = useMembershipPrice();
 
   const navigateTo = (page) => {
     navigate(`/dashboard/${page}`);
@@ -2284,8 +2286,8 @@ function VideoCoursesSection({ profile, onNavigate }) {
                 <p className="text-xs font-bold text-[#C7E36B] uppercase tracking-widest mb-2">All Courses Unlocked</p>
                 <h3 className="text-xl font-bold mb-1">Unlock Pro Membership</h3>
                 <div className="flex items-end gap-2 mt-3">
-                  <span className="text-4xl font-bold">₹6,999</span>
-                  <span className="text-gray-500 line-through text-lg mb-1">₹15,000</span>
+                  <span className="text-4xl font-bold">₹{membershipPrice.toLocaleString("en-IN")}</span>
+                  <span className="text-gray-500 line-through text-lg mb-1">₹{membershipOrig.toLocaleString("en-IN")}</span>
                 </div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">
