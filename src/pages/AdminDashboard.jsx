@@ -3729,19 +3729,6 @@ function ResourcesAdmin({ token }) {
                               placeholder="Step Title"
                               className="flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder-gray-600 mr-3"/>
                             <div className="flex items-center gap-2 shrink-0">
-                              {/* Step image upload icon */}
-                              <label className="cursor-pointer text-gray-500 hover:text-[#C7E36B] transition-colors" title="Upload step image">
-                                <input type="file" accept="image/*" className="hidden" onChange={async e => {
-                                  const file = e.target.files?.[0]; if (!file) return;
-                                  const fd = new FormData(); fd.append("image", file);
-                                  try {
-                                    const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
-                                    const data = await res.json();
-                                    if (data.url) setSteps(ss => ss.map((x,j) => j===i?{...x,image:data.url}:x));
-                                  } catch {}
-                                }}/>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                              </label>
                               {/* Delete step */}
                               <button onClick={() => setSteps(ss => ss.filter((_,j) => j!==i))}
                                 className="text-gray-500 hover:text-red-400 transition-colors" title="Delete step">
@@ -3749,7 +3736,6 @@ function ResourcesAdmin({ token }) {
                               </button>
                             </div>
                           </div>
-                          {s.image && <img src={s.image} alt="" className="w-full h-24 object-cover rounded-lg mb-2"/>}
                           <textarea value={s.description} onChange={e => setSteps(ss => ss.map((x,j) => j===i?{...x,description:e.target.value}:x))}
                             placeholder="Step Description" rows={2}
                             className="w-full bg-transparent text-xs text-gray-400 outline-none resize-none placeholder-gray-600"/>
