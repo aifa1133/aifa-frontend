@@ -120,7 +120,7 @@ export default function ProPlanBanner() {
                   text-[#0F1112]
                 "
               >
-                just ₹9,999
+                just ₹6,999
               </span>
             </p>
 
