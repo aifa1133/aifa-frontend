@@ -424,6 +424,7 @@ function AdminOverview({ token, onNavigate }) {
 function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setProjSaved, projFileRef, projects, setProjects, bootcampId, token }) {
   const h = { Authorization:`Bearer ${token}` };
   const [projResUploading,setProjResUploading]=useState(false);
+  const [projResPct,setProjResPct]=useState(0);
   /* Map DB field names (requirements/resources) to local keys (req/res) */
   useEffect(() => {
     if (!selProj) { setLocalProj(null); return; }
@@ -514,10 +515,15 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
               setProjResUploading(true);
               for(const f of files){
                 let fileUrl="";
-                try{const fd=new FormData();fd.append("file",f);const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});if(up.ok){const ud=await up.json();fileUrl=ud.url||"";}}catch{}
+                try{
+                  setProjResPct(0);
+                  const fd=new FormData();fd.append("file",f);
+                  const ud=await uploadXHR("/api/uploads/file",fd,token,pct=>setProjResPct(pct));
+                  fileUrl=ud.url||"";
+                }catch{}
                 setLocalProj(p=>({...p,res:[...(p.res||[]),{name:f.name,size:(f.size/1024/1024).toFixed(1)+" MB",fileType:f.name.split(".").pop().toUpperCase(),fileUrl}]}));
               }
-              setProjResUploading(false);
+              setProjResUploading(false); setProjResPct(0);
               e.target.value="";
             }}/>
           <div className="grid grid-cols-2 gap-4">
@@ -840,6 +846,7 @@ function BootcampAdmin({ token }) {
   /* G: Edit Details modal resources + recording + status */
   const [modalResources,setModalResources]=useState([]);
   const [modalResUploading,setModalResUploading]=useState(false);
+  const [modalResPct,setModalResPct]=useState(0);
   const [modalRecordingUrl,setModalRecordingUrl]=useState("");
   const [modalStatus,setModalStatus]=useState("COMING SOON");
   const [modalScheduledAt,setModalScheduledAt]=useState("");
@@ -867,6 +874,8 @@ function BootcampAdmin({ token }) {
   const [resCategoryFilter,setResCategoryFilter]=useState("All Category");
   const [showFolderInput,setShowFolderInput]=useState(false);
   const [folderName,setFolderName]=useState("");
+  const [resTabUploading,setResTabUploading]=useState(false);
+  const [resTabPct,setResTabPct]=useState(0);
   const [folderSaved,setFolderSaved]=useState(false);
   /* Resources list for the Resources tab */
   const [resources,setResources]=useState([]);
@@ -1130,17 +1139,22 @@ function BootcampAdmin({ token }) {
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-[10px] text-white uppercase font-bold">Session Resources</p>
                         <label className={`text-xs text-[#C7E36B] flex items-center gap-1 cursor-pointer ${modalResUploading?"opacity-50 pointer-events-none":""}`}>
-                          <I name="upload" size={11}/>{modalResUploading?"Uploading...":"Upload File"}
+                          <I name="upload" size={11}/>{modalResUploading?`Uploading… ${modalResPct}%`:"Upload File"}
                           <input type="file" multiple className="hidden" onChange={async e=>{
                             const files=Array.from(e.target.files||[]);
                             if(!files.length) return;
                             setModalResUploading(true);
                             for(const f of files){
                               let fileUrl="";
-                              try{const fd=new FormData();fd.append("file",f);const up=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});if(up.ok){const ud=await up.json();fileUrl=ud.url||"";}}catch{}
+                              try{
+                                setModalResPct(0);
+                                const fd=new FormData();fd.append("file",f);
+                                const ud=await uploadXHR("/api/uploads/file",fd,token,pct=>setModalResPct(pct));
+                                fileUrl=ud.url||"";
+                              }catch{}
                               setModalResources(prev=>[...prev,{name:f.name,size:(f.size/1024/1024).toFixed(1)+" MB",fileUrl}]);
                             }
-                            setModalResUploading(false);
+                            setModalResUploading(false); setModalResPct(0);
                             e.target.value="";
                           }}/>
                         </label>
@@ -1589,26 +1603,29 @@ function BootcampAdmin({ token }) {
                 ):(
                   <button onClick={()=>setShowFolderInput(true)} className="text-xs border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5">📁 Create Folder</button>
                 )}
-                <label className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 cursor-pointer">
-                  <I name="upload" size={13}/> Upload Assets
+                <label className={`text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg hover:bg-lime-300 flex items-center gap-1.5 cursor-pointer ${resTabUploading?"opacity-70 pointer-events-none":""}`}>
+                  <I name="upload" size={13}/>{resTabUploading?`${resTabPct}%`:"Upload Assets"}
                   <input type="file" multiple accept=".pdf,.zip,.docx,.pptx,.mp4,image/*" className="hidden" onChange={async e=>{
                     const files=Array.from(e.target.files||[]);
+                    setResTabUploading(true);
                     for(const f of files){
                       const typeMap={pdf:"PDF Document",zip:"Compressed Archive",docx:"Word Document",pptx:"Presentation",mp4:"MP4 Video"};
                       const ext=(f.name.split(".").pop()||"").toLowerCase();
                       const isImage=f.type.startsWith("image/");
                       let fileUrl="";
                       try {
+                        setResTabPct(0);
                         const fd=new FormData();
                         const endpoint=isImage?"/api/uploads/image":"/api/uploads/file";
                         fd.append(isImage?"image":"file",f);
-                        const up=await fetch(endpoint,{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                        if(up.ok){const ud=await up.json();fileUrl=ud.url||"";}
+                        const ud=await uploadXHR(endpoint,fd,token,pct=>setResTabPct(pct));
+                        fileUrl=ud.url||"";
                       } catch{}
                       const payload={name:f.name,fileType:typeMap[ext]||"File",fileSize:(f.size/1024/1024).toFixed(1)+" MB",category:"General",fileUrl};
                       const r=await fetch(`/api/bootcamps/${sel._id}/resources`,{method:"POST",headers:{...h,"Content-Type":"application/json"},body:JSON.stringify(payload)});
                       if(r.ok){const d=await r.json();setResources(prev=>[d,...prev]);}
                     }
+                    setResTabUploading(false); setResTabPct(0);
                     e.target.value="";
                   }}/>
                 </label>
@@ -2822,6 +2839,24 @@ function CourseEditor({ course, token, onBack, onSaved }) {
   );
 }
 
+/* ── XHR upload with progress ── */
+const uploadXHR = (url, formData, authToken, onProgress) =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid JSON response")); }
+      } else {
+        try { reject(new Error(JSON.parse(xhr.responseText).message || "Upload failed")); } catch { reject(new Error("Upload failed")); }
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error"));
+    xhr.send(formData);
+  });
+
 /* ── VIDEO COURSES ADMIN ── */
 function VideoCoursesAdmin({ token }) {
   const [view, setView] = useState("list");
@@ -2844,6 +2879,7 @@ function VideoCoursesAdmin({ token }) {
   const [editCourse, setEditCourse] = useState(null);
   const [sortBy, setSortBy]         = useState("newest");
   const [searchQ, setSearchQ]       = useState("");
+  const [thumbPct, setThumbPct]     = useState(0);
   const STEPS = ["Basic Info","Curriculum","Pricing","Publish"];
 
   const buildPayload = (isPublished, scheduledAt=null) => ({
@@ -2983,17 +3019,19 @@ function VideoCoursesAdmin({ token }) {
               <input type="file" accept="image/*" className="hidden" id="thumbUpload" onChange={async e=>{
                 const file=e.target.files?.[0]; if(!file) return;
                 e.target.value="";
-                setF(p=>({...p,thumbnail:"uploading"}));
+                setThumbPct(0); setF(p=>({...p,thumbnail:"uploading"}));
                 try {
                   const fd=new FormData(); fd.append("image",file);
-                  const up=await fetch("/api/uploads/image",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                  if(up.ok){ const ud=await up.json(); setF(p=>({...p,thumbnail:ud.url||""})); }
-                  else { setF(p=>({...p,thumbnail:""})); globalShowToast("Image upload failed."); }
+                  const ud=await uploadXHR("/api/uploads/image",fd,token,pct=>setThumbPct(pct));
+                  setF(p=>({...p,thumbnail:ud.url||""}));
                 } catch { setF(p=>({...p,thumbnail:""})); globalShowToast("Image upload failed."); }
               }}/>
               {f.thumbnail==="uploading"?(
-                <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[120px] mb-2">
-                  <p className="text-xs text-[#C7E36B] animate-pulse">Uploading image…</p>
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#C7E36B]/40 rounded-xl h-[120px] mb-2 gap-2 px-6">
+                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                    <div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${thumbPct}%`}}/>
+                  </div>
+                  <p className="text-xs text-[#C7E36B] font-bold">{thumbPct}%</p>
                 </div>
               ):f.thumbnail?(
                 <div className="relative rounded-xl overflow-hidden border border-white/10 w-full mb-2" style={{aspectRatio:"16/9"}}>
@@ -3427,12 +3465,13 @@ function ResourcesAdmin({ token }) {
     const pageTitle = lt === "workflow" ? "Create Workflow" : lt === "prompt" ? "Create Prompt" : lt === "tip" ? "Add New Learning Tip" : lt === "project" ? "Create Project" : lt === "deal" ? "Add New AI Deal" : "Create Resource";
     const uploadThumb = async (file) => {
       if (!file) return;
-      const fd = new FormData(); fd.append("image", file);
+      setForm(f => ({...f, thumbnail: "uploading", _thumbPct: 0}));
       try {
-        const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
-        const data = await res.json();
-        if (data.url) setForm(f => ({...f, thumbnail: data.url}));
-      } catch {}
+        const fd = new FormData(); fd.append("image", file);
+        const data = await uploadXHR("/api/uploads/image", fd, token, pct => setForm(f => ({...f, _thumbPct: pct})));
+        if (data.url) setForm(f => ({...f, thumbnail: data.url, _thumbPct: 0}));
+        else setForm(f => ({...f, thumbnail: "", _thumbPct: 0}));
+      } catch { setForm(f => ({...f, thumbnail: "", _thumbPct: 0})); }
     };
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -3576,7 +3615,14 @@ function ResourcesAdmin({ token }) {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                   3. Thumbnail {lt === "tip" ? "" : "Upload"}
                 </p>
-                {form.thumbnail ? (
+                {form.thumbnail === "uploading" ? (
+                  <div className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-[#C7E36B]/40 rounded-xl gap-3 px-8">
+                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                      <div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${form._thumbPct||0}%`}}/>
+                    </div>
+                    <p className="text-sm text-[#C7E36B] font-bold">{form._thumbPct||0}%</p>
+                  </div>
+                ) : form.thumbnail ? (
                   <div className="relative rounded-xl overflow-hidden border border-white/10 group">
                     <img src={form.thumbnail} alt="thumbnail" className="w-full h-44 object-cover"/>
                     <button type="button" onClick={() => setForm({...form, thumbnail:""})}
@@ -3602,7 +3648,14 @@ function ResourcesAdmin({ token }) {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                   3. Brand Assets
                 </p>
-                {form.logo && (form.logo.startsWith("http") || form.logo.startsWith("/")) ? (
+                {form.logo === "uploading" ? (
+                  <div className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-[#C7E36B]/40 rounded-xl gap-3 px-8">
+                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                      <div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${form._logoPct||0}%`}}/>
+                    </div>
+                    <p className="text-sm text-[#C7E36B] font-bold">{form._logoPct||0}%</p>
+                  </div>
+                ) : form.logo && (form.logo.startsWith("http") || form.logo.startsWith("/")) ? (
                   <div className="relative rounded-xl overflow-hidden border border-white/10 bg-[#1a1a1a] group h-28 flex items-center justify-center">
                     <img src={form.logo} alt="logo" className="max-h-20 max-w-[180px] object-contain"/>
                     <button type="button" onClick={() => setForm({...form, logo:""})}
@@ -3615,12 +3668,13 @@ function ResourcesAdmin({ token }) {
                     <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-white/15 rounded-xl cursor-pointer hover:border-[#C7E36B]/40 hover:bg-[#C7E36B]/5 transition-all group">
                       <input type="file" accept="image/*" className="hidden" onChange={async e => {
                         const file = e.target.files?.[0]; if (!file) return;
+                        setForm(f => ({...f, logo:"uploading", _logoPct:0}));
                         const fd = new FormData(); fd.append("image", file);
                         try {
-                          const res = await fetch("/api/uploads/image", { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body: fd });
-                          const data = await res.json();
-                          if (data.url) setForm(f => ({...f, logo: data.url}));
-                        } catch {}
+                          const data = await uploadXHR("/api/uploads/image", fd, token, pct => setForm(f => ({...f, _logoPct:pct})));
+                          if (data.url) setForm(f => ({...f, logo: data.url, _logoPct:0}));
+                          else setForm(f => ({...f, logo:""}));
+                        } catch { setForm(f => ({...f, logo:""})); }
                       }}/>
                       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 group-hover:text-[#C7E36B] mb-2 transition-colors">
                         <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
