@@ -1824,12 +1824,18 @@ function WorkshopsSection({ token }) {
             const fmtTime = dt ? dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : null;
             const fmtTimeRange = fmtTime ? (w.endTime ? `${fmtTime} - ${w.endTime}` : fmtTime) : null;
             const calLink = googleCalLink(w);
+            const _calcEnd = (scheduledAt, duration) => {
+              const start = new Date(scheduledAt).getTime();
+              const d = duration || ""; const n = parseInt(d);
+              const mins = !n ? 120 : (d.toLowerCase().includes("hour") || d.toLowerCase().includes("hr")) ? n*60 : n;
+              return start + mins*60000;
+            };
+            const isExpired = !!w.scheduledAt && Date.now() > _calcEnd(w.scheduledAt, w.duration);
             const statusBadge = isMock ? null : (() => {
               if (!w.isPublished) return null;
               if (!w.scheduledAt) return "Upcoming";
               const now = Date.now(), start = new Date(w.scheduledAt).getTime();
-              const dur = (() => { const d=w.duration||""; const n=parseInt(d); if(!n) return 120; if(d.toLowerCase().includes("hour")||d.toLowerCase().includes("hr")) return n*60; return n; })();
-              const end = start + dur*60000;
+              const end = _calcEnd(w.scheduledAt, w.duration);
               if (now < start) return "Upcoming";
               if (now >= start && now <= end) return "Live";
               return null;
@@ -1915,7 +1921,12 @@ function WorkshopsSection({ token }) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {w.zoomLink ? (
+                      {isExpired ? (
+                        <button disabled
+                          className="flex items-center gap-1 bg-gray-700 text-gray-500 font-black text-sm px-5 py-2.5 rounded-xl cursor-not-allowed whitespace-nowrap line-through">
+                          Workshop Ended
+                        </button>
+                      ) : w.zoomLink ? (
                         <a href={w.zoomLink} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
                           className="flex items-center gap-1 bg-[#C7E36B] text-black font-black text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition whitespace-nowrap">
                           Join Workshop →
