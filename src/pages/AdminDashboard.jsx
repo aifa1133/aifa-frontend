@@ -115,7 +115,10 @@ export default function AdminDashboard() {
       .then(r => r.json()).then(setProfile).catch(() => {});
   }, []);
 
-  const handleLogout = () => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
     localStorage.removeItem("aifa_admin_token");
     localStorage.removeItem("aifa_admin_user");
     navigate("/");
@@ -131,6 +134,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-[#0B0F10] text-white overflow-hidden">
+      {/* LOGOUT CONFIRM MODAL */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl p-7 w-80 shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+              <I name="logout" size={22} />
+            </div>
+            <h3 className="text-white font-bold text-lg mb-1">Logout?</h3>
+            <p className="text-gray-400 text-sm mb-6">Are you sure you want to logout?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/5 transition-all">Cancel</button>
+              <button onClick={confirmLogout} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-all">Yes, Logout</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* GLOBAL TOAST */}
       {globalToast && (
         <div className="fixed bottom-6 right-6 z-[9999] bg-[#1A1D1E] border border-[#C7E36B]/40 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 animate-fadeIn">
@@ -171,7 +190,7 @@ export default function AdminDashboard() {
             <p className="text-[10px] text-white font-semibold truncate">{name}</p>
             <p className="text-[9px] text-gray-500">Super Admin</p>
           </div>
-          <button onClick={e => { e.stopPropagation(); handleLogout(); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
+          <button onClick={e => { e.stopPropagation(); setShowLogoutConfirm(true); }} title="Logout" className="text-gray-500 hover:text-red-400 shrink-0"><I name="logout" size={12} /></button>
         </div>
       </aside>
 
@@ -254,7 +273,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="py-1">
                     <button onClick={()=>{ setShowProfileMenu(false); setPage("profile"); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"><I name="edit" size={13}/>Edit Profile</button>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
+                    <button onClick={() => { setShowProfileMenu(false); setShowLogoutConfirm(true); }} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"><I name="logout" size={13}/>Logout</button>
                   </div>
                 </div>
                 </>
