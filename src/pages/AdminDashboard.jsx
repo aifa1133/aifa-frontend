@@ -2726,7 +2726,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
         {addLessonModal !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
             onClick={() => setAddLessonModal(null)}>
-            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4"
+            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4 overflow-y-auto max-h-[90vh]"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-white">{addLessonModal.editIdx !== null ? "Edit Lesson" : "Add Lesson"}</p>
@@ -2742,7 +2742,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
                     <p className="text-[10px] text-[#C7E36B] animate-pulse">Uploading…</p>
                   </div>
                 ) : newLesson.thumbnail ? (
-                  <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2" style={{aspectRatio:"16/9"}}>
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 mb-2 h-[100px]">
                     <img src={newLesson.thumbnail} alt="thumbnail" className="w-full h-full object-cover"/>
                     <button onClick={()=>setNewLesson(l=>({...l,thumbnail:""}))} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-500/80 transition-all">✕ Remove</button>
                   </div>
