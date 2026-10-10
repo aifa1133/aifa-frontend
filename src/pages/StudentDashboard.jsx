@@ -3276,15 +3276,25 @@ function ProfileSection({ profile, token, onUpdated }) {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
+    setUploading(true); setAvatarErr(false);
     const fd = new FormData();
     fd.append("avatar", file);
     try {
       const res = await fetch("/api/users/me/avatar", { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: fd });
       const data = await res.json();
-      if (res.ok) { onUpdated(data.user); }
-    } catch {}
+      if (res.ok && data.user) {
+        onUpdated(data.user);
+        try {
+          const stored = JSON.parse(localStorage.getItem("aifa_user") || "{}");
+          localStorage.setItem("aifa_user", JSON.stringify({ ...stored, profilePicture: data.user.profilePicture || "" }));
+          window.dispatchEvent(new Event("storage"));
+        } catch {}
+      } else {
+        setMsg(data.message || "Upload failed. Please try again.");
+      }
+    } catch { setMsg("Upload failed. Check your connection."); }
     setUploading(false);
+    e.target.value = "";
   };
 
   const handleSave = async () => {
@@ -4435,7 +4445,7 @@ function HireTalentSection({ token }) {
         <button onClick={() => scrollCats(-1)} className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <div ref={catScrollRef} className="flex gap-2 overflow-x-auto scrollbar-none flex-1">
+        <div ref={catScrollRef} className="flex gap-2 overflow-x-hidden flex-1">
           {HT_CATEGORIES.map(c => (
             <button
               key={c}
