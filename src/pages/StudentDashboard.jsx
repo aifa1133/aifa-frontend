@@ -3268,6 +3268,141 @@ function InvoiceView({ item, onBack, profile }) {
 }
 
 /* ════════════════════════════════════════════
+   AVATAR CROP MODAL
+════════════════════════════════════════════ */
+function AvatarCropModal({ src, onConfirm, onCancel }) {
+  const SIZE = 280;          // display crop circle diameter
+  const OUT  = 400;          // output canvas size
+
+  const [offset, setOffset]   = useState({ x: 0, y: 0 });
+  const [zoom, setZoom]       = useState(1);
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(null);
+  const canvasRef = useRef(null);
+  const imgRef    = useRef(new Image());
+
+  // Load image and center it
+  useEffect(() => {
+    const img = imgRef.current;
+    img.onload = () => {
+      const scale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
+      const w = img.naturalWidth  * scale;
+      const h = img.naturalHeight * scale;
+      setImgSize({ w, h });
+      setOffset({ x: (SIZE - w) / 2, y: (SIZE - h) / 2 });
+      setZoom(1);
+    };
+    img.src = src;
+  }, [src]);
+
+  // Clamp offset so image always covers the circle
+  const clamp = (ox, oy, z) => {
+    const w = imgSize.w * z, h = imgSize.h * z;
+    return {
+      x: Math.min(0, Math.max(SIZE - w, ox)),
+      y: Math.min(0, Math.max(SIZE - h, oy)),
+    };
+  };
+
+  // Draw preview on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !imgSize.w) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2); ctx.clip();
+    const w = imgSize.w * zoom, h = imgSize.h * zoom;
+    const c = clamp(offset.x, offset.y, zoom);
+    ctx.drawImage(imgRef.current, c.x, c.y, w, h);
+    ctx.restore();
+    // dim ring
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, SIZE, SIZE); ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2, true); ctx.closePath();
+    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fill();
+    ctx.restore();
+  }, [offset, zoom, imgSize]);
+
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    setDragging(true);
+    dragStart.current = { mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onMouseMove = (e) => {
+    if (!dragging || !dragStart.current) return;
+    const dx = e.clientX - dragStart.current.mx;
+    const dy = e.clientY - dragStart.current.my;
+    const clamped = clamp(dragStart.current.ox + dx, dragStart.current.oy + dy, zoom);
+    setOffset(clamped);
+  };
+  const onMouseUp = () => setDragging(false);
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    setDragging(true);
+    dragStart.current = { mx: t.clientX, my: t.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onTouchMove = (e) => {
+    if (!dragging || !dragStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - dragStart.current.mx;
+    const dy = t.clientY - dragStart.current.my;
+    const clamped = clamp(dragStart.current.ox + dx, dragStart.current.oy + dy, zoom);
+    setOffset(clamped);
+  };
+
+  const handleZoom = (e) => {
+    const z = parseFloat(e.target.value);
+    const c = clamp(offset.x, offset.y, z);
+    setZoom(z); setOffset(c);
+  };
+
+  const handleConfirm = () => {
+    const out = document.createElement("canvas");
+    out.width = out.height = OUT;
+    const ctx = out.getContext("2d");
+    ctx.beginPath(); ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2); ctx.clip();
+    const scale = OUT / SIZE;
+    const w = imgSize.w * zoom, h = imgSize.h * zoom;
+    const c = clamp(offset.x, offset.y, zoom);
+    ctx.drawImage(imgRef.current, c.x * scale, c.y * scale, w * scale, h * scale);
+    out.toBlob(blob => onConfirm(blob), "image/jpeg", 0.9);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl flex flex-col items-center gap-5">
+        <div className="text-center">
+          <h3 className="text-white font-bold text-base">Position Your Photo</h3>
+          <p className="text-gray-400 text-xs mt-1">Drag to reposition · Scroll slider to zoom</p>
+        </div>
+
+        {/* Canvas crop area */}
+        <div className="relative rounded-full overflow-hidden" style={{ width: SIZE, height: SIZE, cursor: dragging ? "grabbing" : "grab" }}
+          onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+          onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => setDragging(false)}>
+          <canvas ref={canvasRef} width={SIZE} height={SIZE} style={{ display: "block", borderRadius: "50%" }} />
+        </div>
+
+        {/* Zoom slider */}
+        <div className="w-full flex items-center gap-3">
+          <span className="text-gray-500 text-xs">−</span>
+          <input type="range" min="1" max="3" step="0.01" value={zoom} onChange={handleZoom}
+            className="flex-1 accent-[#C7E36B]" />
+          <span className="text-gray-500 text-xs">+</span>
+        </div>
+
+        <div className="flex gap-3 w-full">
+          <button onClick={onCancel} className="flex-1 border border-white/10 text-gray-300 text-sm font-semibold py-2.5 rounded-xl hover:bg-white/5 transition-all">Cancel</button>
+          <button onClick={handleConfirm} className="flex-1 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl hover:bg-lime-300 transition-all">Apply</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════
    PROFILE SECTION
 ════════════════════════════════════════════ */
 function ProfileSection({ profile, token, onUpdated }) {
@@ -3281,15 +3416,23 @@ function ProfileSection({ profile, token, onUpdated }) {
   const [msg, setMsg]               = useState("");
   const [uploading, setUploading]   = useState(false);
   const [avatarErr, setAvatarErr]   = useState(false);
+  const [cropSrc, setCropSrc]       = useState(null);
   const fileRef = useRef(null);
 
-
-  const handleAvatarChange = async (e) => {
+  const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setCropSrc(ev.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const uploadCroppedBlob = async (blob) => {
+    setCropSrc(null);
     setUploading(true); setAvatarErr(false);
     const fd = new FormData();
-    fd.append("avatar", file);
+    fd.append("avatar", blob, "avatar.jpg");
     try {
       const res = await fetch("/api/users/me/avatar", { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: fd });
       const data = await res.json();
@@ -3305,7 +3448,6 @@ function ProfileSection({ profile, token, onUpdated }) {
       }
     } catch { setMsg("Upload failed. Check your connection."); }
     setUploading(false);
-    e.target.value = "";
   };
 
   const handleSave = async () => {
@@ -3331,6 +3473,13 @@ function ProfileSection({ profile, token, onUpdated }) {
 
   return (
     <div className="p-6 bg-[#0B0F10] min-h-full text-white">
+      {cropSrc && (
+        <AvatarCropModal
+          src={cropSrc}
+          onConfirm={uploadCroppedBlob}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
 
       {/* Personal Info Card */}
       <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6 mb-6">

@@ -3481,6 +3481,7 @@ function ResourcesAdmin({ token }) {
   const [catFilter, setCatFilter]         = useState("All");
   const [subCatFilter, setSubCatFilter]   = useState("All");
   const [copiedId, setCopiedId]           = useState(null);
+  const [editId, setEditId]               = useState(null);
 
   const load = (type) => {
     setLoading(true); setResources([]);
@@ -3492,9 +3493,40 @@ function ResourcesAdmin({ token }) {
 
   const openAddForm = () => {
     setResType(tab);
+    setEditId(null);
     setForm({ title:"", category:"", subCategory:"", description:"", thumbnail:"", content:"", allowCopy:true, isFeatured:false, discount:"", link:"", logo:"" });
     setSteps([{ title:"", description:"" }]);
     setTools([]);
+    setMsg("");
+    setShowForm(true);
+  };
+
+  const openEditForm = (r) => {
+    setResType(r.type || tab);
+    setEditId(r._id);
+    setForm({
+      title:       r.title       || "",
+      category:    r.category    || "",
+      subCategory: r.subCategory || "",
+      description: r.description || "",
+      thumbnail:   r.thumbnail   || "",
+      content:     r.content     || "",
+      allowCopy:   r.allowCopy   !== false,
+      isFeatured:  r.isFeatured  || false,
+      discount:    r.discount    || "",
+      link:        r.link        || "",
+      logo:        r.logo        || "",
+      couponCode:  r.couponCode  || "",
+      expiry:      r.expiry      || "",
+      ctaText:     r.ctaText     || "",
+      status:      r.status      || "Draft",
+    });
+    if (r.type === "workflow" && r.content) {
+      try { setSteps(JSON.parse(r.content)); } catch { setSteps([{ title:"", description:"" }]); }
+    } else {
+      setSteps([{ title:"", description:"" }]);
+    }
+    setTools(r.tools || []);
     setMsg("");
     setShowForm(true);
   };
@@ -3504,13 +3536,15 @@ function ResourcesAdmin({ token }) {
     const payload = { ...form, type: resType };
     if (resType === "workflow") payload.content = JSON.stringify(steps);
     try {
-      const res = await fetch("/api/resources", {
-        method: "POST",
+      const url    = editId ? `/api/resources/${editId}` : "/api/resources";
+      const method = editId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (res.ok) { setMsg("Saved!"); setShowForm(false); load(tab); globalShowToast("Resource saved!"); }
+      if (res.ok) { setMsg("Saved!"); setShowForm(false); setEditId(null); load(tab); globalShowToast(editId ? "Resource updated!" : "Resource saved!"); }
       else setMsg(data.message || "Failed.");
     } catch { setMsg("Network error."); }
     setSaving(false);
@@ -3533,7 +3567,9 @@ function ResourcesAdmin({ token }) {
   /* ── Split-panel add form (Figma redesign) ── */
   if (showForm) {
     const lt = resType;
-    const pageTitle = lt === "workflow" ? "Create Workflow" : lt === "prompt" ? "Create Prompt" : lt === "tip" ? "Add New Learning Tip" : lt === "project" ? "Create Project" : lt === "deal" ? "Add New AI Deal" : "Create Resource";
+    const pageTitle = editId
+      ? (lt === "workflow" ? "Edit Workflow" : lt === "prompt" ? "Edit Prompt" : lt === "tip" ? "Edit Learning Tip" : lt === "project" ? "Edit Project" : lt === "deal" ? "Edit Deal" : "Edit Resource")
+      : (lt === "workflow" ? "Create Workflow" : lt === "prompt" ? "Create Prompt" : lt === "tip" ? "Add New Learning Tip" : lt === "project" ? "Create Project" : lt === "deal" ? "Add New AI Deal" : "Create Resource");
     const uploadThumb = async (file) => {
       if (!file) return;
       setForm(f => ({...f, thumbnail: "uploading", _thumbPct: 0}));
@@ -3549,7 +3585,7 @@ function ResourcesAdmin({ token }) {
         {/* ── Top bar ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-4">
-            <button onClick={() => setShowForm(false)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+            <button onClick={() => { setShowForm(false); setEditId(null); }} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               Back to Resources
             </button>
@@ -3561,7 +3597,7 @@ function ResourcesAdmin({ token }) {
               Save as Draft
             </button>
             <button onClick={handleSave} disabled={saving} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-60 transition-colors">
-              {saving ? "Publishing..." : "Publish Resource"}
+              {saving ? (editId ? "Saving…" : "Publishing...") : (editId ? "Save Changes" : "Publish Resource")}
             </button>
           </div>
         </div>
@@ -4209,7 +4245,10 @@ function ResourcesAdmin({ token }) {
                 <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-lg mt-3 hover:bg-lime-300 transition-colors">Get Deal</button>
                 <p className="text-[10px] text-gray-400 text-center mt-1.5">Redirects to official site</p>
               </div>
-              <button onClick={() => handleDelete(r._id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all"><I name="trash" size={12}/></button>
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                <button onClick={() => openEditForm(r)} className="bg-white/80 text-black rounded-full w-6 h-6 flex items-center justify-center hover:bg-white"><I name="edit" size={11}/></button>
+                <button onClick={() => handleDelete(r._id)} className="bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-500"><I name="trash" size={11}/></button>
+              </div>
             </div>
           ))}
         </div>
@@ -4227,10 +4266,10 @@ function ResourcesAdmin({ token }) {
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                       </div>
                   }
-                  <button onClick={() => handleDelete(r._id)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center transition-all">
-                    <I name="trash" size={13}/>
-                  </button>
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                    <button onClick={() => openEditForm(r)} className="bg-white/80 text-black rounded-lg w-7 h-7 flex items-center justify-center hover:bg-white"><I name="edit" size={12}/></button>
+                    <button onClick={() => handleDelete(r._id)} className="bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center"><I name="trash" size={12}/></button>
+                  </div>
                 </div>
                 <button className="w-full bg-[#C7E36B] text-black text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-lime-300 transition-colors">
                   Watch Now! <span>→</span>
@@ -4245,10 +4284,10 @@ function ResourcesAdmin({ token }) {
                     ? <img src={r.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
                     : <div className="w-full h-full" style={{background:"linear-gradient(135deg,#1a1d2e 0%,#2d1f3d 40%,#1a2d2e 100%)"}}/>
                   }
-                  <button onClick={() => handleDelete(r._id)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center transition-all">
-                    <I name="trash" size={13}/>
-                  </button>
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                    <button onClick={() => openEditForm(r)} className="bg-white/80 text-black rounded-lg w-7 h-7 flex items-center justify-center hover:bg-white"><I name="edit" size={12}/></button>
+                    <button onClick={() => handleDelete(r._id)} className="bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center"><I name="trash" size={12}/></button>
+                  </div>
                   {r.isFeatured && (
                     <span className="absolute top-2 left-2 text-[9px] font-bold bg-[#C7E36B] text-black px-2 py-0.5 rounded-full">FEATURED</span>
                   )}
@@ -4272,10 +4311,10 @@ function ResourcesAdmin({ token }) {
                     ? <img src={r.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
                     : <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">No Image</div>
                   }
-                  <button onClick={() => handleDelete(r._id)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center transition-all">
-                    <I name="trash" size={13}/>
-                  </button>
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                    <button onClick={() => openEditForm(r)} className="bg-white/80 text-black rounded-lg w-7 h-7 flex items-center justify-center hover:bg-white"><I name="edit" size={12}/></button>
+                    <button onClick={() => handleDelete(r._id)} className="bg-black/60 hover:bg-red-500/80 text-white rounded-lg w-7 h-7 flex items-center justify-center"><I name="trash" size={12}/></button>
+                  </div>
                   {r.isFeatured && (
                     <span className="absolute top-2 left-2 text-[9px] font-bold bg-[#C7E36B] text-black px-2 py-0.5 rounded-full">FEATURED</span>
                   )}
