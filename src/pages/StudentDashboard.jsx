@@ -904,21 +904,27 @@ function timeAgo(dateStr) {
 
 function triggerDownload(url, filename) {
   if (!url) return;
-  // Cloudinary: add fl_attachment to force browser download instead of inline view
   if (url.includes("cloudinary.com")) {
+    // fl_attachment makes Cloudinary send Content-Disposition: attachment
     const dlUrl = url.replace("/upload/", "/upload/fl_attachment/");
     const a = document.createElement("a");
-    a.href = dlUrl; a.download = filename || "download"; a.target = "_blank";
+    a.href = dlUrl; a.download = filename || "download";
+    // No target="_blank" — it overrides the download attribute in some browsers
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     return;
   }
-  // Other origins: fetch as blob
-  fetch(url).then(r => r.blob()).then(blob => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = filename || "download";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-  }).catch(() => window.open(url, "_blank"));
+  // Same-origin relative paths: fetch as blob for clean download
+  if (url.startsWith("/") || url.startsWith(window.location.origin)) {
+    fetch(url).then(r => r.blob()).then(blob => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = filename || "download";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }).catch(() => window.open(url, "_blank"));
+    return;
+  }
+  // Cross-origin non-Cloudinary: just open in new tab
+  window.open(url, "_blank");
 }
 
 function BootcampSection({ token, profile }) {
@@ -1592,16 +1598,23 @@ function BootcampSection({ token, profile }) {
               {activeSession?.resources?.length > 0 ? (
                 <div className="space-y-2">
                   {activeSession.resources.map((r,i) => {
-                    const f = r.name || r;
-                    const isZip = typeof f==="string" && f.toLowerCase().endsWith(".zip");
+                    const name = (typeof r === "string" ? r : r.name) || "File";
+                    const url = (typeof r === "object" ? (r.fileUrl || r.url || r.link || "") : "");
+                    const ext = name.split(".").pop()?.toLowerCase();
+                    const isZip = ext === "zip"; const isPng = ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "gif" || ext === "webp";
+                    const isLink = !url.includes("/upload") && (url.startsWith("http") && !url.includes("cloudinary"));
+                    const fileLabel = isZip ? "ZIP Archive" : isPng ? "Image File" : ext === "pdf" ? "PDF Document" : ext ? ext.toUpperCase() + " File" : "Document";
+                    const iconColor = isZip ? "text-blue-400" : isPng ? "text-green-400" : "text-red-400";
+                    const bgColor = isZip ? "bg-blue-500/20" : isPng ? "bg-green-500/20" : "bg-red-500/20";
                     return (
-                      <div key={i} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:border-white/25 transition-all" onClick={() => r.fileUrl ? triggerDownload(r.fileUrl, r.name || r) : null}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isZip ? "bg-blue-500/20" : "bg-red-500/20"}`}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={isZip ? "text-blue-400" : "text-red-400"}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                      <div key={i} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 cursor-pointer hover:border-white/25 transition-all"
+                        onClick={() => url ? (isLink ? window.open(url,"_blank") : triggerDownload(url, name)) : null}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${bgColor}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={iconColor}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">{f}</p>
-                          <p className="text-[10px] text-white/40">{isZip ? "ZIP Archive" : "PDF Document"}</p>
+                          <p className="text-sm font-semibold text-white truncate">{name}</p>
+                          <p className="text-[10px] text-white/40">{fileLabel}</p>
                         </div>
                         <Ic name="download" size={14} className="text-white/40 shrink-0"/>
                       </div>
