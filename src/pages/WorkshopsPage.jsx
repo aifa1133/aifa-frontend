@@ -222,33 +222,33 @@ export default function WorkshopsPage() {
 
                       {/* INFO BOXES */}
                       {isReserved ? (
-                        <div className="flex gap-3">
-                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{item.duration || "—"}</p>
                           </div>
-                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
+                          <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">SEAT CONFIRMED</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[11px] sm:text-[14px] font-bold uppercase truncate w-full">SEAT CONFIRMED</p>
                           </div>
-                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
+                          <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⌨ Mode</p>
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{item.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex gap-3">
-                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⏱ Duration</p>
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold uppercase">{item.duration || "—"}</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{item.duration || "—"}</p>
                           </div>
-                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
+                          <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[14px] font-bold">{priceStr}</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[13px] sm:text-[14px] font-bold truncate w-full">{priceStr}</p>
                           </div>
-                          <div className="flex flex-col items-start flex-1 gap-[4px] px-5 py-3 bg-[#DCDCDC] rounded-[8px]">
+                          <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">📅 Date & Time</p>
-                            <p className="text-[#2B2D30] font-[Montserrat] text-[12px] font-bold leading-tight">{dateBoxStr}</p>
+                            <p className="text-[#2B2D30] font-[Montserrat] text-[11px] sm:text-[12px] font-bold leading-tight">{dateBoxStr}</p>
                           </div>
                         </div>
                       )}
