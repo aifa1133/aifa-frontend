@@ -23,9 +23,9 @@ function SeatsCounter({ seed = 0 }) {
     // stagger start so cards don't all tick together
     const delay = setTimeout(() => {
       tick();
-      const id = setInterval(tick, 3000 + seed * 700);
+      const id = setInterval(tick, 12000 + seed * 3000);
       return () => clearInterval(id);
-    }, seed * 1100);
+    }, seed * 4000);
     return () => clearTimeout(delay);
   }, []);
 

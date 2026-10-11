@@ -20,9 +20,9 @@ function SeatsCounter({ seed = 0 }: { seed?: number }) {
     };
     const delay = setTimeout(() => {
       tick();
-      const id = setInterval(tick, 3000 + seed * 700);
+      const id = setInterval(tick, 12000 + seed * 3000);
       return () => clearInterval(id);
-    }, seed * 1100 + 500);
+    }, seed * 4000 + 500);
     return () => clearTimeout(delay);
   }, []);
 
