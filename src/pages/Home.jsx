@@ -41,10 +41,10 @@ export default function Home() {
         <CourseCard />
       </section>
 
-      {/* COURSES */}
-      <section className="w-full">
+      {/* COURSES — hidden */}
+      {/* <section className="w-full">
         <Courses />
-      </section>
+      </section> */}
 
       {/* TOOLS */}
       <section className="w-full">
