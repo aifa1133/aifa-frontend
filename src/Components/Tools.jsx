@@ -1,513 +1,170 @@
-// "use client";
-
-// const tools = [
-//   "/Tools/newicon1.svg",
-//   "/Tools/newicon2.png",
-//   "/Tools/newicon3.svg",
-//   "/Tools/newicon4.png",
-//   "/Tools/newicon5.png",
-//   "/Tools/newicon6.png",
-//   "/Tools/newicon7.svg",
-//   "/Tools/newicon8.png",
-//   "/Tools/newicon9.png",
-//   "/Tools/newicon7.svg",
-//   "/Tools/newicon8.png",
-//   "/Tools/newicon9.png",
-// ];
-
-// export default function Tools() {
-//   return (
-//     <section className="w-full bg-[#0B0F10] py-4 relative overflow-hidden">
-//       {/* SIDE FADE (LEFT + RIGHT) */}
-//       <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-[#0B0F10] to-transparent z-10"></div>
-//       <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-[#0B0F10] to-transparent z-10"></div>
-
-//       <div className="max-w-6xl mx-auto px-6 text-center relative z-20">
-//         {/* TITLE */}
-//         <h2 className="text-white text-3xl md:text-4xl font-semibold mb-14">
-//           Tools we will use
-//         </h2>
-
-//         {/* GRID */}
-//         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-6">
-//           {tools.map((tool, i) => (
-//             <div
-//               key={i}
-//               className="
-//                 flex items-center justify-center
-//                 h-24 md:h-28
-//                 rounded-2xl
-//                 bg-[#2f2f2f]
-//                 transition duration-300
-//               "
-//             >
-//               <img
-//                 src={tool}
-//                 alt="tool"
-//                 className="h-10 md:h-12 object-contain opacity-80"
-//               />
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </section>
-//   );
-// }
-
-// "use client";
-
-// import { motion } from "framer-motion";
-
-// const tools = [
-//   "/Tools/newicon1.svg",
-//   "/Tools/newicon2.png",
-//   "/Tools/newicon3.svg",
-//   "/Tools/newicon4.png",
-//   "/Tools/newicon5.png",
-//   "/Tools/newicon6.png",
-//   "/Tools/newicon7.svg",
-//   "/Tools/newicon8.png",
-//   "/Tools/newicon9.png",
-//   "/Tools/newicon9.png",
-// ];
-
-// export default function Tools() {
-//   return (
-//     <section
-//       className="
-//         w-full
-//         bg-[#0F1112]
-//         flex
-//         justify-center
-//         items-center
-//         relative
-//         overflow-hidden
-
-//         px-[16px]
-//         sm:px-[40px]
-//         md:px-[60px]
-//         lg:px-[93px]
-
-//         py-[40px]
-//         sm:py-[64px]
-//       "
-//     >
-//       {/* LEFT SHADOW */}
-//       <div
-//         className="
-//     absolute
-//     left-0
-//     top-0
-//     h-full
-//     w-[60px]
-// sm:w-[120px]
-//     z-40
-//     pointer-events-none
-//   "
-//         style={{
-//           background:
-//             "linear-gradient(to right, #0F1112 0%, rgba(15,17,18,0.98) 20%, rgba(15,17,18,0.92) 40%, rgba(15,17,18,0.75) 60%, rgba(15,17,18,0.4) 80%, transparent 100%)",
-//         }}
-//       />
-
-//       {/* RIGHT SHADOW */}
-//       <div
-//         className="
-//     absolute
-//     right-0
-//     top-0
-//     h-full
-//    w-[60px]
-// sm:w-[120px]
-//     z-40
-//     pointer-events-none
-//   "
-//         style={{
-//           background:
-//             "linear-gradient(to left, #0F1112 0%, rgba(15,17,18,0.98) 20%, rgba(15,17,18,0.92) 40%, rgba(15,17,18,0.75) 60%, rgba(15,17,18,0.4) 80%, transparent 100%)",
-//         }}
-//       />
-//       {/* MAIN CONTAINER */}
-//       <div
-//         className="
-//           w-full
-//           max-w-[1400px]
-
-//           flex
-//           flex-col
-//           justify-center
-//           items-center
-
-//           gap-[28px]
-//           sm:gap-[48px]
-
-//           relative
-//           z-20
-//         "
-//       >
-//         {/* HEADING */}
-//         <motion.h2
-//           initial={{ opacity: 0, y: 30 }}
-//           whileInView={{ opacity: 1, y: 0 }}
-//           transition={{ duration: 0.6 }}
-//           className="
-//             text-[#F0F0F0]
-//             text-center
-//             font-montserrat
-//             font-black
-
-//             text-[20px]
-//             leading-[28px]
-
-//             sm:text-[28px]
-//             sm:leading-[36px]
-
-//             md:text-[32px]
-//             md:leading-[40px]
-//           "
-//         >
-//           TOOLS WE WILL USE
-//         </motion.h2>
-
-//         {/* ROWS */}
-//         <div className="w-full flex flex-col gap-[20px] sm:gap-[32px] overflow-hidden">
-//           {[0, 1].map((row, rowIndex) => (
-//             <motion.div
-//               key={rowIndex}
-//               className="flex gap-[16px]"
-//               animate={{
-//                 x: rowIndex % 2 === 0 ? ["0%", "-50%"] : ["-50%", "0%"],
-//               }}
-//               transition={{
-//                 duration: window.innerWidth < 640 ? 16 : 22,
-//                 repeat: Infinity,
-//                 ease: "linear",
-//               }}
-//             >
-//               {[...tools, ...tools].map((tool, i) => (
-//                 <motion.div
-//                   key={i}
-//                   animate={{ y: [0, -4, 0] }}
-//                   transition={{
-//                     duration: 4 + (i % 2),
-//                     repeat: Infinity,
-//                     ease: "easeInOut",
-//                   }}
-//                   className="
-//             group
-
-//             flex
-//            w-[140px]
-// sm:w-[170px]
-
-// h-[120px]
-// sm:h-[140px]
-
-//             p-[20px]
-
-//             justify-center
-//             items-center
-
-//             gap-[10px]
-
-//             rounded-[15px]
-
-//             bg-[#303133]
-
-//             flex-shrink-0
-//             relative
-//             overflow-hidden
-
-//             transition-all
-//             duration-300
-
-//             hover:bg-[#3A3B3D]
-//             hover:scale-[1.03]
-//           "
-//                 >
-//                   {/* CENTER LIGHT EFFECT */}
-//                   <div
-//                     className="
-//               absolute
-//               inset-0
-
-//               bg-gradient-to-r
-//               from-transparent
-//               via-white/[0.05]
-//               to-transparent
-//             "
-//                   />
-
-//                   {/* HOVER GLOW */}
-//                   <div
-//                     className="
-//               absolute
-//               inset-0
-
-//               bg-white/5
-
-//               opacity-0
-//               group-hover:opacity-100
-
-//               transition-all
-//               duration-500
-//             "
-//                   />
-
-//                   {/* IMAGE BOX */}
-//                   <div
-//                     className="
-//     w-[100px]
-//     h-[100px]
-
-//     flex
-//     justify-center
-//     items-center
-
-//     flex-shrink-0
-//     aspect-square
-
-//     relative
-//     z-10
-//   "
-//                   >
-//                     <img
-//                       src={tool}
-//                       alt="tool"
-//                       className="
-//       w-[100px]
-//       h-[100px]
-
-//       object-cover
-
-//       mix-blend-luminosity
-
-//       opacity-95
-//       brightness-110
-
-//       transition-all
-//       duration-300
-
-//       group-hover:scale-110
-//       group-hover:brightness-125
-//     "
-//                     />
-//                   </div>
-//                 </motion.div>
-//               ))}
-//             </motion.div>
-//           ))}
-//         </div>
-//       </div>
-//     </section>
-//   );
-// }
-
 "use client";
 
 import { motion } from "framer-motion";
 
-const tools = [
-  "/Tools/newicon1.svg",
-  "/Tools/newicon2.png",
-  "/Tools/newicon3.svg",
-  "/Tools/newicon4.png",
-  "/Tools/newicon5.png",
-  "/Tools/newicon6.png",
+const BADGE_COLORS = {
+  "AI CHAT":   "bg-[#6366f1] text-white",
+  "VIDEO":     "bg-[#f59e0b] text-black",
+  "SEARCH":    "bg-[#10b981] text-white",
+  "IMAGE":     "bg-[#3b82f6] text-white",
+  "MUSIC":     "bg-[#22c55e] text-white",
+  "VOICE":     "bg-[#ec4899] text-white",
+  "3D / VIDEO":"bg-[#a855f7] text-white",
+  "CONTENT":   "bg-[#14b8a6] text-white",
+  "ENHANCE":   "bg-[#C7E36B] text-black",
+};
 
-  "/Tools/newicon7.svg",
-  "/Tools/newicon8.png",
-  "/Tools/newicon9.png",
-  "/Tools/newicon10.png",
-  "/Tools/newicon11.png",
-  "/Tools/newicon12.png",
+const tools = [
+  {
+    name: "ChatGPT",
+    badge: "AI CHAT",
+    desc: "Conversational AI assistant",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/openai.svg",
+    bg: "from-[#10a37f]/20 to-[#0d7a5f]/10",
+  },
+  {
+    name: "Runway",
+    badge: "VIDEO",
+    desc: "AI video editor & generator",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/runway.svg",
+    bg: "from-[#f59e0b]/20 to-[#b45309]/10",
+  },
+  {
+    name: "Perplexity",
+    badge: "SEARCH",
+    desc: "AI-powered search engine",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/perplexity.svg",
+    bg: "from-[#10b981]/20 to-[#047857]/10",
+  },
+  {
+    name: "Midjourney",
+    badge: "IMAGE",
+    desc: "AI image generation tool",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/midjourney.svg",
+    bg: "from-[#3b82f6]/20 to-[#1d4ed8]/10",
+  },
+  {
+    name: "Suno AI",
+    badge: "MUSIC",
+    desc: "AI music generation",
+    logo: null,
+    logoText: "SUNO",
+    bg: "from-[#8b5cf6]/20 to-[#6d28d9]/10",
+  },
+  {
+    name: "Gemini",
+    badge: "AI CHAT",
+    desc: "Google's multimodal AI",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/googlegemini.svg",
+    bg: "from-[#6366f1]/20 to-[#4338ca]/10",
+  },
+  {
+    name: "ElevenLabs",
+    badge: "VOICE",
+    desc: "AI voice & audio synthesis",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/elevenlabs.svg",
+    bg: "from-[#ec4899]/20 to-[#be185d]/10",
+  },
+  {
+    name: "Luma AI",
+    badge: "3D / VIDEO",
+    desc: "AI 3D & video generation",
+    logo: null,
+    logoText: "LUMA",
+    bg: "from-[#a855f7]/20 to-[#7e22ce]/10",
+  },
+  {
+    name: "Higgsfield",
+    badge: "VIDEO",
+    desc: "AI Video and content",
+    logo: null,
+    logoText: "HF",
+    bg: "from-[#f97316]/20 to-[#c2410c]/10",
+  },
+  {
+    name: "Claude",
+    badge: "AI CHAT",
+    desc: "Anthropic's conversational AI",
+    logo: "https://cdn.jsdelivr.net/npm/simple-icons@13/icons/anthropic.svg",
+    bg: "from-[#d97706]/20 to-[#92400e]/10",
+  },
+  {
+    name: "Merlin AI",
+    badge: "CONTENT",
+    desc: "AI browser copilot",
+    logo: null,
+    logoText: "M",
+    bg: "from-[#14b8a6]/20 to-[#0f766e]/10",
+  },
+  {
+    name: "Topaz Labs",
+    badge: "ENHANCE",
+    desc: "Video/photo enhancer",
+    logo: null,
+    logoText: "TL",
+    bg: "from-[#84cc16]/20 to-[#4d7c0f]/10",
+  },
 ];
 
 export default function Tools() {
   return (
-    <section
-      className="
-        w-full
-        bg-[#0F1112]
-        flex
-        justify-center
-        overflow-hidden
-
-        px-[16px]
-        sm:px-[40px]
-        md:px-[60px]
-        lg:px-[93px]
-
-        py-[40px]
-        sm:py-[64px]
-      "
-    >
-      <div
-        className="
-          w-full
-          max-w-[1400px]
-
-          flex
-          flex-col
-          items-center
-
-          gap-[32px]
-          sm:gap-[48px]
-        "
-      >
+    <section className="w-full bg-[#0B0F10] py-16 px-4 sm:px-8 lg:px-16">
+      <div className="max-w-7xl mx-auto">
         {/* HEADING */}
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="
-            text-[#F0F0F0]
-            text-center
-
-            font-montserrat
-            font-black
-
-            text-[20px]
-            leading-[28px]
-
-            sm:text-[28px]
-            sm:leading-[36px]
-
-            md:text-[32px]
-            md:leading-[40px]
-          "
+          className="text-white text-center font-black text-[22px] sm:text-[32px] md:text-[38px] mb-12 tracking-tight"
         >
           TOOLS WE WILL USE
         </motion.h2>
 
-        {/* TOOL GRID */}
-        {/* TOOLS ROWS */}
-       {/* TOOL GRID */}
-<div className="relative w-full overflow-hidden">
+        {/* GRID */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {tools.map((tool, i) => (
+            <motion.div
+              key={tool.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              className="group relative bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:scale-[1.02]"
+            >
+              {/* Card gradient bg */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${tool.bg} opacity-60`} />
 
-  {/* Left Shadow */}
-  <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#0F1112] via-[#0F1112] to-transparent z-20 pointer-events-none" />
-
-  {/* Right Shadow */}
-  <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#0F1112] via-[#0F1112] to-transparent z-20 pointer-events-none" />
-
-  {/* TOOLS ROWS */}
-  <div className="w-full flex flex-col gap-[20px] overflow-hidden">
-          {/* FIRST ROW */}
-          <motion.div
-            className="flex gap-[20px] w-max"
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            {[...tools.slice(0, 6), ...tools.slice(0, 6)].map((tool, i) => (
-              <div
-                key={i}
-                className="
-          w-[190px]
-          sm:w-[210px]
-
-          h-[140px]
-          sm:h-[160px]
-
-          flex
-          items-center
-          justify-center
-
-          bg-[#303133]
-          rounded-[15px]
-
-          flex-shrink-0
-          overflow-hidden
-
-          group
-        "
-              >
-                <img
-                  src={tool}
-                  alt="tool"
-                  className="
-            max-w-[100px]
-            max-h-[100px]
-
-            w-auto
-            h-auto
-
-            object-contain
-            mix-blend-luminosity
-
-            transition-all
-            duration-300
-
-            group-hover:scale-110
-          "
-                />
+              {/* Logo area */}
+              <div className="relative h-[140px] sm:h-[160px] flex items-center justify-center">
+                {tool.logo ? (
+                  <img
+                    src={tool.logo}
+                    alt={tool.name}
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain brightness-0 invert opacity-90 group-hover:scale-110 transition-transform duration-300"
+                    onError={e => { e.target.style.display = "none"; }}
+                  />
+                ) : (
+                  <span className="text-white font-black text-2xl sm:text-3xl tracking-widest opacity-90 group-hover:scale-110 transition-transform duration-300">
+                    {tool.logoText}
+                  </span>
+                )}
               </div>
-            ))}
-          </motion.div>
 
-          {/* SECOND ROW */}
-          <motion.div
-            className="flex gap-[20px] w-max"
-            animate={{ x: ["-50%", "0%"] }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            {[...tools.slice(6, 12), ...tools.slice(6, 12)].map((tool, i) => (
-              <div
-                key={i}
-                className="
-          w-[190px]
-          sm:w-[210px]
-
-          h-[140px]
-          sm:h-[160px]
-
-          flex
-          items-center
-          justify-center
-
-          bg-[#303133]
-          rounded-[15px]
-
-          flex-shrink-0
-          overflow-hidden
-
-          group
-        "
-              >
-                <img
-                  src={tool}
-                  alt="tool"
-                  className="
-            max-w-[100px]
-            max-h-[100px]
-
-            w-auto
-            h-auto
-
-            object-contain
-            mix-blend-luminosity
-
-            transition-all
-            duration-300
-
-            group-hover:scale-110
-          "
-                />
+              {/* Info area */}
+              <div className="relative px-4 pb-4">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="text-white font-bold text-sm sm:text-base truncate">{tool.name}</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${BADGE_COLORS[tool.badge] || "bg-white/10 text-white"}`}>
+                    {tool.badge}
+                  </span>
+                </div>
+                <p className="text-gray-400 text-xs leading-snug">{tool.desc}</p>
               </div>
-            ))}
-          </motion.div>
-              </div> {/* End Tool Rows */}
-      </div> {/* End Relative Wrapper */}
-    </div>
-  </section>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
