@@ -67,10 +67,11 @@ const NAV_ITEMS = [
   { id: "hire-talent",        label: "Hire Requests",     icon: "hire"      },
 ];
 const MGMT_ITEMS = [
-  { id: "users",       label: "Users",       icon: "users"      },
-  { id: "membership",  label: "Membership",  icon: "membership" },
-  { id: "enrolments",  label: "Enrolments",  icon: "enrolments" },
-  { id: "influencers", label: "Influencers", icon: "community"  },
+  { id: "users",              label: "Users",               icon: "users"      },
+  { id: "membership",         label: "Membership",          icon: "membership" },
+  { id: "enrolments",         label: "Enrolments",          icon: "enrolments" },
+  { id: "influencers",        label: "Influencers",         icon: "community"  },
+  { id: "website-management", label: "Website Management",  icon: "settings"   },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -304,6 +305,7 @@ export default function AdminDashboard() {
           {activePage === "influencers"        && <AdminInfluencers token={token} />}
           {activePage === "prompt-library"     && <PromptsAdmin token={token} />}
           {activePage === "analytics"          && <AnalyticsAdmin token={token} />}
+          {activePage === "website-management" && <WebsiteManagementAdmin token={token} />}
         </main>
       </div>
     </div>
@@ -11065,6 +11067,173 @@ function PromptsAdmin({ token }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── WEBSITE MANAGEMENT ADMIN ── */
+const BADGE_OPTIONS = ["AI CHAT","VIDEO","SEARCH","IMAGE","MUSIC","VOICE","3D / VIDEO","CONTENT","ENHANCE"];
+const EMPTY_TOOL = { name:"", badge:"AI CHAT", desc:"", logoUrl:"", logoText:"", bgColor:"from-[#6366f1]/20 to-[#4338ca]/10", isActive:true };
+
+function WebsiteManagementAdmin({ token }) {
+  const [tools, setTools]       = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [form, setForm]         = useState(EMPTY_TOOL);
+  const [editId, setEditId]     = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [msg, setMsg]           = useState(null);
+
+  const load = () => {
+    setLoading(true);
+    fetch("/api/tools", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { setTools(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const openNew  = () => { setForm(EMPTY_TOOL); setEditId(null); setShowForm(true); setMsg(null); };
+  const openEdit = (t) => { setForm({ name:t.name, badge:t.badge, desc:t.desc, logoUrl:t.logoUrl||"", logoText:t.logoText||"", bgColor:t.bgColor||"", isActive:t.isActive }); setEditId(t._id); setShowForm(true); setMsg(null); };
+
+  const save = async () => {
+    if (!form.name.trim()) { setMsg({ ok:false, text:"Tool name is required." }); return; }
+    setSaving(true);
+    try {
+      const url    = editId ? `/api/tools/${editId}` : "/api/tools";
+      const method = editId ? "PUT" : "POST";
+      const res = await fetch(url, { method, headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body: JSON.stringify(form) });
+      const data = await res.json();
+      if (res.ok) { setMsg({ ok:true, text: editId ? "Tool updated!" : "Tool added!" }); load(); setTimeout(() => { setShowForm(false); setMsg(null); }, 1200); }
+      else setMsg({ ok:false, text: data.message || "Failed to save." });
+    } catch { setMsg({ ok:false, text:"Network error." }); }
+    setSaving(false);
+  };
+
+  const toggleActive = async (t) => {
+    await fetch(`/api/tools/${t._id}`, { method:"PUT", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body: JSON.stringify({ isActive: !t.isActive }) });
+    load();
+  };
+
+  const deleteTool = async (id) => {
+    if (!window.confirm("Delete this tool?")) return;
+    await fetch(`/api/tools/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    load();
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Website Management</h1>
+          <p className="text-sm text-gray-400 mt-1">Manage homepage sections and content.</p>
+        </div>
+      </div>
+
+      {/* Tools Section */}
+      <div className="bg-[#111315] border border-white/10 rounded-2xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-white font-bold text-base">Tools We Will Use</h2>
+            <p className="text-gray-400 text-xs mt-0.5">Manage tools displayed on the homepage. Changes go live immediately.</p>
+          </div>
+          <button onClick={openNew} className="flex items-center gap-1.5 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-lime-300 transition-all">
+            <I name="plus" size={13}/> Add Tool
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="text-gray-500 text-sm text-center py-8">Loading…</p>
+        ) : tools.length === 0 ? (
+          <div className="border-2 border-dashed border-white/10 rounded-xl py-10 text-center">
+            <p className="text-gray-500 text-sm">No tools added yet. Click "Add Tool" to get started.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {tools.map(t => (
+              <div key={t._id} className={`flex items-center gap-3 bg-[#0B0F10] border rounded-xl p-3 transition-all ${t.isActive ? "border-white/10" : "border-white/5 opacity-50"}`}>
+                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0 overflow-hidden">
+                  {t.logoUrl ? (
+                    <img src={t.logoUrl} alt={t.name} className="w-6 h-6 object-contain brightness-0 invert opacity-80" onError={e=>e.target.style.display="none"} />
+                  ) : (
+                    <span className="text-white font-black text-[10px]">{t.logoText || t.name[0]}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-white text-xs font-bold truncate">{t.name}</p>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/10 text-gray-300 whitespace-nowrap">{t.badge}</span>
+                  </div>
+                  <p className="text-gray-500 text-[10px] truncate mt-0.5">{t.desc}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => toggleActive(t)} title={t.isActive ? "Hide" : "Show"} className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all ${t.isActive ? "bg-green-500/15 text-green-400 hover:bg-red-500/15 hover:text-red-400" : "bg-white/5 text-gray-600 hover:bg-green-500/15 hover:text-green-400"}`}>
+                    {t.isActive ? "●" : "○"}
+                  </button>
+                  <button onClick={() => openEdit(t)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
+                    <I name="edit" size={11} className="text-gray-400" />
+                  </button>
+                  <button onClick={() => deleteTool(t._id)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center hover:bg-red-500/15 transition-all">
+                    <I name="trash" size={11} className="text-gray-400 hover:text-red-400" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add / Edit Form */}
+      {showForm && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1A1D1E] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h3 className="text-white font-bold text-base mb-4">{editId ? "Edit Tool" : "Add Tool"}</h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Tool Name *</label>
+                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="e.g. ChatGPT"
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Category Badge</label>
+                <select value={form.badge} onChange={e=>setForm(f=>({...f,badge:e.target.value}))}
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50">
+                  {BADGE_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Description</label>
+                <input value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="e.g. Conversational AI assistant"
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Logo URL <span className="text-gray-600 normal-case">(SVG/PNG link)</span></label>
+                <input value={form.logoUrl} onChange={e=>setForm(f=>({...f,logoUrl:e.target.value}))} placeholder="https://cdn.../openai.svg"
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Logo Text <span className="text-gray-600 normal-case">(if no URL — e.g. "SUNO")</span></label>
+                <input value={form.logoText} onChange={e=>setForm(f=>({...f,logoText:e.target.value}))} placeholder="e.g. SUNO"
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.isActive} onChange={e=>setForm(f=>({...f,isActive:e.target.checked}))} className="w-4 h-4 rounded" />
+                <span className="text-sm text-gray-300">Show on homepage</span>
+              </label>
+            </div>
+
+            {msg && <p className={`text-xs font-semibold mt-3 ${msg.ok?"text-[#C7E36B]":"text-red-400"}`}>{msg.text}</p>}
+
+            <div className="flex gap-3 mt-5">
+              <button onClick={()=>setShowForm(false)} className="flex-1 border border-white/10 text-gray-300 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all">Cancel</button>
+              <button onClick={save} disabled={saving} className="flex-1 bg-[#C7E36B] text-black text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-60">
+                {saving ? "Saving…" : (editId ? "Save Changes" : "Add Tool")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
