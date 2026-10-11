@@ -11078,13 +11078,16 @@ const BADGE_OPTIONS = ["AI CHAT","VIDEO","SEARCH","IMAGE","MUSIC","VOICE","3D / 
 const EMPTY_TOOL = { name:"", badge:"AI CHAT", desc:"", logoUrl:"", logoText:"", bgColor:"from-[#6366f1]/20 to-[#4338ca]/10", isActive:true };
 
 function WebsiteManagementAdmin({ token }) {
-  const [tools, setTools]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [form, setForm]         = useState(EMPTY_TOOL);
-  const [editId, setEditId]     = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [msg, setMsg]           = useState(null);
+  const [tools, setTools]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [form, setForm]           = useState(EMPTY_TOOL);
+  const [editId, setEditId]       = useState(null);
+  const [showForm, setShowForm]   = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [msg, setMsg]             = useState(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploadPct, setLogoUploadPct] = useState(0);
+  const logoFileRef = useRef(null);
 
   const load = () => {
     setLoading(true);
@@ -11121,6 +11124,17 @@ function WebsiteManagementAdmin({ token }) {
     if (!window.confirm("Delete this tool?")) return;
     await fetch(`/api/tools/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
     load();
+  };
+
+  const uploadLogo = async (file) => {
+    if (!file) return;
+    setLogoUploading(true); setLogoUploadPct(0);
+    const fd = new FormData(); fd.append("image", file);
+    try {
+      const d = await uploadXHR("/api/uploads/image", fd, token, pct => setLogoUploadPct(pct));
+      setForm(f => ({ ...f, logoUrl: d.url || "" }));
+    } catch { setMsg({ ok:false, text:"Image upload failed." }); }
+    setLogoUploading(false);
   };
 
   return (
@@ -11210,9 +11224,27 @@ function WebsiteManagementAdmin({ token }) {
                   className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
               </div>
               <div>
-                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Logo URL <span className="text-gray-600 normal-case">(SVG/PNG link)</span></label>
-                <input value={form.logoUrl} onChange={e=>setForm(f=>({...f,logoUrl:e.target.value}))} placeholder="https://cdn.../openai.svg"
-                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
+                <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Logo Image / URL <span className="text-gray-600 normal-case">(upload or paste SVG/PNG link)</span></label>
+                <div className="flex gap-2 items-stretch">
+                  <input value={form.logoUrl} onChange={e=>setForm(f=>({...f,logoUrl:e.target.value}))} placeholder="https://cdn.../openai.svg"
+                    className="flex-1 bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50" />
+                  <button type="button" onClick={() => logoFileRef.current?.click()} disabled={logoUploading}
+                    className="shrink-0 flex items-center gap-1.5 bg-white/8 border border-white/10 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-white/15 transition-all disabled:opacity-50 whitespace-nowrap">
+                    {logoUploading ? `${logoUploadPct}%` : <><I name="upload" size={12}/> Upload</>}
+                  </button>
+                  <input ref={logoFileRef} type="file" accept="image/*,image/svg+xml"
+                    className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden"
+                    onChange={e => uploadLogo(e.target.files?.[0])} />
+                </div>
+                {form.logoUrl && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                      <img src={form.logoUrl} alt="preview" className="w-5 h-5 object-contain brightness-0 invert opacity-80" onError={e=>e.target.style.display="none"} />
+                    </div>
+                    <span className="text-gray-500 text-[10px] truncate flex-1">{form.logoUrl}</span>
+                    <button type="button" onClick={() => setForm(f=>({...f,logoUrl:""}))} className="text-red-400 text-[10px] hover:text-red-300">✕</button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-[11px] text-gray-400 font-semibold uppercase block mb-1">Logo Text <span className="text-gray-600 normal-case">(if no URL — e.g. "SUNO")</span></label>

@@ -1,9 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import BootcampCardMobile from "./BootcampCardMobile";
+
+function SeatsCounter({ seed = 0 }) {
+  const base = [7, 6, 5][seed % 3];
+  const [seats, setSeats] = useState(base);
+  const [flash, setFlash] = useState(false);
+  const seatsRef = useRef(base);
+
+  useEffect(() => {
+    const tick = () => {
+      setFlash(true);
+      setTimeout(() => {
+        seatsRef.current = seatsRef.current <= 4 ? (Math.floor(Math.random() * 3) + 5) : seatsRef.current - 1;
+        setSeats(seatsRef.current);
+        setFlash(false);
+      }, 350);
+    };
+    // stagger start so cards don't all tick together
+    const delay = setTimeout(() => {
+      tick();
+      const id = setInterval(tick, 3000 + seed * 700);
+      return () => clearInterval(id);
+    }, seed * 1100);
+    return () => clearTimeout(delay);
+  }, []);
+
+  return (
+    <div className={`flex items-center gap-1 bg-red-600 text-white text-[11px] sm:text-[12px] font-black px-2.5 py-1 rounded-full shadow-lg transition-all duration-300 whitespace-nowrap select-none ${flash ? "opacity-0 scale-90" : "opacity-100 scale-100"}`}>
+      🔥 Only {seats} seats left
+    </div>
+  );
+}
 
 const FALLBACK_IMAGES = ["/bootcamp/bootcamp1.png","/bootcamp/bootcamp2.png","/bootcamp/bootcamp3.png","/bootcamp/bootcamp4.png"];
 
@@ -82,10 +113,13 @@ export default function Bootcamps() {
                   {/* RIGHT CONTENT */}
                   <div className="flex flex-col gap-[6px]">
                     {/* TITLE */}
-                    <div className="flex flex-col justify-center items-start h-[80px] sm:h-[105px] px-[12px] py-[10px] bg-[#DCDCDC] rounded-tr-[20px]">
+                    <div className="relative flex flex-col justify-center items-start h-[80px] sm:h-[105px] px-[12px] py-[10px] bg-[#DCDCDC] rounded-tr-[20px]">
                       <h3 className="text-[#282A2C] font-montserrat font-bold text-[16px] sm:text-[24px] md:text-[36px] leading-tight">
                         {item.title}
                       </h3>
+                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                        <SeatsCounter seed={i} />
+                      </div>
                     </div>
 
                     {/* INFO BOXES */}
@@ -136,7 +170,7 @@ export default function Bootcamps() {
               </div>
 
               <div className="block sm:hidden">
-                <BootcampCardMobile item={item} onViewDetails={() => handleViewDetails(item)} onReserve={() => handleReserve(item)} />
+                <BootcampCardMobile item={item} onViewDetails={() => handleViewDetails(item)} onReserve={() => handleReserve(item)} seed={i} />
               </div>
             </motion.div>
           ))}

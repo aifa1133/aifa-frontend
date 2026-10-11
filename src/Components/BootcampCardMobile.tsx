@@ -1,6 +1,37 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+
+function SeatsCounter({ seed = 0 }: { seed?: number }) {
+  const base = [7, 6, 5][seed % 3];
+  const [seats, setSeats] = useState(base);
+  const [flash, setFlash] = useState(false);
+  const seatsRef = useRef(base);
+
+  useEffect(() => {
+    const tick = () => {
+      setFlash(true);
+      setTimeout(() => {
+        seatsRef.current = seatsRef.current <= 4 ? (Math.floor(Math.random() * 3) + 5) : seatsRef.current - 1;
+        setSeats(seatsRef.current);
+        setFlash(false);
+      }, 350);
+    };
+    const delay = setTimeout(() => {
+      tick();
+      const id = setInterval(tick, 3000 + seed * 700);
+      return () => clearInterval(id);
+    }, seed * 1100 + 500);
+    return () => clearTimeout(delay);
+  }, []);
+
+  return (
+    <div className={`flex items-center gap-1 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg transition-all duration-300 whitespace-nowrap select-none ${flash ? "opacity-0 scale-90" : "opacity-100 scale-100"}`}>
+      🔥 Only {seats} seats left
+    </div>
+  );
+}
 
 interface Props {
   item: {
@@ -13,12 +44,14 @@ interface Props {
   };
   onViewDetails?: () => void;
   onReserve?: () => void;
+  seed?: number;
 }
 
 export default function BootcampCardMobile({
   item,
   onViewDetails,
   onReserve,
+  seed = 0,
 }: Props) {
   const navigate = useNavigate();
 
@@ -40,10 +73,13 @@ export default function BootcampCardMobile({
       </div>
 
       {/* Title */}
-      <div className="mt-2 rounded-[8px] bg-[#D9D9D9] px-4 py-3">
-        <h3 className="text-[18px] font-bold text-[#1A1A1A]">
+      <div className="relative mt-2 rounded-[8px] bg-[#D9D9D9] px-4 py-3">
+        <h3 className="text-[18px] font-bold text-[#1A1A1A] pr-4">
           {item.title}
         </h3>
+        <div className="absolute top-2 right-2">
+          <SeatsCounter seed={seed} />
+        </div>
       </div>
 
       {/* Info */}
