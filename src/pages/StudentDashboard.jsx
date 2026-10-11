@@ -3986,10 +3986,10 @@ function ResourcesSection({ token }) {
         /* ── PROMPT LIBRARY ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((r) => (
-            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/18 transition-all">
-              <div className="h-[160px] overflow-hidden bg-white/5">
+            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/18 transition-all group">
+              <div className="aspect-[4/3] overflow-hidden bg-white/5 relative">
                 {img(r)
-                  ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover"/>
+                  ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
                   : <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1f23] to-[#0d1117]">
                       <div className="w-12 h-12 rounded-2xl bg-[#C7E36B]/10 flex items-center justify-center mb-2">
                         <svg width="24" height="24" fill="none" stroke="#C7E36B" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M9 12h6M9 16h6M7 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v0z"/></svg>
