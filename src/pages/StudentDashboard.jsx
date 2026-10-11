@@ -1538,13 +1538,25 @@ function BootcampSection({ token, profile }) {
                 // No recording URL
                 return (
                   <div className="w-full h-full flex items-center justify-center cursor-pointer group"
-                    onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else if(activeSession?.status==="COMPLETED") { setVideoMsg("Recording will be uploaded shortly. Check back soon."); setTimeout(()=>setVideoMsg(""),4000); } else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
+                    onClick={() => {
+                      const scheduledMs = activeSession?.scheduledAt ? new Date(activeSession.scheduledAt).getTime() : null;
+                      const isLive = activeSession?.status === "ACTIVE" || (scheduledMs && scheduledMs <= Date.now() && activeSession?.status !== "COMPLETED");
+                      if (isLive && bootcampData?.zoomLink) { window.open(bootcampData.zoomLink,"_blank"); }
+                      else if (activeSession?.status === "COMPLETED" || (scheduledMs && scheduledMs <= Date.now())) { setVideoMsg("Recording will be uploaded shortly. Check back soon."); setTimeout(()=>setVideoMsg(""),4000); }
+                      else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); }
+                    }}>
                     {activeSession?.thumbnail ? <img src={activeSession.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60"/> : null}
                     <div className="text-center relative z-10">
                       <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
                         <Ic name="play" size={28} className="text-white ml-1"/>
                       </div>
-                      {videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{activeSession?.status==="ACTIVE" && bootcampData?.zoomLink ? "Click to join live session" : activeSession?.status==="COMPLETED" ? "Recording will be uploaded shortly" : "Recording not yet available"}</p>}
+                      {(() => {
+                        const scheduledMs = activeSession?.scheduledAt ? new Date(activeSession.scheduledAt).getTime() : null;
+                        const isLive = activeSession?.status === "ACTIVE" || (scheduledMs && scheduledMs <= Date.now() && activeSession?.status !== "COMPLETED");
+                        const isPast = scheduledMs && scheduledMs <= Date.now();
+                        const label = isLive && bootcampData?.zoomLink ? "Click to join live session" : isPast || activeSession?.status === "COMPLETED" ? "Recording will be uploaded shortly" : "Recording not yet available";
+                        return videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{label}</p>;
+                      })()}
                     </div>
                   </div>
                 );
@@ -1555,7 +1567,20 @@ function BootcampSection({ token, profile }) {
               <h2 className="text-xl font-black text-white mb-2">{activeSession?.name}</h2>
               <div className="flex items-center gap-3 flex-wrap">
                 {activeSession?.scheduledAt && <span className="text-[11px] text-white/50">{new Date(activeSession.scheduledAt).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})} · {new Date(activeSession.scheduledAt).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true})}</span>}
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${activeSession?.status==="COMPLETED"?"bg-green-500/20 text-green-400":activeSession?.status==="ACTIVE"?"bg-blue-500/20 text-blue-400":"bg-gray-500/20 text-gray-400"}`}>{activeSession?.status}</span>
+                {(() => {
+                  const dbStatus = activeSession?.status || "";
+                  const scheduledMs = activeSession?.scheduledAt ? new Date(activeSession.scheduledAt).getTime() : null;
+                  let ds = dbStatus;
+                  if (ds !== "COMPLETED") {
+                    if (scheduledMs && scheduledMs <= Date.now()) ds = "LIVE";
+                    else if (scheduledMs && scheduledMs > Date.now()) ds = "UPCOMING";
+                  }
+                  const cls = ds === "COMPLETED" ? "bg-green-500/20 text-green-400" :
+                              ds === "LIVE" ? "bg-red-500/20 text-red-400 flex items-center gap-1" :
+                              ds === "UPCOMING" ? "bg-yellow-500/20 text-yellow-400" :
+                              "bg-gray-500/20 text-gray-400";
+                  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{ds === "LIVE" && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse inline-block"/>}{ds}</span>;
+                })()}
               </div>
             </div>
             {/* Lesson Attachments */}
