@@ -1538,13 +1538,13 @@ function BootcampSection({ token, profile }) {
                 // No recording URL
                 return (
                   <div className="w-full h-full flex items-center justify-center cursor-pointer group"
-                    onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
+                    onClick={() => { if(activeSession?.status==="ACTIVE" && bootcampData?.zoomLink) window.open(bootcampData.zoomLink,"_blank"); else if(activeSession?.status==="COMPLETED") { setVideoMsg("Recording will be uploaded shortly. Check back soon."); setTimeout(()=>setVideoMsg(""),4000); } else { setVideoMsg("Recording not yet available. Check back after the live class."); setTimeout(()=>setVideoMsg(""),4000); } }}>
                     {activeSession?.thumbnail ? <img src={activeSession.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60"/> : null}
                     <div className="text-center relative z-10">
                       <div className="w-16 h-16 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center mx-auto mb-3 transition-all">
                         <Ic name="play" size={28} className="text-white ml-1"/>
                       </div>
-                      {videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{activeSession?.status==="ACTIVE" && bootcampData?.zoomLink ? "Click to join live session" : "Recording not yet available"}</p>}
+                      {videoMsg ? <p className="text-xs text-yellow-400 max-w-[220px]">{videoMsg}</p> : <p className="text-xs text-white/40">{activeSession?.status==="ACTIVE" && bootcampData?.zoomLink ? "Click to join live session" : activeSession?.status==="COMPLETED" ? "Recording will be uploaded shortly" : "Recording not yet available"}</p>}
                     </div>
                   </div>
                 );
