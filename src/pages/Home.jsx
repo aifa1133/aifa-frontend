@@ -36,6 +36,11 @@ export default function Home() {
         <Companies />
       </section>
 
+      {/* BOOTCAMPS / WORKSHOPS */}
+      <section className="w-full">
+        <Bootcamps />
+      </section>
+
       {/* COURSE CARD */}
       <section className="w-full">
         <CourseCard />
@@ -49,11 +54,6 @@ export default function Home() {
       {/* TOOLS */}
       <section className="w-full">
         <Tools />
-      </section>
-
-      {/* BOOTCAMPS */}
-      <section className="w-full">
-        <Bootcamps />
       </section>
 
       {/* FEATURES */}
