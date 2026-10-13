@@ -444,10 +444,21 @@ function AdminOverview({ token, onNavigate }) {
 }
 
 /* ── PROJECTS TAB (extracted to avoid hook-inside-render issues) ── */
-function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setProjSaved, projFileRef, projects, setProjects, bootcampId, token }) {
+function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setProjSaved, projFileRef, projects, setProjects, bootcampId, token, enrolledCount, bootcampTitle, isPublished }) {
   const h = { Authorization:`Bearer ${token}` };
   const [projResUploading,setProjResUploading]=useState(false);
   const [projResPct,setProjResPct]=useState(0);
+  const [projView,setProjView]=useState("summary"); // "summary"|"edit"|"submissions"
+  const [submissions,setSubmissions]=useState([]);
+  const [subsLoading,setSubsLoading]=useState(false);
+  const [reviewSub,setReviewSub]=useState(null);
+  const [reviewGrade,setReviewGrade]=useState("");
+  const [reviewFeedback,setReviewFeedback]=useState("");
+  const [reviewSaving,setReviewSaving]=useState(false);
+  const [subSearch,setSubSearch]=useState("");
+  const [subStatusFilter,setSubStatusFilter]=useState("All Statuses");
+
+  useEffect(()=>{setProjView("summary"); setSubmissions([]); },[selProj?._id]);
   /* Map DB field names (requirements/resources) to local keys (req/res) */
   useEffect(() => {
     if (!selProj) { setLocalProj(null); return; }
@@ -485,6 +496,8 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
       method:"PUT", headers:{...h,"Content-Type":"application/json"},
       body: JSON.stringify({
         no: localProj.no, title: localProj.title, desc: localProj.desc,
+        deadline: localProj.deadline || "",
+        maxMarks: localProj.maxMarks || 100,
         requirements: localProj.req || [],
         resources: (localProj.res || []).map(r => typeof r === "string" ? { name:r, size:"—", fileType:"PDF" } : r),
       }),
@@ -529,81 +542,266 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
           </div>
         ))}
       </div>
-      {localProj&&(
-        <div className="flex-1 bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5 overflow-y-auto">
-          <input type="file" ref={projFileRef} className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden" multiple
-            onChange={async e=>{
-              const files=Array.from(e.target.files||[]);
-              if(!files.length) return;
-              setProjResUploading(true);
-              for(const f of files){
-                let fileUrl="";
-                try{
-                  setProjResPct(0);
-                  const fd=new FormData();fd.append("file",f);
-                  const ud=await uploadXHR("/api/uploads/file",fd,token,pct=>setProjResPct(pct));
-                  fileUrl=ud.url||"";
-                }catch{}
-                setLocalProj(p=>({...p,res:[...(p.res||[]),{name:f.name,size:(f.size/1024/1024).toFixed(1)+" MB",fileType:f.name.split(".").pop().toUpperCase(),fileUrl}]}));
-              }
-              setProjResUploading(false); setProjResPct(0);
-              e.target.value="";
-            }}/>
-          <div className="grid grid-cols-2 gap-4">
-            <Fld label="Project Number" value={localProj.no||""} onChange={v=>setLocalProj(p=>({...p,no:v}))} />
-            <Fld label="Project Title" value={localProj.title||""} onChange={v=>setLocalProj(p=>({...p,title:v}))} />
-          </div>
-          <Fld label="Description" value={localProj.desc||""} onChange={v=>setLocalProj(p=>({...p,desc:v}))} textarea />
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] text-gray-400 font-semibold uppercase">Requirements</p>
-              <button onClick={()=>setLocalProj(p=>({...p,req:[...(p.req||[]),""]}))} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="plus" size={11}/>Add Requirement</button>
-            </div>
-            <div className="space-y-2">
-              {(localProj.req||[]).map((r,i)=>(
-                <div key={i} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
-                  <I name="check" size={13} className="text-[#C7E36B] shrink-0"/>
-                  <input
-                    value={typeof r==="string"?r:r.text||""}
-                    onChange={e=>setLocalProj(p=>({...p,req:(p.req||[]).map((x,j)=>j===i?e.target.value:x)}))}
-                    className="text-xs text-white flex-1 bg-transparent outline-none border-b border-transparent focus:border-[#C7E36B]/50 transition-colors placeholder-gray-600"
-                    placeholder="Enter requirement..."
-                  />
-                  <button onClick={()=>setLocalProj(p=>({...p,req:(p.req||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={13}/></button>
+      {localProj ? (
+        <div className="flex-1 overflow-y-auto space-y-0">
+          {/* ── SUMMARY VIEW ── */}
+          {projView==="summary"&&(
+            <div className="bg-[#0F1112] border border-white/10 rounded-xl p-6">
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">{localProj.no}</p>
+                  <h3 className="text-base font-bold text-white">{localProj.title}</h3>
                 </div>
-              ))}
+                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${isPublished?"bg-green-500/20 text-green-400":"bg-gray-500/20 text-gray-400"}`}>{isPublished?"Published":"Draft"}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {[["Assigned",enrolledCount],["Submitted",submissions.length||"—"],["Pending",submissions.length>0?Math.max(0,enrolledCount-submissions.length):"—"]].map(([label,val])=>(
+                  <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-black text-white mb-1">{val}</p>
+                    <p className="text-[11px] text-gray-400">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={()=>setProjView("edit")} className="py-3 border border-white/20 text-white text-sm font-semibold rounded-xl hover:bg-white/5 transition-all">Edit Project</button>
+                <button onClick={async()=>{
+                  setProjView("submissions"); setSubsLoading(true);
+                  const r=await fetch(`/api/bootcamps/${bootcampId}/projects/${localProj._id}/submissions`,{headers:{Authorization:`Bearer ${token}`}});
+                  const d=r.ok?await r.json():[];
+                  setSubmissions(Array.isArray(d)?d:[]);
+                  setSubsLoading(false);
+                }} className="py-3 bg-[#C7E36B] text-black text-sm font-bold rounded-xl hover:bg-lime-300 transition-all">View Submissions</button>
+              </div>
             </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] text-gray-400 font-semibold uppercase">Project Downloads</p>
-              <button onClick={()=>!projResUploading&&projFileRef.current?.click()} disabled={projResUploading} className="text-[10px] text-[#C7E36B] flex items-center gap-1 disabled:opacity-50"><I name="upload" size={11}/>{projResUploading?"Uploading...":"Upload File"}</button>
+          )}
+
+          {/* ── EDIT VIEW (existing form) ── */}
+          {projView==="edit"&&(
+            <div className="bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5">
+              <div className="flex items-center gap-2 mb-1">
+                <button onClick={()=>setProjView("summary")} className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 transition-colors">← Back</button>
+                <span className="text-[10px] text-gray-600">/</span>
+                <span className="text-[10px] text-gray-300 font-semibold">Edit Project</span>
+              </div>
+              <input type="file" ref={projFileRef} className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden" multiple
+                onChange={async e=>{
+                  const files=Array.from(e.target.files||[]);
+                  if(!files.length) return;
+                  setProjResUploading(true);
+                  for(const f of files){
+                    let fileUrl="";
+                    try{
+                      setProjResPct(0);
+                      const fd=new FormData();fd.append("file",f);
+                      const ud=await uploadXHR("/api/uploads/file",fd,token,pct=>setProjResPct(pct));
+                      fileUrl=ud.url||"";
+                    }catch{}
+                    setLocalProj(p=>({...p,res:[...(p.res||[]),{name:f.name,size:(f.size/1024/1024).toFixed(1)+" MB",fileType:f.name.split(".").pop().toUpperCase(),fileUrl}]}));
+                  }
+                  setProjResUploading(false); setProjResPct(0);
+                  e.target.value="";
+                }}/>
+              <div className="grid grid-cols-2 gap-4">
+                <Fld label="Project Number" value={localProj.no||""} onChange={v=>setLocalProj(p=>({...p,no:v}))} />
+                <Fld label="Project Title" value={localProj.title||""} onChange={v=>setLocalProj(p=>({...p,title:v}))} />
+              </div>
+              <Fld label="Description" value={localProj.desc||""} onChange={v=>setLocalProj(p=>({...p,desc:v}))} textarea />
+              <div className="grid grid-cols-2 gap-4">
+                <Fld label="Submission Deadline (e.g. 30 October 2026)" value={localProj.deadline||""} onChange={v=>setLocalProj(p=>({...p,deadline:v}))} />
+                <Fld label="Maximum Marks" value={String(localProj.maxMarks||100)} onChange={v=>setLocalProj(p=>({...p,maxMarks:parseInt(v)||100}))} />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-gray-400 font-semibold uppercase">Requirements</p>
+                  <button onClick={()=>setLocalProj(p=>({...p,req:[...(p.req||[]),""]}))} className="text-[10px] text-[#C7E36B] flex items-center gap-1"><I name="plus" size={11}/>Add Requirement</button>
+                </div>
+                <div className="space-y-2">
+                  {(localProj.req||[]).map((r,i)=>(
+                    <div key={i} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
+                      <I name="check" size={13} className="text-[#C7E36B] shrink-0"/>
+                      <input
+                        value={typeof r==="string"?r:r.text||""}
+                        onChange={e=>setLocalProj(p=>({...p,req:(p.req||[]).map((x,j)=>j===i?e.target.value:x)}))}
+                        className="text-xs text-white flex-1 bg-transparent outline-none border-b border-transparent focus:border-[#C7E36B]/50 transition-colors placeholder-gray-600"
+                        placeholder="Enter requirement..."
+                      />
+                      <button onClick={()=>setLocalProj(p=>({...p,req:(p.req||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={13}/></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-gray-400 font-semibold uppercase">Project Downloads</p>
+                  <button onClick={()=>!projResUploading&&projFileRef.current?.click()} disabled={projResUploading} className="text-[10px] text-[#C7E36B] flex items-center gap-1 disabled:opacity-50"><I name="upload" size={11}/>{projResUploading?"Uploading...":"Upload File"}</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {(localProj.res||[]).length===0&&(
+                    <div className="col-span-2 border-2 border-dashed border-white/20 rounded-lg py-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all" onClick={()=>projFileRef.current?.click()}>
+                      <p className="text-2xl mb-2">📎</p>
+                      <p className="text-gray-400 text-xs font-semibold">No files uploaded yet.</p>
+                      <p className="mt-1.5 text-[10px] text-[#C7E36B] font-bold underline">Click to upload files</p>
+                    </div>
+                  )}
+                  {(localProj.res||[]).map((f,i)=>(
+                    <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                      <span className="text-lg">📄</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-white truncate">{typeof f==="string"?f:f.name||f}</p>
+                        {(f.size||f.fileType)&&<p className="text-[10px] text-gray-500">{f.fileType||""} {f.size||""}{f.fileUrl?" · ✓":""}</p>}
+                      </div>
+                      <button onClick={()=>setLocalProj(p=>({...p,res:(p.res||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <button onClick={()=>{ setLocalProj(selProj); setProjView("summary"); }} className="flex-1 border border-white/20 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">Discard</button>
+                <button onClick={async()=>{ await handleSave(); setProjView("summary"); }} className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Save Project</button>
+                {projSaved&&<span className="text-green-400 text-xs font-semibold whitespace-nowrap">✓ Saved!</span>}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {(localProj.res||[]).length===0&&(
-                <div className="col-span-2 border-2 border-dashed border-white/20 rounded-lg py-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all" onClick={()=>projFileRef.current?.click()}>
-                  <p className="text-2xl mb-2">📎</p>
-                  <p className="text-gray-400 text-xs font-semibold">No files uploaded yet.</p>
-                  <p className="mt-1.5 text-[10px] text-[#C7E36B] font-bold underline">Click to upload files</p>
+          )}
+
+          {/* ── SUBMISSIONS VIEW ── */}
+          {projView==="submissions"&&(
+            <div className="bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5">
+              {/* Header */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <button onClick={()=>setProjView("summary")} className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 mb-2 transition-colors">← Back to Project</button>
+                  <h3 className="text-base font-bold text-white">Project Submissions</h3>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{localProj.no} · {localProj.title}</p>
+                </div>
+                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${isPublished?"bg-green-500/20 text-green-400":"bg-gray-500/20 text-gray-400"}`}>{isPublished?"Published":"Draft"}</span>
+              </div>
+              {/* Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  ["Total Students",enrolledCount],
+                  ["Submitted",submissions.length],
+                  ["Pending",Math.max(0,enrolledCount-submissions.length)],
+                  ["Evaluated",submissions.filter(s=>s.status==="graded").length],
+                ].map(([label,val])=>(
+                  <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <p className="text-xl font-black text-white mb-0.5">{val}</p>
+                    <p className="text-[10px] text-gray-400">{label}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Search + filter */}
+              <div className="flex gap-3">
+                <input value={subSearch} onChange={e=>setSubSearch(e.target.value)} placeholder="Search student..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-white/30" />
+                <select value={subStatusFilter} onChange={e=>setSubStatusFilter(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none">
+                  {["All Statuses","submitted","graded","revision_required"].map(s=><option key={s} value={s}>{s==="All Statuses"?"All Statuses":s==="submitted"?"Submitted":s==="graded"?"Evaluated":"Revision Required"}</option>)}
+                </select>
+              </div>
+              {/* Table */}
+              {subsLoading ? (
+                <p className="text-gray-500 text-xs text-center py-8 animate-pulse">Loading submissions...</p>
+              ) : (
+                <div className="border border-white/10 rounded-xl overflow-hidden">
+                  <table className="w-full">
+                    <thead><tr className="text-[10px] text-gray-500 font-bold uppercase tracking-wider bg-white/5">
+                      <th className="text-left px-4 py-3">Student</th>
+                      <th className="text-left px-4 py-3">Status</th>
+                      <th className="text-right px-4 py-3">Action</th>
+                    </tr></thead>
+                    <tbody className="divide-y divide-white/5">
+                      {submissions
+                        .filter(s=>{
+                          const name=(s.user?.name||"").toLowerCase();
+                          const matchSearch=!subSearch||name.includes(subSearch.toLowerCase());
+                          const matchStatus=subStatusFilter==="All Statuses"||s.status===subStatusFilter;
+                          return matchSearch&&matchStatus;
+                        })
+                        .map((s,i)=>{
+                          const statusLabel = s.status==="graded"?"Evaluated":s.status==="revision_required"?"Revision Required":"Submitted";
+                          const statusColor = s.status==="graded"?"text-green-400":s.status==="revision_required"?"text-red-400":"text-gray-300";
+                          return (
+                            <tr key={s._id||i} className="hover:bg-white/5 transition-all">
+                              <td className="px-4 py-3">
+                                <p className="text-sm font-semibold text-white">{s.user?.name||"—"}</p>
+                                <p className="text-[10px] text-gray-500">{s.user?.email||""} · {new Date(s.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className={`text-[11px] font-semibold ${statusColor}`}>{statusLabel}</p>
+                                <p className="text-[10px] text-gray-500 mt-0.5">{s.grade!=null?`${s.grade}/${localProj.maxMarks||100}`:"—"}</p>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button onClick={()=>{ setReviewSub(s); setReviewGrade(s.grade!=null?String(s.grade):""); setReviewFeedback(s.feedback||""); }} className="text-xs text-[#C7E36B] font-bold hover:underline">Review</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {submissions.length===0&&<tr><td colSpan={3} className="px-4 py-10 text-center text-gray-500 text-sm">No submissions yet.</td></tr>}
+                    </tbody>
+                  </table>
                 </div>
               )}
-              {(localProj.res||[]).map((f,i)=>(
-                <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                  <span className="text-lg">📄</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-white truncate">{typeof f==="string"?f:f.name||f}</p>
-                    {(f.size||f.fileType)&&<p className="text-[10px] text-gray-500">{f.fileType||""} {f.size||""}{f.fileUrl?" · ✓":""}</p>}
-                  </div>
-                  <button onClick={()=>setLocalProj(p=>({...p,res:(p.res||[]).filter((_,j)=>j!==i)}))} className="text-gray-500 hover:text-red-400 shrink-0"><I name="trash" size={12}/></button>
-                </div>
-              ))}
             </div>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <button onClick={()=>setLocalProj(selProj)} className="flex-1 border border-white/20 text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-white/5">Discard</button>
-            <button onClick={handleSave} className="flex-1 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-lime-300">Save Project</button>
-            {projSaved&&<span className="text-green-400 text-xs font-semibold whitespace-nowrap">✓ Project saved!</span>}
-          </div>
+          )}
+
+          {/* ── REVIEW MODAL ── */}
+          {reviewSub&&(
+            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={e=>{if(e.target===e.currentTarget)setReviewSub(null);}}>
+              <div className="bg-[#111417] border border-white/15 rounded-2xl w-full max-w-lg p-6 space-y-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-base font-bold text-white">Review Submission</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">{reviewSub.user?.name} · {localProj.no}</p>
+                  </div>
+                  <button onClick={()=>setReviewSub(null)} className="text-gray-500 hover:text-white transition-colors text-lg leading-none">✕</button>
+                </div>
+                {/* Submission content */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
+                  {reviewSub.fileName&&<p className="text-xs text-gray-300"><span className="text-gray-500">File:</span> {reviewSub.fileName}</p>}
+                  {reviewSub.fileUrl&&<a href={reviewSub.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-[#C7E36B] hover:underline block">📎 Download File</a>}
+                  {reviewSub.link&&<a href={reviewSub.link} target="_blank" rel="noreferrer" className="text-xs text-[#C7E36B] hover:underline block">🔗 {reviewSub.link}</a>}
+                  {!reviewSub.fileUrl&&!reviewSub.link&&<p className="text-xs text-gray-500">No submission content.</p>}
+                </div>
+                {/* Grade */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Grade (out of {localProj.maxMarks||100})</label>
+                    <input type="number" min="0" max={localProj.maxMarks||100} value={reviewGrade} onChange={e=>setReviewGrade(e.target.value)} className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/60" placeholder="e.g. 85" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Status</label>
+                    <select value={reviewSub.status} onChange={e=>setReviewSub(s=>({...s,status:e.target.value}))} className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none">
+                      <option value="submitted">Submitted</option>
+                      <option value="graded">Evaluated</option>
+                      <option value="revision_required">Revision Required</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Feedback</label>
+                  <textarea value={reviewFeedback} onChange={e=>setReviewFeedback(e.target.value)} rows={3} className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/60 resize-none" placeholder="Enter feedback for the student..." />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={()=>setReviewSub(null)} className="flex-1 border border-white/20 text-gray-300 text-sm font-semibold py-2.5 rounded-xl hover:bg-white/5">Cancel</button>
+                  <button onClick={async()=>{
+                    setReviewSaving(true);
+                    const r=await fetch(`/api/bootcamps/${bootcampId}/projects/${localProj._id}/submissions/${reviewSub._id}`,{
+                      method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
+                      body:JSON.stringify({grade:reviewGrade!==""?Number(reviewGrade):null,feedback:reviewFeedback,status:reviewSub.status})
+                    });
+                    if(r.ok){
+                      const updated=await r.json();
+                      setSubmissions(prev=>prev.map(s=>s._id===updated._id?updated:s));
+                      setReviewSub(null);
+                    }
+                    setReviewSaving(false);
+                  }} disabled={reviewSaving} className="flex-1 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl hover:bg-lime-300 disabled:opacity-50">{reviewSaving?"Saving...":"Save Review"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center text-center p-8">
+          <p className="text-white/30 text-sm">Select a project from the list</p>
         </div>
       )}
     </div>
@@ -1472,7 +1670,7 @@ function BootcampAdmin({ token }) {
         )}
 
         {tab==="projects"&&(
-          <ProjTab selProj={selProj} setSelProj={setSelProj} localProj={localProj} setLocalProj={setLocalProj} projSaved={projSaved} setProjSaved={setProjSaved} projFileRef={projFileRef} projects={projects} setProjects={setProjects} bootcampId={sel?._id} token={token} />
+          <ProjTab selProj={selProj} setSelProj={setSelProj} localProj={localProj} setLocalProj={setLocalProj} projSaved={projSaved} setProjSaved={setProjSaved} projFileRef={projFileRef} projects={projects} setProjects={setProjects} bootcampId={sel?._id} token={token} enrolledCount={sel?.enrollments?.length || students.length || 0} bootcampTitle={sel?.batchName || sel?.title || ""} isPublished={!!sel?.isPublished} />
         )}
 
         {tab==="announcement"&&(

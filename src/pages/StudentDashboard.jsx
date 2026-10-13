@@ -954,6 +954,11 @@ function BootcampSection({ token, profile }) {
   const [activeProject, setActiveProject] = useState(null);
   const [sessFilter, setSessFilter] = useState("All Sessions");
   const [videoMsg, setVideoMsg] = useState("");
+  const [mySubmission, setMySubmission] = useState(null);
+  const [subLink, setSubLink] = useState("");
+  const [subFile, setSubFile] = useState(null);
+  const [subUploading, setSubUploading] = useState(false);
+  const [subMsg, setSubMsg] = useState("");
 
   const userId = profile?._id || JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
 
@@ -1068,6 +1073,14 @@ function BootcampSection({ token, profile }) {
       })
       .catch(() => {});
   }, [enrolled, bootcampData?._id, token]);
+
+  useEffect(() => {
+    if (!activeProject?._id || !bootcampData?._id || !token) { setMySubmission(null); setSubLink(""); setSubFile(null); setSubMsg(""); return; }
+    fetch(`/api/bootcamps/${bootcampData._id}/projects/${activeProject._id}/my-submission`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setMySubmission(d); setSubLink(d?.link || ""); })
+      .catch(() => {});
+  }, [activeProject?._id, bootcampData?._id, token]);
 
   if (!bcLoaded) return (
     <div className="flex-1 flex items-center justify-center bg-[#0B0F10]">
@@ -1655,6 +1668,18 @@ function BootcampSection({ token, profile }) {
                 <h2 className="text-3xl font-black text-white mb-3">{activeProject.title}</h2>
                 <p className="text-base text-white/50 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
               </div>
+              {(activeProject.deadline || activeProject.maxMarks) && (
+                <div className="border border-[#C7E36B]/40 rounded-xl grid grid-cols-2 divide-x divide-[#C7E36B]/20 overflow-hidden">
+                  <div className="px-5 py-4">
+                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest mb-1">Submission Deadline</p>
+                    <p className="text-sm font-bold text-white">{activeProject.deadline || "—"}</p>
+                  </div>
+                  <div className="px-5 py-4">
+                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest mb-1">Maximum Marks</p>
+                    <p className="text-sm font-bold text-white">{activeProject.maxMarks || 100} Points</p>
+                  </div>
+                </div>
+              )}
               <hr className="border-white/10"/>
               {(() => {
                 const reqs = activeProject.requirements || activeProject.req || [];
@@ -1695,6 +1720,65 @@ function BootcampSection({ token, profile }) {
                   </div>
                 ) : null;
               })()}
+              {/* ── Submit Your Project ── */}
+              <div className="border border-[#C7E36B]/30 rounded-xl p-5 space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold text-white mb-0.5">Submit Your Project</h4>
+                  <p className="text-[11px] text-white/40">Upload your completed work or provide a link to your final project.</p>
+                </div>
+                {mySubmission && mySubmission.status !== "revision_required" ? (
+                  <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-green-400">Project Submitted</p>
+                      <p className="text-[10px] text-white/40 mt-0.5">{mySubmission.grade != null ? `Grade: ${mySubmission.grade}/${activeProject.maxMarks||100}` : "Awaiting evaluation"}{mySubmission.feedback ? ` · ${mySubmission.feedback}` : ""}</p>
+                    </div>
+                    {mySubmission.status === "graded" && <span className="text-[10px] font-bold bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full">Evaluated</span>}
+                  </div>
+                ) : (
+                  <>
+                    {mySubmission?.status === "revision_required" && (
+                      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3">
+                        <p className="text-xs font-bold text-orange-400">Revision Required</p>
+                        {mySubmission.feedback && <p className="text-[10px] text-white/50 mt-0.5">{mySubmission.feedback}</p>}
+                      </div>
+                    )}
+                    <label className="block border-2 border-dashed border-white/20 rounded-xl py-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
+                      <input type="file" className="hidden" onChange={e=>setSubFile(e.target.files?.[0]||null)} />
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 mx-auto mb-2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                      <p className="text-xs font-bold text-white/60">{subFile ? subFile.name : "Upload Project Files"}</p>
+                      <p className="text-[10px] text-white/30 mt-1">MP4, PDF, ZIP or other approved formats</p>
+                    </label>
+                    <input value={subLink} onChange={e=>setSubLink(e.target.value)} placeholder="Paste Google Drive, YouTube or project link" className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 transition-colors" />
+                    {subMsg && <p className={`text-xs font-semibold ${subMsg.startsWith("✓")?"text-green-400":"text-red-400"}`}>{subMsg}</p>}
+                    <div className="flex justify-end">
+                      <button
+                        disabled={subUploading||(!subFile&&!subLink.trim())}
+                        onClick={async()=>{
+                          if(!subFile&&!subLink.trim()){setSubMsg("Please upload a file or paste a link.");return;}
+                          setSubUploading(true); setSubMsg("");
+                          let fileUrl="",fileName="";
+                          if(subFile){
+                            try{
+                              const fd=new FormData();fd.append("file",subFile);
+                              const r=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                              const d=await r.json(); fileUrl=d.url||""; fileName=subFile.name;
+                            }catch{ setSubMsg("File upload failed."); setSubUploading(false); return; }
+                          }
+                          const r=await fetch(`/api/bootcamps/${bootcampData._id}/projects/${activeProject._id}/submissions`,{
+                            method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
+                            body:JSON.stringify({fileUrl,fileName,link:subLink.trim()})
+                          });
+                          if(r.ok){ const d=await r.json(); setMySubmission(d); setSubMsg("✓ Project submitted successfully!"); }
+                          else setSubMsg("Submission failed. Please try again.");
+                          setSubUploading(false);
+                        }}
+                        className="bg-[#C7E36B] text-black text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >{subUploading?"Submitting...":"Submit Project"}</button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-center p-8">
