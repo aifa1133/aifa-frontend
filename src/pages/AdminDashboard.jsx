@@ -10326,7 +10326,7 @@ function CertificatesAdmin({ token }) {
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
-                                    {isPending && (
+                                    {isPending && c.itemType !== "course" && (
                                       <button onClick={() => handleApprove(c._id)} className="text-[11px] font-bold bg-[#C7E36B] text-black px-3 py-1.5 rounded-lg hover:bg-lime-300 transition whitespace-nowrap">Approve</button>
                                     )}
                                     {isGenerated && (
@@ -10551,11 +10551,11 @@ function CertificatesAdmin({ token }) {
           </div>
 
           {/* Pending Approvals */}
-          {certs.filter(c => c.status === "pending").length > 0 && (
+          {certs.filter(c => c.status === "pending" && c.itemType !== "course").length > 0 && (
             <div>
-              <h2 className="text-sm font-bold text-yellow-400 mb-3">Pending Approvals ({certs.filter(c=>c.status==="pending").length})</h2>
+              <h2 className="text-sm font-bold text-yellow-400 mb-3">Pending Approvals ({certs.filter(c=>c.status==="pending"&&c.itemType!=="course").length})</h2>
               <div className="flex flex-col gap-2">
-                {certs.filter(c => c.status === "pending").map(c => (
+                {certs.filter(c => c.status === "pending" && c.itemType !== "course").map(c => (
                   <div key={c._id} className="flex items-center justify-between bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3">
                     <div>
                       <p className="text-sm font-semibold text-white">{c.courseTitle}</p>
