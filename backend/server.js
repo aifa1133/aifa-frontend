@@ -1,0 +1,988 @@
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import connectDB from "./config/db.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import authRoutes from "./routes/authRoutes.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import workshopRoutes from "./routes/workshopRoutes.js";
+import bootcampRoutes from "./routes/bootcampRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import influencerRoutes from "./routes/influencerRoutes.js";
+import adminInfluencerRoutes from "./routes/adminInfluencerRoutes.js";
+import promptRoutes from "./routes/promptRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
+import User from "./models/User.js";
+import Course from "./models/Course.js";
+import Workshop from "./models/Workshop.js";
+import Bootcamp from "./models/Bootcamp.js";
+import Transaction from "./models/Transaction.js";
+import Certificate from "./models/Certificate.js";
+import CertSettings from "./models/CertSettings.js";
+import Job from "./models/Job.js";
+import Resource from "./models/Resource.js";
+import ServiceRequest   from "./models/ServiceRequest.js";
+import SalesConsultation from "./models/SalesConsultation.js";
+import { sendBookingConfirmation, sendTalentInquiry } from "./utils/mailer.js";
+import { createZoomMeeting, parseBookingDateTime } from "./utils/zoom.js";
+import TalentProfile    from "./models/TalentProfile.js";
+import MembershipPlan   from "./models/MembershipPlan.js";
+import Tool             from "./models/Tool.js";
+import PlatformConfig  from "./models/PlatformConfig.js";
+import Coupon from "./models/Coupon.js";
+import BootcampSession from "./models/BootcampSession.js";
+import BootcampProject from "./models/BootcampProject.js";
+import BootcampAnnouncement from "./models/BootcampAnnouncement.js";
+import Notification from "./models/Notification.js";
+import CommunityThread from "./models/CommunityThread.js";
+import CommunityEvent from "./models/CommunityEvent.js";
+import { protect, adminOnly } from "./middleware/authMiddleware.js";
+import { createOrder, verifyPayment, getMyTransactions, getAllTransactions, validateCoupon } from "./controllers/paymentController.js";
+
+dotenv.config();
+
+const app = express();
+
+connectDB();
+
+// Cloudinary config — parse CLOUDINARY_URL: cloudinary://key:secret@cloud_name
+const _cldUrl = process.env.CLOUDINARY_URL || "";
+const _cldMatch = _cldUrl.match(/cloudinary:\/\/(\d+):([^@]+)@(.+)/);
+if (_cldMatch) {
+  cloudinary.config({ api_key: _cldMatch[1], api_secret: _cldMatch[2], cloud_name: _cldMatch[3] });
+}
+
+app.use(cors());
+app.use(express.json());
+
+// Serve uploaded avatars (local fallback for avatars)
+app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Multer — avatar upload (keep local for avatars)
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, "uploads");
+    import("fs").then(({ default: fs }) => { fs.mkdirSync(dir, { recursive: true }); cb(null, dir); });
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
+    cb(null, `avatar-${req.user._id}${ext}`);
+  },
+});
+const avatarUpload = multer({ storage: avatarStorage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) cb(null, true);
+  else cb(new Error("Only image files allowed"));
+}});
+
+// Multer — generic image upload via Cloudinary
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "aifa",
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+    transformation: [{ quality: "auto", fetch_format: "auto" }],
+  },
+});
+const imageUpload = multer({ storage: cloudinaryStorage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) cb(null, true);
+  else cb(new Error("Only image files allowed"));
+}});
+
+// Multer — generic file upload (PDFs, ZIPs, PPTX, DOCX, MP4) via Cloudinary
+const cloudinaryFileStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: "aifa/files",
+    resource_type: "raw",
+    public_id: `file-${Date.now()}-${Math.random().toString(36).slice(2,7)}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`,
+  }),
+});
+const fileUpload = multer({ storage: cloudinaryFileStorage, limits: { fileSize: 100 * 1024 * 1024 } });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/workshops", workshopRoutes);
+app.use("/api/bootcamps", bootcampRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/prompts", promptRoutes);
+app.use("/api/messages", messageRoutes);
+
+// ── Payment routes ──────────────────────────────────────────
+app.get("/api/payments/validate-coupon", validateCoupon);
+app.post("/api/payments/create-order", protect, createOrder);
+app.post("/api/payments/verify",       protect, verifyPayment);
+app.get("/api/payments/history",       protect, getMyTransactions);
+app.get("/api/admin/payments",         protect, adminOnly, getAllTransactions);
+
+// ── Admin stats ─────────────────────────────────────────────
+app.get("/api/admin/stats", protect, adminOnly, async (req, res) => {
+  try {
+    const [users, courses, workshops, bootcamps, revenueAgg, enrollments] = await Promise.all([
+      User.countDocuments(),
+      Course.countDocuments(),
+      Workshop.countDocuments(),
+      Bootcamp.countDocuments(),
+      Transaction.aggregate([{ $match: { status: "paid" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+      Transaction.countDocuments({ status: "paid" }),
+    ]);
+    res.json({ users, courses, workshops, bootcamps, revenue: revenueAgg[0]?.total || 0, enrollments });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Recent enrollments for admin overview ───────────────────
+app.get("/api/admin/enrollments/recent", protect, adminOnly, async (req, res) => {
+  try {
+    const txs = await Transaction.find({ status: "paid" })
+      .sort({ createdAt: -1 }).limit(10)
+      .populate("user", "name email");
+    res.json(txs);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Full enrollments table ──────────────────────────────────
+app.get("/api/admin/enrollments", protect, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find({})
+      .populate("enrolledCourses", "title price")
+      .populate("enrolledWorkshops", "title price")
+      .populate("enrolledBootcamps", "title price")
+      .select("name email enrolledCourses enrolledWorkshops enrolledBootcamps createdAt");
+
+    const enrollments = [];
+    for (const u of users) {
+      for (const c of u.enrolledCourses)   enrollments.push({ user: { name: u.name, email: u.email }, item: c.title,    type: "course",    price: c.price,    enrolledAt: u.createdAt });
+      for (const w of u.enrolledWorkshops) enrollments.push({ user: { name: u.name, email: u.email }, item: w.title,    type: "workshop",  price: w.price,    enrolledAt: u.createdAt });
+      for (const b of u.enrolledBootcamps) enrollments.push({ user: { name: u.name, email: u.email }, item: b.title,    type: "bootcamp",  price: b.price,    enrolledAt: u.createdAt });
+    }
+    enrollments.sort((a, b) => new Date(b.enrolledAt) - new Date(a.enrolledAt));
+    res.json(enrollments);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Analytics ───────────────────────────────────────────────
+app.get("/api/admin/analytics", protect, adminOnly, async (req, res) => {
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const [monthlyData, topCourses, revenueAgg, totalEnrollments, byType] = await Promise.all([
+      Transaction.aggregate([
+        { $match: { status: "paid", createdAt: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 }, revenue: { $sum: "$amount" } } },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+      ]),
+      Transaction.aggregate([
+        { $match: { status: "paid", itemType: "course" } },
+        { $group: { _id: "$itemTitle", count: { $sum: 1 }, revenue: { $sum: "$amount" } } },
+        { $sort: { count: -1 } }, { $limit: 5 }
+      ]),
+      Transaction.aggregate([{ $match: { status: "paid" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+      Transaction.countDocuments({ status: "paid" }),
+      Transaction.aggregate([
+        { $match: { status: "paid" } },
+        { $group: { _id: "$itemType", count: { $sum: 1 } } }
+      ]),
+    ]);
+
+    res.json({
+      monthlyData,
+      topCourses,
+      totalRevenue: revenueAgg[0]?.total || 0,
+      totalEnrollments,
+      byType,
+    });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Certificates ────────────────────────────────────────────
+app.get("/api/certificates/me", protect, async (req, res) => {
+  try {
+    const certs = await Certificate.find({ user: req.user._id, status: { $ne: "pending" } }).sort({ createdAt: -1 });
+    res.json(certs);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.get("/api/certificates", protect, adminOnly, async (req, res) => {
+  try {
+    const certs = await Certificate.find({}).populate("user", "name email").sort({ createdAt: -1 });
+    res.json(certs);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/certificates", protect, adminOnly, async (req, res) => {
+  try {
+    const { userId, title, courseTitle, itemType } = req.body;
+    if (!userId || !title || !courseTitle) return res.status(400).json({ message: "userId, title, courseTitle required" });
+    const certItemType = itemType || "course";
+    if (certItemType === "workshop") return res.status(400).json({ message: "Certificates are not issued for workshops." });
+    const certStatus = certItemType === "course" ? "active" : "pending";
+    const cert = await Certificate.create({ user: userId, title, courseTitle, itemType: certItemType, status: certStatus });
+    res.status(201).json(cert);
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+app.delete("/api/certificates/:id", protect, adminOnly, async (req, res) => {
+  try {
+    await Certificate.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.put("/api/certificates/:id/approve", protect, adminOnly, async (req, res) => {
+  try {
+    const cert = await Certificate.findByIdAndUpdate(req.params.id, { status: "active" }, { new: true });
+    if (!cert) return res.status(404).json({ message: "Certificate not found" });
+    res.json(cert);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Certificate Settings ─────────────────────────────────────
+app.get("/api/cert-settings", protect, adminOnly, async (req, res) => {
+  try {
+    let s = await CertSettings.findOne();
+    if (!s) s = await CertSettings.create({});
+    res.json(s);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.put("/api/cert-settings", protect, adminOnly, async (req, res) => {
+  try {
+    const { autoIssue, manualApproval, idFormat } = req.body;
+    let s = await CertSettings.findOne();
+    if (!s) s = new CertSettings();
+    if (autoIssue      !== undefined) s.autoIssue      = autoIssue;
+    if (manualApproval !== undefined) s.manualApproval = manualApproval;
+    if (idFormat       !== undefined) s.idFormat       = idFormat;
+    await s.save();
+    res.json(s);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Coupons ───────────────────────────────────────────────────
+app.post("/api/coupons/validate", async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.json({ valid: false, message: "Code required" });
+    const c = await Coupon.findOne({ code: code.toUpperCase().trim() });
+    if (!c || !c.isActive) return res.json({ valid: false, message: "Invalid or inactive coupon" });
+    if (c.expiresAt && c.expiresAt < new Date()) return res.json({ valid: false, message: "Coupon has expired" });
+    if (c.maxUses > 0 && c.usedCount >= c.maxUses) return res.json({ valid: false, message: "Coupon usage limit reached" });
+    return res.json({ valid: true, code: c.code, discountType: c.discountType, discountValue: c.discountValue });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.get("/api/coupons", protect, adminOnly, async (req, res) => {
+  try { res.json(await Coupon.find().sort({ createdAt: -1 })); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/coupons", protect, adminOnly, async (req, res) => {
+  try {
+    const data = { ...req.body };
+    if (data.code) data.code = data.code.toUpperCase().trim();
+    const coupon = await Coupon.create(data);
+    res.status(201).json(coupon);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.put("/api/coupons/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!coupon) return res.status(404).json({ message: "Not found" });
+    res.json(coupon);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.delete("/api/coupons/:id", protect, adminOnly, async (req, res) => {
+  try { await Coupon.findByIdAndDelete(req.params.id); res.json({ message: "Deleted" }); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Bootcamp Students (admin) ─────────────────────────────────
+app.get("/api/bootcamps/:id/students", protect, adminOnly, async (req, res) => {
+  try {
+    const bootcamp = await Bootcamp.findById(req.params.id).populate("enrollments", "name email phone createdAt");
+    if (!bootcamp) return res.status(404).json({ message: "Not found" });
+    res.json(bootcamp.enrollments.map(u => ({
+      _id: u._id, name: u.name, email: u.email,
+      mobile: u.phone || "", joinDate: new Date(u.createdAt).toLocaleDateString("en-IN"),
+      status: "ACTIVE",
+    })));
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Jobs ─────────────────────────────────────────────────────
+
+/* In-memory cache for external jobs — per page, refreshed every 6 hours */
+const _extJobCache = {};
+const EXT_CACHE_TTL = 6 * 60 * 60 * 1000;
+const EXT_PER_PAGE = 20;
+
+async function getPlatformValue(key) {
+  try {
+    const c = await PlatformConfig.findOne({ key }).lean();
+    return (c && c.value) ? c.value : process.env[key] || "";
+  } catch { return process.env[key] || ""; }
+}
+
+app.get("/api/jobs/external", async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const now = Date.now();
+    const cached = _extJobCache[page];
+    if (cached && (now - cached.fetchedAt < EXT_CACHE_TTL)) {
+      return res.json({ jobs: cached.data, total: cached.total, page, perPage: EXT_PER_PAGE });
+    }
+
+    const appId  = await getPlatformValue("ADZUNA_APP_ID");
+    const appKey = await getPlatformValue("ADZUNA_APP_KEY");
+    if (!appId || !appKey) return res.json({ jobs: [], total: 0, page, perPage: EXT_PER_PAGE });
+
+    const keywords = "AI film AI video AI animation generative AI creative";
+    const url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?app_id=${appId}&app_key=${appKey}&results_per_page=${EXT_PER_PAGE}&what_or=${encodeURIComponent(keywords)}&content-type=application/json`;
+
+    const resp = await fetch(url);
+    if (!resp.ok) return res.json({ jobs: [], total: 0, page, perPage: EXT_PER_PAGE });
+    const data = await resp.json();
+
+    const TAG_MAP = { film: "AI Film", video: "AI Film", animat: "AI Editing", edit: "AI Editing", sound: "AI Music", music: "AI Music", story: "AI Story", script: "AI Story", ads: "AI Ads", marketing: "AI Ads" };
+    const guessTag = (title = "") => {
+      const t = title.toLowerCase();
+      for (const [k, v] of Object.entries(TAG_MAP)) if (t.includes(k)) return v;
+      return "AI Film";
+    };
+
+    const jobs = (data.results || []).map(j => ({
+      _id: `ext_${j.id}`,
+      title: j.title,
+      description: (j.description || "").substring(0, 200).replace(/<[^>]*>/g, "") + "…",
+      type: (j.contract_time || "PART-TIME").toUpperCase().replace("_", "-"),
+      tag: guessTag(j.title),
+      budget: j.salary_min ? `₹${Math.round(j.salary_min / 12 / 160)}/hr` : null,
+      timeline: "Flexible",
+      category: j.category?.label || "AI & Creative",
+      company: j.company?.display_name || "",
+      location: j.location?.display_name || "",
+      link: j.redirect_url,
+      createdAt: j.created,
+      source: "Adzuna",
+    }));
+
+    const total = data.count || jobs.length;
+    _extJobCache[page] = { data: jobs, total, fetchedAt: now };
+    res.json({ jobs, total, page, perPage: EXT_PER_PAGE });
+  } catch (e) {
+    console.error("[external jobs]", e.message);
+    res.json({ jobs: [], total: 0, page: 1, perPage: EXT_PER_PAGE });
+  }
+});
+
+app.get("/api/jobs", async (req, res) => {
+  try {
+    /* ?all=true used by admin to see inactive jobs too */
+    const filter = req.query.all === "true" ? {} : { isActive: true };
+    const jobs = await Job.find(filter).sort({ createdAt: -1 });
+    res.json(jobs);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/jobs", protect, adminOnly, async (req, res) => {
+  try {
+    const job = await Job.create(req.body);
+    res.status(201).json(job);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.put("/api/jobs/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const job = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(job);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.delete("/api/jobs/:id", protect, adminOnly, async (req, res) => {
+  try {
+    await Job.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/jobs/:id/apply", protect, async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+    const already = job.applicants?.some(a => String(a.userId) === String(req.user._id));
+    if (already) return res.status(400).json({ message: "Already applied" });
+    job.applicants = job.applicants || [];
+    job.applicants.push({ userId: req.user._id, name: req.user.name, email: req.user.email, appliedAt: new Date() });
+    await job.save();
+    res.json({ message: "Application submitted" });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+// ── Resources ────────────────────────────────────────────────
+app.get("/api/resources", async (req, res) => {
+  try {
+    const filter = req.query.type ? { type: req.query.type } : {};
+    const resources = await Resource.find(filter).sort({ createdAt: -1 });
+    res.json(resources);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/resources", protect, adminOnly, async (req, res) => {
+  try {
+    const resource = await Resource.create(req.body);
+    res.status(201).json(resource);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.put("/api/resources/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const resource = await Resource.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(resource);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.delete("/api/resources/:id", protect, adminOnly, async (req, res) => {
+  try {
+    await Resource.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Generic image upload → Cloudinary ────────────────────────
+app.post("/api/uploads/image", protect, adminOnly, (req, res, next) => {
+  imageUpload.single("image")(req, res, (err) => {
+    if (err) return res.status(500).json({ message: err.message || "Upload failed" });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    res.json({ url: req.file.path, public_id: req.file.filename });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+// ── Generic file upload (PDF, ZIP, DOCX, PPTX, MP4) ──────────
+app.post("/api/uploads/file", protect, adminOnly, (req, res, next) => {
+  fileUpload.single("file")(req, res, (err) => {
+    if (err) return res.status(500).json({ message: err.message || "Upload failed" });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    res.json({ url: req.file.path, name: req.file.originalname });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+// ── Avatar upload ─────────────────────────────────────────────
+app.put("/api/users/me/avatar", protect, avatarUpload.single("avatar"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const avatarUrl = `/api/uploads/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(req.user._id, { profilePicture: avatarUrl }, { new: true }).select("-password");
+    res.json({ avatarUrl, user });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+// ── SERVICE REQUESTS ─────────────────────────────────────────
+app.post("/api/service-requests", async (req, res) => {
+  try {
+    // Support both old field names (name/service) and new (senderName/type)
+    const body = { ...req.body };
+    if (!body.name && body.senderName) body.name = body.senderName;
+    if (!body.email && body.senderEmail) body.email = body.senderEmail;
+    if (!body.service && body.type) body.service = body.type;
+    if (!body.message && body.message === undefined) body.message = "";
+
+    const { name, email, service, talentId, talentName, message, budget } = body;
+    if (!name || !service) return res.status(400).json({ message: "Name and service required" });
+    const sr = await ServiceRequest.create(body);
+
+    if ((service === "hire-talent" || service === "hire_talent") && (talentId || talentName)) {
+      try {
+        const talent = talentId ? await TalentProfile.findById(talentId) : null;
+        sendTalentInquiry({
+          talentName: talent?.name || talentName || "Talent",
+          talentEmail: talent?.contactEmail || null,
+          studentName: name,
+          studentEmail: email || "",
+          message: message || "",
+          budget: budget || "",
+        }).catch(() => {});
+      } catch {}
+    }
+
+    res.status(201).json(sr);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+app.get("/api/service-requests", protect, adminOnly, async (req, res) => {
+  try { res.json(await ServiceRequest.find().sort({ createdAt: -1 })); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+app.put("/api/service-requests/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const sr = await ServiceRequest.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!sr) return res.status(404).json({ message: "Not found" });
+    res.json(sr);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+app.delete("/api/service-requests/:id", protect, adminOnly, async (req, res) => {
+  try { await ServiceRequest.findByIdAndDelete(req.params.id); res.json({ message: "Deleted" }); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── SALES CONSULTATIONS ───────────────────────────────────────
+app.post("/api/consultations", async (req, res) => {
+  try {
+    const { name, email, phone, preferredDate, preferredTime, topic } = req.body;
+    if (!name || !email) return res.status(400).json({ message: "Name and email required" });
+
+    // Auto-create Zoom meeting
+    let meetLink = "";
+    try {
+      const [accountId, clientId, clientSecret] = await Promise.all([
+        getConfig("ZOOM_ACCOUNT_ID"),
+        getConfig("ZOOM_CLIENT_ID"),
+        getConfig("ZOOM_CLIENT_SECRET"),
+      ]);
+      if (accountId && clientId && clientSecret) {
+        const startTime = parseBookingDateTime(preferredDate, preferredTime);
+        const meeting = await createZoomMeeting({
+          topic: `AIFA Counselling Call – ${name}`,
+          startTime,
+          durationMinutes: 30,
+          accountId,
+          clientId,
+          clientSecret,
+        });
+        meetLink = meeting.joinUrl;
+        console.log("[ZOOM] Meeting created:", meetLink);
+      }
+    } catch (zoomErr) {
+      console.error("[ZOOM] Meeting creation failed:", zoomErr.message);
+    }
+
+    const c = await SalesConsultation.create({ ...req.body, meetLink, status: meetLink ? "confirmed" : "pending" });
+    try {
+      await sendBookingConfirmation({ name, email, phone, preferredDate, preferredTime, topic, meetLink });
+    } catch (mailErr) {
+      console.error("[EMAIL] Booking confirmation failed:", mailErr.message);
+    }
+    res.status(201).json(c);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+app.get("/api/consultations", protect, adminOnly, async (req, res) => {
+  try { res.json(await SalesConsultation.find().sort({ createdAt: -1 })); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+app.put("/api/consultations/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const c = await SalesConsultation.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!c) return res.status(404).json({ message: "Not found" });
+    res.json(c);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+app.delete("/api/consultations/:id", protect, adminOnly, async (req, res) => {
+  try { await SalesConsultation.findByIdAndDelete(req.params.id); res.json({ message: "Deleted" }); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── TALENT PROFILES ───────────────────────────────────────────
+app.get("/api/talent", async (req, res) => {
+  try {
+    const { category, page = 1, limit = 6 } = req.query;
+    const filter = { isActive: true };
+    if (category && category !== "All") filter.category = category;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const [items, total] = await Promise.all([
+      TalentProfile.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+      TalentProfile.countDocuments(filter),
+    ]);
+    res.json({ items, total, page: parseInt(page), limit: parseInt(limit), hasMore: skip + items.length < total });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+app.get("/api/talent/all", protect, adminOnly, async (req, res) => {
+  try { res.json(await TalentProfile.find().sort({ createdAt: -1 })); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+app.post("/api/talent", protect, adminOnly, async (req, res) => {
+  try { res.status(201).json(await TalentProfile.create(req.body)); }
+  catch (e) { res.status(400).json({ message: e.message }); }
+});
+app.put("/api/talent/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const t = await TalentProfile.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!t) return res.status(404).json({ message: "Not found" });
+    res.json(t);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+app.delete("/api/talent/:id", protect, adminOnly, async (req, res) => {
+  try { await TalentProfile.findByIdAndDelete(req.params.id); res.json({ message: "Deleted" }); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── MEMBERSHIP PLANS ──────────────────────────────────────────
+app.get("/api/membership/plans", async (req, res) => {
+  try { res.json(await MembershipPlan.find({ isActive: true })); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+app.post("/api/membership/plans", protect, adminOnly, async (req, res) => {
+  try { res.status(201).json(await MembershipPlan.create(req.body)); }
+  catch (e) { res.status(400).json({ message: e.message }); }
+});
+app.put("/api/membership/plans/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const p = await MembershipPlan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!p) return res.status(404).json({ message: "Not found" });
+    res.json(p);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+app.delete("/api/membership/plans/:id", protect, adminOnly, async (req, res) => {
+  try { await MembershipPlan.findByIdAndDelete(req.params.id); res.json({ message: "Deleted" }); }
+  catch { res.status(500).json({ message: "Server error" }); }
+});
+app.get("/api/membership/members", protect, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find({ role: "student" })
+      .select("name email createdAt enrolledCourses enrolledWorkshops enrolledBootcamps isPro proExpiry")
+      .sort({ createdAt: -1 });
+    res.json(users);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// Admin: activate or deactivate Pro for a user
+app.post("/api/membership/activate/:userId", protect, adminOnly, async (req, res) => {
+  try {
+    const { isPro, durationDays } = req.body;
+    const update = { isPro: !!isPro };
+    if (isPro && durationDays) {
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + Number(durationDays));
+      update.proExpiry = expiry;
+    } else if (!isPro) {
+      update.proExpiry = null;
+    }
+    const user = await User.findByIdAndUpdate(req.params.userId, update, { new: true }).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: isPro ? "Pro activated" : "Pro deactivated", user });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+// ── PLATFORM CONFIG ─────────────────────────────────────
+async function getConfig(key) {
+  try {
+    const c = await PlatformConfig.findOne({ key }).lean();
+    return (c && c.value) ? c.value : process.env[key] || "";
+  } catch { return process.env[key] || ""; }
+}
+
+app.get("/api/admin/config", protect, adminOnly, async (req, res) => {
+  try {
+    const configs = await PlatformConfig.find().sort({ group: 1, key: 1 });
+    const result = configs.map(c => ({
+      ...c.toObject(),
+      value: c.isSecret && c.value ? "••••••••" : c.value,
+      hasValue: Boolean(c.value),
+    }));
+    res.json(result);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.get("/api/admin/config/:key", protect, adminOnly, async (req, res) => {
+  try {
+    const c = await PlatformConfig.findOne({ key: req.params.key });
+    if (!c) return res.status(404).json({ message: "Key not found" });
+    res.json(c);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.put("/api/admin/config/:key", protect, adminOnly, async (req, res) => {
+  try {
+    const { value } = req.body;
+    const c = await PlatformConfig.findOneAndUpdate(
+      { key: req.params.key },
+      { value, updatedAt: new Date() },
+      { new: true, upsert: true }
+    );
+    res.json(c);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+/* ── Tools (homepage "Tools We Will Use") ── */
+app.get("/api/tools", async (req, res) => {
+  try {
+    const tools = await Tool.find({ isActive: true }).sort({ order: 1, createdAt: 1 });
+    res.json(tools);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/tools", protect, adminOnly, async (req, res) => {
+  try {
+    const count = await Tool.countDocuments();
+    const tool = await Tool.create({ ...req.body, order: req.body.order ?? count });
+    res.status(201).json(tool);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.put("/api/tools/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const tool = await Tool.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!tool) return res.status(404).json({ message: "Not found" });
+    res.json(tool);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.delete("/api/tools/:id", protect, adminOnly, async (req, res) => {
+  try {
+    await Tool.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// Public endpoint — frontend fetches membership pricing without auth
+app.get("/api/settings/membership-price", async (req, res) => {
+  try {
+    const [priceDoc, origDoc] = await Promise.all([
+      PlatformConfig.findOne({ key: "MEMBERSHIP_PRICE" }).lean(),
+      PlatformConfig.findOne({ key: "MEMBERSHIP_ORIGINAL_PRICE" }).lean(),
+    ]);
+    res.json({
+      price:         parseInt(priceDoc?.value) || 6999,
+      originalPrice: parseInt(origDoc?.value)  || 15000,
+    });
+  } catch { res.status(500).json({ price: 6999, originalPrice: 15000 }); }
+});
+
+app.put("/api/admin/config", protect, adminOnly, async (req, res) => {
+  try {
+    const updates = req.body;
+    const ops = Object.entries(updates).map(([key, value]) => ({
+      updateOne: { filter: { key }, update: { $set: { value } }, upsert: true }
+    }));
+    await PlatformConfig.bulkWrite(ops);
+    res.json({ message: "Saved" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/admin/config/seed", protect, adminOnly, async (req, res) => {
+  try {
+    const defaults = [
+      { key:"EMAIL_USER",           group:"email",   label:"Gmail Address",            isSecret:false },
+      { key:"EMAIL_PASS",           group:"email",   label:"Gmail App Password",       isSecret:true  },
+      { key:"EMAIL_FROM_NAME",      group:"email",   label:"From Name",                isSecret:false },
+      { key:"RAZORPAY_KEY_ID",      group:"payment", label:"Razorpay Key ID",          isSecret:false },
+      { key:"RAZORPAY_KEY_SECRET",  group:"payment", label:"Razorpay Key Secret",      isSecret:true  },
+      { key:"RAZORPAY_TEST_MODE",   group:"payment", label:"Test Mode",                isSecret:false },
+      { key:"GOOGLE_CLIENT_ID",     group:"auth",    label:"Google Client ID",         isSecret:false },
+      { key:"TWILIO_SID",           group:"auth",    label:"Twilio Account SID",       isSecret:true  },
+      { key:"TWILIO_TOKEN",         group:"auth",    label:"Twilio Auth Token",        isSecret:true  },
+      { key:"TWILIO_PHONE",         group:"auth",    label:"Twilio Phone Number",      isSecret:false },
+      { key:"TURNSTILE_SITE_KEY",   group:"auth",    label:"Turnstile Site Key",       isSecret:false },
+      { key:"TURNSTILE_SECRET_KEY", group:"auth",    label:"Turnstile Secret Key",     isSecret:true  },
+      { key:"SITE_NAME",            group:"site",    label:"Site Name",                isSecret:false },
+      { key:"SITE_URL",             group:"site",    label:"Live Site URL",            isSecret:false },
+      { key:"SUPPORT_EMAIL",        group:"site",    label:"Support Email",            isSecret:false },
+    ];
+    for (const d of defaults) {
+      await PlatformConfig.updateOne({ key: d.key }, { $setOnInsert: d }, { upsert: true });
+    }
+    res.json({ message: "Seeded" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── PUBLIC CONFIG (no auth) ─────────────────────────────
+app.get("/api/config/public", async (req, res) => {
+  try {
+    const keys = ["TURNSTILE_SITE_KEY", "SITE_NAME", "SITE_URL"];
+    const result = {};
+    for (const k of keys) {
+      const c = await PlatformConfig.findOne({ key: k }).lean();
+      result[k] = (c && c.value) ? c.value : process.env[k] || "";
+    }
+    res.json(result);
+  } catch { res.json({}); }
+});
+
+// ── COURSE UPDATE ROUTES ─────────────────────────────────
+app.put("/api/courses/:id/lessons", protect, adminOnly, async (req, res) => {
+  try {
+    const { lessons } = req.body;
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { $set: { lessons } },
+      { new: true }
+    );
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    res.json(course);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.put("/api/courses/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    res.json(course);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Notifications ────────────────────────────────────────────
+
+/* Get my notifications */
+app.get("/api/notifications/me", protect, async (req, res) => {
+  try {
+    const notifs = await Notification.find({ user: req.user._id })
+      .sort({ createdAt: -1 }).limit(20);
+    res.json(notifs);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+/* Unread count */
+app.get("/api/notifications/unread-count", protect, async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({ user: req.user._id, isRead: false });
+    res.json({ count });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+/* Mark all as read */
+app.put("/api/notifications/read", protect, async (req, res) => {
+  try {
+    await Notification.updateMany({ user: req.user._id, isRead: false }, { isRead: true });
+    res.json({ message: "Marked all as read" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+/* Mark one as read */
+app.put("/api/notifications/:id/read", protect, async (req, res) => {
+  try {
+    await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+    res.json({ message: "Marked as read" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+/* Admin: send notification to specific users or all bootcamp students */
+app.post("/api/notifications/broadcast", protect, adminOnly, async (req, res) => {
+  try {
+    const { title, message, type = "general", link = "", bootcampId, userIds } = req.body;
+    if (!title) return res.status(400).json({ message: "Title is required" });
+
+    let targetIds = userIds || [];
+
+    // If bootcampId provided, notify all enrolled students
+    if (bootcampId && (!userIds || userIds.length === 0)) {
+      const bc = await Bootcamp.findById(bootcampId).select("enrollments");
+      if (bc) targetIds = bc.enrollments.map(id => id.toString());
+    }
+
+    // If neither, notify ALL users
+    if (targetIds.length === 0) {
+      const users = await User.find({ role: "student" }).select("_id");
+      targetIds = users.map(u => u._id.toString());
+    }
+
+    const docs = targetIds.map(uid => ({ user: uid, title, message, type, link, isRead: false }));
+    await Notification.insertMany(docs);
+    res.status(201).json({ message: `Sent to ${docs.length} users` });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+/* Admin: create single notification */
+app.post("/api/notifications", protect, adminOnly, async (req, res) => {
+  try {
+    const notif = await Notification.create(req.body);
+    res.status(201).json(notif);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+/* Admin: get all notifications */
+app.get("/api/notifications", protect, adminOnly, async (req, res) => {
+  try {
+    const notifs = await Notification.find({}).populate("user","name email").sort({ createdAt: -1 }).limit(50);
+    res.json(notifs);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Community ──────────────────────────────────────────────
+
+// Threads
+app.get("/api/community/threads", async (req, res) => {
+  try {
+    const threads = await CommunityThread.find({}).sort({ createdAt: -1 });
+    res.json(threads);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/community/threads", protect, async (req, res) => {
+  try {
+    const { title, body, tag, author } = req.body;
+    if (!title || !body) return res.status(400).json({ message: "Title and body are required" });
+    const thread = await CommunityThread.create({ title, body, tag: tag || "General", author: author || req.user?.name || "Anonymous", authorId: req.user._id });
+    res.status(201).json(thread);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.post("/api/community/threads/:id/reply", protect, async (req, res) => {
+  try {
+    const { text, author } = req.body;
+    if (!text) return res.status(400).json({ message: "Reply text required" });
+    const thread = await CommunityThread.findByIdAndUpdate(
+      req.params.id,
+      { $push: { replies: { author: author || req.user?.name || "Anonymous", text, createdAt: new Date() } } },
+      { new: true }
+    );
+    if (!thread) return res.status(404).json({ message: "Thread not found" });
+    res.json(thread);
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+app.delete("/api/community/threads/:id", protect, adminOnly, async (req, res) => {
+  try {
+    await CommunityThread.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// Events
+app.get("/api/community/events", async (req, res) => {
+  try {
+    const events = await CommunityEvent.find({}).sort({ createdAt: -1 });
+    res.json(events);
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+app.post("/api/community/events", protect, adminOnly, async (req, res) => {
+  try {
+    const ev = await CommunityEvent.create(req.body);
+    res.status(201).json(ev);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.put("/api/community/events/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const ev = await CommunityEvent.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!ev) return res.status(404).json({ message: "Not found" });
+    res.json(ev);
+  } catch (e) { res.status(400).json({ message: e.message }); }
+});
+
+app.delete("/api/community/events/:id", protect, adminOnly, async (req, res) => {
+  try {
+    await CommunityEvent.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch { res.status(500).json({ message: "Server error" }); }
+});
+
+// ── Influencer module ────────────────────────────────────────
+app.use("/api/influencer", influencerRoutes);
+app.use("/api/admin", protect, adminOnly, adminInfluencerRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
