@@ -30,10 +30,10 @@ export default function PromptLibrary() {
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const published = data
-            .filter(p => p.status === "Published")
+          const mapped = data
+            .filter(p => p.status !== "Hidden")
             .map(p => ({ ...p, image: p.thumbnail || p.image || "", text: p.content || p.text || "" }));
-          setPrompts(published);
+          setPrompts(mapped);
         }
       })
       .catch(() => {})
