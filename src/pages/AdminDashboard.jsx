@@ -5462,7 +5462,7 @@ function CommunityAdmin({ token, adminName }) {
   /* ── Clubs state ── */
   const [clubs, setClubs]               = useState([]);
   const [showClubForm, setShowClubForm] = useState(false);
-  const [clubForm, setClubForm]         = useState({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false });
+  const [clubForm, setClubForm]         = useState({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false, bannerUrl:"" });
   const [selectedClub, setSelectedClub] = useState(null);
   const [clubDetailTab, setClubDetailTab] = useState("feed");
 
@@ -5500,6 +5500,30 @@ function CommunityAdmin({ token, adminName }) {
       .then(r => r.ok ? r.json() : [])
       .then(d => { setEvents(Array.isArray(d) ? d : []); setEvLoading(false); })
       .catch(() => { setEvents([]); setEvLoading(false); });
+  }, [commTab, token]);
+
+  useEffect(() => {
+    if (commTab !== "clubs") return;
+    fetch("/api/community/clubs", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setClubs(d); })
+      .catch(() => {});
+  }, [commTab, token]);
+
+  useEffect(() => {
+    if (commTab !== "awards") return;
+    fetch("/api/community/challenges", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setChallenges(d); })
+      .catch(() => {});
+  }, [commTab, token]);
+
+  useEffect(() => {
+    if (commTab !== "chats") return;
+    fetch("/api/community/channels", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setChannels(d); })
+      .catch(() => {});
   }, [commTab, token]);
 
   useEffect(() => {
@@ -5881,7 +5905,7 @@ function CommunityAdmin({ token, adminName }) {
     const doSubmit = async (status) => {
       try {
         const h = {"Content-Type":"application/json", Authorization:`Bearer ${token}`};
-        const body = {...event, status, date: event.date ? new Date(event.date) : null, capacity: event.capacity ? Number(event.capacity) : null};
+        const body = {...event, status, date: event.date ? new Date(event.date) : null, capacity: event.capacity ? Number(event.capacity) : null, image: thumbPreview || ""};
         const isEdit = !!editEventId;
         const url = isEdit ? `/api/community/events/${editEventId}` : "/api/community/events";
         const res = await fetch(url, {method: isEdit ? "PUT" : "POST", headers: h, body: JSON.stringify(body)});
@@ -6425,12 +6449,13 @@ function CommunityAdmin({ token, adminName }) {
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Left: event card preview */}
                   <div className="w-full md:w-[320px] shrink-0">
-                    <div className={`rounded-2xl overflow-hidden bg-gradient-to-br ${ev.bg || "from-blue-900 to-purple-900"} h-[180px] relative mb-4`}>
-                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[44px]">
+                    <div className={`rounded-2xl overflow-hidden h-[180px] relative mb-4`} style={{background: ev.image ? "none" : `linear-gradient(135deg, #1e3a8a, #581c87)`}}>
+                      {ev.image && <img src={ev.image} alt="" className="absolute inset-0 w-full h-full object-cover"/>}
+                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[44px] z-10">
                         <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider leading-none mb-0.5">{month}</p>
                         <p className="text-2xl font-black text-white leading-none">{day}</p>
                       </div>
-                      {ev.featured && <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded-lg">FEATURED</span>}
+                      {ev.featured && <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded-lg z-10">FEATURED</span>}
                     </div>
                     <h2 className="text-lg font-bold text-white mb-1">{ev.title}</h2>
                     <p className="text-xs text-gray-400 mb-4">{ev.type} · {ev.mode}</p>
@@ -6501,19 +6526,21 @@ function CommunityAdmin({ token, adminName }) {
                 return (
                   <div key={ev._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all group">
                     {/* Image area */}
-                    <div className={`relative h-[180px] bg-gradient-to-br ${bg} overflow-hidden`}>
-                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[44px]">
+                    <div className={`relative h-[180px] overflow-hidden`} style={{background: ev.image ? "none" : `linear-gradient(135deg, var(--ev-bg-from, #1e3a8a), var(--ev-bg-to, #581c87))`}}>
+                      {ev.image && <img src={ev.image} alt="" className="absolute inset-0 w-full h-full object-cover"/>}
+                      {!ev.image && <div className={`absolute inset-0 bg-gradient-to-br ${bg}`}/>}
+                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[44px] z-10">
                         <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider leading-none mb-0.5">{month}</p>
                         <p className="text-2xl font-black text-white leading-none">{day}</p>
                       </div>
                       {ev.featured && (
-                        <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded-lg tracking-wider">FEATURED</span>
+                        <span className="absolute top-3 right-3 text-[9px] font-black bg-green-500 text-white px-2 py-1 rounded-lg tracking-wider z-10">FEATURED</span>
                       )}
                       {!ev.featured && limitedSeats && (
-                        <span className="absolute top-3 right-3 text-[9px] font-black bg-red-600 text-white px-2 py-1 rounded-lg tracking-wider">LIMITED SEATS</span>
+                        <span className="absolute top-3 right-3 text-[9px] font-black bg-red-600 text-white px-2 py-1 rounded-lg tracking-wider z-10">LIMITED SEATS</span>
                       )}
                       {/* subtle gradient overlay at bottom */}
-                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#111315] to-transparent"/>
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#111315] to-transparent z-10"/>
                     </div>
                     {/* Card body */}
                     <div className="p-4">
@@ -6734,22 +6761,38 @@ function CommunityAdmin({ token, adminName }) {
               {/* Media */}
               <div className="bg-white/5 border border-white/10 rounded-xl p-5">
                 <p className="text-[10px] font-bold text-[#C7E36B] uppercase tracking-wider mb-3">Media</p>
-                <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/15 rounded-xl h-32 cursor-pointer hover:border-[#C7E36B]/40 transition-colors">
-                  <svg className="w-8 h-8 text-gray-600 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <p className="text-sm text-gray-400">Click to upload banner image</p>
-                  <p className="text-[10px] text-gray-600 mt-1">Recommended size: 1200×675px (16:9)</p>
-                  <input type="file" accept="image/*" className="hidden"/>
+                <label className="relative flex flex-col items-center justify-center border-2 border-dashed border-white/15 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-colors" style={{height: clubForm.bannerUrl ? "auto" : "128px"}}>
+                  {clubForm.bannerUrl ? (
+                    <img src={clubForm.bannerUrl} alt="Banner preview" className="w-full rounded-xl object-cover max-h-[200px]"/>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8 text-gray-600 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      <p className="text-sm text-gray-400">Click to upload banner image</p>
+                      <p className="text-[10px] text-gray-600 mt-1">Recommended size: 1200×675px (16:9)</p>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => setClubForm(f => ({...f, bannerUrl: ev.target.result}));
+                    reader.readAsDataURL(file);
+                  }}/>
                 </label>
               </div>
               {/* Actions */}
               <div className="flex gap-3 pb-4">
                 <button onClick={() => setShowClubForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
-                <button onClick={() => {
+                <button onClick={async () => {
                   if (!clubForm.name.trim()) return;
-                  const newClub = { _id:`cl${Date.now()}`, ...clubForm, type: clubForm.type.replace(" (Open to All)",""), members:0, events:0, posts:[] };
-                  setClubs(prev => [newClub, ...prev]);
-                  setClubForm({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false });
-                  setShowClubForm(false);
+                  const body = { ...clubForm, type: clubForm.type.replace(" (Open to All)","") };
+                  const r = await fetch("/api/community/clubs", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                  if (r.ok) {
+                    const saved = await r.json();
+                    setClubs(prev => [saved, ...prev]);
+                    setClubForm({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false, bannerUrl:"" });
+                    setShowClubForm(false);
+                  }
                 }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Create Club
@@ -6760,9 +6803,10 @@ function CommunityAdmin({ token, adminName }) {
             <div className="w-[300px] shrink-0 border-l border-white/5 bg-[#0F1112] p-5 overflow-y-auto">
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">Live Card Preview</p>
               <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
-                <div className="h-[150px] bg-gradient-to-br from-blue-900 to-purple-900 relative">
-                  {clubForm.isPrimary && <span className="absolute top-3 right-3 text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded">PRIMARY CLUB</span>}
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                <div className="h-[150px] relative overflow-hidden" style={{background: clubForm.bannerUrl ? "none" : "linear-gradient(to bottom right, #1e3a8a, #581c87)"}}>
+                  {clubForm.bannerUrl && <img src={clubForm.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover"/>}
+                  {clubForm.isPrimary && <span className="absolute top-3 right-3 text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded z-10">PRIMARY CLUB</span>}
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
                     <h3 className="text-sm font-bold text-white">{clubForm.name || "Club Name"}</h3>
                     <p className="text-[10px] text-gray-300">{clubForm.city || "City"}</p>
                   </div>
@@ -6907,13 +6951,15 @@ function CommunityAdmin({ token, adminName }) {
               {/* Actions */}
               <div className="flex gap-3 pb-4">
                 <button onClick={() => setShowChannelForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
-                <button onClick={() => {
+                <button onClick={async () => {
                   if (!channelForm.name.trim()) return;
-                  const catColors = { General:"bg-blue-500",  "Study Group":"bg-green-500", Regional:"bg-orange-500", Creative:"bg-purple-500", Support:"bg-yellow-500", Announcement:"bg-red-500" };
-                  const newCh = { _id:`ch${Date.now()}`, ...channelForm, color: catColors[channelForm.category]||"bg-blue-500", members:0, active:0 };
-                  setChannels(prev => [newCh, ...prev]);
-                  setChannelForm({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
-                  setShowChannelForm(false);
+                  const r = await fetch("/api/community/channels", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(channelForm) });
+                  if (r.ok) {
+                    const saved = await r.json();
+                    setChannels(prev => [saved, ...prev]);
+                    setChannelForm({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
+                    setShowChannelForm(false);
+                  }
                 }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Create Channel
@@ -7037,7 +7083,7 @@ function CommunityAdmin({ token, adminName }) {
                     )}
                     <div className="flex items-center gap-2 shrink-0">
                       <button className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:bg-white/5">Edit</button>
-                      <button onClick={() => setChannels(prev => prev.filter(c => c._id!==ch._id))} className="text-xs border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">Delete</button>
+                      <button onClick={async () => { const r = await fetch(`/api/community/channels/${ch._id}`, {method:"DELETE", headers:{Authorization:`Bearer ${token}`}}); if (r.ok) setChannels(prev => prev.filter(c => c._id!==ch._id)); }} className="text-xs border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">Delete</button>
                     </div>
                   </div>
                 );
@@ -7397,18 +7443,17 @@ function CommunityAdmin({ token, adminName }) {
                 </div>
                 {/* Action buttons */}
                 <div className="flex gap-2 mt-auto">
-                  <button onClick={() => {
+                  <button onClick={async () => {
                     if (!challenge.title.trim()) return;
-                    const newC = { _id:`c${Date.now()}`, ...challenge, status:"draft", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
-                    setChallenges(prev => [newC, ...prev]);
-                    resetChallengeForm(); setShowChallengeForm(false);
+                    const body = { ...challenge, status:"draft", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
+                    const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                    if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); }
                   }} className="flex-1 text-sm border border-white/20 text-gray-300 py-2.5 rounded-lg hover:bg-white/5 font-medium">Save Draft</button>
-                  <button onClick={() => {
+                  <button onClick={async () => {
                     if (!challenge.title.trim()) return;
-                    const newC = { _id:`c${Date.now()}`, ...challenge, status:"live", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
-                    setChallenges(prev => [newC, ...prev]);
-                    resetChallengeForm(); setShowChallengeForm(false);
-                    setSelectedChallenge(newC); setChallengePublishedOk(true);
+                    const body = { ...challenge, status:"live", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
+                    const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                    if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); setSelectedChallenge(saved); setChallengePublishedOk(true); }
                   }} className="flex-1 text-sm bg-[#C7E36B] text-black font-bold py-2.5 rounded-lg hover:bg-[#b8d44f]">Publish Challenge</button>
                 </div>
               </div>

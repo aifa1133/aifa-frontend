@@ -26,9 +26,16 @@ export default function PromptLibrary() {
   const isPro = useIsPro();
 
   useEffect(() => {
-    fetch("/api/prompts")
+    fetch("/api/resources?type=prompt")
       .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setPrompts(data); })
+      .then(data => {
+        if (Array.isArray(data)) {
+          const published = data
+            .filter(p => p.status === "Published")
+            .map(p => ({ ...p, image: p.thumbnail || p.image || "", text: p.content || p.text || "" }));
+          setPrompts(published);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
