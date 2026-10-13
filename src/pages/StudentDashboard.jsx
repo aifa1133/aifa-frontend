@@ -393,7 +393,7 @@ export default function StudentDashboard() {
               {activePage === "dashboard" && <DashboardHome profile={profile} token={token} onNavigate={navigateTo} />}
               {activePage === "bootcamp" && <BootcampSection token={token} profile={profile} />}
               {activePage === "workshops" && <WorkshopsSection token={token} />}
-              {activePage === "video-courses" && <VideoCoursesSection profile={profile} onNavigate={navigateTo} />}
+              {activePage === "video-courses" && <VideoCoursesSection profile={profile} onNavigate={navigateTo} onScrollTop={() => mainRef.current?.scrollTo({ top: 0, behavior: "instant" })} />}
               {activePage === "certificates" && <CertificatesSection token={token} profile={profile} />}
               {activePage === "jobs" && <JobsSection token={token} />}
               {activePage === "resources" && <ResourcesSection token={token} />}
@@ -2049,7 +2049,7 @@ const CD_DEFAULT_FAQS = [
 ];
 const CD_YOU_GET = ["Lifetime Course Access", "HD Video Lessons", "Digital Certificate", "Step-by-step lessons", "Downloadable resources"];
 
-function VideoCoursesSection({ profile, onNavigate }) {
+function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
   const navigate   = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2406,7 +2406,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c, i) => (
             <div key={c._id || i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all">
-              <div className="relative cursor-pointer" onClick={() => setDetailCourse(c)}>
+              <div className="relative cursor-pointer" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
                 <img src={c.image} alt={c.title} className="w-full h-[160px] object-cover" />
                 <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">{c.duration}</span>
                 {c.status === "completed" && (
@@ -2431,7 +2431,7 @@ function VideoCoursesSection({ profile, onNavigate }) {
                 ) : c.progress !== undefined ? (
                   <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="w-full text-xs bg-[#7C3AED] hover:bg-purple-700 text-white py-1.5 rounded-lg transition-all font-semibold">Continue Learning</button>
                 ) : (
-                  <button onClick={() => setDetailCourse(c)} className="w-full text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Details</button>
+                  <button onClick={() => { setDetailCourse(c); onScrollTop?.(); }} className="w-full text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Details</button>
                 )}
               </div>
             </div>
