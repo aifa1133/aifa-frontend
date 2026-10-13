@@ -2135,6 +2135,7 @@ const CD_YOU_GET = ["Lifetime Course Access", "HD Video Lessons", "Digital Certi
 
 function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
   const navigate   = useNavigate();
+  const { price: membershipPrice, originalPrice: membershipOrig } = useMembershipPrice();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab]         = useState("all");
