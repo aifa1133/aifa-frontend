@@ -17,8 +17,8 @@ dist-ssr
 .env.local
 .env.production
 
-# Backend (separate repo)
-backend/
+# Backend env (never commit)
+backend/.env
 
 # QA / test artefacts
 qa_*.mjs
