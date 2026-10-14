@@ -936,7 +936,7 @@ export default function WorkshopDetail() {
       {/* PRICING CTA SECTION */}
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/bootcamp/bootcamp1.png')" }} />
+          style={{ backgroundImage: `url('${workshop.image || '/bootcamp/bootcamp1.png'}')` }} />
         <div className="absolute inset-0 bg-black/70" />
         <div className="relative z-10 max-w-md mx-auto">
           <div className="bg-[#0F1112]/90 border border-[#C7E36B]/60 rounded-2xl p-8 relative">
