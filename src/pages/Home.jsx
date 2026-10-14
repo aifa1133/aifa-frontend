@@ -62,14 +62,14 @@ export default function Home() {
         <Features />
       </section>
 
-      {/* DIRECTORS */}
-      <section className="w-full">
-        <Directors />
-      </section>
-
       {/* INSTITUTIONS */}
       <section className="w-full">
         <Institutions />
+      </section>
+
+      {/* DIRECTORS */}
+      <section className="w-full">
+        <Directors />
       </section>
 
       {/* STATS */}
