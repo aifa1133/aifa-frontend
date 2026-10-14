@@ -158,12 +158,11 @@ function WhatYouWillCreate({ projects }) {
 }
 
 const AUDIENCE_CARDS = [
-  { title: "Filmmakers & Video Creators",   desc: "Bring your stories to life with AI-powered filmmaking.",                  img: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600&q=80" },
-  { title: "Marketing Professionals",        desc: "Create better campaigns, ads, and brand content with AI.",                img: "https://images.unsplash.com/photo-1551817958-c5b51e7b4a33?w=600&q=80" },
-  { title: "Content Creators & Influencers", desc: "Make eye-catching reels and videos faster with AI.",                     img: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80" },
-  { title: "Designers & Creatives",          desc: "Turn your ideas into stunning visuals with AI.",                          img: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=600&q=80" },
-  { title: "Freelancers & Agency Owners",    desc: "Offer AI video services and grow your income streams.", badge: "FREELANCE",
-    img: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=80" },
+  { title: "Filmmakers & Video Creators",   desc: "Bring your stories to life with AI-powered filmmaking.",   img: "/audience/filmmaker.jpg" },
+  { title: "Marketing Professionals",        desc: "Create better campaigns, ads, and brand content with AI.", img: "/audience/marketing.jpg" },
+  { title: "Content Creators & Influencers", desc: "Make eye-catching reels and videos faster with AI.",       img: "/audience/creator.jpg" },
+  { title: "Designers & Creatives",          desc: "Turn your ideas into stunning visuals with AI.",            img: "/audience/designer.jpg" },
+  { title: "Freelancers & Agency Owners",    desc: "Offer AI video services and grow your income streams.",    img: "/audience/filmmaker.jpg", badge: "FREELANCE" },
 ];
 
 function WhoIsItFor({ audience }) {
