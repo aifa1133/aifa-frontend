@@ -162,7 +162,7 @@ const AUDIENCE_CARDS = [
   { title: "Marketing Professionals",        desc: "Create better campaigns, ads, and brand content with AI.", img: "/audience/marketing.jpg" },
   { title: "Content Creators & Influencers", desc: "Make eye-catching reels and videos faster with AI.",       img: "/audience/creator.jpg" },
   { title: "Designers & Creatives",          desc: "Turn your ideas into stunning visuals with AI.",            img: "/audience/designer.jpg" },
-  { title: "Freelancers & Agency Owners",    desc: "Offer AI video services and grow your income streams.",    img: "/audience/filmmaker.jpg", badge: "FREELANCE" },
+  { title: "Freelancers & Agency Owners",    desc: "Offer AI video services and grow your income streams.",    img: "/audience/freelancer.jpg", badge: "FREELANCE" },
 ];
 
 function WhoIsItFor({ audience }) {
