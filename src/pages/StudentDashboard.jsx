@@ -2074,9 +2074,9 @@ function WorkshopsSection({ token }) {
                     <a
                       href={`/workshops/${w._id}`}
                       onClick={e => e.stopPropagation()}
-                      className="flex justify-center items-center gap-1 px-5 py-3 font-black text-sm uppercase bg-white/10 text-white hover:bg-white/20 transition-all border-r border-white/10 whitespace-nowrap"
+                      className="flex justify-center items-center gap-1 px-5 py-3 font-black text-sm uppercase bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition-all border-r border-white/10 whitespace-nowrap"
                     >
-                      View Details
+                      VIEW DETAILS
                     </a>
                     <button
                       onClick={(e) => handleReserve(w, e)}
