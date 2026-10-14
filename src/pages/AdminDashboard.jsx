@@ -5655,6 +5655,10 @@ function CommunityAdmin({ token, adminName }) {
   const [challengePublishedOk, setChallengePublishedOk] = useState(false);
   const [challenge, setChallenge] = useState({ title:"", desc:"", startDate:"", endDate:"", visibility:"Public" });
   const [challengeThumb, setChallengeThumb] = useState(null);
+  const [challengeThumbUploading, setChallengeThumbUploading] = useState(false);
+  const [challengeThumbPct, setChallengeThumbPct] = useState(0);
+  const [clubBannerUploading, setClubBannerUploading] = useState(false);
+  const [clubBannerPct, setClubBannerPct] = useState(0);
   const [challengeSubTypes, setChallengeSubTypes] = useState(["Video"]);
   const [challengeAwards, setChallengeAwards] = useState([{ type:"Cash Reward", description:"" }]);
   const [challenges, setChallenges] = useState([]);
@@ -6987,14 +6991,25 @@ function CommunityAdmin({ token, adminName }) {
                       <p className="text-[10px] text-gray-600 mt-1">Recommended size: 1200×675px (16:9)</p>
                     </>
                   )}
-                  <input type="file" accept="image/*" className="hidden" onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = ev => setClubForm(f => ({...f, bannerUrl: ev.target.result}));
-                    reader.readAsDataURL(file);
+                  <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setClubBannerUploading(true); setClubBannerPct(0);
+                    try {
+                      const fd = new FormData(); fd.append("image", file);
+                      const d = await uploadXHR("/api/uploads/image", fd, token, pct => setClubBannerPct(pct));
+                      if (d.url) setClubForm(f => ({...f, bannerUrl: d.url}));
+                    } catch { globalShowToast("Image upload failed."); }
+                    setClubBannerUploading(false); e.target.value = "";
                   }}/>
                 </label>
+                {clubBannerUploading && (
+                  <div className="mt-2">
+                    <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                      <div className="h-1.5 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${clubBannerPct}%`}}/>
+                    </div>
+                    <p className="text-[10px] text-[#C7E36B] mt-1">{clubBannerPct}% uploading...</p>
+                  </div>
+                )}
               </div>
               {/* Actions */}
               <div className="flex gap-3 pb-4">
@@ -7529,12 +7544,26 @@ function CommunityAdmin({ token, adminName }) {
                           <p className="text-[10px] text-gray-600 mt-1">RECOMMENDED: 1280 X 720 (16:9)</p>
                         </div>
                       )}
-                      <input type="file" accept="image/*" className="hidden" onChange={e => {
-                        const f = e.target.files?.[0];
-                        if (f) { const r = new FileReader(); r.onload = ev => setChallengeThumb(ev.target.result); r.readAsDataURL(f); }
+                      <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                        const f = e.target.files?.[0]; if (!f) return;
+                        setChallengeThumbUploading(true); setChallengeThumbPct(0);
+                        try {
+                          const fd = new FormData(); fd.append("image", f);
+                          const d = await uploadXHR("/api/uploads/image", fd, token, pct => setChallengeThumbPct(pct));
+                          if (d.url) setChallengeThumb(d.url);
+                        } catch { globalShowToast("Image upload failed."); }
+                        setChallengeThumbUploading(false); e.target.value = "";
                       }}/>
                     </label>
-                    {challengeThumb && <button onClick={() => setChallengeThumb(null)} className="mt-1 text-[10px] text-red-400 hover:text-red-300">✕ Remove image</button>}
+                    {challengeThumbUploading && (
+                      <div className="mt-2">
+                        <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                          <div className="h-1.5 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${challengeThumbPct}%`}}/>
+                        </div>
+                        <p className="text-[10px] text-[#C7E36B] mt-1">{challengeThumbPct}% uploading...</p>
+                      </div>
+                    )}
+                    {challengeThumb && !challengeThumbUploading && <button onClick={() => setChallengeThumb(null)} className="mt-1 text-[10px] text-red-400 hover:text-red-300">✕ Remove image</button>}
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 font-semibold mb-1">DESCRIPTION</p>
