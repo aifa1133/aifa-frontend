@@ -4374,7 +4374,7 @@ function CommunitySection({ token, profile }) {
             <div className="space-y-3">
               {events.slice(0, 2).map(ev => (
                 <div key={ev._id} className="bg-[#111315] border border-white/8 rounded-xl overflow-hidden">
-                  {ev.thumbnail && <img src={ev.thumbnail} className="w-full h-20 object-cover" alt=""/>}
+                  {(ev.image || ev.thumbnail) && <img src={ev.image || ev.thumbnail} className="w-full h-20 object-cover" alt=""/>}
                   <div className="p-3">
                     <p className="text-xs font-semibold text-white leading-snug mb-1">{ev.title}</p>
                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2">
@@ -4438,7 +4438,7 @@ function CommunitySection({ token, profile }) {
         <div className="grid grid-cols-2 gap-4">
           {events.map(ev => (
             <div key={ev._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-all">
-              {ev.thumbnail && <img src={ev.thumbnail} className="w-full h-36 object-cover" alt=""/>}
+              {(ev.image || ev.thumbnail) && <img src={ev.image || ev.thumbnail} className="w-full h-36 object-cover" alt=""/>}
               <div className="p-4">
                 <p className="text-sm font-bold text-white mb-2">{ev.title}</p>
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
