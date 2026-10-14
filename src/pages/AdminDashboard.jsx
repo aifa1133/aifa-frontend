@@ -2995,7 +2995,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
         {addLessonModal !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
             onClick={() => setAddLessonModal(null)}>
-            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4 overflow-y-auto max-h-[90vh]"
+            <div className="bg-[#111315] border border-white/12 rounded-2xl w-full max-w-lg p-6 space-y-4 overflow-y-auto max-h-[90vh] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-white">{addLessonModal.editIdx !== null ? "Edit Lesson" : "Add Lesson"}</p>
@@ -3004,7 +3004,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
                 </button>
               </div>
               <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
-              <Fld label="Description" value={newLesson.desc||""} onChange={v=>setNewLesson(l=>({...l,desc:v}))} placeholder="Brief description of this lesson..." textarea />
+              <Fld label="Description" value={newLesson.description||""} onChange={v=>setNewLesson(l=>({...l,description:v}))} placeholder="Brief description of this lesson..." textarea />
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
                 {newLesson.thumbnail === "uploading" ? (
@@ -5588,7 +5588,7 @@ function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min 
       <div className="relative">
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
-          ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 ${prefix?"pl-7":""}`}/>
+          ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${prefix?"pl-7":""}`}/>
           : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
         }
       </div>

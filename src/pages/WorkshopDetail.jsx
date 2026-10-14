@@ -979,21 +979,41 @@ export default function WorkshopDetail() {
           </div>
         ) : (
           /* NORMAL STICKY BAR */
-          <div className="fixed bottom-0 left-0 right-0 bg-[#0F1112] border-t border-white/10 px-6 py-4 flex items-center justify-between z-40 gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <p className="text-white font-bold text-sm truncate">{workshop.title}</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[#C7E36B] font-black text-sm whitespace-nowrap">{sym}{workshop.price}</span>
-                  {hasDiscount && <span className="text-gray-500 line-through text-xs">{sym}{workshop.originalPrice}</span>}
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0F1112] border-t border-white/10 z-40">
+            {/* DESKTOP */}
+            <div className="hidden sm:flex items-center justify-between px-6 py-4 gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="text-white font-bold text-sm truncate">{workshop.title}</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[#C7E36B] font-black text-sm whitespace-nowrap">{sym}{workshop.price}</span>
+                    {hasDiscount && <span className="text-gray-500 line-through text-xs">{sym}{workshop.originalPrice}</span>}
+                  </div>
+                </div>
+                <p className="text-gray-500 text-xs mt-0.5">{isFull ? "SOLD OUT" : "LIMITED SEATS AVAILABLE"}</p>
+              </div>
+              <button onClick={handleBookClick} disabled={enrolling || isFull}
+                className="bg-[#C7E36B] text-black font-black text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-60 whitespace-nowrap flex items-center gap-1 shrink-0">
+                {enrolling ? "Processing..." : "Book your seat →"}
+              </button>
+            </div>
+            {/* MOBILE */}
+            <div className="flex sm:hidden flex-col px-4 pt-3 pb-4 gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-[15px] leading-tight">{workshop.title}</p>
+                  <p className="text-[#C7E36B] font-bold text-xs mt-0.5">{isFull ? "SOLD OUT" : "LIMITED SEATS AVAILABLE"}</p>
+                </div>
+                <div className="flex flex-col items-end shrink-0">
+                  <span className="text-white font-black text-lg leading-tight">{sym}{workshop.price}</span>
+                  {hasDiscount && <span className="text-gray-500 line-through text-sm">{sym}{workshop.originalPrice}</span>}
                 </div>
               </div>
-              <p className="text-gray-500 text-xs mt-0.5">{isFull ? "SOLD OUT" : "LIMITED SEATS AVAILABLE"}</p>
+              <button onClick={handleBookClick} disabled={enrolling || isFull}
+                className="w-full bg-[#C7E36B] text-black font-black text-base py-3 rounded-2xl hover:opacity-90 transition disabled:opacity-60 flex items-center justify-center gap-2">
+                {enrolling ? "Processing..." : "Book your seat →"}
+              </button>
             </div>
-            <button onClick={handleBookClick} disabled={enrolling || isFull}
-              className="bg-[#C7E36B] text-black font-black text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-60 whitespace-nowrap flex items-center gap-1 shrink-0">
-              {enrolling ? "Processing..." : "Book your seat →"}
-            </button>
           </div>
         )
       )}
