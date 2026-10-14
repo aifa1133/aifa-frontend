@@ -989,7 +989,7 @@ export default function WorkshopDetail() {
               {hasDiscount && <span className="text-gray-500 line-through text-xl">{sym}{workshop.originalPrice}</span>}
             </div>
             <ul className="space-y-3 mb-8">
-              {["Full Live Session Access","Lifetime Recording Access","Verified Certificate","Exclusive Prompt Pack","Private Community Access"].map(f => (
+              {["Full Live Session Access","Lifetime Recording Access","Industry Expert Guidance","Exclusive Prompt Pack","Private Community Access"].map(f => (
                 <li key={f} className="flex items-center gap-3 text-white text-sm">
                   <svg className="shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#C7E36B" fillOpacity="0.15"/><polyline points="6 12 10 16 18 8" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   {f}
