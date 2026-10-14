@@ -10,6 +10,7 @@ import Tools from "../Components/Tools";
 import Bootcamps from "../Components/Bootcamp";
 import Features from "../Components/Features";
 import Directors from "../Components/Directors";
+import Institutions from "../Components/Institutions";
 import Stats from "../Components/Stats";
 import Testimonial from "../Components/Testimonial";
 import CTASection from "../Components/CTASection";
@@ -64,6 +65,11 @@ export default function Home() {
       {/* DIRECTORS */}
       <section className="w-full">
         <Directors />
+      </section>
+
+      {/* INSTITUTIONS */}
+      <section className="w-full">
+        <Institutions />
       </section>
 
       {/* STATS */}
