@@ -2070,21 +2070,21 @@ function WorkshopsSection({ token }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex rounded-b-[20px] overflow-hidden">
+                  <div className="flex flex-col overflow-hidden rounded-b-[20px]">
                     <a
                       href={`/workshops/${w._id}`}
                       onClick={e => e.stopPropagation()}
-                      className="flex justify-center items-center gap-1 px-5 py-3 font-black text-sm uppercase bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition-all border-r border-white/10 whitespace-nowrap"
+                      className="flex w-full justify-center items-center px-[30px] py-[12px] font-bold text-[18px] bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition-all duration-300"
                     >
                       VIEW DETAILS
                     </a>
                     <button
                       onClick={(e) => handleReserve(w, e)}
                       disabled={isFull}
-                      className={`flex justify-center items-center gap-1 px-6 py-3 flex-1 font-black text-base uppercase transition-all
-                        ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#C7E36B] text-[#0F1112] hover:opacity-90"}`}
+                      className={`flex w-full justify-center items-center gap-[4px] px-[30px] py-[10px] font-bold text-[14px] uppercase transition-all duration-300
+                        ${isFull ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#D0E46A] text-[#1A1A1A] hover:bg-[#BDD250]"}`}
                     >
-                      {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><span className="text-xl">→</span></>}
+                      {isFull ? "SOLD OUT" : <><span>RESERVE SPOT</span><img src="/Arrowleft2.svg" alt="arrow" className="w-[16px] h-[16px]" /></>}
                     </button>
                   </div>
                 )}
