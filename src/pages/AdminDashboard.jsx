@@ -5673,6 +5673,8 @@ function CommunityAdmin({ token, adminName }) {
 
   /* ── Event thumbnail ── */
   const [thumbPreview, setThumbPreview] = useState(null);
+  const [thumbUploading, setThumbUploading] = useState(false);
+  const [thumbPct, setThumbPct] = useState(0);
 
   /* ── Nav ── */
   const [commTab, setCommTab] = useState("forum");
@@ -6115,7 +6117,7 @@ function CommunityAdmin({ token, adminName }) {
           setShowEventForm(false);
           setEditEventId(null);
           setEvent({title:"",type:"Workshop",mode:"ONLINE",date:"",startTime:"",endTime:"",timezone:"",duration:"2",capacity:"",description:"",link:"",location:"",openRSVP:true,featured:false});
-          setThumbPreview(null);
+          setThumbPreview(null); setThumbUploading(false); setThumbPct(0);
           setEventSuccess(true); setTimeout(() => setEventSuccess(false), 3000);
           globalShowToast(isEdit ? "Event updated!" : status === "draft" ? "Draft saved!" : "Event published!");
         } else globalShowToast(isEdit ? "Failed to update event." : "Failed to create event.");
@@ -6158,12 +6160,26 @@ function CommunityAdmin({ token, adminName }) {
                     <p className="text-[10px] text-gray-600 mt-1">RECOMMENDED: 16:9 ASPECT RATIO</p>
                   </div>
                 )}
-                <input type="file" accept="image/*" className="hidden" onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) { const r = new FileReader(); r.onload = ev => setThumbPreview(ev.target.result); r.readAsDataURL(file); }
+                <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  setThumbUploading(true); setThumbPct(0);
+                  try {
+                    const fd = new FormData(); fd.append("image", file);
+                    const d = await uploadXHR("/api/uploads/image", fd, token, pct => setThumbPct(pct));
+                    if (d.url) setThumbPreview(d.url);
+                  } catch { globalShowToast("Image upload failed."); }
+                  setThumbUploading(false); e.target.value = "";
                 }}/>
               </label>
-              {thumbPreview && <button onClick={() => setThumbPreview(null)} className="mt-1 text-[10px] text-red-400 hover:text-red-300">✕ Remove image</button>}
+              {thumbUploading && (
+                <div className="mt-2">
+                  <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                    <div className="h-1.5 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${thumbPct}%`}}/>
+                  </div>
+                  <p className="text-[10px] text-[#C7E36B] mt-1">{thumbPct}% uploading...</p>
+                </div>
+              )}
+              {thumbPreview && !thumbUploading && <button onClick={() => setThumbPreview(null)} className="mt-1 text-[10px] text-red-400 hover:text-red-300">✕ Remove image</button>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
