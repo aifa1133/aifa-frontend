@@ -3004,6 +3004,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
                 </button>
               </div>
               <Fld label="Lesson Title" value={newLesson.title} onChange={v => setNewLesson(l=>({...l,title:v}))} placeholder="e.g. Introduction to AI Cinematography"/>
+              <Fld label="Description" value={newLesson.desc||""} onChange={v=>setNewLesson(l=>({...l,desc:v}))} placeholder="Brief description of this lesson..." textarea />
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase mb-1.5">Lesson Thumbnail (16:9 — shows in syllabus grid)</p>
                 {newLesson.thumbnail === "uploading" ? (
