@@ -933,6 +933,41 @@ export default function WorkshopDetail() {
       {/* STUDENT SUCCESS STORIES */}
       <SuccessStories testimonials={workshop.testimonials} />
 
+      {/* PRICING CTA SECTION */}
+      <section className="relative py-20 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/bootcamp/bootcamp1.png')" }} />
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="relative z-10 max-w-md mx-auto">
+          <div className="bg-[#0F1112]/90 border border-[#C7E36B]/60 rounded-2xl p-8 relative">
+            {hasDiscount && (
+              <div className="absolute -top-3 right-5 bg-[#C7E36B] text-black text-xs font-black px-3 py-1 rounded-full uppercase tracking-wide">
+                {discount}% OFF TODAY
+              </div>
+            )}
+            <h2 className="text-white font-black text-2xl mb-1">Workshop Access</h2>
+            <p className="text-gray-400 text-sm mb-6">Everything you need to start creating AI films.</p>
+            <div className="flex items-baseline gap-3 mb-6">
+              <span className="text-white font-black text-5xl">{sym}{workshop.price}</span>
+              {hasDiscount && <span className="text-gray-500 line-through text-xl">{sym}{workshop.originalPrice}</span>}
+            </div>
+            <ul className="space-y-3 mb-8">
+              {["Full Live Session Access","Lifetime Recording Access","Verified Certificate","Exclusive Prompt Pack","Private Community Access"].map(f => (
+                <li key={f} className="flex items-center gap-3 text-white text-sm">
+                  <svg className="shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#C7E36B" fillOpacity="0.15"/><polyline points="6 12 10 16 18 8" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button onClick={handleBookClick} disabled={enrolling || isFull}
+              className="w-full bg-[#C7E36B] text-black font-black text-base uppercase py-4 rounded-xl hover:opacity-90 transition disabled:opacity-60 tracking-wide">
+              {isFull ? "SOLD OUT" : enrolling ? "Processing..." : "BOOK MY SEAT NOW"}
+            </button>
+            <p className="text-gray-500 text-xs text-center mt-3">Spots are filling up fast. Secure yours today.</p>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <WorkshopFAQ faqs={workshop.faqs} />
 
