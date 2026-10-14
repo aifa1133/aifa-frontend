@@ -4243,9 +4243,11 @@ function CommunitySection({ token, profile }) {
   const [newTag, setNewTag]           = useState("General");
   const [posting, setPosting]         = useState(false);
 
-  /* events + clubs for sidebar + tabs */
-  const [events, setEvents] = useState([]);
-  const [clubs, setClubs]   = useState([]);
+  /* events, clubs, channels, challenges */
+  const [events,     setEvents]     = useState([]);
+  const [clubs,      setClubs]      = useState([]);
+  const [channels,   setChannels]   = useState([]);
+  const [challenges, setChallenges] = useState([]);
 
   useEffect(() => {
     fetch("/api/community/threads")
@@ -4257,6 +4259,21 @@ function CommunitySection({ token, profile }) {
       .then(r => r.ok ? r.json() : [])
       .then(d => setEvents(Array.isArray(d) ? d : []))
       .catch(() => setEvents([]));
+
+    fetch("/api/community/clubs")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setClubs(Array.isArray(d) ? d : []))
+      .catch(() => setClubs([]));
+
+    fetch("/api/community/channels")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setChannels(Array.isArray(d) ? d : []))
+      .catch(() => setChannels([]));
+
+    fetch("/api/community/challenges")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setChallenges(Array.isArray(d) ? d.filter(c => c.status === "live") : []))
+      .catch(() => setChallenges([]));
   }, []);
 
   const filteredThreads = threads.filter(t =>
@@ -4461,29 +4478,129 @@ function CommunitySection({ token, profile }) {
   );
 
   /* ── Tab: Clubs ── */
-  const ClubsTab = () => (
+  const ClubsTab = () => clubs.length === 0 ? (
     <div className="text-center py-20 text-gray-500">
       <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <p className="text-sm font-semibold text-white mb-1">Clubs Coming Soon</p>
-      <p className="text-xs">Student clubs will be available here</p>
+      <p className="text-sm font-semibold text-white mb-1">No clubs yet</p>
+      <p className="text-xs">Check back soon!</p>
+    </div>
+  ) : (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      {clubs.map(cl => (
+        <div key={cl._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
+          {cl.bannerUrl
+            ? <img src={cl.bannerUrl} alt={cl.name} className="w-full h-32 object-cover"/>
+            : <div className="w-full h-32 bg-gradient-to-br from-[#C7E36B]/20 to-[#1a1d1e] flex items-center justify-center">
+                <span className="text-4xl font-black text-[#C7E36B]/40">{cl.name?.[0]}</span>
+              </div>
+          }
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-bold text-white">{cl.name}</p>
+              {cl.isPrimary && <span className="text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded-full">PRIMARY</span>}
+            </div>
+            {cl.city && <p className="text-[11px] text-gray-500 mb-2">📍 {cl.city}</p>}
+            {cl.description && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{cl.description}</p>}
+            <div className="flex items-center justify-between text-[10px] text-gray-500 mb-3">
+              <span>{cl.members || 0} members</span>
+              <span className="bg-white/5 px-2 py-0.5 rounded-full">{cl.type || "Public"}</span>
+            </div>
+            <button className="w-full py-2 rounded-xl bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] text-xs font-bold hover:bg-[#C7E36B]/20 transition-all">
+              Join Club
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 
   /* ── Tab: Chats ── */
-  const ChatsTab = () => (
+  const ChatsTab = () => channels.length === 0 ? (
     <div className="text-center py-20 text-gray-500">
       <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-      <p className="text-sm font-semibold text-white mb-1">Chats Coming Soon</p>
-      <p className="text-xs">Community channels will be available here</p>
+      <p className="text-sm font-semibold text-white mb-1">No channels yet</p>
+      <p className="text-xs">Community channels will appear here</p>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-3">
+      {channels.map(ch => (
+        <div key={ch._id} className="bg-[#111315] border border-white/8 rounded-2xl p-4 flex items-center justify-between gap-4 hover:border-white/20 transition-all">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#C7E36B]/15 flex items-center justify-center shrink-0">
+              <svg width="18" height="18" fill="none" stroke="#C7E36B" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-sm font-bold text-white truncate">{ch.name}</p>
+                <span className="text-[9px] bg-white/8 text-gray-400 px-2 py-0.5 rounded-full shrink-0">{ch.category || "General"}</span>
+              </div>
+              {ch.description && <p className="text-xs text-gray-500 truncate">{ch.description}</p>}
+              <p className="text-[10px] text-gray-600 mt-0.5">{ch.members || 0} members {ch.activeNow > 0 && <span className="text-green-400">· {ch.activeNow} active</span>}</p>
+            </div>
+          </div>
+          <div className="shrink-0 flex gap-2">
+            <span className="text-[10px] bg-white/5 text-gray-400 px-2 py-1 rounded-lg">{ch.access || "Public"}</span>
+            {ch.inviteLink
+              ? <a href={ch.inviteLink} target="_blank" rel="noreferrer" className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-1.5 rounded-xl hover:opacity-90 transition-all">Join</a>
+              : <button className="text-xs bg-[#C7E36B]/10 border border-[#C7E36B]/30 text-[#C7E36B] font-bold px-4 py-1.5 rounded-xl hover:bg-[#C7E36B]/20 transition-all">Join</button>
+            }
+          </div>
+        </div>
+      ))}
     </div>
   );
 
   /* ── Tab: Awards ── */
-  const AwardsTab = () => (
+  const AwardsTab = () => challenges.length === 0 ? (
     <div className="text-center py-20 text-gray-500">
       <svg className="mx-auto mb-3 opacity-40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-      <p className="text-sm font-semibold text-white mb-1">Awards & Challenges</p>
-      <p className="text-xs">Challenges and leaderboards will be available here</p>
+      <p className="text-sm font-semibold text-white mb-1">No active challenges yet</p>
+      <p className="text-xs">New challenges will appear here when launched</p>
+    </div>
+  ) : (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {challenges.map(ch => (
+        <div key={ch._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
+          {ch.thumb
+            ? <img src={ch.thumb} alt={ch.title} className="w-full h-36 object-cover"/>
+            : <div className="w-full h-36 bg-gradient-to-br from-yellow-900/30 to-[#1a1d1e] flex items-center justify-center">
+                <svg width="40" height="40" fill="none" stroke="#C7E36B" strokeWidth="1.2" opacity="0.3" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+              </div>
+          }
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <p className="text-sm font-bold text-white leading-snug">{ch.title}</p>
+              <span className="text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded-full shrink-0 uppercase">LIVE</span>
+            </div>
+            {ch.desc && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{ch.desc}</p>}
+            {(ch.startDate || ch.endDate) && (
+              <p className="text-[10px] text-gray-500 mb-2">
+                {ch.startDate && `From ${ch.startDate}`}{ch.endDate && ` · Ends ${ch.endDate}`}
+              </p>
+            )}
+            {Array.isArray(ch.submissionTypes) && ch.submissionTypes.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {ch.submissionTypes.map(t => <span key={t} className="text-[10px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-full">{t}</span>)}
+              </div>
+            )}
+            {Array.isArray(ch.awards) && ch.awards.length > 0 && (
+              <div className="flex flex-col gap-1 mb-3">
+                {ch.awards.slice(0, 2).map((a, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[11px]">
+                    <span className="text-yellow-400">🏆</span>
+                    <span className="text-[#C7E36B] font-bold">{a.type}</span>
+                    {a.description && <span className="text-gray-500">— {a.description}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-500">{ch.participants || 0} participants</span>
+              <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-1.5 rounded-xl hover:opacity-90 transition-all">Participate</button>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 
