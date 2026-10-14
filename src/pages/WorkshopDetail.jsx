@@ -157,56 +157,59 @@ function WhatYouWillCreate({ projects }) {
   );
 }
 
-const AUDIENCE_IMAGES = [
-  "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600&q=80",
-  "https://images.unsplash.com/photo-1551817958-c5b51e7b4a33?w=600&q=80",
-  "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80",
-  "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=600&q=80",
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&q=80",
-  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80",
+const AUDIENCE_CARDS = [
+  { title: "Filmmakers & Video Creators",   desc: "Bring your stories to life with AI-powered filmmaking.",                  img: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600&q=80" },
+  { title: "Marketing Professionals",        desc: "Create better campaigns, ads, and brand content with AI.",                img: "https://images.unsplash.com/photo-1551817958-c5b51e7b4a33?w=600&q=80" },
+  { title: "Content Creators & Influencers", desc: "Make eye-catching reels and videos faster with AI.",                     img: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80" },
+  { title: "Designers & Creatives",          desc: "Turn your ideas into stunning visuals with AI.",                          img: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=600&q=80" },
+  { title: "Freelancers & Agency Owners",    desc: "Offer AI video services and grow your income streams.", badge: "FREELANCE",
+    img: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=80" },
 ];
 
 function WhoIsItFor({ audience }) {
-  const raw = (audience && audience.length > 0) ? audience : DEFAULT_AUDIENCE;
-  const items = raw.map((a, i) => ({ ...a, img: AUDIENCE_IMAGES[i % AUDIENCE_IMAGES.length] }));
-  const main = items.slice(0, 4);
-  const last = items[4] || null;
+  const raw = (audience && audience.length >= 5) ? audience : null;
+  const cards = raw
+    ? raw.map((a, i) => ({ title: a.title, desc: a.description, img: AUDIENCE_CARDS[i % AUDIENCE_CARDS.length].img, badge: AUDIENCE_CARDS[i]?.badge }))
+    : AUDIENCE_CARDS;
+
+  const grid = cards.slice(0, 4);
+  const wide = cards[4] || null;
 
   return (
     <section className="bg-[#0B0F10] py-16 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <p className="text-[#C7E36B] text-xs font-bold tracking-widest mb-2 uppercase">Who is it for?</p>
-        <h2 className="text-white font-black text-3xl md:text-5xl mb-3 uppercase leading-tight">WHO IS THIS<br />WORKSHOP FOR?</h2>
-        <p className="text-gray-400 text-sm mb-10 max-w-md">Whether you are a seasoned creative or a complete beginner, this workshop is designed to level up your skills.</p>
+        <p className="text-[#C7E36B] text-xs font-bold tracking-widest mb-3 uppercase">Who is it for?</p>
+        <h2 className="text-white font-black text-4xl md:text-5xl mb-4 uppercase leading-[1.05]">WHO IS THIS<br />WORKSHOP FOR?</h2>
+        <p className="text-gray-400 text-sm mb-8 max-w-md leading-relaxed">Whether you are a seasoned creative or a complete beginner, this workshop is designed to level up your skills.</p>
 
-        {/* 2×2 grid */}
+        {/* 2×2 grid — portrait cards */}
         <div className="grid grid-cols-2 gap-3 mb-3">
-          {main.map((aud, i) => (
-            <div key={i} className="relative rounded-2xl overflow-hidden aspect-[4/3] group">
-              <img src={aud.img} alt={aud.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          {grid.map((c, i) => (
+            <div key={i} className="relative rounded-[20px] overflow-hidden group" style={{ aspectRatio: "3/4" }}>
+              <img src={c.img} alt={c.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="text-white font-black text-sm md:text-base leading-tight mb-1">{aud.title}</p>
-                <p className="text-gray-300 text-xs leading-snug">{aud.description}</p>
+                <p className="text-white font-black text-[13px] md:text-base leading-tight mb-1">{c.title}</p>
+                <p className="text-gray-300 text-[11px] md:text-xs leading-snug">{c.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Wide bottom card */}
-        {last && (
-          <div className="relative rounded-2xl overflow-hidden group" style={{ minHeight: "180px" }}>
-            <img src={last.img} alt={last.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-              {items[4]?.badge && (
+        {wide && (
+          <div className="relative rounded-[20px] overflow-hidden group" style={{ minHeight: "220px" }}>
+            <img src={wide.img} alt={wide.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              {wide.badge && (
                 <span className="inline-flex items-center gap-1.5 text-[#C7E36B] text-[10px] font-black uppercase tracking-widest mb-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C7E36B]" />{items[4].badge}
+                  <span className="w-2 h-2 rounded-full bg-[#C7E36B]" />{wide.badge}
                 </span>
               )}
-              <p className="text-white font-black text-xl md:text-3xl leading-tight mb-1">{last.title}</p>
-              <p className="text-gray-300 text-sm max-w-lg">{last.description}</p>
+              <p className="text-white font-black text-2xl md:text-4xl leading-tight mb-2">{wide.title}</p>
+              <p className="text-gray-300 text-sm max-w-lg">{wide.desc}</p>
             </div>
           </div>
         )}
