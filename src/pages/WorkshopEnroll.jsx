@@ -154,7 +154,7 @@ export default function WorkshopEnroll() {
       const h = { "Content-Type": "application/json", Authorization: `Bearer ${activeToken}` };
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST", headers: h,
-        body: JSON.stringify({ itemType: "workshop", itemId: id, couponCode: couponResult?.couponCode || undefined }),
+        body: JSON.stringify({ itemType: "workshop", itemId: workshop?._id || id, couponCode: couponResult?.couponCode || undefined }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) { alert(orderData.message || "Could not create order. Try again."); setPaying(false); return; }

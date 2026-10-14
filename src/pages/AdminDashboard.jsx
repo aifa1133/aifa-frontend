@@ -2118,7 +2118,7 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"" });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", trainer:"", seats:50, date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"" });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -2135,7 +2135,7 @@ function WorkshopsAdmin({ token }) {
       dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
       timeStr = `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
     }
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"" });
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", trainer:w.trainer||"", seats:w.seats||50, date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"" });
     setIsEditing(true); setView("create");
   };
 
@@ -2150,7 +2150,7 @@ function WorkshopsAdmin({ token }) {
           if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
         } catch {}
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", ...(scheduledAt && { scheduledAt }) };
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), trainer:cf.trainer||"", seats:parseInt(cf.seats)||50, isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -2219,9 +2219,13 @@ function WorkshopsAdmin({ token }) {
           </Sect>
           <Sect icon="service" title="Key Details">
             <div className="grid grid-cols-3 gap-3">
-              <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} />
-              <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} />
-              <Fld label="MODE" value={cf.mode} onChange={v=>setCf({...cf,mode:v})} />
+              <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} placeholder="e.g. 3 Hours" />
+              <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} placeholder="e.g. INR 999" />
+              <Fld label="MODE" value={cf.mode} onChange={v=>setCf({...cf,mode:v})} placeholder="ONLINE / OFFLINE" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="INSTRUCTOR NAME" value={cf.trainer} onChange={v=>setCf({...cf,trainer:v})} placeholder="e.g. KR Ravi Teja" />
+              <Fld label="STUDENT LIMIT" value={String(cf.seats)} onChange={v=>setCf({...cf,seats:v})} type="number" min="1" placeholder="e.g. 50" />
             </div>
           </Sect>
           <Sect icon="link" title="CTA Section">
@@ -2580,17 +2584,17 @@ function CourseEditor({ course, token, onBack, onSaved }) {
 
         {/* Settings (editable) */}
         <Sect icon="resources" title="Course Settings">
+          <Fld label="Title" value={info.title ?? course.title ?? ""} onChange={v=>setInfo(i=>({...i,title:v}))} placeholder="Course title" />
           <div className="grid grid-cols-2 gap-3">
-            <Fld label="Title" value={info.title ?? course.title ?? ""} onChange={v=>setInfo(i=>({...i,title:v}))} />
-            <Fld label="Price (₹)" value={String(info.price ?? course.price ?? "")} onChange={v=>setInfo(i=>({...i,price:parseFloat(v)||0}))} />
+            <Fld label="Price (₹)" value={String(info.price ?? course.price ?? "")} onChange={v=>setInfo(i=>({...i,price:parseFloat(v)||0}))} type="number" min="0" />
+            <Fld label="Original Price (₹)" value={String(info.originalPrice ?? course.originalPrice ?? "")} onChange={v=>setInfo(i=>({...i,originalPrice:parseFloat(v)||0}))} type="number" min="0" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Fld label="Original Price (₹)" value={String(info.originalPrice ?? course.originalPrice ?? "")} onChange={v=>setInfo(i=>({...i,originalPrice:parseFloat(v)||0}))} />
-            <Fld label="Duration" value={info.duration ?? course.duration ?? ""} onChange={v=>setInfo(i=>({...i,duration:v}))} placeholder="e.g. 12 hours" />
+            <Fld label="Duration" value={info.duration ?? course.duration ?? ""} onChange={v=>setInfo(i=>({...i,duration:v}))} placeholder="e.g. 3 Hours" />
+            <Fld label="Instructor / Mentor" value={info.instructor ?? course.instructor ?? ""} onChange={v=>setInfo(i=>({...i,instructor:v}))} placeholder="Instructor name" />
           </div>
-          <Fld label="Instructor / Mentor" value={info.instructor ?? course.instructor ?? ""} onChange={v=>setInfo(i=>({...i,instructor:v}))} placeholder="Instructor name" />
-          <Fld label="Short Description" value={info.shortDesc ?? course.shortDesc ?? ""} onChange={v=>setInfo(i=>({...i,shortDesc:v}))} />
-          <Fld label="Full Description" value={info.description ?? course.description ?? ""} onChange={v=>setInfo(i=>({...i,description:v}))} textarea />
+          <Fld label="Short Description" value={info.shortDesc ?? course.shortDesc ?? ""} onChange={v=>setInfo(i=>({...i,shortDesc:v}))} textarea placeholder="A brief summary shown in the course card..." />
+          <Fld label="Full Description" value={info.description ?? course.description ?? ""} onChange={v=>setInfo(i=>({...i,description:v}))} textarea placeholder="Full course details, what students will learn..." />
 
           {/* Thumbnail */}
           <div>
@@ -5581,14 +5585,21 @@ function AdminLoader({ label = "Loading" }) {
 }
 
 function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min }) {
-  const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 placeholder-gray-600";
+  const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60 focus:bg-[#1e2120] placeholder-gray-600 transition-colors";
+  const taRef = React.useRef(null);
+  React.useLayoutEffect(() => {
+    if (textarea && taRef.current) {
+      taRef.current.style.height = "auto";
+      taRef.current.style.height = taRef.current.scrollHeight + "px";
+    }
+  }, [value, textarea]);
   return (
     <div>
-      {label && <p className="text-[10px] text-gray-400 font-semibold mb-1">{label}</p>}
+      {label && <p className="text-xs text-gray-400 font-semibold mb-1.5 tracking-wide">{label}</p>}
       <div className="relative">
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
         {textarea
-          ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`${cls} resize-none h-24 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${prefix?"pl-7":""}`}/>
+          ? <textarea ref={taRef} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={3} className={`${cls} resize-none overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${prefix?"pl-7":""}`}/>
           : <input type={type||"text"} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} min={min} className={`${cls} ${prefix?"pl-7":""} ${type==="date"?"[color-scheme:dark]":""}`}/>
         }
       </div>
@@ -5651,6 +5662,7 @@ function CommunityAdmin({ token, adminName }) {
   /* ── Awards/Challenges state ── */
   const [challengeFilter, setChallengeFilter]   = useState("Active");
   const [showChallengeForm, setShowChallengeForm] = useState(false);
+  const [editChallengeId, setEditChallengeId]   = useState(null);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [challengePublishedOk, setChallengePublishedOk] = useState(false);
   const [challenge, setChallenge] = useState({ title:"", desc:"", startDate:"", endDate:"", visibility:"Public" });
@@ -5666,6 +5678,7 @@ function CommunityAdmin({ token, adminName }) {
   /* ── Clubs state ── */
   const [clubs, setClubs]               = useState([]);
   const [showClubForm, setShowClubForm] = useState(false);
+  const [editClubId, setEditClubId]     = useState(null);
   const [clubForm, setClubForm]         = useState({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false, bannerUrl:"" });
   const [selectedClub, setSelectedClub] = useState(null);
   const [clubDetailTab, setClubDetailTab] = useState("feed");
@@ -5673,6 +5686,7 @@ function CommunityAdmin({ token, adminName }) {
   /* ── Chats state ── */
   const [channels, setChannels]               = useState([]);
   const [showChannelForm, setShowChannelForm] = useState(false);
+  const [editChannelId, setEditChannelId]     = useState(null);
   const [channelForm, setChannelForm]         = useState({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
 
   /* ── Event thumbnail ── */
@@ -6827,7 +6841,20 @@ function CommunityAdmin({ token, adminName }) {
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button className="text-sm border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5">
+                  <button onClick={async () => {
+                    if (!window.confirm(`Delete "${selectedClub.name}"?`)) return;
+                    const r = await fetch(`/api/community/clubs/${selectedClub._id}`, { method:"DELETE", headers:{Authorization:`Bearer ${token}`} });
+                    if (r.ok) { setClubs(prev => prev.filter(c => c._id !== selectedClub._id)); setSelectedClub(null); }
+                  }} className="text-sm border border-red-500/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/10 flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                    Delete
+                  </button>
+                  <button onClick={() => {
+                    setEditClubId(selectedClub._id);
+                    setClubForm({ name: selectedClub.name||"", city: selectedClub.city||"", description: selectedClub.description||"", type: selectedClub.type||"Public", memberLimit: selectedClub.memberLimit||"", isPrimary: selectedClub.isPrimary||false, autoDetect: selectedClub.autoDetect||false, bannerUrl: selectedClub.bannerUrl||"" });
+                    setSelectedClub(null);
+                    setShowClubForm(true);
+                  }} className="text-sm border border-white/20 text-gray-300 px-4 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Edit Club
                   </button>
@@ -6911,7 +6938,12 @@ function CommunityAdmin({ token, adminName }) {
                     <span className="text-xs font-bold text-white">{v}</span>
                   </div>
                 ))}
-                <button className="w-full mt-3 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-[#b8d44f]">Moderation Settings</button>
+                <button onClick={() => {
+                  setEditClubId(selectedClub._id);
+                  setClubForm({ name: selectedClub.name||"", city: selectedClub.city||"", description: selectedClub.description||"", type: selectedClub.type||"Public", memberLimit: selectedClub.memberLimit||"", isPrimary: selectedClub.isPrimary||false, autoDetect: selectedClub.autoDetect||false, bannerUrl: selectedClub.bannerUrl||"" });
+                  setSelectedClub(null);
+                  setShowClubForm(true);
+                }} className="w-full mt-3 bg-[#C7E36B] text-black text-xs font-bold py-2 rounded-lg hover:bg-[#b8d44f]">Moderation Settings</button>
               </div>
               <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Club Health</p>
@@ -7013,20 +7045,30 @@ function CommunityAdmin({ token, adminName }) {
               </div>
               {/* Actions */}
               <div className="flex gap-3 pb-4">
-                <button onClick={() => setShowClubForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
+                <button onClick={() => { setShowClubForm(false); setEditClubId(null); }} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
                 <button onClick={async () => {
                   if (!clubForm.name.trim()) return;
                   const body = { ...clubForm, type: clubForm.type.replace(" (Open to All)","") };
-                  const r = await fetch("/api/community/clubs", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
-                  if (r.ok) {
-                    const saved = await r.json();
-                    setClubs(prev => [saved, ...prev]);
-                    setClubForm({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false, bannerUrl:"" });
-                    setShowClubForm(false);
+                  if (editClubId) {
+                    const r = await fetch(`/api/community/clubs/${editClubId}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                    if (r.ok) {
+                      const saved = await r.json();
+                      setClubs(prev => prev.map(c => c._id === editClubId ? saved : c));
+                      setSelectedClub(saved);
+                      setEditClubId(null); setShowClubForm(false);
+                    }
+                  } else {
+                    const r = await fetch("/api/community/clubs", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                    if (r.ok) {
+                      const saved = await r.json();
+                      setClubs(prev => [saved, ...prev]);
+                      setClubForm({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false, bannerUrl:"" });
+                      setShowClubForm(false);
+                    }
                   }
                 }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Create Club
+                  {editClubId ? "Save Changes" : "Create Club"}
                 </button>
               </div>
             </div>
@@ -7094,9 +7136,10 @@ function CommunityAdmin({ token, adminName }) {
                 const typeCls = club.type==="Private"?"bg-purple-500/20 text-purple-400":club.type==="Invite Only"?"bg-blue-500/20 text-blue-400":"bg-green-500/20 text-green-400";
                 return (
                   <div key={club._id||i} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all cursor-pointer" onClick={() => setSelectedClub(club)}>
-                    <div className={`relative h-[170px] bg-gradient-to-br ${grd}`}>
-                      {club.isPrimary && <span className="absolute top-3 right-3 text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded">PRIMARY CLUB</span>}
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <div className={`relative h-[170px] bg-gradient-to-br ${grd} overflow-hidden`}>
+                      {club.bannerUrl && <img src={club.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover"/>}
+                      {club.isPrimary && <span className="absolute top-3 right-3 text-[9px] font-black bg-[#C7E36B] text-black px-2 py-0.5 rounded z-10">PRIMARY CLUB</span>}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
                         <h3 className="text-base font-bold text-white">{club.name}</h3>
                         <p className="text-xs text-gray-300">{club.city}</p>
                       </div>
@@ -7181,19 +7224,28 @@ function CommunityAdmin({ token, adminName }) {
               </div>
               {/* Actions */}
               <div className="flex gap-3 pb-4">
-                <button onClick={() => setShowChannelForm(false)} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
+                <button onClick={() => { setShowChannelForm(false); setEditChannelId(null); }} className="text-sm border border-white/20 text-gray-300 px-5 py-2.5 rounded-lg hover:bg-white/5">Cancel</button>
                 <button onClick={async () => {
                   if (!channelForm.name.trim()) return;
-                  const r = await fetch("/api/community/channels", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(channelForm) });
-                  if (r.ok) {
-                    const saved = await r.json();
-                    setChannels(prev => [saved, ...prev]);
-                    setChannelForm({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
-                    setShowChannelForm(false);
+                  if (editChannelId) {
+                    const r = await fetch(`/api/community/channels/${editChannelId}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(channelForm) });
+                    if (r.ok) {
+                      const saved = await r.json();
+                      setChannels(prev => prev.map(c => c._id === editChannelId ? saved : c));
+                      setEditChannelId(null); setShowChannelForm(false);
+                    }
+                  } else {
+                    const r = await fetch("/api/community/channels", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(channelForm) });
+                    if (r.ok) {
+                      const saved = await r.json();
+                      setChannels(prev => [saved, ...prev]);
+                      setChannelForm({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
+                      setShowChannelForm(false);
+                    }
                   }
                 }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Create Channel
+                  {editChannelId ? "Save Changes" : "Create Channel"}
                 </button>
               </div>
             </div>
@@ -7313,7 +7365,11 @@ function CommunityAdmin({ token, adminName }) {
                       </div>
                     )}
                     <div className="flex items-center gap-2 shrink-0">
-                      <button className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:bg-white/5">Edit</button>
+                      <button onClick={() => {
+                        setEditChannelId(ch._id);
+                        setChannelForm({ name: ch.name||"", category: ch.category||"General", description: ch.description||"", inviteLink: ch.inviteLink||"", access: ch.access||"Public" });
+                        setShowChannelForm(true);
+                      }} className="text-xs border border-white/15 text-gray-400 px-3 py-1.5 rounded-lg hover:bg-white/5">Edit</button>
                       <button onClick={async () => { const r = await fetch(`/api/community/channels/${ch._id}`, {method:"DELETE", headers:{Authorization:`Bearer ${token}`}}); if (r.ok) setChannels(prev => prev.filter(c => c._id!==ch._id)); }} className="text-xs border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">Delete</button>
                     </div>
                   </div>
@@ -7338,6 +7394,7 @@ function CommunityAdmin({ token, adminName }) {
           setChallengeThumb(null);
           setChallengeSubTypes(["Video"]);
           setChallengeAwards([{ type:"Cash Reward", description:"" }]);
+          setEditChallengeId(null);
         };
 
         /* ── Published Challenge Detail View ── */
@@ -7435,18 +7492,40 @@ function CommunityAdmin({ token, adminName }) {
                 {/* Manage Challenge */}
                 <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider p-4 pb-2">Manage Challenge</p>
-                  {[
-                    { label:"Edit Challenge",      icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, danger:false },
-                    { label:"Preview Live Page",   icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>, danger:false },
-                    { label:"Copy Challenge Link", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>, danger:false },
-                    { label:"Pause Challenge",     icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>, danger:false },
-                    { label:"Close Challenge",     icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>, danger:true },
-                  ].map(a => (
-                    <button key={a.label} className={`w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm ${a.danger?"text-red-400":"text-gray-300"}`}>
-                      <span className="flex items-center gap-2">{a.icon}{a.label}</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
-                  ))}
+                  <button onClick={() => {
+                    setEditChallengeId(selectedChallenge._id);
+                    setChallenge({ title: selectedChallenge.title||"", desc: selectedChallenge.desc||"", startDate: selectedChallenge.startDate||"", endDate: selectedChallenge.endDate||"", visibility: selectedChallenge.visibility||"Public" });
+                    setChallengeThumb(selectedChallenge.thumb||null);
+                    setChallengeSubTypes(selectedChallenge.submissionTypes||["Video"]);
+                    setChallengeAwards(selectedChallenge.awards||[{ type:"Cash Reward", description:"" }]);
+                    setSelectedChallenge(null); setShowChallengeForm(true);
+                  }} className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm text-gray-300">
+                    <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Challenge</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <button className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm text-gray-300">
+                    <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview Live Page</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <button onClick={() => navigator.clipboard?.writeText(window.location.origin + "/challenges/" + selectedChallenge._id)} className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm text-gray-300">
+                    <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Copy Challenge Link</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <button onClick={async () => {
+                    const r = await fetch(`/api/community/challenges/${selectedChallenge._id}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify({ status:"paused" }) });
+                    if (r.ok) { const saved = await r.json(); setChallenges(prev => prev.map(c => c._id===saved._id?saved:c)); setSelectedChallenge(saved); }
+                  }} className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm text-gray-300">
+                    <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Pause Challenge</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <button onClick={async () => {
+                    if (!window.confirm("Close and delete this challenge?")) return;
+                    const r = await fetch(`/api/community/challenges/${selectedChallenge._id}`, { method:"DELETE", headers:{Authorization:`Bearer ${token}`} });
+                    if (r.ok) { setChallenges(prev => prev.filter(c => c._id!==selectedChallenge._id)); setSelectedChallenge(null); setChallengePublishedOk(false); }
+                  }} className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 hover:bg-white/5 transition-colors text-sm text-red-400">
+                    <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Close Challenge</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
                 </div>
                 {/* Challenge Summary */}
                 <div className="bg-[#111315] border border-white/10 rounded-2xl p-4">
@@ -7691,15 +7770,25 @@ function CommunityAdmin({ token, adminName }) {
                   <button onClick={async () => {
                     if (!challenge.title.trim()) return;
                     const body = { ...challenge, status:"draft", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
-                    const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
-                    if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); }
+                    if (editChallengeId) {
+                      const r = await fetch(`/api/community/challenges/${editChallengeId}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                      if (r.ok) { const saved = await r.json(); setChallenges(prev => prev.map(c => c._id===editChallengeId?saved:c)); resetChallengeForm(); setShowChallengeForm(false); }
+                    } else {
+                      const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                      if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); }
+                    }
                   }} className="flex-1 text-sm border border-white/20 text-gray-300 py-2.5 rounded-lg hover:bg-white/5 font-medium">Save Draft</button>
                   <button onClick={async () => {
                     if (!challenge.title.trim()) return;
                     const body = { ...challenge, status:"live", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
-                    const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
-                    if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); setSelectedChallenge(saved); setChallengePublishedOk(true); }
-                  }} className="flex-1 text-sm bg-[#C7E36B] text-black font-bold py-2.5 rounded-lg hover:bg-[#b8d44f]">Publish Challenge</button>
+                    if (editChallengeId) {
+                      const r = await fetch(`/api/community/challenges/${editChallengeId}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                      if (r.ok) { const saved = await r.json(); setChallenges(prev => prev.map(c => c._id===editChallengeId?saved:c)); resetChallengeForm(); setShowChallengeForm(false); setSelectedChallenge(saved); setChallengePublishedOk(true); }
+                    } else {
+                      const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+                      if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); setSelectedChallenge(saved); setChallengePublishedOk(true); }
+                    }
+                  }} className="flex-1 text-sm bg-[#C7E36B] text-black font-bold py-2.5 rounded-lg hover:bg-[#b8d44f]">{editChallengeId ? "Update Challenge" : "Publish Challenge"}</button>
                 </div>
               </div>
             </div>

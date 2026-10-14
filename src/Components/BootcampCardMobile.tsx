@@ -73,12 +73,14 @@ export default function BootcampCardMobile({
       </div>
 
       {/* Title */}
-      <div className="relative mt-2 rounded-[8px] bg-[#D9D9D9] px-4 py-3">
-        <h3 className="text-[18px] font-bold text-[#1A1A1A] pr-4">
-          {item.title}
-        </h3>
-        <div className="absolute top-2 right-2">
-          <SeatsCounter seed={seed} />
+      <div className="mt-2 rounded-[8px] bg-[#D9D9D9] px-4 py-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-[18px] font-bold text-[#1A1A1A] leading-snug">
+            {item.title}
+          </h3>
+          <div className="shrink-0 mt-0.5">
+            <SeatsCounter seed={seed} />
+          </div>
         </div>
       </div>
 

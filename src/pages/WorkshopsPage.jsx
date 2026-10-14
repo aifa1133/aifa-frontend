@@ -1,7 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+
+function SeatsCounter({ seed = 0 }) {
+  const base = [7, 6, 5][seed % 3];
+  const [seats, setSeats] = useState(base);
+  const [flash, setFlash] = useState(false);
+  const seatsRef = useRef(base);
+  useEffect(() => {
+    const tick = () => {
+      setFlash(true);
+      setTimeout(() => {
+        seatsRef.current = seatsRef.current <= 4 ? (Math.floor(Math.random() * 3) + 5) : seatsRef.current - 1;
+        setSeats(seatsRef.current);
+        setFlash(false);
+      }, 350);
+    };
+    const delay = setTimeout(() => {
+      tick();
+      const id = setInterval(tick, 12000 + seed * 3000);
+      return () => clearInterval(id);
+    }, seed * 4000 + 500);
+    return () => clearTimeout(delay);
+  }, []);
+  return (
+    <div className={`flex items-center gap-1 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg transition-all duration-300 whitespace-nowrap select-none ${flash ? "opacity-0 scale-90" : "opacity-100 scale-100"}`}>
+      🔥 Only few seats left
+    </div>
+  );
+}
 
 const fmtDateBox = (scheduledAt) => {
   if (!scheduledAt) return "—";
@@ -208,8 +236,10 @@ export default function WorkshopsPage() {
                             </span>
                           </div>
                         )}
-                        {isReserved && (
+                        {isReserved ? (
                           <span className="absolute top-3 right-3 text-[10px] bg-[#2C3A10] text-white font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
+                        ) : !isFull && (
+                          <div className="absolute top-3 right-3"><SeatsCounter seed={i} /></div>
                         )}
                         <h3 className="self-stretch text-[#2B2D30] font-[Montserrat] text-[22px] leading-[28px] md:text-[36px] md:leading-[42px] font-black pr-20">
                           {item.title}

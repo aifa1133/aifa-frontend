@@ -96,18 +96,41 @@ const DEFAULT_FAQS = [
   { question: "Which tools will be covered?", answer: "We cover industry-leading AI tools for video creation, image generation, voice synthesis, and more." },
 ];
 
+const LEARN_ICONS = [
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>,
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>,
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#C7E36B" stroke="none"/></svg>,
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="#C7E36B" stroke="none"/></svg>,
+];
+
 function WhatYouWillLearn({ outcomes }) {
   const items = (outcomes && outcomes.length > 0) ? outcomes : DEFAULT_OUTCOMES;
   return (
     <section className="bg-[#0B0F10] py-16 px-4">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-white font-black text-3xl md:text-4xl text-center mb-3">What You Will Learn</h2>
-        <p className="text-gray-400 text-center text-sm mb-10">Master the complete AI filmmaking workflow—from idea generation to exporting professional-quality videos.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-white font-black text-4xl md:text-5xl text-center uppercase leading-tight mb-4">
+          What You Will<br />Learn
+        </h2>
+        <p className="text-gray-400 text-center text-sm md:text-base mb-10">
+          Master the complete AI filmmaking workflow—from idea generation to exporting professional-quality videos.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
           {items.map((item, i) => (
-            <div key={i} className="bg-[#111315] rounded-2xl px-6 py-5">
-              <p className="text-white font-bold text-base mb-1">{item.title}</p>
-              <p className="text-gray-400 text-sm">{item.description}</p>
+            <div key={i} className="bg-[#111315] rounded-2xl p-5 flex flex-col gap-4 min-h-[160px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#C7E36B] text-xs font-black bg-[#C7E36B]/10 px-2 py-0.5 rounded-md">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="w-8 h-8 rounded-lg bg-[#C7E36B]/10 flex items-center justify-center">
+                  {LEARN_ICONS[i % LEARN_ICONS.length]}
+                </span>
+              </div>
+              <div>
+                <p className="text-white font-black text-base md:text-lg leading-snug mb-1.5">{item.title}</p>
+                <p className="text-gray-400 text-xs md:text-sm leading-relaxed">{item.description}</p>
+              </div>
             </div>
           ))}
         </div>
