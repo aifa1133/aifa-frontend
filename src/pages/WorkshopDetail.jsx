@@ -191,10 +191,6 @@ function SuccessStories({ testimonials }) {
             <h2 className="text-white font-black text-3xl md:text-4xl">Student Success Stories</h2>
             <p className="text-gray-400 text-sm mt-1">See what others achieved after taking this workshop.</p>
           </div>
-          <button onClick={() => setIdx(i => (i + 1) % items.length)}
-            className="w-10 h-10 bg-[#C7E36B] rounded-lg flex items-center justify-center hover:opacity-90 transition shrink-0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B0F10" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           {items.slice(0, 3).map((t, i) => (
