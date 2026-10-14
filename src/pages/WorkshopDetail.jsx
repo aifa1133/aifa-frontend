@@ -189,9 +189,9 @@ function WhoIsItFor({ audience }) {
             <div key={i} className="relative rounded-[20px] overflow-hidden group aspect-[3/4] md:aspect-[3/2]">
               <img src={c.img} alt={c.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="text-white font-black text-[13px] md:text-base leading-tight mb-1">{c.title}</p>
-                <p className="text-gray-300 text-[11px] md:text-xs leading-snug">{c.desc}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+                <p className="text-white font-black text-[13px] md:text-xl leading-tight mb-1">{c.title}</p>
+                <p className="text-gray-300 text-[11px] md:text-sm leading-snug">{c.desc}</p>
               </div>
             </div>
           ))}
