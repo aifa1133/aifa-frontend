@@ -2588,6 +2588,7 @@ function CourseEditor({ course, token, onBack, onSaved }) {
             <Fld label="Original Price (₹)" value={String(info.originalPrice ?? course.originalPrice ?? "")} onChange={v=>setInfo(i=>({...i,originalPrice:parseFloat(v)||0}))} />
             <Fld label="Duration" value={info.duration ?? course.duration ?? ""} onChange={v=>setInfo(i=>({...i,duration:v}))} placeholder="e.g. 12 hours" />
           </div>
+          <Fld label="Instructor / Mentor" value={info.instructor ?? course.instructor ?? ""} onChange={v=>setInfo(i=>({...i,instructor:v}))} placeholder="Instructor name" />
           <Fld label="Short Description" value={info.shortDesc ?? course.shortDesc ?? ""} onChange={v=>setInfo(i=>({...i,shortDesc:v}))} />
           <Fld label="Full Description" value={info.description ?? course.description ?? ""} onChange={v=>setInfo(i=>({...i,description:v}))} textarea />
 
