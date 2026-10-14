@@ -186,7 +186,7 @@ function WhoIsItFor({ audience }) {
         {/* 2×2 grid — portrait cards */}
         <div className="grid grid-cols-2 gap-3 mb-3">
           {grid.map((c, i) => (
-            <div key={i} className="relative rounded-[20px] overflow-hidden group" style={{ aspectRatio: "3/4" }}>
+            <div key={i} className="relative rounded-[20px] overflow-hidden group aspect-[3/4] md:aspect-[3/2]">
               <img src={c.img} alt={c.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -199,7 +199,7 @@ function WhoIsItFor({ audience }) {
 
         {/* Wide bottom card */}
         {wide && (
-          <div className="relative rounded-[20px] overflow-hidden group" style={{ minHeight: "220px" }}>
+          <div className="relative rounded-[20px] overflow-hidden group" style={{ minHeight: "260px", maxHeight: "340px" }}>
             <img src={wide.img} alt={wide.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
