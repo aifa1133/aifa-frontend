@@ -31,7 +31,7 @@ function SeatsCounter({ seed = 0 }) {
 
   return (
     <div className={`flex items-center gap-1 bg-red-600 text-white text-[11px] sm:text-[12px] font-black px-2.5 py-1 rounded-full shadow-lg transition-all duration-300 whitespace-nowrap select-none ${flash ? "opacity-0 scale-90" : "opacity-100 scale-100"}`}>
-      🔥 Only {seats} seats left
+      🔥 Only few seats left
     </div>
   );
 }
