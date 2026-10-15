@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminInfluencers from "./admin/AdminInfluencers";
 
@@ -5586,8 +5586,8 @@ function AdminLoader({ label = "Loading" }) {
 
 function Fld({ label, value, onChange, textarea, placeholder, prefix, type, min }) {
   const cls = "w-full bg-[#1A1D1E] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60 focus:bg-[#1e2120] placeholder-gray-600 transition-colors";
-  const taRef = React.useRef(null);
-  React.useLayoutEffect(() => {
+  const taRef = useRef(null);
+  useLayoutEffect(() => {
     if (textarea && taRef.current) {
       taRef.current.style.height = "auto";
       taRef.current.style.height = taRef.current.scrollHeight + "px";
