@@ -449,6 +449,12 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
   const [projResUploading,setProjResUploading]=useState(false);
   const [projResPct,setProjResPct]=useState(0);
   const [projView,setProjView]=useState("summary"); // "summary"|"edit"|"submissions"
+  const editTopRef = useRef(null);
+  useEffect(() => {
+    if (projView === "edit" && editTopRef.current) {
+      editTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [projView]);
   const [submissions,setSubmissions]=useState([]);
   const [subsLoading,setSubsLoading]=useState(false);
   const [reviewSub,setReviewSub]=useState(null);
@@ -577,7 +583,7 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
 
           {/* ── EDIT VIEW (existing form) ── */}
           {projView==="edit"&&(
-            <div className="bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5">
+            <div ref={editTopRef} className="bg-[#0F1112] border border-white/10 rounded-xl p-5 space-y-5">
               <div className="flex items-center gap-2 mb-1">
                 <button onClick={()=>setProjView("summary")} className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 transition-colors">← Back</button>
                 <span className="text-[10px] text-gray-600">/</span>
@@ -1731,19 +1737,33 @@ function BootcampAdmin({ token }) {
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">Image (Optional)</p>
                   {annF.imageUrl?(
                     <div className="relative rounded-xl overflow-hidden border border-white/10">
-                      <img src={annF.imageUrl} alt="Announcement" className="w-full max-h-48 object-cover"/>
+                      {/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(annF.imageUrl) ? (
+                        <img src={annF.imageUrl} alt="Attachment" className="w-full max-h-48 object-cover"/>
+                      ) : (
+                        <div className="flex items-center gap-3 px-4 py-3 bg-white/5">
+                          <div className="w-8 h-8 rounded-lg bg-[#C7E36B]/20 flex items-center justify-center shrink-0">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          </div>
+                          <a href={annF.imageUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#C7E36B] truncate flex-1">{annF.imageUrl.split("/").pop()}</a>
+                        </div>
+                      )}
                       <button onClick={()=>setAnnF(f=>({...f,imageUrl:""}))} className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500 transition-colors">✕</button>
                     </div>
                   ):(
                     <label className={`block border-2 border-dashed border-white/15 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all ${annImgUploading?"opacity-60 pointer-events-none":""}`}>
-                      <input type="file" accept="image/*" className="hidden" onChange={async e=>{
+                      <input type="file" accept="image/*,video/*,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.mp3,.mp4" className="hidden" onChange={async e=>{
                         const file=e.target.files?.[0]; if(!file) return;
-                        if(!file.type.startsWith("image/")) return;
                         setAnnImgUploading(true); setAnnImgPct(0);
                         try{
-                          const fd=new FormData(); fd.append("image",file);
-                          const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setAnnImgPct(pct));
-                          if(d.url) setAnnF(f=>({...f,imageUrl:d.url}));
+                          if(file.type.startsWith("image/")){
+                            const fd=new FormData(); fd.append("image",file);
+                            const d=await uploadXHR("/api/uploads/image",fd,token,pct=>setAnnImgPct(pct));
+                            if(d.url) setAnnF(f=>({...f,imageUrl:d.url}));
+                          } else {
+                            const fd=new FormData(); fd.append("file",file);
+                            const d=await uploadXHR("/api/uploads/file",fd,token,pct=>setAnnImgPct(pct));
+                            if(d.url) setAnnF(f=>({...f,imageUrl:d.url}));
+                          }
                         }catch{}
                         setAnnImgUploading(false);
                         e.target.value="";
@@ -1755,9 +1775,9 @@ function BootcampAdmin({ token }) {
                         </div>
                       ):(
                         <>
-                      <div className="text-xl mb-1">🖼</div>
-                      <p className="text-sm font-semibold text-white mb-0.5">Click to upload image</p>
-                      <p className="text-xs text-gray-500">JPG, PNG, GIF, WebP (Max 10MB)</p></>)}
+                      <div className="text-xl mb-1">📎</div>
+                      <p className="text-sm font-semibold text-white mb-0.5">Click to upload file</p>
+                      <p className="text-xs text-gray-500">Images, Videos, PDFs, Docs, and more</p></>)}
                     </label>
                   )}
                 </div>
@@ -7079,7 +7099,8 @@ function CommunityAdmin({ token, adminName }) {
                       setClubs(prev => prev.map(c => c._id === editClubId ? saved : c));
                       setSelectedClub(saved);
                       setEditClubId(null); setShowClubForm(false);
-                    }
+                      globalShowToast("Club updated!");
+                    } else { const d = await r.json(); globalShowToast(d.message || "Failed to update club."); }
                   } else {
                     const r = await fetch("/api/community/clubs", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
                     if (r.ok) {
@@ -7087,7 +7108,8 @@ function CommunityAdmin({ token, adminName }) {
                       setClubs(prev => [saved, ...prev]);
                       setClubForm({ name:"", city:"", description:"", type:"Public", memberLimit:"", isPrimary:false, autoDetect:false, bannerUrl:"" });
                       setShowClubForm(false);
-                    }
+                      globalShowToast("Club created!");
+                    } else { const d = await r.json(); globalShowToast(d.message || "Failed to create club."); }
                   }
                 }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -7256,7 +7278,8 @@ function CommunityAdmin({ token, adminName }) {
                       const saved = await r.json();
                       setChannels(prev => prev.map(c => c._id === editChannelId ? saved : c));
                       setEditChannelId(null); setShowChannelForm(false);
-                    }
+                      globalShowToast("Channel updated!");
+                    } else { const d = await r.json(); globalShowToast(d.message || "Failed to update channel."); }
                   } else {
                     const r = await fetch("/api/community/channels", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(channelForm) });
                     if (r.ok) {
@@ -7264,7 +7287,8 @@ function CommunityAdmin({ token, adminName }) {
                       setChannels(prev => [saved, ...prev]);
                       setChannelForm({ name:"", category:"General", description:"", inviteLink:"", access:"Public" });
                       setShowChannelForm(false);
-                    }
+                      globalShowToast("Channel created!");
+                    } else { const d = await r.json(); globalShowToast(d.message || "Failed to create channel."); }
                   }
                 }} className="text-sm bg-[#C7E36B] text-black font-bold px-5 py-2.5 rounded-lg hover:bg-[#b8d44f] flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -7795,10 +7819,12 @@ function CommunityAdmin({ token, adminName }) {
                     const body = { ...challenge, status:"draft", submissionTypes:challengeSubTypes, awards:challengeAwards, thumb:challengeThumb, participants:0 };
                     if (editChallengeId) {
                       const r = await fetch(`/api/community/challenges/${editChallengeId}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
-                      if (r.ok) { const saved = await r.json(); setChallenges(prev => prev.map(c => c._id===editChallengeId?saved:c)); resetChallengeForm(); setShowChallengeForm(false); }
+                      if (r.ok) { const saved = await r.json(); setChallenges(prev => prev.map(c => c._id===editChallengeId?saved:c)); resetChallengeForm(); setShowChallengeForm(false); globalShowToast("Challenge updated!"); }
+                      else { const d = await r.json(); globalShowToast(d.message || "Failed to update challenge."); }
                     } else {
                       const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
-                      if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); }
+                      if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); globalShowToast("Draft saved!"); }
+                      else { const d = await r.json(); globalShowToast(d.message || "Failed to save challenge."); }
                     }
                   }} className="flex-1 text-sm border border-white/20 text-gray-300 py-2.5 rounded-lg hover:bg-white/5 font-medium">Save Draft</button>
                   <button onClick={async () => {
@@ -7807,9 +7833,11 @@ function CommunityAdmin({ token, adminName }) {
                     if (editChallengeId) {
                       const r = await fetch(`/api/community/challenges/${editChallengeId}`, { method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
                       if (r.ok) { const saved = await r.json(); setChallenges(prev => prev.map(c => c._id===editChallengeId?saved:c)); resetChallengeForm(); setShowChallengeForm(false); setSelectedChallenge(saved); setChallengePublishedOk(true); }
+                      else { const d = await r.json(); globalShowToast(d.message || "Failed to update challenge."); }
                     } else {
                       const r = await fetch("/api/community/challenges", { method:"POST", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
                       if (r.ok) { const saved = await r.json(); setChallenges(prev => [saved, ...prev]); resetChallengeForm(); setShowChallengeForm(false); setSelectedChallenge(saved); setChallengePublishedOk(true); }
+                      else { const d = await r.json(); globalShowToast(d.message || "Failed to publish challenge."); }
                     }
                   }} className="flex-1 text-sm bg-[#C7E36B] text-black font-bold py-2.5 rounded-lg hover:bg-[#b8d44f]">{editChallengeId ? "Update Challenge" : "Publish Challenge"}</button>
                 </div>
@@ -8476,12 +8504,16 @@ function ServiceRequestAdmin({ token }) {
                     <div className="flex items-center gap-1">
                       <button onClick={() => setSelectedReq(r)} className="border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">View</button>
                       <div className="relative">
-                        <button onClick={e => { e.stopPropagation(); setContextMenu(contextMenu?.id===r._id ? null : { id:r._id, req:r }); }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                        <button onClick={e => {
+                          e.stopPropagation();
+                          if (contextMenu?.id === r._id) { setContextMenu(null); return; }
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setContextMenu({ id:r._id, req:r, top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                        }} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                         </button>
                         {contextMenu?.id === r._id && (
-                          <div className="absolute right-0 top-8 z-50 bg-[#1A1D1E] border border-white/10 rounded-xl shadow-2xl w-48 py-1 overflow-hidden" onClick={e=>e.stopPropagation()}>
+                          <div className="fixed z-[9999] bg-[#1A1D1E] border border-white/10 rounded-xl shadow-2xl w-48 py-1" style={{ top: contextMenu.top, right: contextMenu.right }} onClick={e=>e.stopPropagation()}>
                             {[
                               { label:"Assign To Me",    action:"assign" },
                               { label:"Schedule Call",   action:"call" },
@@ -10380,6 +10412,18 @@ function AdminProfile({ token, profile, onUpdated }) {
     setPwdSaving(false);
   };
 
+  if (!profile) return (
+    <div className="p-6 max-w-2xl">
+      <h1 className="text-xl font-bold text-white mb-4">Admin Profile</h1>
+      <div className="bg-white/5 border border-white/10 rounded-xl p-8 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/>
+          <p className="text-gray-400 text-sm">Loading profile...</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-6 max-w-2xl space-y-5">
       <h1 className="text-xl font-bold text-white">Admin Profile</h1>
@@ -11611,7 +11655,7 @@ function WebsiteManagementAdmin({ token }) {
               <div key={t._id} className={`flex items-center gap-3 bg-[#0B0F10] border rounded-xl p-3 transition-all ${t.isActive ? "border-white/10" : "border-white/5 opacity-50"}`}>
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0 overflow-hidden">
                   {t.logoUrl ? (
-                    <img src={t.logoUrl} alt={t.name} className="w-6 h-6 object-contain brightness-0 invert opacity-80" onError={e=>e.target.style.display="none"} />
+                    <img src={t.logoUrl} alt={t.name} className="w-7 h-7 object-contain" onError={e=>e.target.style.display="none"} />
                   ) : (
                     <span className="text-white font-black text-[10px]">{t.logoText || t.name[0]}</span>
                   )}

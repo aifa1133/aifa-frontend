@@ -875,7 +875,7 @@ function DashboardHome({ profile, token, onNavigate }) {
                   </p>
                 </div>
                 <button
-                  onClick={() => w._id && navigate(`/workshops/${w._id}`)}
+                  onClick={() => w._id && window.open(`/workshops/${w._id}`, "_blank")}
                   className="text-xs bg-white text-[#0F1112] font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-all shrink-0"
                 >
                   View Details
@@ -905,12 +905,18 @@ function timeAgo(dateStr) {
 function triggerDownload(url, filename) {
   if (!url) return;
   if (url.includes("cloudinary.com")) {
-    // fl_attachment makes Cloudinary send Content-Disposition: attachment
     const dlUrl = url.replace("/upload/", "/upload/fl_attachment/");
-    const a = document.createElement("a");
-    a.href = dlUrl; a.download = filename || "download";
-    // No target="_blank" — it overrides the download attribute in some browsers
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // Fetch as blob so the download attribute works cross-origin
+    fetch(dlUrl)
+      .then(r => r.blob())
+      .then(blob => {
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objUrl; a.download = filename || "download";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(objUrl);
+      })
+      .catch(() => window.open(dlUrl, "_blank"));
     return;
   }
   // Same-origin relative paths: fetch as blob for clean download
@@ -1313,20 +1319,20 @@ function BootcampSection({ token, profile }) {
                 const doneProjects  = projects.filter(p => p.status === "submitted" || p.status === "completed").length;
                 const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0;
                 return (
-                  <div className="border border-dashed border-gray-300 rounded-2xl p-5 bg-white">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Your Bootcamp Progress</h3>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="border border-dashed border-gray-300 rounded-xl p-4 text-center">
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">OVERALL COMPLETED</p>
-                        <p className="text-2xl font-black text-gray-900">{pct}%</p>
+                  <div className="border border-dashed border-gray-300 rounded-2xl p-4 bg-white">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Your Bootcamp Progress</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="border border-dashed border-gray-200 rounded-xl p-3 text-center">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">OVERALL</p>
+                        <p className="text-xl font-black text-gray-900 leading-none">{pct}%</p>
                       </div>
-                      <div className="border border-dashed border-gray-300 rounded-xl p-4 text-center">
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">SESSIONS COMPLETED</p>
-                        <p className="text-2xl font-black text-gray-900">{String(doneSessions).padStart(2,"0")}/{String(totalSessions).padStart(2,"0")}</p>
+                      <div className="border border-dashed border-gray-200 rounded-xl p-3 text-center">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">SESSIONS</p>
+                        <p className="text-xl font-black text-gray-900 leading-none">{doneSessions}<span className="text-sm text-gray-400">/{totalSessions}</span></p>
                       </div>
-                      <div className="border border-dashed border-gray-300 rounded-xl p-4 text-center">
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">PROJECTS</p>
-                        <p className="text-2xl font-black text-gray-900">{String(doneProjects).padStart(2,"0")}/{String(totalProjects).padStart(2,"0")}</p>
+                      <div className="border border-dashed border-gray-200 rounded-xl p-3 text-center">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">PROJECTS</p>
+                        <p className="text-xl font-black text-gray-900 leading-none">{doneProjects}<span className="text-sm text-gray-400">/{totalProjects}</span></p>
                       </div>
                     </div>
                   </div>
@@ -1782,12 +1788,15 @@ function BootcampSection({ token, profile }) {
                               const d=await r.json(); fileUrl=d.url||""; fileName=subFile.name;
                             }catch{ setSubMsg("File upload failed."); setSubUploading(false); return; }
                           }
-                          const r=await fetch(`/api/bootcamps/${bootcampData._id}/projects/${activeProject._id}/submissions`,{
-                            method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
-                            body:JSON.stringify({fileUrl,fileName,link:subLink.trim()})
-                          });
-                          if(r.ok){ const d=await r.json(); setMySubmission(d); setSubMsg("✓ Project submitted successfully!"); }
-                          else setSubMsg("Submission failed. Please try again.");
+                          try {
+                            const r=await fetch(`/api/bootcamps/${bootcampData._id}/projects/${activeProject._id}/submissions`,{
+                              method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
+                              body:JSON.stringify({fileUrl,fileName,link:subLink.trim()})
+                            });
+                            const d=await r.json();
+                            if(r.ok){ setMySubmission(d); setSubMsg("✓ Project submitted successfully!"); }
+                            else setSubMsg(d?.message || "Submission failed. Please try again.");
+                          } catch { setSubMsg("Network error. Please check your connection and try again."); }
                           setSubUploading(false);
                         }}
                         className="bg-[#C7E36B] text-black text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
@@ -2602,18 +2611,18 @@ function CertificateDocument({ cert, studentName }) {
       {[["top-2 left-2"],["top-2 right-2"],["bottom-2 left-2"],["bottom-2 right-2"]].map(([pos], i) => (
         <div key={i} className={`absolute ${pos} w-4 h-4 bg-white z-10`} style={{ border: "2.5px solid #111" }} />
       ))}
-      {/* Watermarks — faint brand logo text, top-right and bottom-left */}
-      <div className="absolute top-5 right-6 select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif", fontSize: "52px", fontWeight: 900, opacity: 0.055, lineHeight: 1, letterSpacing: "-1px" }}>
-        <span style={{ color: "#b8d400" }}>Ai</span><span style={{ color: "#111" }}>FA</span>
+      {/* Watermarks — faint brand logo, top-right and bottom-left */}
+      <div className="absolute top-5 right-6 select-none pointer-events-none" style={{ opacity: 0.07, width: "120px" }}>
+        <img src="/logos/aifabetalogo.svg" alt="" style={{ width: "120px" }} />
       </div>
-      <div className="absolute bottom-12 left-5 select-none pointer-events-none" style={{ fontFamily: "Arial Black, sans-serif", fontSize: "52px", fontWeight: 900, opacity: 0.055, lineHeight: 1, letterSpacing: "-1px" }}>
-        <span style={{ color: "#b8d400" }}>Ai</span><span style={{ color: "#111" }}>FA</span>
+      <div className="absolute bottom-12 left-5 select-none pointer-events-none" style={{ opacity: 0.07, width: "120px" }}>
+        <img src="/logos/aifabetalogo.svg" alt="" style={{ width: "120px" }} />
       </div>
       {/* Content */}
       <div className="flex flex-col items-center text-center px-10 pt-8 pb-6">
-        {/* Logo — green Ai + black FA */}
-        <div className="mb-3" style={{ fontFamily: "Arial Black, sans-serif", fontSize: "30px", fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1 }}>
-          <span style={{ color: "#b8d400" }}>Ai</span><span style={{ color: "#111" }}>FA</span>
+        {/* Logo */}
+        <div className="mb-3">
+          <img src="/logos/aifabetalogo.svg" alt="AIFA" style={{ height: "32px" }} />
         </div>
         <h2 className="text-xl font-bold mb-1" style={{ color: "#5a6a20", fontFamily: "Georgia, serif" }}>Certificates of Completion</h2>
         <p className="text-xs text-gray-500 mb-4">Proudly presented to</p>
@@ -2690,12 +2699,12 @@ function CertDetailPage({ cert, profile, onBack }) {
   .cert{width:800px;min-height:566px;border:3px solid #b8d400;position:relative;padding:0;background:#fff;display:flex;flex-direction:column}
   .corner{position:absolute;width:18px;height:18px;border:2.5px solid #111;background:#fff}
   .tl{top:8px;left:8px} .tr{top:8px;right:8px} .bl{bottom:8px;left:8px} .br{bottom:8px;right:8px}
-  .wm{position:absolute;font-size:72px;font-weight:900;opacity:.055;font-family:'Arial Black',sans-serif;letter-spacing:-2px;user-select:none;pointer-events:none}
+  .wm{position:absolute;opacity:.07;user-select:none;pointer-events:none;width:120px}
   .wm1{top:24px;right:36px} .wm2{bottom:55px;left:20px}
-  .wm .lime{color:#b8d400} .wm .dark{color:#111}
+  .wm img{width:120px}
   .body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 80px 20px}
-  .logo{font-size:36px;font-weight:900;font-family:'Arial Black',sans-serif;margin-bottom:8px;letter-spacing:-1px}
-  .logo .lime{color:#b8d400} .logo .dark{color:#111}
+  .logo{margin-bottom:10px}
+  .logo img{height:36px}
   h1{font-size:28px;color:#5a6a20;font-family:Georgia,serif;font-weight:700;margin-bottom:6px}
   .sub{font-size:13px;color:#888;margin-bottom:20px}
   .name{font-size:30px;font-weight:700;color:#111;margin-bottom:4px}
@@ -2714,10 +2723,10 @@ function CertDetailPage({ cert, profile, onBack }) {
   <div class="cert">
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>
-    <div class="wm wm1"><span class="lime">Ai</span><span class="dark">FA</span></div>
-    <div class="wm wm2"><span class="lime">Ai</span><span class="dark">FA</span></div>
+    <div class="wm wm1"><img src="${window.location.origin}/logos/aifabetalogo.svg" alt=""/></div>
+    <div class="wm wm2"><img src="${window.location.origin}/logos/aifabetalogo.svg" alt=""/></div>
     <div class="body">
-      <div class="logo"><span class="lime">Ai</span><span class="dark">FA</span></div>
+      <div class="logo"><img src="${window.location.origin}/logos/aifabetalogo.svg" alt="AIFA"/></div>
       <h1>Certificates of Completion</h1>
       <p class="sub">Proudly presented to</p>
       <p class="name">${studentName}</p>
@@ -2887,12 +2896,15 @@ function CertificatesSection({ token, profile }) {
       {loading ? (
         <p className="text-gray-500 text-sm animate-pulse text-center py-16">Loading certificates...</p>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Ic name="cert" size={28} className="text-gray-600" />
+        <div className="text-center py-20 flex flex-col items-center">
+          <div className="w-32 h-32 rounded-full bg-[#111315] border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"/><rect x="4" y="14" width="16" height="8" rx="2"/><polyline points="9 20 12 17 15 20"/>
+              <path d="M8 14v-2M16 14v-2"/>
+            </svg>
           </div>
-          <p className="text-white font-semibold text-sm">No Certificates Yet</p>
-          <p className="text-gray-500 text-xs mt-1">Complete a course or bootcamp to earn your first certificate.</p>
+          <p className="text-white font-bold text-base mb-2">No Certificates Yet</p>
+          <p className="text-gray-500 text-sm max-w-xs">Complete a course, bootcamp, or workshop to earn your first certificate of completion.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
