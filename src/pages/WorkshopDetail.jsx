@@ -209,7 +209,7 @@ function WhoIsItFor({ audience }) {
         <div className="grid grid-cols-2 gap-3 mb-3">
           {grid.map((c, i) => (
             <div key={i} className="relative rounded-[20px] overflow-hidden group aspect-[3/4] md:aspect-[3/2]">
-              <img src={c.img} alt={c.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <img src={c.img} alt={c.title} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105" style={{imageRendering:"auto",WebkitBackfaceVisibility:"hidden"}} />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
                 <p className="text-white font-black text-[13px] md:text-xl leading-tight mb-1">{c.title}</p>
@@ -222,7 +222,7 @@ function WhoIsItFor({ audience }) {
         {/* Wide bottom card */}
         {wide && (
           <div className="relative rounded-[20px] overflow-hidden group" style={{ minHeight: "260px", maxHeight: "340px" }}>
-            <img src={wide.img} alt={wide.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <img src={wide.img} alt={wide.title} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105" style={{imageRendering:"auto",WebkitBackfaceVisibility:"hidden"}} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
               {wide.badge && (
@@ -783,7 +783,15 @@ export default function WorkshopDetail() {
 
   /* ── BEFORE PURCHASE ── */
   return (
-    <div className="min-h-screen bg-[#0B0F10] text-white pb-24">
+    <div className="min-h-screen text-white pb-24" style={{
+      backgroundColor:"#0B0F10",
+      backgroundImage: workshop.image
+        ? `linear-gradient(rgba(11,15,16,0.82),rgba(11,15,16,0.82)),url('${workshop.image}')`
+        : undefined,
+      backgroundSize: "cover",
+      backgroundPosition: "center top",
+      backgroundAttachment: "fixed",
+    }}>
       {showBuyModal && (
         <BuyModal
           item={{ ...workshop, benefits: ["Live interactive session", "Session recording access", "Downloadable resources", "Certificate of completion", "Direct trainer Q&A"] }}
