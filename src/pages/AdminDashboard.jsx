@@ -3610,45 +3610,68 @@ function VideoCoursesAdmin({ token }) {
         : sortedCourses.length === 0
         ? <div className="text-center py-12"><p className="text-gray-400 text-sm">{searchQ ? "No courses match your search." : "No courses yet."}</p>{!searchQ && <button onClick={()=>{setView("create");setStep(1);}} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Create First Course</button>}</div>
         : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-5">
           {sortedCourses.map((c,idx)=>(
-            <div key={c._id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all">
-              <div className="relative h-[140px] bg-[#111315]">
-                {c.image ? (
-                  <img
-                    src={c.image}
-                    alt={c.title}
-                    className="w-full h-full object-cover"
-                    onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}
-                  />
-                ) : null}
-                <div className={`w-full h-full absolute inset-0 bg-gradient-to-br from-[#1a1f20] to-[#0B0F10] flex items-center justify-center ${c.image ? "hidden" : "flex"}`}>
-                  <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8Z"/><path d="M7 21h10"/><path d="M12 17v4"/></svg>
-                </div>
-                <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${c.isPublished?"bg-green-500/80 text-white":"bg-yellow-500/80 text-black"}`}>{c.isPublished?"published":"draft"}</span>
-              </div>
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2 leading-snug">{c.title}</h3>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-[#C7E36B] font-bold">₹{c.price}</span>
-                  <div className="flex items-center gap-2">
-                    {c.duration && <span className="text-[10px] text-gray-500">⏱ {c.duration}</span>}
-                    <span className="text-[10px] text-gray-400">{c.level||"Beginner"}</span>
+            <div key={c._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+              {/* Thumbnail */}
+              <div className="relative h-[170px] bg-gradient-to-br from-[#1a1f20] to-[#0B0F10] overflow-hidden shrink-0">
+                {c.image && (
+                  <img src={c.image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={e => { e.target.style.display="none"; }} />
+                )}
+                {!c.image && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg width="36" height="36" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8Z"/><path d="M7 21h10"/><path d="M12 17v4"/></svg>
                   </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                {/* Status badge */}
+                <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm ${c.isPublished ? "bg-green-500/85 text-white" : "bg-yellow-400/90 text-black"}`}>
+                  {c.isPublished ? "published" : "draft"}
+                </span>
+                {/* Level badge */}
+                {c.level && (
+                  <span className="absolute top-2.5 right-2.5 text-[10px] font-semibold px-2 py-1 rounded-lg bg-black/60 backdrop-blur-sm text-gray-200">{c.level}</span>
+                )}
+                {/* Duration bottom */}
+                {c.duration && (
+                  <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold bg-black/70 backdrop-blur-sm text-white px-2 py-0.5 rounded-md">{c.duration}</span>
+                )}
+              </div>
+
+              {/* Body */}
+              <div className="p-4 flex flex-col flex-1 gap-3">
+                <h3 className="text-[14px] font-bold text-white leading-snug line-clamp-2 min-h-[40px]">{c.title}</h3>
+
+                {/* Price + enrolled row */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black text-[#C7E36B]">₹{(c.price||0).toLocaleString("en-IN")}</span>
+                  <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                    <I name="users" size={11} className="text-gray-600"/>
+                    {c.enrollmentCount ?? 0} enrolled
+                  </span>
                 </div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] text-gray-500">👥 {c.enrollmentCount ?? 0} enrolled</span>
-                  <button onClick={async()=>{
-                    const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
-                    if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
-                  }} className={`text-xs font-bold px-3 py-1 rounded-lg transition-all ${c.isPublished?"bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400":"bg-[#C7E36B] text-black animate-pulse hover:animate-none hover:bg-lime-300"}`}>
-                    {c.isPublished?"● Live":"Publish"}
+
+                {/* Live/Publish toggle */}
+                <button onClick={async()=>{
+                  const r=await fetch(`/api/courses/${c._id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({isPublished:!c.isPublished})});
+                  if(r.ok) setCourses(cs=>cs.map(x=>x._id===c._id?{...x,isPublished:!c.isPublished}:x));
+                }} className={`w-full text-xs font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${c.isPublished ? "bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-red-500/15 hover:text-red-400 hover:border-red-500/25" : "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30 hover:bg-[#C7E36B] hover:text-black"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${c.isPublished ? "bg-green-400" : "bg-[#C7E36B]"}`}/>
+                  {c.isPublished ? "Live" : "Publish Now"}
+                </button>
+
+                {/* Actions */}
+                <div className="flex gap-2 mt-auto">
+                  <button onClick={()=>window.open(`/courses/${c.slug || c._id}`,"_blank")} className="flex-1 text-xs border border-white/10 text-gray-300 py-2 rounded-xl hover:bg-white/5 hover:border-white/20 flex items-center justify-center gap-1.5 transition-all">
+                    <I name="eye" size={12}/>View
                   </button>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={()=>window.open(`/courses/${c.slug || c._id}`,"_blank")} className="flex-1 text-xs border border-white/20 text-gray-300 py-1.5 rounded-lg hover:bg-white/5 flex items-center justify-center gap-1"><I name="eye" size={11}/>View</button>
-                  <button onClick={()=>{ setEditCourse(c); setView("edit"); }} className="text-xs border border-white/20 text-gray-300 px-2 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"><I name="edit" size={11}/>Edit</button>
-                  <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/30 text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10"><I name="trash" size={11}/></button>
+                  <button onClick={()=>{ setEditCourse(c); setView("edit"); }} className="flex-1 text-xs border border-white/10 text-gray-300 py-2 rounded-xl hover:bg-white/5 hover:border-white/20 flex items-center justify-center gap-1.5 transition-all">
+                    <I name="edit" size={12}/>Edit
+                  </button>
+                  <button onClick={()=>deleteCourse(c._id)} className="text-xs border border-red-500/20 text-red-400 px-3 py-2 rounded-xl hover:bg-red-500/10 hover:border-red-500/40 transition-all">
+                    <I name="trash" size={12}/>
+                  </button>
                 </div>
               </div>
             </div>

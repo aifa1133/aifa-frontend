@@ -1951,8 +1951,9 @@ function WorkshopsSection({ token }) {
             const isFull = (seats - registered) <= 0;
             const isMock = !w._id || w._id?.startsWith?.("m");
             const isReserved = reserved.has(w._id);
-            const cur = w.currency === "USD" ? "USD" : "INR";
-            const priceStr = `${cur} ${parseFloat(w.price || 0).toFixed(2)}`;
+            const priceStr = w.currency === "USD"
+              ? `$${(w.price || 0).toLocaleString("en-US")}`
+              : `₹${Math.round(w.price || 0).toLocaleString("en-IN")}`;
             const dateBoxStr = fmtDateBox(w.scheduledAt);
             const dt = w.scheduledAt ? new Date(w.scheduledAt) : null;
             const fmtDateLong = dt ? dt.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}) : null;
@@ -1993,7 +1994,7 @@ function WorkshopsSection({ token }) {
                   </div>
                   <div className="flex-1 flex flex-col gap-3">
                     {/* TITLE */}
-                    <div className="relative flex flex-col justify-center px-4 py-3 bg-[#DCDCDC] rounded-tr-[18px] gap-1 flex-1">
+                    <div className="relative flex flex-col justify-center px-4 py-3 bg-[#1a1e20] rounded-tr-[18px] gap-1 flex-1">
                       {(statusBadge === "Live" || statusBadge === "Upcoming") && (
                         <div>
                           {statusBadge === "Live" && <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>Live</span>}
@@ -2001,42 +2002,42 @@ function WorkshopsSection({ token }) {
                         </div>
                       )}
                       {isReserved && (
-                        <span className="absolute top-3 right-3 text-[10px] bg-[#2C3A10] text-white font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
+                        <span className="absolute top-3 right-3 text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5 border border-[#C7E36B]/30"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
                       )}
-                      <h3 className="text-[#2B2D30] font-black text-xl md:text-2xl leading-tight pr-24">{w.title}</h3>
-                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-[#6E7072] font-semibold">
+                      <h3 className="text-white font-black text-xl md:text-2xl leading-tight pr-24">{w.title}</h3>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-gray-400 font-semibold">
                         {w.trainer && <span>👤 {w.trainer}</span>}
                       </div>
                     </div>
                     {/* INFO BOXES */}
                     {isReserved ? (
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#DCDCDC] min-w-0">
-                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⏱ Duration</p>
-                          <p className="text-[#2B2D30] text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
+                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-white text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#DCDCDC] min-w-0">
-                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                          <p className="text-[#2B2D30] text-[11px] sm:text-[14px] font-bold uppercase truncate w-full">SEAT CONFIRMED</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
+                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                          <p className="text-[#C7E36B] text-[11px] sm:text-[14px] font-bold uppercase truncate w-full">SEAT CONFIRMED</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#DCDCDC] min-w-0">
-                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⌨ Mode</p>
-                          <p className="text-[#2B2D30] text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
+                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⌨ Mode</p>
+                          <p className="text-white text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
                         </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#DCDCDC] min-w-0">
-                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⏱ Duration</p>
-                          <p className="text-[#2B2D30] text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
+                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-white text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#DCDCDC] min-w-0">
-                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                          <p className="text-[#2B2D30] text-[13px] sm:text-[14px] font-bold truncate w-full">{priceStr}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
+                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                          <p className="text-[#C7E36B] text-[13px] sm:text-[14px] font-bold truncate w-full">{priceStr}</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#DCDCDC] min-w-0">
-                          <p className="text-[#6E7072] text-[10px] font-semibold uppercase">📅 Date & Time</p>
-                          <p className="text-[#2B2D30] text-[11px] sm:text-[12px] font-bold leading-tight">{dateBoxStr}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
+                          <p className="text-gray-500 text-[10px] font-semibold uppercase">📅 Date & Time</p>
+                          <p className="text-white text-[11px] sm:text-[12px] font-bold leading-tight">{dateBoxStr}</p>
                         </div>
                       </div>
                     )}
@@ -2106,8 +2107,8 @@ function WorkshopsSection({ token }) {
       )}
 
       {/* WhatsApp Contact */}
-      <div className="mt-6 bg-[#F4A79D] rounded-3xl px-6 py-8 flex flex-col items-center text-center">
-        <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-white/60 mb-5 shadow-md">
+      <div className="mt-6 bg-[#111315] border border-white/10 rounded-3xl px-6 py-8 flex flex-col items-center text-center">
+        <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-white/20 mb-5 shadow-md">
           <img
             src="https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=144&h=144&fit=crop&crop=face"
             alt="Support agent"
@@ -2115,10 +2116,10 @@ function WorkshopsSection({ token }) {
             onError={e => { e.target.src = "https://randomuser.me/api/portraits/women/44.jpg"; }}
           />
         </div>
-        <h2 className="text-black text-[1.75rem] leading-[1.2] mb-2" style={{ fontWeight: 900 }}>
+        <h2 className="text-white text-[1.75rem] leading-[1.2] mb-2 font-black">
           Not sure which<br />workshop is<br />right for you?
         </h2>
-        <p className="text-black font-bold text-sm mb-6">Get personalised guidance from our team</p>
+        <p className="text-gray-400 font-semibold text-sm mb-6">Get personalised guidance from our team</p>
         <a
           href="https://wa.me/919052088000"
           target="_blank"
@@ -2500,19 +2501,17 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((c, i) => (
+          {filtered.map((c, i) => {
+            const discountPct = c.originalPrice && c.price && c.originalPrice > c.price
+              ? Math.round((1 - c.price / c.originalPrice) * 100) : null;
+            return (
             <div key={c._id || i} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 flex flex-col">
               {/* Thumbnail */}
               <div className="relative cursor-pointer overflow-hidden" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
-                <img src={c.image} alt={c.title} className="w-full h-[190px] object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                {/* Duration badge */}
+                <img src={c.image} alt={c.title} className="w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 {c.duration && (
-                  <span className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">{c.duration}</span>
-                )}
-                {/* Level badge */}
-                {c.level && (
-                  <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm ${c.level === "Beginner" ? "bg-green-500/80 text-white" : c.level === "Intermediate" ? "bg-yellow-500/80 text-black" : "bg-red-500/80 text-white"}`}>{c.level}</span>
+                  <span className="absolute top-3 left-3 bg-black/75 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1 rounded-lg">{c.duration}</span>
                 )}
                 {c.status === "completed" && (
                   <div className="absolute bottom-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
@@ -2524,16 +2523,13 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
 
               {/* Body */}
               <div className="p-4 flex flex-col flex-1 gap-3">
-                <h3 className="text-[15px] font-bold text-white leading-snug line-clamp-2 cursor-pointer hover:text-[#C7E36B] transition-colors" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>{c.title}</h3>
+                <h3 className="text-[16px] font-bold text-white leading-snug line-clamp-2 cursor-pointer" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>{c.title}</h3>
 
-                {/* Meta row */}
-                <div className="flex items-center gap-3 text-[11px] text-gray-400">
-                  {c.instructor && <span className="truncate">{c.instructor}</span>}
-                  {c.language && <><span className="w-1 h-1 rounded-full bg-white/20 shrink-0" /><span>{c.language}</span></>}
-                  {c.price != null && <><span className="w-1 h-1 rounded-full bg-white/20 shrink-0" /><span className="text-[#C7E36B] font-semibold">₹{c.price}</span></>}
-                </div>
+                {c.description && (
+                  <p className="text-[13px] text-gray-400 leading-relaxed line-clamp-2">{c.description}</p>
+                )}
 
-                {/* Progress bar */}
+                {/* Progress bar (enrolled courses) */}
                 {c.progress !== undefined && (
                   <div>
                     <div className="flex justify-between text-[10px] text-gray-400 mb-1">
@@ -2545,22 +2541,37 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
                   </div>
                 )}
 
+                {/* Price row (unenrolled only) */}
+                {c.progress === undefined && c.status !== "completed" && c.price != null && (
+                  <div className="flex items-center gap-2">
+                    {discountPct && <span className="text-[13px] font-bold text-[#C7E36B]">{discountPct}% off</span>}
+                    {c.originalPrice && c.originalPrice > c.price && (
+                      <span className="text-[13px] text-gray-500 line-through">₹{c.originalPrice.toLocaleString("en-IN")}</span>
+                    )}
+                    {!discountPct && <span className="text-[13px] font-bold text-[#C7E36B]">₹{(c.price||0).toLocaleString("en-IN")}</span>}
+                  </div>
+                )}
+
                 {/* CTA */}
-                <div className="mt-auto">
+                <div className="mt-auto flex flex-col gap-2">
                   {c.status === "completed" ? (
                     <div className="flex gap-2">
-                      <button onClick={() => onNavigate?.("certificates")} className="flex-1 text-xs font-semibold border border-[#C7E36B] text-[#C7E36B] py-2 rounded-xl hover:bg-[#C7E36B]/10 transition-all">View Certificate</button>
-                      <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="flex-1 text-xs font-semibold border border-white/15 text-gray-300 py-2 rounded-xl hover:bg-white/5 transition-all">Watch Again</button>
+                      <button onClick={() => onNavigate?.("certificates")} className="flex-1 text-sm font-semibold border border-[#C7E36B] text-[#C7E36B] py-2.5 rounded-xl hover:bg-[#C7E36B]/10 transition-all">View Certificate</button>
+                      <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="flex-1 text-sm font-semibold border border-white/15 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 transition-all">Watch Again</button>
                     </div>
                   ) : c.progress !== undefined ? (
-                    <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="w-full text-sm font-bold bg-[#C7E36B] text-black py-2.5 rounded-xl hover:bg-lime-300 transition-all">Continue Learning →</button>
+                    <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="w-full text-sm font-bold bg-[#C7E36B] text-black py-3 rounded-xl hover:bg-lime-300 transition-all">Continue Learning →</button>
                   ) : (
-                    <button onClick={() => { setDetailCourse(c); onScrollTop?.(); }} className="w-full text-sm font-bold bg-white/5 border border-white/10 text-white py-2.5 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all">View Details</button>
+                    <>
+                      <button onClick={() => { setDetailCourse(c); onScrollTop?.(); }} className="w-full text-sm font-semibold border border-white/20 text-white py-3 rounded-xl hover:bg-white/5 transition-all">View Details</button>
+                      <button onClick={() => { setDetailCourse(c); onScrollTop?.(); }} className="w-full text-sm font-bold bg-white text-[#0B0F10] py-3 rounded-xl hover:bg-gray-100 transition-all">BUY ₹{(c.price||0).toLocaleString("en-IN")}</button>
+                    </>
                   )}
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
