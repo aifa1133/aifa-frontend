@@ -2499,36 +2499,65 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
           <p className="text-gray-500 text-xs mt-1">Try a different filter or search term.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((c, i) => (
-            <div key={c._id || i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-all">
-              <div className="relative cursor-pointer" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
-                <img src={c.image} alt={c.title} className="w-full h-[160px] object-cover" />
-                <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">{c.duration}</span>
+            <div key={c._id || i} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 flex flex-col">
+              {/* Thumbnail */}
+              <div className="relative cursor-pointer overflow-hidden" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
+                <img src={c.image} alt={c.title} className="w-full h-[190px] object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                {/* Duration badge */}
+                {c.duration && (
+                  <span className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">{c.duration}</span>
+                )}
+                {/* Level badge */}
+                {c.level && (
+                  <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm ${c.level === "Beginner" ? "bg-green-500/80 text-white" : c.level === "Intermediate" ? "bg-yellow-500/80 text-black" : "bg-red-500/80 text-white"}`}>{c.level}</span>
+                )}
                 {c.status === "completed" && (
-                  <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">Completed</div>
+                  <div className="absolute bottom-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    Completed
+                  </div>
                 )}
               </div>
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-white mb-2 line-clamp-2">{c.title}</h3>
+
+              {/* Body */}
+              <div className="p-4 flex flex-col flex-1 gap-3">
+                <h3 className="text-[15px] font-bold text-white leading-snug line-clamp-2 cursor-pointer hover:text-[#C7E36B] transition-colors" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>{c.title}</h3>
+
+                {/* Meta row */}
+                <div className="flex items-center gap-3 text-[11px] text-gray-400">
+                  {c.instructor && <span className="truncate">{c.instructor}</span>}
+                  {c.language && <><span className="w-1 h-1 rounded-full bg-white/20 shrink-0" /><span>{c.language}</span></>}
+                  {c.price != null && <><span className="w-1 h-1 rounded-full bg-white/20 shrink-0" /><span className="text-[#C7E36B] font-semibold">₹{c.price}</span></>}
+                </div>
+
+                {/* Progress bar */}
                 {c.progress !== undefined && (
-                  <div className="mb-2">
-                    <div className="w-full bg-white/10 rounded-full h-1 mb-1">
-                      <div className="bg-[#7C3AED] h-1 rounded-full" style={{ width: `${c.progress}%` }} />
+                  <div>
+                    <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                      <span>Progress</span><span>{c.progress}%</span>
                     </div>
-                    <span className="text-[10px] text-gray-400">{c.progress}% completed</span>
+                    <div className="w-full bg-white/10 rounded-full h-1.5">
+                      <div className="bg-[#C7E36B] h-1.5 rounded-full transition-all" style={{ width: `${c.progress}%` }} />
+                    </div>
                   </div>
                 )}
-                {c.status === "completed" ? (
-                  <div className="flex gap-2">
-                    <button onClick={() => onNavigate?.("certificates")} className="flex-1 text-xs border border-[#C7E36B] text-[#C7E36B] py-1.5 rounded-lg hover:bg-[#C7E36B]/10 transition-all">View Certificate</button>
-                    <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="flex-1 text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Again</button>
-                  </div>
-                ) : c.progress !== undefined ? (
-                  <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="w-full text-xs bg-[#7C3AED] hover:bg-purple-700 text-white py-1.5 rounded-lg transition-all font-semibold">Continue Learning</button>
-                ) : (
-                  <button onClick={() => { setDetailCourse(c); onScrollTop?.(); }} className="w-full text-xs border border-white/20 text-gray-400 py-1.5 rounded-lg hover:bg-white/5 transition-all">View Details</button>
-                )}
+
+                {/* CTA */}
+                <div className="mt-auto">
+                  {c.status === "completed" ? (
+                    <div className="flex gap-2">
+                      <button onClick={() => onNavigate?.("certificates")} className="flex-1 text-xs font-semibold border border-[#C7E36B] text-[#C7E36B] py-2 rounded-xl hover:bg-[#C7E36B]/10 transition-all">View Certificate</button>
+                      <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="flex-1 text-xs font-semibold border border-white/15 text-gray-300 py-2 rounded-xl hover:bg-white/5 transition-all">Watch Again</button>
+                    </div>
+                  ) : c.progress !== undefined ? (
+                    <button onClick={() => navigate(`/courses/${c.slug || c._id}/watch`)} className="w-full text-sm font-bold bg-[#C7E36B] text-black py-2.5 rounded-xl hover:bg-lime-300 transition-all">Continue Learning →</button>
+                  ) : (
+                    <button onClick={() => { setDetailCourse(c); onScrollTop?.(); }} className="w-full text-sm font-bold bg-white/5 border border-white/10 text-white py-2.5 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all">View Details</button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
