@@ -787,13 +787,13 @@ function DashboardHome({ profile, token, onNavigate }) {
       {/* 3 STAT CARDS */}
       <div className="grid grid-cols-3 gap-4">
         {statCards.map(s => (
-          <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 flex items-center gap-3.5">
-            <div className={`w-10 h-10 rounded-xl border ${s.borderColor} flex items-center justify-center shrink-0`}>
-              <Ic name={s.icon} size={18} className={s.color}/>
+          <div key={s.label} className={`bg-[#111315] border ${s.borderColor} rounded-2xl px-5 py-4 flex items-center gap-4 hover:shadow-lg hover:shadow-black/30 transition-all duration-200`}>
+            <div className={`w-12 h-12 rounded-2xl ${s.bg} border ${s.borderColor} flex items-center justify-center shrink-0`}>
+              <Ic name={s.icon} size={22} className={s.color}/>
             </div>
             <div>
-              <p className="text-2xl font-black text-white leading-none">{String(s.value).padStart(2, "0")}</p>
-              <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+              <p className="text-3xl font-black text-white leading-none tracking-tight">{String(s.value).padStart(2, "0")}</p>
+              <p className="text-[11px] text-gray-400 mt-1 font-medium">{s.label}</p>
             </div>
           </div>
         ))}
@@ -2891,22 +2891,25 @@ function CertificatesSection({ token, profile }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {filtered.map((c) => (
-            <div key={c._id} className="bg-[#141718] rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-all flex flex-col">
+            <div key={c._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+              {/* Certificate preview thumbnail */}
               <CertThumbnail profile={profile} />
-              <div className="p-4 flex flex-col flex-1">
-                <span className={`self-start text-[9px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-wide mb-2 ${typeBadgeStyle(c.itemType)}`}>
-                  {typeLabel(c.itemType)}
-                </span>
-                <p className="text-[10px] text-gray-500 mb-2">Earned on {new Date(c.issuedAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
-                <h3 className="text-sm font-bold text-white leading-snug mb-1">{c.courseTitle}</h3>
-                {c.description && <p className="text-[11px] text-gray-500 line-clamp-2 mb-3">{c.description}</p>}
+              {/* Card body */}
+              <div className="p-4 flex flex-col flex-1 gap-2">
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wide ${typeBadgeStyle(c.itemType)}`}>
+                    {typeLabel(c.itemType)}
+                  </span>
+                  <p className="text-[11px] text-gray-500">{new Date(c.issuedAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
+                </div>
+                <h3 className="text-[14px] font-bold text-white leading-snug line-clamp-2 min-h-[40px]">{c.courseTitle}</h3>
                 <div className="flex items-center justify-between pt-3 mt-auto border-t border-white/8">
                   <div>
-                    <p className="text-[9px] text-gray-500 font-semibold uppercase tracking-wider">Certificate ID</p>
-                    <p className="text-[10px] text-gray-300 font-mono mt-0.5">{c.certificateId}</p>
+                    <p className="text-[9px] text-gray-500 font-semibold uppercase tracking-wider mb-0.5">Certificate ID</p>
+                    <p className="text-[10px] text-gray-400 font-mono">{c.certificateId}</p>
                   </div>
                   <button onClick={() => setViewCert(c)}
-                    className="bg-white text-black text-[11px] font-bold px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-all">
+                    className="bg-white text-black text-[11px] font-bold px-4 py-2 rounded-xl hover:bg-gray-100 transition-all">
                     View
                   </button>
                 </div>
@@ -3010,30 +3013,34 @@ function JobsSection({ token }) {
         </div>
       ) : (
         <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((j) => (
-            <div key={j._id} className="bg-[#111315] border border-white/8 rounded-2xl p-5 hover:border-white/18 transition-all flex flex-col">
-              {/* Tag */}
-              {j.tag && (
-                <span className="text-[11px] font-bold bg-[#C7E36B] text-black px-3 py-1 rounded-full w-fit mb-3">{j.tag}</span>
-              )}
-              {/* Title + type */}
-              <h3 className="text-base font-bold text-white mb-1 leading-snug">{j.title}</h3>
-              <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide mb-3">{j.type}</p>
+            <div key={j._id} className="group bg-[#111315] border border-white/8 rounded-2xl p-5 hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+              {/* Tag + type row */}
+              <div className="flex items-center gap-2 mb-3">
+                {j.tag && (
+                  <span className="text-[11px] font-bold bg-[#C7E36B] text-black px-3 py-1 rounded-full">{j.tag}</span>
+                )}
+                {j.type && (
+                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{j.type}</span>
+                )}
+              </div>
+              {/* Title */}
+              <h3 className="text-[15px] font-bold text-white mb-2 leading-snug line-clamp-2 min-h-[44px]">{j.title}</h3>
               {/* Description */}
-              <p className="text-sm text-gray-400 flex-1 mb-4 line-clamp-3 leading-relaxed">{j.description}</p>
+              <p className="text-[12px] text-gray-400 flex-1 mb-4 line-clamp-3 leading-relaxed">{j.description}</p>
               {/* View Details */}
               <button
                 onClick={() => setDetailJob(j)}
-                className="text-sm text-[#C7E36B] font-semibold hover:underline text-left mb-4"
-              >View Details</button>
+                className="w-full text-sm font-bold border border-[#C7E36B]/30 text-[#C7E36B] py-2.5 rounded-xl hover:bg-[#C7E36B]/10 transition-all mb-3"
+              >View Details →</button>
               {/* Footer */}
               <div className="flex items-center gap-2 flex-wrap border-t border-white/8 pt-3">
                 {j.budget && (
-                  <span className="text-xs border border-white/15 text-gray-300 px-3 py-1 rounded-lg font-medium">{j.budget}</span>
+                  <span className="text-[11px] bg-white/5 border border-white/10 text-gray-300 px-2.5 py-1 rounded-lg font-medium">{j.budget}</span>
                 )}
                 {(j.createdAt || j.postedAt) && (
-                  <span className="text-xs border border-white/15 text-gray-400 px-3 py-1 rounded-lg">{timeAgo(j.createdAt || j.postedAt)}</span>
+                  <span className="text-[11px] text-gray-500 ml-auto">{timeAgo(j.createdAt || j.postedAt)}</span>
                 )}
               </div>
             </div>
