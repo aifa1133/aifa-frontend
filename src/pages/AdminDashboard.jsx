@@ -9224,7 +9224,7 @@ function SalesConsultAdmin({ token }) {
 }
 
 /* ── HIRE TALENT ADMIN ── */
-const TALENT_CATEGORIES = ["All","Logo Design","UI Design","Video Editing","3D Modeling","Animation","VFX","Sound Design"];
+const TALENT_CATEGORIES = ["All","AI Filmmakers","Video Editors","AI Artists & Designers","Prompt Engineers","VFX & CGI Artists","Sound Designers","3D Artists"];
 
 function HireTalentAdmin({ token }) {
   const [talents, setTalents]   = useState([]);

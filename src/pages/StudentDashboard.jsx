@@ -1743,11 +1743,22 @@ function BootcampSection({ token, profile }) {
                         {mySubmission.feedback && <p className="text-[10px] text-white/50 mt-0.5">{mySubmission.feedback}</p>}
                       </div>
                     )}
-                    <label className="block border-2 border-dashed border-white/20 rounded-xl py-8 text-center cursor-pointer hover:border-[#C7E36B]/40 transition-all">
+                    <label className="block border-2 border-dashed border-white/20 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-all">
                       <input type="file" className="hidden" onChange={e=>setSubFile(e.target.files?.[0]||null)} />
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 mx-auto mb-2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-                      <p className="text-xs font-bold text-white/60">{subFile ? subFile.name : "Upload Project Files"}</p>
-                      <p className="text-[10px] text-white/30 mt-1">MP4, PDF, ZIP or other approved formats</p>
+                      {subFile && subFile.type.startsWith("image/") ? (
+                        <div className="relative">
+                          <img src={URL.createObjectURL(subFile)} alt="preview" className="w-full max-h-52 object-cover" />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-3 py-1.5">
+                            <p className="text-xs font-bold text-white truncate">{subFile.name}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 mx-auto mb-2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                          <p className="text-xs font-bold text-white/60">{subFile ? subFile.name : "Upload Project Files"}</p>
+                          <p className="text-[10px] text-white/30 mt-1">MP4, PDF, ZIP or other approved formats</p>
+                        </div>
+                      )}
                     </label>
                     <input value={subLink} onChange={e=>setSubLink(e.target.value)} placeholder="Paste Google Drive, YouTube or project link" className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 transition-colors" />
                     {subMsg && <p className={`text-xs font-semibold ${subMsg.startsWith("✓")?"text-green-400":"text-red-400"}`}>{subMsg}</p>}
@@ -1761,7 +1772,7 @@ function BootcampSection({ token, profile }) {
                           if(subFile){
                             try{
                               const fd=new FormData();fd.append("file",subFile);
-                              const r=await fetch("/api/uploads/file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+                              const r=await fetch("/api/uploads/project-file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
                               const d=await r.json(); fileUrl=d.url||""; fileName=subFile.name;
                             }catch{ setSubMsg("File upload failed."); setSubUploading(false); return; }
                           }
