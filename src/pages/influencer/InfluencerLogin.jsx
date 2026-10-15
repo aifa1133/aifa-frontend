@@ -38,6 +38,11 @@ export default function InfluencerLogin() {
 
   return (
     <div className="min-h-screen w-full bg-[#0B0F10] flex items-center justify-center p-4">
+      {/* Back to home */}
+      <a href="/" className="absolute top-5 left-5 flex items-center gap-2 text-gray-400 hover:text-white text-sm font-semibold transition-colors group">
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:-translate-x-0.5 transition-transform"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to Home
+      </a>
       <div className="w-full max-w-[420px]">
         {/* Brand */}
         <div className="text-center mb-8">

@@ -4158,18 +4158,19 @@ function ResourcesSection({ token }) {
         </div>
       ) : tab === "workflow" || tab === "project" ? (
         /* ── WORKFLOWS / PROJECTS ── */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((r) => (
             <div key={r._id}
               onClick={() => {
                 const path = tab === "workflow" ? `/workflow/${r._id}` : `/projects/${r._id}`;
                 navigate(path, { state: { resource: r } });
               }}
-              className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all cursor-pointer group">
-              <div className="h-[200px] overflow-hidden relative bg-white/5">
+              className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 cursor-pointer flex flex-col">
+              {/* Thumbnail */}
+              <div className="relative h-[185px] shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1f23] to-[#0d1117]">
                 {img(r)
                   ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
-                  : <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1a1f23] to-[#0d1117]">
+                  : <div className="w-full h-full flex flex-col items-center justify-center">
                       <div className="w-14 h-14 rounded-2xl bg-[#C7E36B]/10 flex items-center justify-center mb-2">
                         {tab === "workflow"
                           ? <svg width="26" height="26" fill="none" stroke="#C7E36B" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M9.5 17.5 12 11l2.5 6.5"/></svg>
@@ -4179,17 +4180,19 @@ function ResourcesSection({ token }) {
                       <span className="text-[10px] font-bold text-[#C7E36B]/60 tracking-widest uppercase">{tab === "workflow" ? "Workflow" : "Project"}</span>
                     </div>
                 }
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                 {r.category && (
-                  <span className="absolute top-3 left-3 text-[9px] font-bold bg-black/70 text-[#C7E36B] px-2 py-1 rounded uppercase tracking-wider">{r.category}</span>
+                  <span className="absolute top-3 left-3 text-[10px] font-bold bg-black/70 backdrop-blur-sm text-[#C7E36B] px-2.5 py-1 rounded-lg uppercase tracking-wider">{r.category}</span>
                 )}
               </div>
-              <div className="p-4">
-                <h3 className="text-base font-bold text-white mb-1.5">{r.title}</h3>
-                <p className="text-xs text-gray-400 line-clamp-2 mb-3">{r.description}</p>
-                <span className="flex items-center gap-1.5 text-sm text-[#C7E36B] font-semibold">
+              {/* Body */}
+              <div className="p-4 flex flex-col flex-1 gap-2">
+                <h3 className="text-[15px] font-bold text-white leading-snug line-clamp-2 min-h-[44px]">{r.title}</h3>
+                <p className="text-[12px] text-gray-400 leading-relaxed line-clamp-3 flex-1">{r.description}</p>
+                <div className="flex items-center gap-1.5 text-[13px] text-[#C7E36B] font-semibold mt-1">
                   View Details
                   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </span>
+                </div>
               </div>
             </div>
           ))}
@@ -4503,23 +4506,34 @@ function CommunitySection({ token, profile }) {
           <p className="text-sm">No events scheduled yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {events.map(ev => (
-            <div key={ev._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-all">
-              {(ev.image || ev.thumbnail) && <img src={ev.image || ev.thumbnail} className="w-full h-36 object-cover" alt=""/>}
-              <div className="p-4">
-                <p className="text-sm font-bold text-white mb-2">{ev.title}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div key={ev._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+              {/* Thumbnail — always rendered, fallback gradient if no image */}
+              <div className="relative h-[170px] shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1e22] to-[#0d1117]">
+                {(ev.image || ev.thumbnail)
+                  ? <img src={ev.image || ev.thumbnail} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt=""/>
+                  : <div className="w-full h-full flex items-center justify-center">
+                      <svg width="36" height="36" fill="none" stroke="rgba(199,227,107,0.25)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+                    </div>
+                }
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"/>
+                {/* Date badge */}
+                <span className="absolute bottom-3 left-3 text-[11px] font-bold bg-black/70 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   {ev.date ? new Date(ev.date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "TBD"}
-                </div>
+                </span>
+              </div>
+              {/* Body */}
+              <div className="p-4 flex flex-col flex-1 gap-2">
+                <p className="text-[15px] font-bold text-white leading-snug line-clamp-2 min-h-[44px]">{ev.title}</p>
                 {ev.startTime && (
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                  <div className="flex items-center gap-1.5 text-[12px] text-gray-400">
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     {ev.startTime}{ev.endTime ? ` - ${ev.endTime}` : ""} {ev.timezone || ""}
                   </div>
                 )}
-                <button onClick={() => ev.link ? window.open(ev.link, "_blank") : alert("Event link coming soon!")} className="w-full text-xs bg-[#C7E36B] !text-black font-bold py-2 rounded-xl hover:brightness-105 transition-all">View Event</button>
+                <button onClick={() => ev.link ? window.open(ev.link, "_blank") : alert("Event link coming soon!")} className="mt-auto w-full text-sm bg-[#C7E36B] !text-black font-bold py-2.5 rounded-xl hover:brightness-105 transition-all">View Event</button>
               </div>
             </div>
           ))}
