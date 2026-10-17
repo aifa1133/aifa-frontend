@@ -119,15 +119,13 @@ export default function LearnSection() {
               <div
                 key={index}
                 className="
-                  w-[375px]
+                  w-full
 
                   flex
                   items-center
 
-                  gap-[15px]
-
                   px-[25px]
-                  py-[10px]
+                  py-[22px]
 
                   rounded-[24px]
 
@@ -144,36 +142,24 @@ export default function LearnSection() {
                   hover:border-[#D0E46A]
                   hover:translate-y-[-4px]
 
-                  max-sm:w-full
-                  max-sm:min-h-[80px]
                   max-sm:px-[18px]
-                  max-sm:py-[12px]
+                  max-sm:py-[16px]
                   max-sm:rounded-[18px]
                 "
               >
-                {/* TEXT */}
                 <p
                   className="
-                    flex
-                    flex-col
-                    justify-center
-
-                    w-[294px]
-                    h-[96px]
-
-                    shrink-0
+                    w-full
 
                     text-[#F0F0F0]
 
                     font-['Montserrat']
 
-                    text-[24px]
+                    text-[22px]
                     font-black
 
-                    leading-[32px]
+                    leading-[30px]
 
-                    max-sm:w-full
-                    max-sm:h-auto
                     max-sm:text-[18px]
                     max-sm:leading-[26px]
                   "
