@@ -518,7 +518,7 @@ export default function WorkshopDetail() {
   const seatsLeft    = (workshop.seats || 50) - regCount;
   const isFull       = seatsLeft <= 0;
   const hasDiscount  = workshop.originalPrice && workshop.originalPrice > workshop.price;
-  const discount     = hasDiscount ? Math.round((1 - workshop.price / workshop.originalPrice) * 100) : 0;
+  const discount     = hasDiscount ? Math.floor((1 - workshop.price / workshop.originalPrice) * 100) : 0;
 
   const fmtDate      = dt ? dt.toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" }) : null;
   const fmtTime      = dt ? dt.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true }) : null;
