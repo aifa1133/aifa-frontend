@@ -172,6 +172,10 @@ export default function UserLogin() {
 
   return (
     <div className="h-screen bg-[#0B0F10] flex items-center justify-center px-4 overflow-hidden">
+      <a href="/" className="fixed top-4 left-4 flex items-center gap-1.5 text-white/40 hover:text-white/80 text-xs transition-colors z-50">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+        Back to AIFA
+      </a>
       <div
         className="fixed inset-0 opacity-[0.03] pointer-events-none"
         style={{
@@ -365,11 +369,6 @@ export default function UserLogin() {
           )}
         </div>
 
-        <p className="text-center text-white/30 text-xs mt-3">
-          <a href="/" className="text-white/50 hover:text-white/80 transition-colors underline underline-offset-2">
-            ← Back to AIFA
-          </a>
-        </p>
       </div>
     </div>
   );
