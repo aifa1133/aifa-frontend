@@ -2138,13 +2138,14 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", mode:"ONLINE", trainer:"", seats:50, date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"" });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", originalPrice:"", mode:"ONLINE", trainer:"", seats:50, date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"" });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [manageTab, setManageTab] = useState("overview");
   const [wsStudents, setWsStudents] = useState([]);
   const [wsStudentsLoading, setWsStudentsLoading] = useState(false);
+  const [wsPage, setWsPage] = useState(1);
   const [wsCoverUploading, setWsCoverUploading] = useState(false);
   const [wsCoverPct, setWsCoverPct] = useState(0);
 
@@ -2155,7 +2156,7 @@ function WorkshopsAdmin({ token }) {
       dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
       timeStr = `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
     }
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), mode:w.mode||"ONLINE", trainer:w.trainer||"", seats:w.seats||50, date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"" });
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), originalPrice:w.originalPrice!=null?String(w.originalPrice):"", mode:w.mode||"ONLINE", trainer:w.trainer||"", seats:w.seats||50, date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"" });
     setIsEditing(true); setView("create");
   };
 
@@ -2170,7 +2171,7 @@ function WorkshopsAdmin({ token }) {
           if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
         } catch {}
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), mode:cf.mode.toUpperCase(), trainer:cf.trainer||"", seats:parseInt(cf.seats)||50, isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", ...(scheduledAt && { scheduledAt }) };
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), originalPrice:cf.originalPrice?parseFloat(cf.originalPrice.replace(/[^0-9.]/g,""))||0:0, mode:cf.mode.toUpperCase(), trainer:cf.trainer||"", seats:parseInt(cf.seats)||50, isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -2238,10 +2239,13 @@ function WorkshopsAdmin({ token }) {
             </label>
           </Sect>
           <Sect icon="service" title="Key Details">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Fld label="DURATION" value={cf.duration} onChange={v=>setCf({...cf,duration:v})} placeholder="e.g. 3 Hours" />
-              <Fld label="PRICING" value={cf.price} onChange={v=>setCf({...cf,price:v})} placeholder="e.g. INR 999" />
               <Fld label="MODE" value={cf.mode} onChange={v=>setCf({...cf,mode:v})} placeholder="ONLINE / OFFLINE" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="PRICING (₹)" value={cf.price} onChange={v=>setCf({...cf,price:v})} placeholder="e.g. 999" />
+              <Fld label="ORIGINAL PRICE (₹) — strikethrough" value={cf.originalPrice} onChange={v=>setCf({...cf,originalPrice:v})} placeholder="e.g. 1999 (optional)" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Fld label="INSTRUCTOR NAME" value={cf.trainer} onChange={v=>setCf({...cf,trainer:v})} placeholder="e.g. KR Ravi Teja" />
@@ -2361,10 +2365,13 @@ function WorkshopsAdmin({ token }) {
         {[["overview","Overview"],["session","Session Details"],["students","Students"]].map(([t,l])=>(
           <button key={t} onClick={()=>{
             setManageTab(t);
-            if(t==="students" && wsStudents.length===0){
-              setWsStudentsLoading(true);
-              fetch(`/api/workshops/${sel._id}/registrations`,{headers:{Authorization:`Bearer ${token}`}})
-                .then(r=>r.ok?r.json():[]).then(d=>{ setWsStudents(Array.isArray(d)?d:[]); setWsStudentsLoading(false); }).catch(()=>setWsStudentsLoading(false));
+            if(t==="students"){
+              setWsPage(1);
+              if(wsStudents.length===0){
+                setWsStudentsLoading(true);
+                fetch(`/api/workshops/${sel._id}/registrations`,{headers:{Authorization:`Bearer ${token}`}})
+                  .then(r=>r.ok?r.json():[]).then(d=>{ setWsStudents(Array.isArray(d)?d:[]); setWsStudentsLoading(false); }).catch(()=>setWsStudentsLoading(false));
+              }
             }
           }}
           className={`text-xs font-semibold px-4 py-2.5 border-b-2 transition-all ${manageTab===t?"border-[#C7E36B] text-[#C7E36B]":"border-transparent text-gray-500 hover:text-white"}`}>{l}</button>
@@ -2374,7 +2381,7 @@ function WorkshopsAdmin({ token }) {
       {/* ── Overview Tab ── */}
       {manageTab==="overview" && (
         <div className="grid grid-cols-3 gap-4">
-          {[["PRICE","₹"+sel.price],["DURATION",sel.duration||"—"],["SEATS",`${sel.registrations?.length||0} / ${sel.seats||50}`],["MODE",sel.mode||"ONLINE"],["DATE",sel.scheduledAt?new Date(sel.scheduledAt).toLocaleDateString("en-IN"):"Not scheduled"],["STATUS",sel.isPublished?"Published":"Draft"]].map(([k,v])=>(
+          {[["PRICE", sel.originalPrice>0 ? <>₹{sel.price} <span className="text-xs text-gray-500 line-through ml-1">₹{sel.originalPrice}</span></> : "₹"+sel.price],["DURATION",sel.duration||"—"],["SEATS",`${sel.registrations?.length||0} / ${sel.seats||50}`],["MODE",sel.mode||"ONLINE"],["DATE",sel.scheduledAt?new Date(sel.scheduledAt).toLocaleDateString("en-IN"):"Not scheduled"],["STATUS",sel.isPublished?"Published":"Draft"]].map(([k,v])=>(
             <div key={k} className="bg-white/5 border border-white/10 rounded-xl p-4">
               <p className="text-[10px] text-gray-500 font-semibold mb-1">{k}</p>
               <p className="text-base font-bold text-white">{v}</p>
@@ -2422,7 +2429,13 @@ function WorkshopsAdmin({ token }) {
       )}
 
       {/* ── Students Tab ── */}
-      {manageTab==="students" && (
+      {manageTab==="students" && (()=>{
+        const WS_PAGE_SIZE = 10;
+        const sorted = [...wsStudents].sort((a,b)=>new Date(b.registeredAt)-new Date(a.registeredAt));
+        const totalPages = Math.max(1, Math.ceil(sorted.length / WS_PAGE_SIZE));
+        const safePage = Math.min(wsPage, totalPages);
+        const pageStudents = sorted.slice((safePage-1)*WS_PAGE_SIZE, safePage*WS_PAGE_SIZE);
+        return (
         <div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-bold text-white">{wsStudents.length} Registered Students</p>
@@ -2436,6 +2449,7 @@ function WorkshopsAdmin({ token }) {
               <p className="text-xs text-gray-500 mt-1">Students who register for this workshop will appear here.</p>
             </div>
           ) : (
+            <>
             <div className="overflow-x-auto rounded-xl border border-white/10">
               <table className="w-full text-xs">
                 <thead><tr className="border-b border-white/10 bg-white/5">
@@ -2446,21 +2460,40 @@ function WorkshopsAdmin({ token }) {
                   <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Registered</th>
                 </tr></thead>
                 <tbody>
-                  {wsStudents.map((s,i)=>(
+                  {pageStudents.map((s,i)=>(
                     <tr key={s._id||i} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="px-4 py-3 text-gray-500">{i+1}</td>
+                      <td className="px-4 py-3 text-gray-500">{(safePage-1)*WS_PAGE_SIZE+i+1}</td>
                       <td className="px-4 py-3 font-semibold text-white">{s.name||"—"}</td>
                       <td className="px-4 py-3 text-gray-400">{s.email||"—"}</td>
                       <td className="px-4 py-3 text-gray-400">{s.phone||s.mobile||"—"}</td>
-                      <td className="px-4 py-3 text-gray-500">{s.registeredAt?new Date(s.registeredAt).toLocaleDateString("en-IN"):"—"}</td>
+                      <td className="px-4 py-3">
+                        {s.registeredAt ? (
+                          <>
+                            <p className="text-gray-300 text-xs">{new Date(s.registeredAt).toLocaleDateString("en-IN")}</p>
+                            <p className="text-gray-500 text-[10px] mt-0.5">{new Date(s.registeredAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}</p>
+                          </>
+                        ) : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 px-1">
+                <p className="text-[10px] text-gray-500">Showing {(safePage-1)*WS_PAGE_SIZE+1}–{Math.min(safePage*WS_PAGE_SIZE,sorted.length)} of {sorted.length}</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={()=>setWsPage(p=>Math.max(1,p-1))} disabled={safePage===1} className="text-[10px] px-3 py-1.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed">← Prev</button>
+                  <span className="text-[10px] text-gray-400">{safePage} / {totalPages}</span>
+                  <button onClick={()=>setWsPage(p=>Math.min(totalPages,p+1))} disabled={safePage===totalPages} className="text-[10px] px-3 py-1.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed">Next →</button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 
@@ -2512,7 +2545,10 @@ function WorkshopsAdmin({ token }) {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className="text-base font-bold text-white">₹{w.price}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-base font-bold text-white">₹{w.price}</span>
+                  {w.originalPrice>0 && <span className="text-xs text-gray-500 line-through">₹{w.originalPrice}</span>}
+                </div>
                 <div className="flex gap-2">
                   <button onClick={()=>{setSel(w);setView("manage");setManageTab("overview");setWsStudents([]);}} className={`text-xs font-bold px-3 py-1.5 rounded-lg ${w.isPublished?"bg-[#C7E36B] text-black hover:bg-lime-300":"border border-white/20 text-gray-300 hover:bg-white/5"}`}>
                     {w.isPublished?"Manage Workshop":"Continue Editing"}

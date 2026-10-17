@@ -275,6 +275,7 @@ export default function WorkshopsPage() {
                           <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
                             <p className="text-[#2B2D30] font-[Montserrat] text-[13px] sm:text-[14px] font-bold truncate w-full">{priceStr}</p>
+                            {item.originalPrice>0 && <p className="text-[#9E9E9E] font-[Montserrat] text-[10px] line-through truncate w-full">{cur} {parseFloat(item.originalPrice).toFixed(2)}</p>}
                           </div>
                           <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">📅 Date & Time</p>
