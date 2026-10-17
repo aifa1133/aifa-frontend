@@ -171,7 +171,7 @@ export default function UserLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F10] flex items-center justify-center px-4">
+    <div className="h-screen bg-[#0B0F10] flex items-center justify-center px-4 overflow-hidden">
       <div
         className="fixed inset-0 opacity-[0.03] pointer-events-none"
         style={{
@@ -183,29 +183,29 @@ export default function UserLogin() {
 
       <div className="relative w-full max-w-[420px]">
         {/* Logo */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-4">
           <a href="/">
-            <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-8" />
+            <img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" />
           </a>
         </div>
 
-        <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-[#0F1112] border border-white/10 rounded-2xl p-5 shadow-2xl">
 
           {/* ── LOGIN ── */}
           {mode === "login" && (
             <>
-              <div className="mb-8">
+              <div className="mb-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
-                  <span className="text-[#a78bfa] text-xs font-semibold tracking-widest uppercase">Student Portal</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED]" />
+                  <span className="text-[#a78bfa] text-[10px] font-semibold tracking-widest uppercase">Student Portal</span>
                 </div>
-                <h1 className="text-white text-2xl font-bold mt-2">Welcome back</h1>
-                <p className="text-white/40 text-sm mt-1">Sign in to continue learning.</p>
+                <h1 className="text-white text-xl font-bold mt-1">Welcome back</h1>
+                <p className="text-white/40 text-xs mt-0.5">Sign in to continue learning.</p>
               </div>
 
               {error && <ErrorBox msg={error} />}
 
-              <form onSubmit={handleLogin} className="space-y-5">
+              <form onSubmit={handleLogin} className="space-y-3">
                 <Field label="Email Address" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com" />
                 <PasswordField label="Password" name="password" value={form.password} onChange={handleChange} show={showPassword} toggle={() => setShowPassword(v => !v)} />
 
@@ -218,7 +218,7 @@ export default function UserLogin() {
                 <SubmitBtn loading={loading} label="Sign In" loadingLabel="Signing in…" color="purple" />
               </form>
 
-              <p className="text-center text-white/30 text-sm mt-6">
+              <p className="text-center text-white/30 text-xs mt-3">
                 New to AIFA?{" "}
                 <button onClick={() => switchMode("signup")} className="text-[#a78bfa] hover:text-[#c4b5fd] transition-colors font-medium">
                   Create an account
@@ -365,7 +365,7 @@ export default function UserLogin() {
           )}
         </div>
 
-        <p className="text-center text-white/30 text-xs mt-6">
+        <p className="text-center text-white/30 text-xs mt-3">
           <a href="/" className="text-white/50 hover:text-white/80 transition-colors underline underline-offset-2">
             ← Back to AIFA
           </a>
@@ -462,7 +462,7 @@ function Field({ label, type, name, value, onChange, placeholder }) {
         onChange={onChange}
         required
         placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/8 transition-all"
+        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/8 transition-all"
       />
     </div>
   );
@@ -480,7 +480,7 @@ function PasswordField({ label, name, value, onChange, show, toggle }) {
           onChange={onChange}
           required
           placeholder="••••••••"
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-11 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/8 transition-all"
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pr-11 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/8 transition-all"
         />
         <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors">
           {show ? (
@@ -508,7 +508,7 @@ function SubmitBtn({ loading, label, loadingLabel, color }) {
     <button
       type="submit"
       disabled={loading}
-      className={`w-full ${bg} ${text} disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm py-3 rounded-xl transition-all duration-200 mt-1`}
+      className={`w-full ${bg} ${text} disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm py-2.5 rounded-xl transition-all duration-200 mt-1`}
     >
       {loading ? (
         <span className="flex items-center justify-center gap-2">
