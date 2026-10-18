@@ -925,9 +925,6 @@ export default function WorkshopDetail() {
               {workshop.sessionCode && <p>🔖 Session: <span className="text-white font-semibold">{workshop.sessionCode}</span></p>}
               {workshop.duration   && <p>⏱ Duration: <span className="text-white font-semibold">{workshop.duration}</span></p>}
               <p>🌐 Mode: <span className="text-white font-semibold">{workshop.mode === "OFFLINE" ? "Offline" : "Online"}</span></p>
-              {!isFull && seatsLeft > 0 && (
-                <p>🪑 <span className="text-[#C7E36B] font-semibold">{seatsLeft} seats remaining</span></p>
-              )}
             </div>
           </div>
         </div>
