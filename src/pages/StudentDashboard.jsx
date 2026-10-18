@@ -1882,7 +1882,6 @@ function WorkshopsSection({ token }) {
   const [loading, setLoading]     = useState(true);
   const [enrolling, setEnrolling] = useState(null);
   const [reserved, setReserved]   = useState(new Set());
-  const [detailWs, setDetailWs]   = useState(null);
 
   useEffect(() => {
     const userId = JSON.parse(localStorage.getItem("aifa_user") || "{}")._id;
@@ -2104,12 +2103,13 @@ function WorkshopsSection({ token }) {
                   </div>
                 ) : (
                   <div className="flex flex-col overflow-hidden rounded-b-[20px]">
-                    <button
-                      onClick={e => { e.stopPropagation(); setDetailWs(w); }}
+                    <a
+                      href={`/workshops/${w._id}`}
+                      onClick={e => e.stopPropagation()}
                       className="flex w-full justify-center items-center px-[30px] py-[12px] font-bold text-[18px] bg-[#F2FEB1] text-[#0F1112] hover:bg-[#EAF99A] transition-all duration-300"
                     >
                       VIEW DETAILS
-                    </button>
+                    </a>
                     <button
                       onClick={(e) => handleReserve(w, e)}
                       disabled={isFull}
@@ -2123,65 +2123,6 @@ function WorkshopsSection({ token }) {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Workshop Detail Modal */}
-      {detailWs && (
-        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDetailWs(null)}>
-          <div className="relative w-full max-w-[680px] max-h-[90vh] overflow-y-auto bg-[#0F1112] rounded-[24px] border border-white/10" onClick={e => e.stopPropagation()}>
-            {/* Close */}
-            <button onClick={() => setDetailWs(null)} className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-lg transition-all">✕</button>
-            {/* Banner */}
-            {detailWs.image && <img src={detailWs.image} alt={detailWs.title} className="w-full h-[200px] object-cover rounded-t-[24px]" />}
-            <div className="p-6 flex flex-col gap-5">
-              {/* Title & badges */}
-              <div>
-                {detailWs.sessionCode && <span className="text-[10px] bg-[#2C3A10] text-[#D0E46A] font-bold px-2 py-0.5 rounded-full">• {detailWs.sessionCode}</span>}
-                <h2 className="text-white font-black text-2xl mt-2">{detailWs.title}</h2>
-                {detailWs.trainer && <p className="text-gray-400 text-sm mt-1">👤 {detailWs.trainer}</p>}
-              </div>
-              {/* Price */}
-              <div className="flex items-baseline gap-2">
-                <span className="text-white font-black text-3xl">₹{Math.round(detailWs.price || 0).toLocaleString("en-IN")}</span>
-                {detailWs.originalPrice > 0 && detailWs.originalPrice > detailWs.price && (
-                  <span className="text-gray-500 text-base line-through">₹{Math.round(detailWs.originalPrice).toLocaleString("en-IN")}</span>
-                )}
-              </div>
-              {/* Info grid */}
-              <div className="grid grid-cols-3 gap-3">
-                {detailWs.duration && <div className="bg-[#1a1e20] rounded-xl p-3"><p className="text-gray-500 text-[10px] font-semibold uppercase mb-1">⏱ Duration</p><p className="text-white text-sm font-bold">{detailWs.duration}</p></div>}
-                <div className="bg-[#1a1e20] rounded-xl p-3"><p className="text-gray-500 text-[10px] font-semibold uppercase mb-1">🌐 Mode</p><p className="text-white text-sm font-bold">{detailWs.mode === "OFFLINE" ? "Offline" : "Online"}</p></div>
-                {detailWs.scheduledAt && <div className="bg-[#1a1e20] rounded-xl p-3"><p className="text-gray-500 text-[10px] font-semibold uppercase mb-1">📅 Date</p><p className="text-white text-sm font-bold">{new Date(detailWs.scheduledAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</p></div>}
-              </div>
-              {/* Description */}
-              {detailWs.description && (
-                <div>
-                  <p className="text-gray-400 text-[10px] font-semibold uppercase mb-2">About</p>
-                  <p className="text-gray-300 text-sm leading-relaxed">{detailWs.description}</p>
-                </div>
-              )}
-              {/* What you'll learn */}
-              {Array.isArray(detailWs.whatYouWillLearn) && detailWs.whatYouWillLearn.length > 0 && (
-                <div>
-                  <p className="text-gray-400 text-[10px] font-semibold uppercase mb-2">What you'll learn</p>
-                  <ul className="flex flex-col gap-1.5">
-                    {detailWs.whatYouWillLearn.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-gray-300 text-sm"><span className="text-[#C7E36B] mt-0.5">✓</span>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {/* CTA */}
-              <button
-                onClick={e => { setDetailWs(null); handleReserve(detailWs, e); }}
-                disabled={reserved.has(detailWs._id)}
-                className={`w-full py-3.5 font-black text-base rounded-xl transition-all ${reserved.has(detailWs._id) ? "bg-[#C7E36B]/20 text-[#C7E36B] cursor-default" : "bg-[#C7E36B] text-[#0F1112] hover:bg-[#d4ec85]"}`}
-              >
-                {reserved.has(detailWs._id) ? "✓ SEAT CONFIRMED" : "RESERVE MY SEAT →"}
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
