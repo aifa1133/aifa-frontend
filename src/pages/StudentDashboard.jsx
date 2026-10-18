@@ -2127,27 +2127,17 @@ function WorkshopsSection({ token }) {
       )}
 
       {/* WhatsApp Contact */}
-      <div className="mt-6 bg-[#111315] border border-white/10 rounded-3xl px-6 py-8 flex flex-col items-center text-center">
-        <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-white/20 mb-5 shadow-md">
-          <img
-            src="https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=144&h=144&fit=crop&crop=face"
-            alt="Support agent"
-            className="w-full h-full object-cover"
-            onError={e => { e.target.src = "https://randomuser.me/api/portraits/women/44.jpg"; }}
-          />
-        </div>
-        <h2 className="text-white text-[1.75rem] leading-[1.2] mb-2 font-black">
-          Not sure which<br />workshop is<br />right for you?
+      <div className="mt-6 w-full bg-[#E39494] rounded-[24px] px-[20px] py-[40px] sm:px-[32px] sm:py-[48px] flex flex-col items-center text-center">
+        <img src="/logoimage.png" alt="support" className="w-[72px] h-[72px] rounded-full object-cover mx-auto mb-[20px]" />
+        <h2 className="text-[#000000] font-[Montserrat] text-[32px] leading-[40px] sm:text-[44px] sm:leading-[52px] font-[900] mb-[16px]">
+          Not sure which workshop is<br className="hidden sm:block" /> right for you?
         </h2>
-        <p className="text-gray-400 font-semibold text-sm mb-6">Get personalised guidance from our team</p>
-        <a
-          href="https://wa.me/919052088000"
-          target="_blank"
-          rel="noreferrer"
-          className="bg-[#C7E36B] text-black font-black text-xs px-6 py-2.5 rounded-full hover:bg-[#d4ec85] transition-colors"
-        >
-          Chat on Whats app
-        </a>
+        <p className="text-[#000000] font-[Montserrat] text-[18px] leading-[28px] sm:text-[24px] sm:leading-[32px] font-bold mb-[28px]">
+          Get personalised guidance from our team
+        </p>
+        <button onClick={() => window.open("https://wa.me/919052088000?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20the%20AIFA%20workshops.", "_blank")} className="inline-flex justify-center items-center gap-[8px] px-[22px] py-[12px] rounded-[12px] bg-[#D0E46A] text-[#0F1112] font-[Montserrat] text-[15px] font-bold uppercase transition-all duration-300 hover:opacity-90">
+          CHAT WITH US NOW
+        </button>
       </div>
     </div>
   );
