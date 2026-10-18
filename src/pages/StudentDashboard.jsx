@@ -2048,7 +2048,12 @@ function WorkshopsSection({ token }) {
                         </div>
                         <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
                           <p className="text-gray-500 text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                          <p className="text-[#C7E36B] text-[13px] sm:text-[14px] font-bold truncate w-full">{priceStr}</p>
+                          <div className="flex items-baseline gap-1.5 w-full min-w-0">
+                            <p className="text-[#C7E36B] text-[13px] sm:text-[14px] font-bold truncate">{priceStr}</p>
+                            {w.originalPrice > 0 && w.originalPrice > w.price && (
+                              <p className="text-gray-500 text-[10px] line-through truncate shrink-0">₹{Math.round(w.originalPrice).toLocaleString("en-IN")}</p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
                           <p className="text-gray-500 text-[10px] font-semibold uppercase">📅 Date & Time</p>
