@@ -636,14 +636,14 @@ export default function WorkshopDetail() {
         <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
           {storedUser?.name ? (
-            <div className="flex items-center gap-2.5">
+            <Link to="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded-full bg-[#C7E36B]/20 border border-[#C7E36B]/40 flex items-center justify-center text-[#C7E36B] text-xs font-bold shrink-0 overflow-hidden">
                 {storedUser.avatar
                   ? <img src={storedUser.avatar} alt="" className="w-full h-full object-cover" />
                   : (storedUser.name?.[0] || "U").toUpperCase()}
               </div>
               <span className="text-sm text-gray-300 font-medium hidden sm:block">{storedUser.name}</span>
-            </div>
+            </Link>
           ) : (
             <Link to="/login" className="text-xs text-[#C7E36B] font-semibold hover:underline">Login</Link>
           )}
@@ -842,14 +842,14 @@ export default function WorkshopDetail() {
       <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between">
         <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
         {storedUser?.name ? (
-          <div className="flex items-center gap-2.5">
+          <Link to="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-full bg-[#C7E36B]/20 border border-[#C7E36B]/40 flex items-center justify-center text-[#C7E36B] text-xs font-bold shrink-0 overflow-hidden">
               {storedUser.avatar
                 ? <img src={storedUser.avatar} alt="" className="w-full h-full object-cover" />
                 : (storedUser.name?.[0] || "U").toUpperCase()}
             </div>
             <span className="text-sm text-gray-300 font-medium hidden sm:block">{storedUser.name}</span>
-          </div>
+          </Link>
         ) : (
           <Link to="/login" className="text-xs text-[#C7E36B] font-semibold hover:underline">Login</Link>
         )}
