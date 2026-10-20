@@ -65,12 +65,14 @@ export default function Bootcamps() {
           const mapped = data
             .filter(w => w.isPublished !== false)
             .map((w, i) => ({
-              _id:      w._id,
-              title:    w.title,
-              image:    w.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length],
-              duration: w.duration || "3 HOURS",
-              price:    fmtPrice(w),
-              date:     fmtDateBox(w.scheduledAt),
+              _id:           w._id,
+              title:         w.title,
+              image:         w.image || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length],
+              duration:      w.duration || "3 HOURS",
+              price:         fmtPrice(w),
+              originalPrice: w.originalPrice > 0 && w.originalPrice > w.price ? w.originalPrice : null,
+              currency:      w.currency,
+              date:          fmtDateBox(w.scheduledAt),
             }));
           if (mapped.length > 0) setWorkshops(mapped);
         }
@@ -136,7 +138,10 @@ export default function Bootcamps() {
                           <img src="/moneyicon.svg" alt="money" className="w-[12px] h-[12px] object-contain" />
                           PRICING
                         </p>
-                        <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">{item.price}</p>
+                        <div className="flex items-baseline gap-1.5">
+                          <p className="text-[12px] sm:text-[14px] font-bold text-[#282A2C]">{item.price}</p>
+                          {item.originalPrice && <p className="text-[10px] text-[#888] line-through">{item.currency === "USD" ? "USD" : "INR"} {parseFloat(item.originalPrice).toFixed(2)}</p>}
+                        </div>
                       </div>
                       <div className="flex flex-col p-[12px] sm:p-[20px] gap-[6px] bg-[#DCDCDC] rounded-[8px]">
                         <p className="flex items-center gap-[4px] text-[10px] sm:text-[12px] font-semibold text-[#414243]">
