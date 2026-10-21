@@ -975,15 +975,17 @@ export default function WorkshopDetail() {
             onEnroll={() => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } })}
           />
         ) : (
-          <div className="rounded-2xl overflow-hidden mb-8" style={{padding:"56.37% 0 0 0", position:"relative"}}>
-            <iframe
-              src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0"
-              frameBorder="0"
-              allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
-              title="Workshop Preview"
-            />
+          <div className="-mx-4 sm:-mx-6 mb-8">
+            <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
+              <iframe
+                src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
+                title="Workshop Preview"
+              />
+            </div>
           </div>
         )}
       </div>
