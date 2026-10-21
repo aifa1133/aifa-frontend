@@ -811,7 +811,10 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
     if (!f.fullName.trim()) { setErr("Full name is required"); return; }
     if (!f.email.trim()) { setErr("Email is required"); return; }
     if (!f.phone.trim()) { setErr("Mobile number is required"); return; }
-    if (!/^\d{7,15}$/.test(f.phone.replace(/[\s\-\+]/g, ""))) { setErr("Mobile number must contain only digits (7–15 digits)"); return; }
+    const rawPhone = f.phone.replace(/[\s\-]/g, "");
+    const isIndian = /^(\+91)?[6-9]\d{9}$/.test(rawPhone);
+    const isIntl   = /^\+\d{7,15}$/.test(rawPhone);
+    if (!isIndian && !isIntl) { setErr("Enter a valid 10-digit Indian number (starting 6–9) or an international number with country code (e.g. +1 650 555 1234)"); return; }
     if (f.city && /[^a-zA-Z\s]/.test(f.city)) { setErr("City name must contain only letters"); return; }
     setSaving(true); setErr("");
     try {
@@ -898,8 +901,14 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
                   onChange={(e) => { const v = e.target.value.replace(/[^\d\s\-\+]/g, ""); set("phone")(v); }}
                   placeholder="+91 9876543210"
                   inputMode="tel"
+                  maxLength={16}
                   className={inputCls}
                 />
+                {f.phone.trim() && (() => {
+                  const raw = f.phone.replace(/[\s\-]/g, "");
+                  const ok = /^(\+91)?[6-9]\d{9}$/.test(raw) || /^\+\d{7,15}$/.test(raw);
+                  return !ok ? <p className="text-[11px] text-red-400 mt-1">Enter a valid 10-digit Indian number or international number with + code</p> : <p className="text-[11px] text-green-400 mt-1">✓ Valid number</p>;
+                })()}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
