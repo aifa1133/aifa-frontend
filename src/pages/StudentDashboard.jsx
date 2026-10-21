@@ -2037,7 +2037,7 @@ function WorkshopsSection({ token }) {
                         {fmtTimeRange && <p className="text-[#3a5000] text-[11px] font-semibold">at {fmtTimeRange}</p>}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {isExpired ? (
                         <button disabled
                           className="flex items-center gap-1 bg-gray-700 text-gray-500 font-black text-sm px-5 py-2.5 rounded-xl cursor-not-allowed whitespace-nowrap line-through">
@@ -2061,6 +2061,7 @@ function WorkshopsSection({ token }) {
                         </a>
                       )}
                     </div>
+
                   </div>
                 ) : (
                   <div className="flex flex-col overflow-hidden rounded-b-[20px]">

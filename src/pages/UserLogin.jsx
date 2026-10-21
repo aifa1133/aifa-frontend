@@ -35,7 +35,7 @@ export default function UserLogin() {
       if (data.role === "admin") { setError("Use the admin portal to sign in."); return; }
       localStorage.setItem("aifa_token", data.token);
       localStorage.setItem("aifa_user", JSON.stringify(data));
-      navigate("/dashboard");
+      navigate(window.innerWidth < 768 ? "/" : "/dashboard");
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   };
@@ -117,7 +117,7 @@ export default function UserLogin() {
 
       localStorage.setItem("aifa_token", data2.token);
       localStorage.setItem("aifa_user", JSON.stringify(data2));
-      navigate("/dashboard");
+      navigate(window.innerWidth < 768 ? "/" : "/dashboard");
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   };

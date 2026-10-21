@@ -11,13 +11,13 @@ const STATIC_TALENTS = [
 
 const filters = [
   { name: "All" },
-  { name: "AI Filmmakers",       img: "/logos/logoback.jpg" },
-  { name: "Video Editors",       img: "/logos/logoback.jpg" },
-  { name: "AI Artists & Designers", img: "/logos/logoback.jpg" },
-  { name: "Prompt Engineers",    img: "/logos/logoback.jpg" },
-  { name: "VFX & CGI Artists",   img: "/logos/logoback.jpg" },
-  { name: "Sound Designers",     img: "/logos/logoback.jpg" },
-  { name: "3D Artists",          img: "/logos/logoback.jpg" },
+  { name: "AI Filmmakers" },
+  { name: "Video Editors" },
+  { name: "AI Artists & Designers" },
+  { name: "Prompt Engineers" },
+  { name: "VFX & CGI Artists" },
+  { name: "Sound Designers" },
+  { name: "3D Artists" },
 ];
 
 function TalentBlock({ t, onInquiry, locked, onLockedClick }) {
@@ -298,7 +298,7 @@ export default function HireTalent() {
             {filters.map((f, i) => (
               <button key={i} onClick={() => setSelected(f.name)}
                 className={`relative min-w-[150px] sm:min-w-[180px] md:min-w-[188px] h-[56px] md:h-[64px] flex-shrink-0 rounded-[6px] flex items-center justify-center overflow-hidden transition-all duration-300 ${selected === f.name ? "bg-[#C7E36B] text-black" : "text-[#F0F0F0] border border-white/10"}`}>
-                {f.name !== "All" && (<><img src={f.img} alt={f.name} className="absolute inset-0 w-full h-full object-cover" /><div className="absolute inset-0 bg-black/50" /></>)}
+                {f.img && (<><img src={f.img} alt={f.name} className="absolute inset-0 w-full h-full object-cover" /><div className="absolute inset-0 bg-black/50" /></>)}
                 <span className="relative z-10 text-[13px] sm:text-[14px] font-medium px-3 text-center">{f.name}</span>
               </button>
             ))}

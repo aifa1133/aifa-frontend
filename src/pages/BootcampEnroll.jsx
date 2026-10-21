@@ -338,7 +338,7 @@ export default function BootcampEnroll() {
               CONTINUE TO PAYMENT →
             </button>
 
-            <div className="flex items-center justify-center gap-4 text-gray-500 text-[11px] mt-4">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-gray-500 text-[11px] mt-4">
               <span>🔒 Secure Payment</span>
               <span>🛡 Razorpay Secure</span>
               <span>🔒 SSL Protected</span>
@@ -427,7 +427,7 @@ export default function BootcampEnroll() {
               </button>
             )}
 
-            <div className="flex items-center justify-center gap-4 text-gray-500 text-[11px]">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-gray-500 text-[11px]">
               <span>🔒 Secure by Razorpay</span>
               <span>🛡 256-bit SSL Encryption</span>
               <span>⚡ Instant Enrollment</span>

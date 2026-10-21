@@ -64,8 +64,6 @@ export default function VideoSection({
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
             title="Bootcamp Preview"
           />
-          {/* Cover Vimeo watermark — cannot be removed without Vimeo Pro via API */}
-          <div style={{ position: "absolute", bottom: 0, right: 0, width: 110, height: 42, background: "#000", zIndex: 2, borderRadius: "14px 0 0 0" }} />
         </div>
       </div>
     </section>
