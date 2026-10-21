@@ -193,7 +193,7 @@ export default function WorkshopsPage() {
               const isMock = item._id?.startsWith("mw");
               const isReserved = reserved.has(item._id);
               const cur = item.currency === "USD" ? "USD" : "INR";
-              const priceStr = `${cur} ${parseFloat(item.price || 0).toFixed(2)}`;
+              const priceStr = item.currency === "USD" ? `$${(item.price || 0).toLocaleString("en-US")}` : `₹${Math.round(item.price || 0).toLocaleString("en-IN")}`;
               const status = isMock ? null : getStatus(item);
               const dt = item.scheduledAt ? new Date(item.scheduledAt) : null;
               const fmtDate = dt ? dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : null;
@@ -276,7 +276,7 @@ export default function WorkshopsPage() {
                             <p className="text-[#6E7072] font-[Montserrat] text-[10px] font-semibold uppercase">⊞ Pricing</p>
                             <div className="flex items-baseline gap-2 w-full min-w-0">
                               <p className="text-[#2B2D30] font-[Montserrat] text-[13px] sm:text-[14px] font-bold truncate">{priceStr}</p>
-                              {item.originalPrice>0 && <p className="text-[#9E9E9E] font-[Montserrat] text-[10px] line-through truncate shrink-0">{cur} {parseFloat(item.originalPrice).toFixed(2)}</p>}
+                              {item.originalPrice>0 && <p className="text-[#9E9E9E] font-[Montserrat] text-[10px] line-through truncate shrink-0">{item.currency === "USD" ? `$${item.originalPrice.toLocaleString("en-US")}` : `₹${Math.round(item.originalPrice).toLocaleString("en-IN")}`}</p>}
                             </div>
                           </div>
                           <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 bg-[#DCDCDC] rounded-[8px] min-w-0">

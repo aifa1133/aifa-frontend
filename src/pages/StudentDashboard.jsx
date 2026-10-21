@@ -2938,7 +2938,6 @@ function JobsSection({ token }) {
   );
 
   const isProUser = !!(JSON.parse(localStorage.getItem("aifa_user") || "{}").isPro);
-  if (!isProUser) return <ProGate onUpgrade={() => window.location.href = "/membership"} />;
 
   return (
     <div className="p-6">
@@ -2963,8 +2962,10 @@ function JobsSection({ token }) {
       ) : (
         <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((j) => (
-            <div key={j._id} className="group bg-[#111315] border border-white/8 rounded-2xl p-5 hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+          {filtered.map((j, idx) => (
+            <div key={j._id} className="relative">
+              <div className={idx > 0 && !isProUser ? "blur-sm pointer-events-none select-none" : ""}>
+              <div className="group bg-[#111315] border border-white/8 rounded-2xl p-5 hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
               {/* Tag + type row */}
               <div className="flex items-center gap-2 mb-3">
                 {j.tag && (
@@ -2992,6 +2993,9 @@ function JobsSection({ token }) {
                   <span className="text-[11px] text-gray-500 ml-auto">{timeAgo(j.createdAt || j.postedAt)}</span>
                 )}
               </div>
+            </div>
+              </div>
+              {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
             </div>
           ))}
         </div>
@@ -3997,6 +4001,20 @@ function ProGate({ onUpgrade }) {
   );
 }
 
+function ProLockOverlay({ onUpgrade }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl" style={{background:"rgba(11,15,16,0.55)",backdropFilter:"blur(4px)"}}>
+      <button
+        onClick={onUpgrade}
+        className="flex items-center gap-2 bg-black/80 text-white text-[13px] font-semibold px-5 py-2.5 rounded-full border border-white/25 hover:bg-black/90 transition-all"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Pro Members Only — Tap to Unlock
+      </button>
+    </div>
+  );
+}
+
 function ResourcesSection({ token }) {
   const navigate = useNavigate();
   const isPro = !!(JSON.parse(localStorage.getItem("aifa_user") || "{}").isPro);
@@ -4048,8 +4066,6 @@ function ResourcesSection({ token }) {
     const matchSub = subCatFilter === "All" || r.subCategory === subCatFilter;
     return matchCat && matchSub;
   });
-
-  if (!isPro) return <ProGate onUpgrade={() => navigate("/membership")} />;
 
   return (
     <div className="p-6">
@@ -4115,8 +4131,10 @@ function ResourcesSection({ token }) {
       ) : tab === "prompt" ? (
         /* ── PROMPT LIBRARY ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r) => (
-            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/18 transition-all group">
+          {filtered.map((r, idx) => (
+            <div key={r._id} className="relative">
+              <div className={idx > 0 && !isPro ? "blur-sm pointer-events-none select-none" : ""}>
+              <div className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/18 transition-all group">
               <div className="aspect-[4/3] overflow-hidden bg-white/5 relative">
                 {img(r)
                   ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
@@ -4147,14 +4165,18 @@ function ResourcesSection({ token }) {
                   </div>
                 )}
               </div>
+              </div>
+              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
             </div>
           ))}
         </div>
       ) : tab === "workflow" || tab === "project" ? (
         /* ── WORKFLOWS / PROJECTS ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((r) => (
-            <div key={r._id}
+          {filtered.map((r, idx) => (
+            <div key={r._id} className="relative">
+              <div className={idx > 0 && !isPro ? "blur-sm pointer-events-none select-none" : ""}>
+            <div
               onClick={() => {
                 const path = tab === "workflow" ? `/workflow/${r._id}` : `/projects/${r._id}`;
                 navigate(path, { state: { resource: r } });
@@ -4189,13 +4211,18 @@ function ResourcesSection({ token }) {
                 </div>
               </div>
             </div>
+              </div>
+              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
+            </div>
           ))}
         </div>
       ) : tab === "tip" ? (
         /* ── LEARNING TIPS ── 3-column thumbnail + Watch Now grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r) => (
-            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden group hover:border-white/18 transition-all">
+          {filtered.map((r, idx) => (
+            <div key={r._id} className="relative">
+              <div className={idx > 0 && !isPro ? "blur-sm pointer-events-none select-none" : ""}>
+            <div className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden group hover:border-white/18 transition-all">
               <div className="aspect-video overflow-hidden bg-white/5 relative">
                 {img(r)
                   ? <img src={img(r)} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
@@ -4218,6 +4245,9 @@ function ResourcesSection({ token }) {
                   </button>
               }
             </div>
+              </div>
+              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
+            </div>
           ))}
         </div>
       ) : tab === "deal" ? (
@@ -4226,7 +4256,9 @@ function ResourcesSection({ token }) {
           {filtered
             .filter(r => dealCatFilter === "All Benefits" || (r.category || "").toLowerCase() === dealCatFilter.toLowerCase())
             .map((r, i) => (
-            <div key={r._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden flex flex-col hover:border-white/18 transition-all">
+            <div key={r._id} className="relative">
+              <div className={i > 0 && !isPro ? "blur-sm pointer-events-none select-none" : ""}>
+            <div className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden flex flex-col hover:border-white/18 transition-all">
               {/* Logo header */}
               <div className="h-[100px] bg-[#1a1f23] flex items-center justify-center px-6 border-b border-white/8">
                 {r.logo && (r.logo.startsWith("http") || r.logo.startsWith("/"))
@@ -4257,6 +4289,9 @@ function ResourcesSection({ token }) {
                 )}
                 <p className="text-[10px] text-gray-600 text-center mt-1.5">Redirects to official site</p>
               </div>
+            </div>
+              </div>
+              {i > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
             </div>
           ))}
         </div>
@@ -4398,8 +4433,10 @@ function CommunitySection({ token, profile }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredThreads.map(t => (
-              <div key={t._id || t.id} className="bg-[#111315] border border-white/8 rounded-2xl p-4 hover:border-white/15 transition-all">
+            {filteredThreads.map((t, idx) => (
+              <div key={t._id || t.id} className="relative">
+                <div className={idx > 0 && !isProUser ? "blur-sm pointer-events-none select-none" : ""}>
+              <div className="bg-[#111315] border border-white/8 rounded-2xl p-4 hover:border-white/15 transition-all">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#C7E36B]/20 flex items-center justify-center text-[#C7E36B] font-black shrink-0">
                     {(t.author || "?")[0].toUpperCase()}
@@ -4419,6 +4456,9 @@ function CommunitySection({ token, profile }) {
                     className="shrink-0 text-xs border border-[#C7E36B]/40 text-[#C7E36B] font-semibold px-4 py-1.5 rounded-lg hover:bg-[#C7E36B]/10 transition-all"
                   >Reply</button>
                 </div>
+              </div>
+                </div>
+                {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
               </div>
             ))}
           </div>
@@ -4501,8 +4541,10 @@ function CommunitySection({ token, profile }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-          {events.map(ev => (
-            <div key={ev._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col max-w-[420px] w-full">
+          {events.map((ev, idx) => (
+            <div key={ev._id} className="relative max-w-[420px] w-full">
+              <div className={idx > 0 && !isProUser ? "blur-sm pointer-events-none select-none" : ""}>
+            <div className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
               {/* Thumbnail — always rendered, fallback gradient if no image */}
               <div className="relative aspect-video shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1e22] to-[#0d1117]">
                 {(ev.image || ev.thumbnail)
@@ -4530,6 +4572,9 @@ function CommunitySection({ token, profile }) {
                 <button onClick={() => ev.link ? window.open(ev.link, "_blank") : alert("Event link coming soon!")} className="mt-auto w-full text-sm bg-[#C7E36B] !text-black font-bold py-2.5 rounded-xl hover:brightness-105 transition-all">View Event</button>
               </div>
             </div>
+              </div>
+              {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
+            </div>
           ))}
         </div>
       )}
@@ -4545,8 +4590,10 @@ function CommunitySection({ token, profile }) {
     </div>
   ) : (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-      {clubs.map(cl => (
-        <div key={cl._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all max-w-[420px] w-full">
+      {clubs.map((cl, idx) => (
+        <div key={cl._id} className="relative max-w-[420px] w-full">
+          <div className={idx > 0 && !isProUser ? "blur-sm pointer-events-none select-none" : ""}>
+          <div className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
           {cl.bannerUrl
             ? <div className="aspect-video overflow-hidden"><img src={cl.bannerUrl} alt={cl.name} className="w-full h-full object-cover"/></div>
             : <div className="w-full h-32 bg-gradient-to-br from-[#C7E36B]/20 to-[#1a1d1e] flex items-center justify-center">
@@ -4568,6 +4615,8 @@ function CommunitySection({ token, profile }) {
               Join Club
             </button>
           </div>
+          </div>
+          {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
         </div>
       ))}
     </div>
@@ -4618,8 +4667,10 @@ function CommunitySection({ token, profile }) {
     </div>
   ) : (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-      {challenges.map(ch => (
-        <div key={ch._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all max-w-[420px] w-full">
+      {challenges.map((ch, idx) => (
+        <div key={ch._id} className="relative max-w-[420px] w-full">
+          <div className={idx > 0 && !isProUser ? "blur-sm pointer-events-none select-none" : ""}>
+          <div className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
           {ch.thumb
             ? <div className="aspect-video overflow-hidden"><img src={ch.thumb} alt={ch.title} className="w-full h-full object-cover"/></div>
             : <div className="w-full h-36 bg-gradient-to-br from-yellow-900/30 to-[#1a1d1e] flex items-center justify-center">
@@ -4658,12 +4709,12 @@ function CommunitySection({ token, profile }) {
               <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-1.5 rounded-xl hover:opacity-90 transition-all">Participate</button>
             </div>
           </div>
+          </div>
+          {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
         </div>
       ))}
     </div>
   );
-
-  if (!profile?.isPro) return <ProGate onUpgrade={() => window.location.href = "/membership"} />;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -4941,57 +4992,63 @@ function HireTalentSection({ token }) {
           <p className="text-gray-500 text-sm">No talent found{catFilter !== "All" ? ` in ${catFilter}` : ""}</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map(t => (
-            <div key={t._id} className="bg-[#111315] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
-              <div className="flex items-start gap-4 mb-4">
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 relative">
-                  {t.avatar
-                    ? <img src={t.avatar} className="w-full h-full object-cover" alt=""
-                        onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}/>
-                    : null}
-                  <div className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-lg"
-                    style={{display: t.avatar ? "none" : "flex"}}>{t.name?.[0]?.toUpperCase()}</div>
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-white">{t.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                    <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                    {t.location}
-                  </p>
-                  {t.bio && <p className="text-sm text-gray-400 mt-1.5 leading-relaxed line-clamp-2">{t.bio}</p>}
-                </div>
-                {/* CTA */}
-                <button
-                  onClick={() => openInquiry(t)}
-                  className="shrink-0 flex items-center gap-1.5 bg-[#C7E36B] text-black text-xs font-bold px-4 py-2 rounded-xl hover:brightness-110 transition-all"
-                >
-                  Send Inquiry
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-              </div>
-
-              {/* Skills */}
-              {t.skills?.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {t.skills.map(s => (
-                    <span key={s} className="text-[10px] border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">{s}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Portfolio grid */}
-              {t.works?.filter(Boolean).length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
+            <div key={t._id} className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+              {/* Portfolio preview or gradient header */}
+              {t.works?.filter(Boolean).length > 0 ? (
+                <div className="grid grid-cols-3 gap-0.5 h-[120px] overflow-hidden">
                   {t.works.filter(Boolean).slice(0, 3).map((w, i) => (
-                    <div key={i} className="aspect-video rounded-xl overflow-hidden bg-white/5">
+                    <div key={i} className="overflow-hidden bg-white/5">
                       <img src={w} className="w-full h-full object-cover" alt=""/>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="h-[120px] bg-gradient-to-br from-[#1a2200]/60 to-[#0d1117] flex items-center justify-center">
+                  <svg width="36" height="36" fill="none" stroke="rgba(199,227,107,0.2)" strokeWidth="1.2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
               )}
+              <div className="p-4 flex flex-col flex-1">
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 relative">
+                    {t.avatar
+                      ? <img src={t.avatar} className="w-full h-full object-cover" alt=""
+                          onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}/>
+                      : null}
+                    <div className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-black text-base"
+                      style={{display: t.avatar ? "none" : "flex"}}>{t.name?.[0]?.toUpperCase()}</div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{t.name}</p>
+                    {t.location && (
+                      <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
+                        <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        {t.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {/* Bio */}
+                {t.bio && <p className="text-[12px] text-gray-400 leading-relaxed line-clamp-2 mb-3 flex-1">{t.bio}</p>}
+                {/* Skills */}
+                {t.skills?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {t.skills.slice(0, 4).map(s => (
+                      <span key={s} className="text-[10px] border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">{s}</span>
+                    ))}
+                  </div>
+                )}
+                {/* CTA */}
+                <button
+                  onClick={() => openInquiry(t)}
+                  className="mt-auto w-full flex items-center justify-center gap-2 bg-[#C7E36B] text-black text-sm font-bold py-2.5 rounded-xl hover:brightness-110 transition-all"
+                >
+                  Send Inquiry
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
             </div>
           ))}
         </div>
