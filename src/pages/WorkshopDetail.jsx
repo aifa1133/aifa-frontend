@@ -796,7 +796,7 @@ export default function WorkshopDetail() {
     }}>
       {showBuyModal && (
         <BuyModal
-          item={{ ...workshop, benefits: ["Live interactive session", "Session recording access", "Downloadable resources", "Certificate of completion", "Direct trainer Q&A"] }}
+          item={{ ...workshop, benefits: ["Live interactive session", "Certificate of completion", "Direct trainer Q&A"] }}
           initialData={buyerInfo}
           emailError={buyEmailError}
           onClose={() => { setShowBuyModal(false); setBuyEmailError(""); }}
@@ -805,7 +805,7 @@ export default function WorkshopDetail() {
       )}
       {showPayModal && (
         <PaymentModal
-          item={{ ...workshop, type: "Workshop", benefits: ["Live interactive session", "Session recording access", "Downloadable resources", "Certificate of completion", "Direct trainer Q&A"] }}
+          item={{ ...workshop, type: "Workshop", benefits: ["Live interactive session", "Certificate of completion", "Direct trainer Q&A"] }}
           orderId={paidOrderId}
           onClose={() => setShowPayModal(false)}
           onBack={() => { setShowPayModal(false); setShowBuyModal(true); }}

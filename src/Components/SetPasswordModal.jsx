@@ -45,7 +45,7 @@ export default function SetPasswordModal({ email, token, itemType, itemId, onSuc
   };
 
   const benefits = itemType === "Workshop"
-    ? ["Live interactive session", "Session recording access", "Certificate of completion", "Direct trainer Q&A"]
+    ? ["Live interactive session", "Certificate of completion", "Direct trainer Q&A"]
     : ["Step-by-step lessons", "Lifetime access to this course", "English captions", "Certificate of completion"];
 
   return (

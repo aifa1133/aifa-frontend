@@ -264,8 +264,6 @@ export default function WorkshopEnroll() {
 
   const benefits = workshop.benefits || [
     "Live interactive session",
-    "Session recording access",
-    "Downloadable resources",
     "Certificate of completion",
     "Direct trainer Q&A",
   ];
