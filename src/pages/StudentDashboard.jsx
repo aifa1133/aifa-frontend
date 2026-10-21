@@ -2164,6 +2164,7 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
   const [search, setSearch]   = useState("");
   const [sort, setSort]       = useState("Newest");
   const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef(null);
   const [detailCourse, setDetailCourse] = useState(null);
   const [fullCourse, setFullCourse]     = useState(null);
   const [openFaq, setOpenFaq]           = useState(null);
@@ -2174,6 +2175,12 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => { if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   useEffect(() => {
@@ -2484,7 +2491,7 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
               className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none w-[180px]" />
             <Ic name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           </div>
-          <div className="relative">
+          <div className="relative" ref={sortRef}>
             <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 bg-white/5 border border-white/10 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/10">
               Sort: {sort} <Ic name="chevron" size={14} className={sortOpen ? "rotate-90" : ""} />
             </button>
@@ -4909,9 +4916,16 @@ function HireTalentSection({ token }) {
   }, []);
 
   useEffect(() => {
+    const isPro = !!(JSON.parse(localStorage.getItem("aifa_user") || "{}").isPro);
     fetch("/api/talent")
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d) && d.length > 0) setTalents(d); setLoading(false); })
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          const visible = isPro ? d : d.filter(t => t.freeAccess);
+          if (visible.length > 0) setTalents(visible);
+        }
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 

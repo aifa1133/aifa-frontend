@@ -9324,7 +9324,7 @@ function HireTalentAdmin({ token }) {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [saving, setSaving]     = useState(false);
-  const [form, setForm] = useState({ name:"", location:"", category:"All", bio:"", contactEmail:"", skills:"", avatar:"", work1:"", work2:"", work3:"" });
+  const [form, setForm] = useState({ name:"", location:"", category:"All", bio:"", contactEmail:"", skills:"", avatar:"", work1:"", work2:"", work3:"", freeAccess:false });
   const [talentAvatarUploading, setTalentAvatarUploading] = useState(false);
   const [talentAvatarPct, setTalentAvatarPct] = useState(0);
   const [talentPortPct, setTalentPortPct] = useState({});
@@ -9336,11 +9336,16 @@ function HireTalentAdmin({ token }) {
   };
   useEffect(load, [token]);
 
-  const openAdd = () => { setEditTarget(null); setForm({ name:"",location:"",category:"All",bio:"",contactEmail:"",skills:"",avatar:"",work1:"",work2:"",work3:"" }); setShowForm(true); };
+  const openAdd = () => { setEditTarget(null); setForm({ name:"",location:"",category:"All",bio:"",contactEmail:"",skills:"",avatar:"",work1:"",work2:"",work3:"",freeAccess:false }); setShowForm(true); };
   const openEdit = (t) => {
     setEditTarget(t);
-    setForm({ name:t.name,location:t.location||"",category:t.category||"All",bio:t.bio||"",contactEmail:t.contactEmail||"",skills:(t.skills||[]).join(", "),avatar:t.avatar||"",work1:t.works?.[0]||"",work2:t.works?.[1]||"",work3:t.works?.[2]||"" });
+    setForm({ name:t.name,location:t.location||"",category:t.category||"All",bio:t.bio||"",contactEmail:t.contactEmail||"",skills:(t.skills||[]).join(", "),avatar:t.avatar||"",work1:t.works?.[0]||"",work2:t.works?.[1]||"",work3:t.works?.[2]||"",freeAccess:!!t.freeAccess });
     setShowForm(true);
+  };
+
+  const toggleFreeAccess = async (t) => {
+    await fetch(`/api/talent/${t._id}`, { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ freeAccess:!t.freeAccess }) });
+    setTalents(ts=>ts.map(x=>x._id===t._id?{...x,freeAccess:!x.freeAccess}:x));
   };
 
   const handleSave = async () => {
@@ -9385,6 +9390,14 @@ function HireTalentAdmin({ token }) {
         <div className="grid grid-cols-2 gap-3">
           <Fld label="CONTACT EMAIL" value={form.contactEmail} onChange={v=>setForm({...form,contactEmail:v})} placeholder="email@example.com"/>
           <Fld label="SKILLS (comma-separated)" value={form.skills} onChange={v=>setForm({...form,skills:v})} placeholder="AI, Design, Motion"/>
+        </div>
+        {/* FREE ACCESS TOGGLE */}
+        <div className="flex items-center justify-between bg-[#1A1D1E] border border-white/10 rounded-lg px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold text-white">Visible to non-pro users</p>
+            <p className="text-[10px] text-gray-500">Free users can see this talent profile</p>
+          </div>
+          <Tog value={form.freeAccess} onChange={()=>setForm(f=>({...f,freeAccess:!f.freeAccess}))}/>
         </div>
         {/* AVATAR UPLOAD */}
         <div>
@@ -9477,7 +9490,7 @@ function HireTalentAdmin({ token }) {
                     ))}
                   </div>
                 )}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-gray-400">{t.isActive?"Active":"Inactive"}</span>
                     <Tog value={t.isActive} onChange={()=>toggleActive(t)}/>
@@ -9485,6 +9498,13 @@ function HireTalentAdmin({ token }) {
                   <div className="flex gap-1">
                     <button onClick={()=>openEdit(t)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-all"><I name="edit" size={13}/></button>
                     <button onClick={()=>handleDelete(t._id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all"><I name="trash" size={13}/></button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                  <span className="text-[10px] text-gray-500">Free access</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${t.freeAccess ? "bg-[#C7E36B]/15 text-[#C7E36B]" : "bg-white/5 text-gray-600"}`}>{t.freeAccess?"Public":"Pro only"}</span>
+                    <Tog value={!!t.freeAccess} onChange={()=>toggleFreeAccess(t)}/>
                   </div>
                 </div>
               </div>
