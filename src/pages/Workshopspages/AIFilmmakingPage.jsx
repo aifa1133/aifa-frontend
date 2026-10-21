@@ -689,9 +689,8 @@ navigate("/workshops/confirmation");
             <div className="mt-[32px] space-y-[18px]">
               {[
                 "Full Live Session Access",
-                "Lifetime Recording Access",
                 "Verified Certificate",
-                "Exclusive Prompt Pack",
+                "Exclusive Prompt",
                 "Private Community Access",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-[12px]">

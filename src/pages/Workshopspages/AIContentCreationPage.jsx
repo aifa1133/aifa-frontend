@@ -696,7 +696,7 @@ export default function AIContentCreationPage() {
                 "Live Interactive Session",
                 "Workshop Resources",
                 "Live Q&A Session",
-                "Exclusive Prompt Pack",
+                "Exclusive Prompt",
                 "AI Tools Guide & Resources",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-[12px]">
