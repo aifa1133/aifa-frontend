@@ -45,12 +45,17 @@ export default function AiDeals() {
 
         {/* FILTERS */}
         <div className="flex flex-wrap gap-4 mb-10 text-sm">
-          {categories.map((cat, i) => (
-            <button key={i} onClick={() => setActive(cat)}
-              className={`px-4 py-2 border border-white/10 transition ${active === cat ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat, i) => {
+            const locked = i > 0 && !isPro;
+            return (
+              <button key={i}
+                onClick={() => { if (locked) { setShowModal(true); } else { setActive(cat); } }}
+                className={`px-4 py-2 border transition flex items-center gap-1.5 ${active === cat ? "bg-[#C7E36B] text-black border-[#C7E36B]" : locked ? "border-white/10 text-gray-600 cursor-not-allowed" : "border-white/10 text-gray-400 hover:text-white"}`}>
+                {locked && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                {cat}
+              </button>
+            );
+          })}
         </div>
 
         {loading ? (

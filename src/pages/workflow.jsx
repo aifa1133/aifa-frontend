@@ -45,8 +45,15 @@ export default function Workflow() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <h2 className="text-2xl md:text-3xl font-semibold">WORK FLOW</h2>
           <div className="flex gap-3 w-full md:w-auto">
-            <select value={category} onChange={e => setCategory(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-2 rounded-md w-full md:w-auto text-white">
-              {categories.map(c => <option key={c}>{c}</option>)}
+            <select
+              value={category}
+              onChange={e => { if (!isPro && e.target.value !== "All") { setShowModal(true); e.target.value = "All"; } else { setCategory(e.target.value); } }}
+              className="bg-[#111] border border-white/10 px-4 py-2 rounded-md w-full md:w-auto text-white">
+              {categories.map((c, i) => (
+                <option key={c} value={c} disabled={i > 0 && !isPro}>
+                  {i > 0 && !isPro ? `🔒 ${c}` : c}
+                </option>
+              ))}
             </select>
             <select className="bg-[#111] border border-white/10 px-4 py-2 rounded-md w-full md:w-auto text-white">
               <option>Sub Category</option>

@@ -3009,6 +3009,9 @@ function JobsSection({ token }) {
     </div>
   );
 
+  const isProUser = !!(JSON.parse(localStorage.getItem("aifa_user") || "{}").isPro);
+  if (!isProUser) return <ProGate onUpgrade={() => window.location.href = "/membership"} />;
+
   return (
     <div className="p-6">
       {/* Filters */}
@@ -4569,11 +4572,11 @@ function CommunitySection({ token, profile }) {
           <p className="text-sm">No events scheduled yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {events.map(ev => (
-            <div key={ev._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+            <div key={ev._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col max-w-[420px] w-full">
               {/* Thumbnail — always rendered, fallback gradient if no image */}
-              <div className="relative h-[170px] shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1e22] to-[#0d1117]">
+              <div className="relative aspect-video shrink-0 overflow-hidden bg-gradient-to-br from-[#1a1e22] to-[#0d1117]">
                 {(ev.image || ev.thumbnail)
                   ? <img src={ev.image || ev.thumbnail} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt=""/>
                   : <div className="w-full h-full flex items-center justify-center">
@@ -4615,9 +4618,9 @@ function CommunitySection({ token, profile }) {
   ) : (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {clubs.map(cl => (
-        <div key={cl._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
+        <div key={cl._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all max-w-[420px] w-full">
           {cl.bannerUrl
-            ? <img src={cl.bannerUrl} alt={cl.name} className="w-full h-32 object-cover"/>
+            ? <div className="aspect-video overflow-hidden"><img src={cl.bannerUrl} alt={cl.name} className="w-full h-full object-cover"/></div>
             : <div className="w-full h-32 bg-gradient-to-br from-[#C7E36B]/20 to-[#1a1d1e] flex items-center justify-center">
                 <span className="text-4xl font-black text-[#C7E36B]/40">{cl.name?.[0]}</span>
               </div>
@@ -4686,11 +4689,11 @@ function CommunitySection({ token, profile }) {
       <p className="text-xs">New challenges will appear here when launched</p>
     </div>
   ) : (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {challenges.map(ch => (
-        <div key={ch._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all">
+        <div key={ch._id} className="bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all max-w-[420px] w-full">
           {ch.thumb
-            ? <img src={ch.thumb} alt={ch.title} className="w-full h-36 object-cover"/>
+            ? <div className="aspect-video overflow-hidden"><img src={ch.thumb} alt={ch.title} className="w-full h-full object-cover"/></div>
             : <div className="w-full h-36 bg-gradient-to-br from-yellow-900/30 to-[#1a1d1e] flex items-center justify-center">
                 <svg width="40" height="40" fill="none" stroke="#C7E36B" strokeWidth="1.2" opacity="0.3" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
               </div>
@@ -4882,8 +4885,14 @@ function CommunitySection({ token, profile }) {
 /* ─── HIRE TALENT SECTION ─── */
 const HT_CATEGORIES = ["All", "AI Filmmakers", "Video Editors", "AI Artists & Designers", "Prompt Engineers", "VFX & CGI Artists", "Sound Designers", "3D Artists"];
 
+const STATIC_TALENTS_FALLBACK = [
+  { _id:"s1", name: "Sarah Jenkins", location: "San Francisco, CA", avatar: "/talent/avatar1.jpg", work1: "/talent/ta1.png", work2: "/talent/ta2.png", work3: "/talent/ta3.png", category: "AI Filmmakers" },
+  { _id:"s2", name: "Rajiv K",       location: "Mumbai, India",      avatar: "/talent/avatar2.png", work1: "/talent/ta4.png", work2: "/talent/ta5.png", work3: "/talent/ta6.png", category: "Video Editors" },
+  { _id:"s3", name: "Jessica",       location: "New York, USA",      avatar: "/talent/avatar3.png", work1: "/talent/ta7.png", work2: "/talent/ta8.png", work3: "/talent/ta9.png", category: "AI Artists & Designers" },
+];
+
 function HireTalentSection({ token }) {
-  const [talents, setTalents] = useState([]);
+  const [talents, setTalents] = useState(STATIC_TALENTS_FALLBACK);
   const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("All");
   const [countryFilter, setCountryFilter] = useState("");
@@ -4902,8 +4911,8 @@ function HireTalentSection({ token }) {
   useEffect(() => {
     fetch("/api/talent")
       .then(r => r.json())
-      .then(d => { setTalents(Array.isArray(d) ? d : []); setLoading(false); })
-      .catch(() => { setTalents([]); setLoading(false); });
+      .then(d => { if (Array.isArray(d) && d.length > 0) setTalents(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   const filtered = talents.filter(t => {

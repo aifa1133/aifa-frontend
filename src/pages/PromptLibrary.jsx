@@ -56,10 +56,12 @@ export default function PromptLibrary() {
           <h1 className="text-3xl font-semibold">PROMPT LIBRARY</h1>
           <select
             value={category}
-            onChange={e => { setCategory(e.target.value); setVisible(PAGE_SIZE); }}
+            onChange={e => { if (!isPro && e.target.value !== "All") { setShowModal(true); e.target.value = "All"; } else { setCategory(e.target.value); setVisible(PAGE_SIZE); } }}
             className="bg-[#111] border border-white/10 px-4 py-2 rounded-md text-white"
           >
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            {CATEGORIES.map((c, i) => (
+              <option key={c} value={c} disabled={i > 0 && !isPro}>{i > 0 && !isPro ? `🔒 ${c}` : c}</option>
+            ))}
           </select>
         </div>
 
