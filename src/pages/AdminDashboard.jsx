@@ -966,9 +966,9 @@ function ListBootcampAdmin({ onSelect, token }) {
           <div className="grid grid-cols-3 gap-4">
             {filtered.map(b=>(
               <div key={b._id} onClick={()=>onSelect(b.raw || b)} className="group bg-[#0F1112] border border-white/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-all relative">
-                <div className="relative h-[110px] bg-white/5 flex items-center justify-center overflow-hidden">
+                <div className="relative h-[110px] bg-[#0B0F10] flex items-center justify-center overflow-hidden">
                   {b.raw?.image ? (
-                    <img src={b.raw.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover"/>
+                    <img src={b.raw.image} alt={b.title} className="absolute inset-0 w-full h-full object-contain"/>
                   ) : (
                     <span className="text-5xl font-black text-white/20 tracking-wider">{b.code}</span>
                   )}
@@ -9577,7 +9577,7 @@ function MembershipAdmin({ token }) {
     const q = search.toLowerCase();
     const matchQ = !q || m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q);
     const matchS = statusFilter === "All" || getStatus(m) === statusFilter;
-    const matchP = planFilter   === "All" || getPlan(m)   === planFilter;
+    const matchP = planFilter === "All" || getPlan(m).toLowerCase() === planFilter.toLowerCase();
     return matchQ && matchS && matchP;
   });
 
@@ -10423,7 +10423,9 @@ function AdminProfile({ token, profile, onUpdated }) {
   const [pwdMsg, setPwdMsg]       = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const fileRef = useRef(null);
+  const avatarMenuRef = useRef(null);
 
   const memberId = `AIFA-ADMIN-${String(profile?._id || "00001").slice(-5).toUpperCase()}`;
 
@@ -10439,6 +10441,18 @@ function AdminProfile({ token, profile, onUpdated }) {
       if (res.ok) { onUpdated(data.user); }
     } catch {}
     setUploading(false);
+    setShowAvatarMenu(false);
+  };
+
+  const handleAvatarRemove = async () => {
+    setUploading(true);
+    try {
+      const res = await fetch("/api/users/me", { method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({ profilePicture:"" }) });
+      const data = await res.json();
+      if (res.ok) { onUpdated({ ...data, profilePicture:"" }); }
+    } catch {}
+    setUploading(false);
+    setShowAvatarMenu(false);
   };
 
   const handleSave = async () => {
@@ -10481,7 +10495,7 @@ function AdminProfile({ token, profile, onUpdated }) {
       {/* Identity card */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-5">
         <div className="flex items-center gap-4 mb-5">
-          <div className="relative">
+          <div className="relative" ref={avatarMenuRef}>
             <div className="w-14 h-14 rounded-full overflow-hidden">
               {profile?.profilePicture
                 ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
@@ -10489,10 +10503,22 @@ function AdminProfile({ token, profile, onUpdated }) {
               }
             </div>
             {uploading && <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center"><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/></div>}
-            <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all" title="Change photo">
+            <button onClick={() => setShowAvatarMenu(v=>!v)} disabled={uploading} className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#C7E36B] rounded-full flex items-center justify-center hover:bg-lime-300 transition-all" title="Photo options">
               <I name="edit" size={10} className="text-black" />
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden" onChange={handleAvatarChange} />
+            {showAvatarMenu && (
+              <div className="absolute left-16 top-0 bg-[#1A1D1E] border border-white/10 rounded-xl overflow-hidden shadow-xl z-50 min-w-[150px]">
+                <button onClick={() => { fileRef.current?.click(); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-white/5 flex items-center gap-2">
+                  <I name="edit" size={12}/> Change photo
+                </button>
+                {profile?.profilePicture && (
+                  <button onClick={handleAvatarRemove} className="w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-white/5 flex items-center gap-2">
+                    <I name="trash" size={12}/> Remove photo
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <p className="text-sm font-bold text-white">{profile?.name}</p>
