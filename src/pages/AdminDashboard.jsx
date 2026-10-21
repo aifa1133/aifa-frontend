@@ -568,15 +568,8 @@ function ProjTab({ selProj, setSelProj, localProj, setLocalProj, projSaved, setP
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <button onClick={()=>setProjView("edit")} className="py-3 border border-white/20 text-white text-sm font-semibold rounded-xl hover:bg-white/5 transition-all">Edit Project</button>
-                <button onClick={async()=>{
-                  setProjView("submissions"); setSubsLoading(true);
-                  const r=await fetch(`/api/bootcamps/${bootcampId}/projects/${localProj._id}/submissions`,{headers:{Authorization:`Bearer ${token}`}});
-                  const d=r.ok?await r.json():[];
-                  setSubmissions(Array.isArray(d)?d:[]);
-                  setSubsLoading(false);
-                }} className="py-3 bg-[#C7E36B] text-black text-sm font-bold rounded-xl hover:bg-lime-300 transition-all">View Submissions</button>
               </div>
             </div>
           )}
@@ -11659,7 +11652,7 @@ function WebsiteManagementAdmin({ token }) {
 
   const toggleActive = async (t) => {
     await fetch(`/api/tools/${t._id}`, { method:"PUT", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body: JSON.stringify({ isActive: !t.isActive }) });
-    load();
+    setTools(ts => ts.map(x => x._id === t._id ? { ...x, isActive: !x.isActive } : x));
   };
 
   const deleteTool = async (id) => {

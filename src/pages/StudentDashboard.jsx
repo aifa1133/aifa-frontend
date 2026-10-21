@@ -1726,85 +1726,6 @@ function BootcampSection({ token, profile }) {
                   </div>
                 ) : null;
               })()}
-              {/* ── Submit Your Project ── */}
-              <div className="border border-[#C7E36B]/30 rounded-xl p-5 space-y-4">
-                <div>
-                  <h4 className="text-sm font-bold text-white mb-0.5">Submit Your Project</h4>
-                  <p className="text-[11px] text-white/40">Upload your completed work or provide a link to your final project.</p>
-                </div>
-                {mySubmission && mySubmission.status !== "revision_required" ? (
-                  <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-green-400">Project Submitted</p>
-                      <p className="text-[10px] text-white/40 mt-0.5">{mySubmission.grade != null ? `Grade: ${mySubmission.grade}/${activeProject.maxMarks||100}` : "Awaiting evaluation"}{mySubmission.feedback ? ` · ${mySubmission.feedback}` : ""}</p>
-                    </div>
-                    {mySubmission.status === "graded" && <span className="text-[10px] font-bold bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full">Evaluated</span>}
-                  </div>
-                ) : (
-                  <>
-                    {mySubmission?.status === "revision_required" && (
-                      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3">
-                        <p className="text-xs font-bold text-orange-400">Revision Required</p>
-                        {mySubmission.feedback && <p className="text-[10px] text-white/50 mt-0.5">{mySubmission.feedback}</p>}
-                      </div>
-                    )}
-                    <div className="relative">
-                      <label className="block border-2 border-dashed border-white/20 rounded-xl overflow-hidden cursor-pointer hover:border-[#C7E36B]/40 transition-all">
-                        <input type="file" className="hidden" onChange={e=>setSubFile(e.target.files?.[0]||null)} />
-                        {subFile && subFile.type.startsWith("image/") ? (
-                          <div className="relative">
-                            <img src={URL.createObjectURL(subFile)} alt="preview" className="w-full max-h-52 object-cover" />
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-3 py-1.5">
-                              <p className="text-xs font-bold text-white truncate">{subFile.name}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="py-8 text-center">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 mx-auto mb-2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-                            <p className="text-xs font-bold text-white/60">{subFile ? subFile.name : "Upload Project Files"}</p>
-                            <p className="text-[10px] text-white/30 mt-1">MP4, PDF, ZIP or other approved formats</p>
-                          </div>
-                        )}
-                      </label>
-                      {subFile && (
-                        <button type="button" onClick={e=>{e.stopPropagation();setSubFile(null);}} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 border border-white/20 text-white/70 hover:text-white hover:bg-red-500/70 flex items-center justify-center text-xs font-bold transition-all" title="Remove file">✕</button>
-                      )}
-                    </div>
-                    <input value={subLink} onChange={e=>setSubLink(e.target.value)} placeholder="Paste Google Drive, YouTube or project link" className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#C7E36B]/50 transition-colors" />
-                    {subMsg && <p className={`text-xs font-semibold ${subMsg.startsWith("✓")?"text-green-400":"text-red-400"}`}>{subMsg}</p>}
-                    <div className="flex justify-end">
-                      <button
-                        disabled={subUploading||(!subFile&&!subLink.trim())}
-                        onClick={async()=>{
-                          if(!subFile&&!subLink.trim()){setSubMsg("Please upload a file or paste a link.");return;}
-                          setSubUploading(true); setSubMsg("");
-                          let fileUrl="",fileName="";
-                          if(subFile){
-                            try{
-                              const fd=new FormData();fd.append("file",subFile);
-                              const r=await fetch("/api/uploads/project-file",{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
-                              if(!r.ok){ setSubMsg("File upload failed. Please try a smaller file or try again."); setSubUploading(false); return; }
-                              const d=await r.json(); fileUrl=d.url||""; fileName=subFile.name;
-                            }catch{ setSubMsg("File upload failed."); setSubUploading(false); return; }
-                          }
-                          try {
-                            const r=await fetch(`/api/bootcamps/${bootcampData._id}/projects/${activeProject._id}/submissions`,{
-                              method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
-                              body:JSON.stringify({fileUrl,fileName,link:subLink.trim()})
-                            });
-                            const d=await r.json();
-                            if(r.ok){ setMySubmission(d); setSubMsg("✓ Project submitted successfully!"); }
-                            else setSubMsg(d?.message || "Submission failed. Please try again.");
-                          } catch { setSubMsg("Network error. Please check your connection and try again."); }
-                          setSubUploading(false);
-                        }}
-                        className="bg-[#C7E36B] text-black text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      >{subUploading?"Submitting...":"Submit Project"}</button>
-                    </div>
-                  </>
-                )}
-              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-center p-8">
@@ -2009,7 +1930,7 @@ function WorkshopsSection({ token }) {
                   </div>
                   <div className="flex-1 flex flex-col gap-3">
                     {/* TITLE */}
-                    <div className="relative flex flex-col justify-center px-4 py-3 bg-[#1a1e20] rounded-tr-[18px] gap-1 flex-1">
+                    <div className="relative flex flex-col justify-center px-4 py-3 bg-white rounded-tr-[18px] gap-1 flex-1">
                       {(statusBadge === "Live" || statusBadge === "Upcoming") && (
                         <div>
                           {statusBadge === "Live" && <span className="text-[10px] bg-green-500 text-white font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"/>Live</span>}
@@ -2017,47 +1938,47 @@ function WorkshopsSection({ token }) {
                         </div>
                       )}
                       {isReserved && (
-                        <span className="absolute top-3 right-3 text-[10px] bg-[#C7E36B]/20 text-[#C7E36B] font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5 border border-[#C7E36B]/30"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
+                        <span className="absolute top-3 right-3 text-[10px] bg-[#2C3A10] text-[#C7E36B] font-black px-2.5 py-1 rounded-full tracking-wide flex items-center gap-1.5 border border-[#C7E36B]/30"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>CONFIRMED</span>
                       )}
-                      <h3 className="text-white font-black text-xl md:text-2xl leading-tight pr-24">{w.title}</h3>
-                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-gray-400 font-semibold">
+                      <h3 className="text-black font-black text-xl md:text-2xl leading-tight pr-24">{w.title}</h3>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-gray-500 font-semibold">
                         {w.trainer && <span>👤 {w.trainer}</span>}
                       </div>
                     </div>
                     {/* INFO BOXES */}
                     {isReserved ? (
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
-                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⏱ Duration</p>
-                          <p className="text-white text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-white min-w-0">
+                          <p className="text-gray-400 text-[10px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-black text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
-                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⊞ Pricing</p>
-                          <p className="text-[#C7E36B] text-[11px] sm:text-[14px] font-bold uppercase truncate w-full">SEAT CONFIRMED</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-white min-w-0">
+                          <p className="text-gray-400 text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                          <p className="text-green-600 text-[11px] sm:text-[14px] font-bold uppercase truncate w-full">SEAT CONFIRMED</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
-                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⌨ Mode</p>
-                          <p className="text-white text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-white min-w-0">
+                          <p className="text-gray-400 text-[10px] font-semibold uppercase">⌨ Mode</p>
+                          <p className="text-black text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.mode === "OFFLINE" ? "OFFLINE" : "ONLINE"}</p>
                         </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
-                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⏱ Duration</p>
-                          <p className="text-white text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-white min-w-0">
+                          <p className="text-gray-400 text-[10px] font-semibold uppercase">⏱ Duration</p>
+                          <p className="text-black text-[13px] sm:text-[14px] font-bold uppercase truncate w-full">{w.duration || "—"}</p>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
-                          <p className="text-gray-500 text-[10px] font-semibold uppercase">⊞ Pricing</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-white min-w-0">
+                          <p className="text-gray-400 text-[10px] font-semibold uppercase">⊞ Pricing</p>
                           <div className="flex items-baseline gap-1.5 w-full min-w-0">
-                            <p className="text-[#C7E36B] text-[13px] sm:text-[14px] font-bold truncate">{priceStr}</p>
+                            <p className="text-[#2C6B00] text-[13px] sm:text-[14px] font-bold truncate">{priceStr}</p>
                             {w.originalPrice > 0 && w.originalPrice > w.price && (
-                              <p className="text-gray-500 text-[10px] line-through truncate shrink-0">₹{Math.round(w.originalPrice).toLocaleString("en-IN")}</p>
+                              <p className="text-gray-400 text-[10px] line-through truncate shrink-0">₹{Math.round(w.originalPrice).toLocaleString("en-IN")}</p>
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-[#1a1e20] min-w-0">
-                          <p className="text-gray-500 text-[10px] font-semibold uppercase">📅 Date & Time</p>
-                          <p className="text-white text-[11px] sm:text-[12px] font-bold leading-tight">{dateBoxStr}</p>
+                        <div className="flex flex-col items-start gap-[4px] px-2 sm:px-5 py-3 rounded-[8px] bg-white min-w-0">
+                          <p className="text-gray-400 text-[10px] font-semibold uppercase">📅 Date & Time</p>
+                          <p className="text-black text-[11px] sm:text-[12px] font-bold leading-tight">{dateBoxStr}</p>
                         </div>
                       </div>
                     )}
