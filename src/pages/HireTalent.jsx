@@ -11,13 +11,13 @@ const STATIC_TALENTS = [
 
 const filters = [
   { name: "All" },
-  { name: "AI Filmmakers" },
-  { name: "Video Editors" },
-  { name: "AI Artists & Designers" },
-  { name: "Prompt Engineers" },
-  { name: "VFX & CGI Artists" },
-  { name: "Sound Designers" },
-  { name: "3D Artists" },
+  { name: "AI Filmmakers",          img: "/hire-talent/ai-filmmakers.jpg" },
+  { name: "Video Editors",          img: "/hire-talent/video-editors.jpg" },
+  { name: "AI Artists & Designers", img: "/hire-talent/ai-artists.jpg" },
+  { name: "Prompt Engineers",       img: "/hire-talent/prompt-engineers.jpg" },
+  { name: "VFX & CGI Artists",      img: "/hire-talent/vfx-cgi.jpg" },
+  { name: "Sound Designers",        img: "/hire-talent/sound-designers.jpg" },
+  { name: "3D Artists",             img: "/hire-talent/3d-artists.jpg" },
 ];
 
 function TalentBlock({ t, onInquiry, locked, onLockedClick }) {
