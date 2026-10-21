@@ -870,14 +870,25 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
                   </svg>
-                  Upload Photo
+                  {f._photoUploading ? "Uploading…" : "Upload Photo"}
                   <input type="file" accept="image/png,image/jpeg,image/jpg" className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => set("profilePhoto")(ev.target.result);
-                      reader.readAsDataURL(file);
+                      setF(p => ({ ...p, _photoUploading: true }));
+                      try {
+                        const fd = new FormData();
+                        fd.append("image", file);
+                        const tok = localStorage.getItem("aifa_token");
+                        const r = await fetch("/api/uploads/image", { method: "POST", headers: { Authorization: `Bearer ${tok}` }, body: fd });
+                        const d = await r.json();
+                        if (!r.ok) throw new Error(d.message || "Upload failed");
+                        set("profilePhoto")(d.url);
+                      } catch (ex) {
+                        setErr(ex.message);
+                      } finally {
+                        setF(p => ({ ...p, _photoUploading: false }));
+                      }
                     }}
                   />
                 </label>
