@@ -262,11 +262,12 @@ export default function WorkshopEnroll() {
   const total          = discountedBase + tax;
   const shortId        = "ORD-XXXXX";
 
-  const benefits = workshop.benefits || [
+  const REMOVE_BENEFITS = ["Session recording access", "Downloadable resources"];
+  const benefits = (workshop.benefits || [
     "Live interactive session",
     "Certificate of completion",
     "Direct trainer Q&A",
-  ];
+  ]).filter(b => !REMOVE_BENEFITS.includes(b));
 
   /* ── Main page ── */
   return (
