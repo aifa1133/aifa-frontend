@@ -4165,6 +4165,7 @@ function ResourcesSection({ token }) {
                   </div>
                 )}
               </div>
+            </div>
               </div>
               {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
             </div>
@@ -4616,6 +4617,7 @@ function CommunitySection({ token, profile }) {
             </button>
           </div>
           </div>
+          </div>
           {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
         </div>
       ))}
@@ -4708,6 +4710,7 @@ function CommunitySection({ token, profile }) {
               <span className="text-[10px] text-gray-500">{ch.participants || 0} participants</span>
               <button className="text-xs bg-[#C7E36B] text-black font-bold px-4 py-1.5 rounded-xl hover:opacity-90 transition-all">Participate</button>
             </div>
+          </div>
           </div>
           </div>
           {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
