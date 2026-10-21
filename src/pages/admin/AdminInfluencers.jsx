@@ -909,10 +909,15 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
                 <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Mobile Number <span className="text-red-400">*</span></label>
                 <input
                   value={f.phone}
-                  onChange={(e) => { const v = e.target.value.replace(/[^\d\s\-\+]/g, ""); set("phone")(v); }}
-                  placeholder="+91 9876543210"
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/[^\d\+]/g, "");
+                    if (v.startsWith("+")) { if (v.length > 15) v = v.slice(0, 15); }
+                    else { if (v.length > 10) v = v.slice(0, 10); }
+                    set("phone")(v);
+                  }}
+                  placeholder="9876543210"
                   inputMode="tel"
-                  maxLength={16}
+                  maxLength={15}
                   className={inputCls}
                 />
                 {f.phone.trim() && (() => {
