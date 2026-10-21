@@ -819,7 +819,7 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
     setSaving(true); setErr("");
     try {
       const res = await fetch("/api/admin/influencers", {
-        method: "POST", headers, body: JSON.stringify({ ...f, couponCode: f.couponCode || autoCode }),
+        method: "POST", headers, body: JSON.stringify({ ...f, couponCode: f.couponCode.trim() }),
       });
       let d;
       try { d = await res.json(); } catch { throw new Error("Server returned an unexpected response"); }
