@@ -2515,10 +2515,10 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
             const discountPct = c.originalPrice && c.price && c.originalPrice > c.price
               ? Math.round((1 - c.price / c.originalPrice) * 100) : null;
             return (
-            <div key={c._id || i} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 flex flex-col">
+            <div key={c._id || i} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 flex flex-col max-w-[420px] w-full">
               {/* Thumbnail */}
-              <div className="relative cursor-pointer overflow-hidden" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
-                <img src={c.image} alt={c.title} className="w-full h-[200px] object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="relative aspect-video cursor-pointer overflow-hidden" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
+                <img src={c.image} alt={c.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 {c.duration && (
                   <span className="absolute top-3 left-3 bg-black/75 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1 rounded-lg">{c.duration}</span>

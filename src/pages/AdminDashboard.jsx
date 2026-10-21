@@ -3666,11 +3666,11 @@ function VideoCoursesAdmin({ token }) {
         : sortedCourses.length === 0
         ? <div className="text-center py-12"><p className="text-gray-400 text-sm">{searchQ ? "No courses match your search." : "No courses yet."}</p>{!searchQ && <button onClick={()=>{setView("create");setStep(1);}} className="mt-3 text-xs bg-[#C7E36B] text-black font-bold px-4 py-2 rounded-lg">Create First Course</button>}</div>
         : (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {sortedCourses.map((c,idx)=>(
-            <div key={c._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col">
+            <div key={c._id} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/40 transition-all duration-200 flex flex-col max-w-[420px] w-full">
               {/* Thumbnail */}
-              <div className="relative h-[170px] bg-gradient-to-br from-[#1a1f20] to-[#0B0F10] overflow-hidden shrink-0">
+              <div className="relative aspect-video bg-gradient-to-br from-[#1a1f20] to-[#0B0F10] overflow-hidden shrink-0">
                 {c.image && (
                   <img src={c.image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={e => { e.target.style.display="none"; }} />
