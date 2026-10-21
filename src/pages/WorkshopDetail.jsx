@@ -756,7 +756,7 @@ export default function WorkshopDetail() {
             ) : (
               <>
                 <div style={{padding:"56.37% 0 0 0", position:"relative"}}>
-                  <iframe src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0"
+                  <iframe src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&autoplay=1&muted=1&title=0&byline=0&portrait=0"
                     frameBorder="0"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                     referrerPolicy="strict-origin-when-cross-origin"
@@ -978,7 +978,7 @@ export default function WorkshopDetail() {
           <div className="-mx-4 sm:-mx-6 mb-8">
             <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
               <iframe
-                src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&title=0&byline=0&portrait=0"
+                src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&autoplay=1&muted=1&title=0&byline=0&portrait=0"
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
