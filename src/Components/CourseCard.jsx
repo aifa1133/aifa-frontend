@@ -149,7 +149,7 @@ rounded-tr-[10px]
             {/* BUTTON */}
 
             <button
-              onClick={() => navigate("/bootcamp/enroll")}
+              onClick={() => navigate("/bootcamp")}
               className="
         w-full
         sm:w-auto

@@ -325,7 +325,7 @@ export default function StudentDashboard() {
                 <NotificationDropdown
                   notifs={notifs}
                   onClose={() => setShowNotif(false)}
-                  onViewAll={() => { setShowNotif(false); navigateTo("community"); }}
+                  onViewAll={() => { setShowNotif(false); navigateTo("notifications"); }}
                   onMarkRead={async () => {
                     await fetch("/api/notifications/read", { method:"PUT", headers:{ Authorization:`Bearer ${token}` } });
                     setNotifCount(0);
@@ -398,6 +398,7 @@ export default function StudentDashboard() {
               {activePage === "jobs" && <JobsSection token={token} />}
               {activePage === "resources" && <ResourcesSection token={token} />}
               {activePage === "community" && <CommunitySection token={token} profile={profile} />}
+              {activePage === "notifications" && <NotificationsSection token={token} />}
               {activePage === "hire-talent" && <HireTalentSection token={token} />}
               {activePage === "profile" && <ProfileSection profile={profile} token={token} onUpdated={setProfile} />}
               {activePage === "settings" && <SettingsSection token={token} profile={profile} />}
@@ -455,6 +456,45 @@ function timeAgoNotif(dateStr) {
   if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
   if (diff < 172800) return "Yesterday";
   return new Date(dateStr).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+}
+
+function NotificationsSection({ token }) {
+  const [notifs, setNotifs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/notifications?limit=100", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setNotifs(Array.isArray(d) ? d : []))
+      .catch(() => setNotifs([]))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <h2 className="text-xl font-bold text-white mb-6">All Notifications</h2>
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-6 h-6 border-2 border-[#C7E36B] border-t-transparent rounded-full animate-spin"/>
+        </div>
+      ) : notifs.length === 0 ? (
+        <div className="text-center py-16 text-gray-500 text-sm">No notifications yet.</div>
+      ) : (
+        <div className="space-y-3">
+          {notifs.map((n, i) => (
+            <div key={i} className={`flex gap-4 p-4 rounded-xl border ${n.isRead ? "bg-[#0F1112] border-white/5" : "bg-[#111315] border-[#C7E36B]/20"}`}>
+              <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.isRead ? "bg-gray-600" : "bg-[#C7E36B]"}`}/>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold ${n.isRead ? "text-gray-300" : "text-white"}`}>{n.title}</p>
+                {n.message && <p className="text-sm text-gray-500 mt-0.5 leading-snug">{n.message}</p>}
+                <p className="text-xs text-gray-600 mt-1">{timeAgoNotif(n.createdAt)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function NotificationDropdown({ notifs, onClose, onMarkRead, onViewAll }) {

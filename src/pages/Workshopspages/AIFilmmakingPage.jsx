@@ -418,7 +418,7 @@ navigate("/workshops/confirmation");
                 className="
             w-full
             h-auto
-            rounded-[48px]
+            rounded-2xl
             object-cover
             shadow-2xl
           "
