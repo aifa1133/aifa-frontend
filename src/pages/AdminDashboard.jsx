@@ -2853,8 +2853,9 @@ function CourseEditor({ course, token, onBack, onSaved }) {
   };
 
   // ── Enrollments tab ───────────────────────────────────────────────
+  const enrollFetched = useRef(false);
   const EnrollmentsTab = () => {
-    useEffect(() => { if (enrollments.length === 0) loadEnrollments(); }, []);
+    useEffect(() => { if (!enrollFetched.current) { enrollFetched.current = true; loadEnrollments(); } }, []);
     const filtered = enrollments.filter(s => {
       if (enrollStatus !== "All" && s.status !== enrollStatus) return false;
       if (enrollSearch && !s.name.toLowerCase().includes(enrollSearch.toLowerCase()) && !s.email.toLowerCase().includes(enrollSearch.toLowerCase())) return false;
