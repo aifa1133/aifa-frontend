@@ -372,11 +372,23 @@
 
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+
+const CURRENCIES = ["INR", "USD"];
 
 export default function Footer() {
   const location = useLocation();
-  
+  const [currency, setCurrency] = useState("INR");
+  const [showDrop, setShowDrop] = useState(false);
+  const dropRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setShowDrop(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
 const isActive = (path) => location.pathname === path;
   const socialIcons = [
     {
@@ -464,27 +476,24 @@ const isActive = (path) => location.pathname === path;
 
           {/* RIGHT */}
 
-          <div
-            className="
-              flex
-              items-center
-              gap-[8px]
-              border
-              border-[#F0F0F0]
-              rounded-[4px]
-              px-[16px]
-              py-[8px]
-              text-[#F0F0F0]
-              text-[14px]
-            "
-          >
-            INR
-
-            <img
-              src="/Vector 212.svg"
-              alt=""
-              className="w-[14px] h-[14px]"
-            />
+          <div ref={dropRef} className="relative">
+            <button
+              onClick={() => setShowDrop(v => !v)}
+              className="flex items-center gap-[8px] border border-[#F0F0F0] rounded-[4px] px-[16px] py-[8px] text-[#F0F0F0] text-[14px] hover:bg-white/10 transition cursor-pointer"
+            >
+              {currency}
+              <img src="/Vector 212.svg" alt="" className={`w-[14px] h-[14px] transition-transform ${showDrop ? "rotate-180" : ""}`} />
+            </button>
+            {showDrop && (
+              <div className="absolute bottom-full mb-2 right-0 bg-[#2A2D31] border border-white/15 rounded-[8px] overflow-hidden shadow-xl z-50">
+                {CURRENCIES.map(c => (
+                  <button key={c} onClick={() => { setCurrency(c); setShowDrop(false); }}
+                    className={`block w-full px-5 py-2.5 text-left text-sm transition hover:bg-white/10 ${currency === c ? "text-[#C7E36B] font-bold" : "text-[#F0F0F0]"}`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
@@ -543,26 +552,24 @@ const isActive = (path) => location.pathname === path;
 
           {/* CURRENCY */}
 
-          <div
-            className="
-              bg-[#2A2D31]
-              rounded-[8px]
-              px-[12px]
-              py-[10px]
-              flex
-              justify-between
-              items-center
-            "
-          >
-            <span className="text-[#F0F0F0] text-[13px] font-medium">
-              INR
-            </span>
-
-            <img
-              src="/Vector 212.svg"
-              alt=""
-              className="w-[14px] h-[14px]"
-            />
+          <div className="relative">
+            <button
+              onClick={() => setShowDrop(v => !v)}
+              className="w-full bg-[#2A2D31] rounded-[8px] px-[12px] py-[10px] flex justify-between items-center cursor-pointer"
+            >
+              <span className="text-[#F0F0F0] text-[13px] font-medium">{currency}</span>
+              <img src="/Vector 212.svg" alt="" className={`w-[14px] h-[14px] transition-transform ${showDrop ? "rotate-180" : ""}`} />
+            </button>
+            {showDrop && (
+              <div className="absolute bottom-full mb-1 right-0 w-full bg-[#2A2D31] border border-white/15 rounded-[8px] overflow-hidden shadow-xl z-50">
+                {CURRENCIES.map(c => (
+                  <button key={c} onClick={() => { setCurrency(c); setShowDrop(false); }}
+                    className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-white/10 ${currency === c ? "text-[#C7E36B] font-bold" : "text-[#F0F0F0]"}`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
                 {/* ========================= */}

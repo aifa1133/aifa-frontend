@@ -164,14 +164,16 @@ function WhatYouWillCreate({ projects }) {
             <img
               src={proj.image || FALLBACK}
               alt={proj.title}
-              className="w-[320px] h-[280px] md:w-[400px] md:h-[340px] object-cover rounded-[50%]"
+              className="w-full max-w-[480px] h-[260px] md:h-[320px] object-cover rounded-[24px] md:rounded-[80px]"
               onError={e => { e.target.src = FALLBACK; }}
             />
           </div>
         </div>
 
         <div className="flex justify-center">
-          <button className="bg-[#C7E36B] text-black font-black text-sm px-10 py-3 rounded-xl hover:opacity-90 transition uppercase tracking-wide">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="bg-[#C7E36B] text-black font-black text-sm px-10 py-3 rounded-xl hover:opacity-90 transition uppercase tracking-wide">
             I WANT TO CREATE THIS
           </button>
         </div>
@@ -208,9 +210,9 @@ function WhoIsItFor({ audience }) {
         {/* 2×2 grid — portrait cards */}
         <div className="grid grid-cols-2 gap-3 mb-3">
           {grid.map((c, i) => (
-            <div key={i} className="relative rounded-[20px] overflow-hidden group aspect-[3/4] md:aspect-[3/2]">
-              <img src={c.img} alt={c.title} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105" style={{imageRendering:"auto",WebkitBackfaceVisibility:"hidden"}} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div key={i} className="relative rounded-[20px] overflow-hidden group aspect-[4/3]">
+              <img src={c.img} alt={c.title} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" style={{imageRendering:"auto",WebkitBackfaceVisibility:"hidden"}} onError={e => { e.target.style.display="none"; }} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
                 <p className="text-white font-black text-[13px] md:text-xl leading-tight mb-1">{c.title}</p>
                 <p className="text-gray-300 text-[11px] md:text-sm leading-snug">{c.desc}</p>
@@ -222,8 +224,8 @@ function WhoIsItFor({ audience }) {
         {/* Wide bottom card */}
         {wide && (
           <div className="relative rounded-[20px] overflow-hidden group" style={{ minHeight: "260px", maxHeight: "340px" }}>
-            <img src={wide.img} alt={wide.title} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105" style={{imageRendering:"auto",WebkitBackfaceVisibility:"hidden"}} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+            <img src={wide.img} alt={wide.title} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" style={{imageRendering:"auto",WebkitBackfaceVisibility:"hidden"}} onError={e => { e.target.style.display="none"; }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
               {wide.badge && (
                 <span className="inline-flex items-center gap-1.5 text-[#C7E36B] text-[10px] font-black uppercase tracking-widest mb-2">
@@ -577,7 +579,7 @@ export default function WorkshopDetail() {
           <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <span>›</span>
-            <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+            <button onClick={() => navigate(-1)} className="hover:text-white transition-colors">Workshop</button>
             <span>›</span>
             <span className="text-[#C7E36B]">{workshop.title}</span>
           </div>
@@ -654,7 +656,7 @@ export default function WorkshopDetail() {
           <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <span>›</span>
-            <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+            <button onClick={() => navigate(-1)} className="hover:text-white transition-colors">Workshop</button>
             <span>›</span>
             <span className="text-[#C7E36B] truncate max-w-[240px]">{workshop.title}</span>
           </div>
@@ -860,7 +862,7 @@ export default function WorkshopDetail() {
         <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
           <Link to="/" className="hover:text-white transition-colors">Home</Link>
           <span>›</span>
-          <Link to="/workshops" className="hover:text-white transition-colors">Workshop</Link>
+          <button onClick={() => navigate(-1)} className="hover:text-white transition-colors">Workshop</button>
           <span>›</span>
           <span className="text-[#C7E36B] truncate max-w-[240px]">{workshop.title}</span>
         </div>

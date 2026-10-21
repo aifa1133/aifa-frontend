@@ -2892,12 +2892,17 @@ function CertificatesSection({ token, profile }) {
         <p className="text-gray-500 text-sm animate-pulse text-center py-16">Loading certificates...</p>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 flex flex-col items-center">
-          <div className="w-32 h-32 rounded-full bg-[#111315] border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4"/><rect x="4" y="14" width="16" height="8" rx="2"/><polyline points="9 20 12 17 15 20"/>
-              <path d="M8 14v-2M16 14v-2"/>
-            </svg>
-          </div>
+          <svg width="160" height="140" viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-6 opacity-80">
+            <rect x="20" y="20" width="120" height="86" rx="10" fill="#1A1D1E" stroke="#2A2D30" strokeWidth="1.5"/>
+            <rect x="32" y="32" width="96" height="62" rx="6" fill="#111315"/>
+            <circle cx="80" cy="56" r="14" fill="#222527" stroke="#333638" strokeWidth="1.5"/>
+            <path d="M74 56l4 4 8-8" stroke="#C7E36B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <rect x="52" y="74" width="56" height="5" rx="2.5" fill="#2A2D30"/>
+            <rect x="62" y="82" width="36" height="4" rx="2" fill="#222527"/>
+            <path d="M60 106l20 -12 20 12v18a4 4 0 01-4 4H64a4 4 0 01-4-4v-18z" fill="#1A1D1E" stroke="#2A2D30" strokeWidth="1.5"/>
+            <path d="M72 118l8 -6 8 6" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="80" cy="112" r="4" fill="#C7E36B" fillOpacity="0.2" stroke="#C7E36B" strokeWidth="1"/>
+          </svg>
           <p className="text-white font-bold text-base mb-2">No Certificates Yet</p>
           <p className="text-gray-500 text-sm max-w-xs">Complete a course, bootcamp, or workshop to earn your first certificate of completion.</p>
         </div>
@@ -3665,8 +3670,28 @@ function ProfileSection({ profile, token, onUpdated }) {
   const initial = (profile?.name || "A")[0].toUpperCase();
   const showAvatar = avatarSrc && !avatarErr;
 
+  const isPro = !!profile?.isPro;
+
   return (
     <div className="p-6 bg-[#0B0F10] min-h-full text-white">
+      {isPro && (
+        <div className="mb-5 rounded-2xl overflow-hidden relative" style={{ background: "linear-gradient(135deg,#1a2200 0%,#0d1a00 60%,#0B0F10 100%)", border: "1px solid rgba(199,227,107,0.3)" }}>
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #C7E36B 0%, transparent 60%)" }} />
+          <div className="relative flex items-center gap-5 px-6 py-5">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg,#C7E36B,#8fb830)" }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" fill="#0B0F10"/></svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[#C7E36B] text-xs font-black uppercase tracking-widest">PRO MEMBER</span>
+                <span className="bg-[#C7E36B]/20 text-[#C7E36B] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#C7E36B]/30">ACTIVE</span>
+              </div>
+              <p className="text-white text-sm font-semibold">Unlimited access to all resources, community & premium content</p>
+              {profile?.proExpiry && <p className="text-gray-400 text-xs mt-1">Expires: {new Date(profile.proExpiry).toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" })}</p>}
+            </div>
+          </div>
+        </div>
+      )}
       {cropSrc && (
         <AvatarCropModal
           src={cropSrc}
@@ -4026,8 +4051,24 @@ const RES_TABS = [
   { key: "deal",     label: "AI DEAL"        },
 ];
 
+function ProGate({ onUpgrade }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6" style={{ background: "linear-gradient(135deg,#C7E36B,#8fb830)" }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" fill="#0B0F10"/></svg>
+      </div>
+      <h2 className="text-white font-black text-2xl mb-2">Pro Members Only</h2>
+      <p className="text-gray-400 text-sm max-w-sm mb-8 leading-relaxed">Upgrade to Pro to unlock access to the full library of resources, community features, and exclusive content.</p>
+      <button onClick={onUpgrade} className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-xl hover:opacity-90 transition uppercase tracking-wide">
+        Upgrade to Pro
+      </button>
+    </div>
+  );
+}
+
 function ResourcesSection({ token }) {
   const navigate = useNavigate();
+  const isPro = !!(JSON.parse(localStorage.getItem("aifa_user") || "{}").isPro);
   const [tab, setTab]               = useState("prompt");
   const [resources, setRes]         = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -4076,6 +4117,8 @@ function ResourcesSection({ token }) {
     const matchSub = subCatFilter === "All" || r.subCategory === subCatFilter;
     return matchCat && matchSub;
   });
+
+  if (!isPro) return <ProGate onUpgrade={() => navigate("/membership")} />;
 
   return (
     <div className="p-6">
@@ -4688,6 +4731,8 @@ function CommunitySection({ token, profile }) {
       ))}
     </div>
   );
+
+  if (!profile?.isPro) return <ProGate onUpgrade={() => window.location.href = "/membership"} />;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
