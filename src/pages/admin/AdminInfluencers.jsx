@@ -337,8 +337,9 @@ export default function AdminInfluencers({ token: tokenProp }) {
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[#C7E36B] flex items-center justify-center">
                           {inf.profilePhoto
-                            ? <img src={inf.profilePhoto} alt="" className="w-full h-full object-cover" />
-                            : <span className="text-black font-black text-sm">{(inf.fullName || "?")[0].toUpperCase()}</span>}
+                            ? <img src={inf.profilePhoto} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display=""; }} />
+                            : null}
+                          <span className="text-black font-black text-sm" style={{display: inf.profilePhoto ? "none" : ""}}>{(inf.fullName || "?")[0].toUpperCase()}</span>
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm text-white font-semibold truncate">{inf.fullName}</p>
@@ -397,8 +398,9 @@ export default function AdminInfluencers({ token: tokenProp }) {
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-[#C7E36B] flex items-center justify-center overflow-hidden shrink-0">
                   {detail.profilePhoto
-                    ? <img src={detail.profilePhoto} alt="" className="w-full h-full object-cover" />
-                    : <span className="text-black font-black">{(detail.fullName || "?")[0].toUpperCase()}</span>}
+                    ? <img src={detail.profilePhoto} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display=""; }} />
+                    : null}
+                  <span className="text-black font-black" style={{display: detail.profilePhoto ? "none" : ""}}>{(detail.fullName || "?")[0].toUpperCase()}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-white truncate">{detail.fullName}</p>
