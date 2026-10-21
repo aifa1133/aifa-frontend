@@ -81,7 +81,7 @@ const scrollToContact = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[40px] items-center">
             
             {/* IMAGE */}
-            <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px]">
+            <div className="overflow-hidden rounded-2xl">
               <img
                 src="/3Dai/ai3d1.jpg"
                 alt="AI 3D"
@@ -91,9 +91,7 @@ const scrollToContact = () => {
                   sm:h-[320px]
                   md:h-[306px]
 
-                  rounded-[40px]
-                  sm:rounded-[70px]
-                  lg:rounded-[200px]
+                  rounded-2xl
 
                   object-cover
                 "
@@ -102,7 +100,7 @@ const scrollToContact = () => {
 
             {/* CONTENT */}
             <div>
-              
+
               <p
                 className="
                   text-[#F0F0F0]
@@ -314,7 +312,7 @@ const scrollToContact = () => {
           </div>
 
           {/* IMAGE */}
-          <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px] order-1 md:order-2">
+          <div className="overflow-hidden rounded-2xl order-1 md:order-2">
             <img
               src="/3Dai/ai3d2.jpg"
               alt=""
@@ -324,9 +322,7 @@ const scrollToContact = () => {
                 sm:h-[320px]
                 md:h-[306px]
 
-                rounded-[40px]
-                sm:rounded-[70px]
-                lg:rounded-[200px]
+                rounded-2xl
 
                 object-cover
               "
@@ -357,7 +353,7 @@ const scrollToContact = () => {
         <div className="w-full max-w-[1180px] grid grid-cols-1 md:grid-cols-2 gap-[40px] items-center">
           
           {/* IMAGE */}
-          <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px]">
+          <div className="overflow-hidden rounded-2xl">
             <img
               src="/3Dai/ai3d3.jpg"
               alt=""
@@ -367,9 +363,7 @@ const scrollToContact = () => {
                 sm:h-[320px]
                 md:h-[306px]
 
-                rounded-[40px]
-                sm:rounded-[70px]
-                lg:rounded-[200px]
+                rounded-2xl
 
                 object-cover
               "
@@ -588,7 +582,7 @@ const scrollToContact = () => {
           </div>
 
           {/* IMAGE */}
-          <div className="overflow-hidden rounded-[40px] sm:rounded-[70px] lg:rounded-[100px] order-1 md:order-2">
+          <div className="overflow-hidden rounded-2xl order-1 md:order-2">
             <img
               src="/3Dai/ai3d4.png"
               alt=""
@@ -598,9 +592,7 @@ const scrollToContact = () => {
                 sm:h-[320px]
                 md:h-[306px]
 
-                rounded-[40px]
-                sm:rounded-[70px]
-                lg:rounded-[200px]
+                rounded-2xl
 
                 object-cover
               "

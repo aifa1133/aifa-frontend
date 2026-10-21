@@ -2483,9 +2483,9 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
             const discountPct = c.originalPrice && c.price && c.originalPrice > c.price
               ? Math.round((1 - c.price / c.originalPrice) * 100) : null;
             return (
-            <div key={c._id || i} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 flex flex-col max-w-[420px] w-full">
+            <div key={c._id || i} className="group bg-[#111315] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 flex flex-col w-full">
               {/* Thumbnail */}
-              <div className="relative aspect-video cursor-pointer overflow-hidden" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
+              <div className="relative aspect-video cursor-pointer overflow-hidden flex-shrink-0" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>
                 <img src={c.image} alt={c.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 {c.duration && (
@@ -2501,11 +2501,11 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
 
               {/* Body */}
               <div className="p-4 flex flex-col flex-1 gap-3">
-                <h3 className="text-[16px] font-bold text-white leading-snug line-clamp-2 cursor-pointer" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>{c.title}</h3>
+                <h3 className="text-[15px] font-bold text-white leading-snug line-clamp-2 min-h-[2.5rem] cursor-pointer" onClick={() => { setDetailCourse(c); onScrollTop?.(); }}>{c.title}</h3>
 
-                {c.description && (
-                  <p className="text-[13px] text-gray-400 leading-relaxed line-clamp-2">{c.description}</p>
-                )}
+                <p className="text-[13px] text-gray-400 leading-relaxed line-clamp-2 min-h-[2.5rem]">
+                  {c.description || ""}
+                </p>
 
                 {/* Progress bar (enrolled courses) */}
                 {c.progress !== undefined && (
@@ -2519,16 +2519,18 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
                   </div>
                 )}
 
-                {/* Price row (unenrolled only) */}
-                {c.progress === undefined && c.status !== "completed" && c.price != null && (
-                  <div className="flex items-center gap-2">
-                    {discountPct && <span className="text-[13px] font-bold text-[#C7E36B]">{discountPct}% off</span>}
-                    {c.originalPrice && c.originalPrice > c.price && (
-                      <span className="text-[13px] text-gray-500 line-through">₹{c.originalPrice.toLocaleString("en-IN")}</span>
-                    )}
-                    {!discountPct && <span className="text-[13px] font-bold text-[#C7E36B]">₹{(c.price||0).toLocaleString("en-IN")}</span>}
-                  </div>
-                )}
+                {/* Price row */}
+                <div className="min-h-[1.5rem] flex items-center gap-2">
+                  {c.progress === undefined && c.status !== "completed" && c.price != null && (
+                    <>
+                      {discountPct && <span className="text-[13px] font-bold text-[#C7E36B]">{discountPct}% off</span>}
+                      {c.originalPrice && c.originalPrice > c.price && (
+                        <span className="text-[13px] text-gray-500 line-through">₹{c.originalPrice.toLocaleString("en-IN")}</span>
+                      )}
+                      {!discountPct && <span className="text-[13px] font-bold text-[#C7E36B]">₹{(c.price||0).toLocaleString("en-IN")}</span>}
+                    </>
+                  )}
+                </div>
 
                 {/* CTA */}
                 <div className="mt-auto flex flex-col gap-2">
