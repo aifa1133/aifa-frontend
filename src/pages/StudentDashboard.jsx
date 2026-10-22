@@ -4085,19 +4085,6 @@ function ResourcesSection({ token }) {
       </div>
 
       {/* Deal category filters — Figma style: lime pill for active, pipe-separated text links */}
-      {tab === "deal" && (
-        <div className="flex items-center gap-0 flex-wrap mb-6">
-          {["All Benefits", "video", "design", "marketing", "voice", "Automation"].map((c, i, arr) => (
-            <span key={c} className="flex items-center">
-              <button onClick={() => setDealCatFilter(c)}
-                className={`text-sm font-semibold whitespace-nowrap transition-all px-3 py-1 rounded-lg ${dealCatFilter === c ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
-                {c}
-              </button>
-              {i < arr.length - 1 && <span className="text-gray-600 mx-1 select-none">|</span>}
-            </span>
-          ))}
-        </div>
-      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-48">
