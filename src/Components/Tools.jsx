@@ -36,7 +36,17 @@ export default function Tools() {
   useEffect(() => {
     fetch("/api/tools")
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => { if (Array.isArray(d) && d.length > 0) setTools(d); })
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          // Merge API data with static fallback — fill in missing logo fields
+          const merged = d.map(t => {
+            if (t.logoUrl || t.logoText) return t;
+            const fallback = STATIC_TOOLS.find(s => s.name.toLowerCase() === t.name?.toLowerCase());
+            return { ...t, logoUrl: fallback?.logoUrl || "", logoText: fallback?.logoText || "", bgColor: t.bgColor || fallback?.bgColor || "" };
+          });
+          setTools(merged);
+        }
+      })
       .catch(() => {}); // silent fallback to static list
   }, []);
 
