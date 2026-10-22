@@ -4305,6 +4305,7 @@ const COMM_TABS = [
 ];
 
 function CommunitySection({ token, profile }) {
+  const isProUser = !!(JSON.parse(localStorage.getItem("aifa_user") || "{}").isPro);
   const [activeTab, setActiveTab]     = useState("discussions");
   const [search, setSearch]           = useState("");
   const [showNewThread, setShowNewThread] = useState(false);
