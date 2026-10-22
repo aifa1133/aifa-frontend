@@ -10426,6 +10426,13 @@ function AdminProfile({ token, profile, onUpdated }) {
   const fileRef = useRef(null);
   const avatarMenuRef = useRef(null);
 
+  useEffect(() => {
+    if (!showAvatarMenu) return;
+    const handle = (e) => { if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target)) setShowAvatarMenu(false); };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [showAvatarMenu]);
+
   const memberId = `AIFA-ADMIN-${String(profile?._id || "00001").slice(-5).toUpperCase()}`;
 
   const handleAvatarChange = async (e) => {
