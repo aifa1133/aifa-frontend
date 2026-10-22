@@ -17,6 +17,7 @@ export default function InfluencerLogin() {
   const [fpLoading, setFpLoading] = useState(false);
   const [fpMsg, setFpMsg] = useState("");
   const [fpError, setFpError] = useState("");
+  const [showFpPw, setShowFpPw] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem("influencer_token")) {
@@ -147,8 +148,14 @@ export default function InfluencerLogin() {
             </div>
             <div>
               <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">New Password</label>
-              <input type="password" value={fpPassword} onChange={(e) => setFpPassword(e.target.value)} placeholder="Min 6 characters" autoComplete="new-password"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+              <div className="relative">
+                <input type={showFpPw ? "text" : "password"} value={fpPassword} onChange={(e) => setFpPassword(e.target.value)} placeholder="Min 6 characters" autoComplete="new-password"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 pr-16 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+                <button type="button" onClick={() => setShowFpPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400 hover:text-[#C7E36B] transition-colors">
+                  {showFpPw ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
             <div className="flex gap-3">
               <button type="button" onClick={() => { setFpStep("request"); setFpError(""); }}
