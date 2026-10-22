@@ -177,10 +177,10 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
             <input type="email" placeholder="Enter Email" value={email} onChange={e => setEmail(e.target.value)}
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-3 mb-6 w-full min-w-0">
               <div className="flex items-center border border-white/20 rounded-xl px-4 py-3 text-white shrink-0">+91</div>
               <input type="text" placeholder="Enter Phone" value={phone} onChange={e => setPhone(e.target.value)}
-                className="flex-1 bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
+                className="min-w-0 flex-1 bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
             </div>
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
             <button onClick={handleContinue} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
