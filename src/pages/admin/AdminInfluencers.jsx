@@ -111,6 +111,16 @@ export default function AdminInfluencers({ token: tokenProp }) {
   const [resetLinkFor, setResetLinkFor] = useState(null);
   const [toast, setToast] = useState("");
 
+  /* ── Payouts state ── */
+  const [payoutStats, setPayoutStats] = useState(null);
+  const [payouts, setPayouts] = useState([]);
+  const [payoutsTotal, setPayoutsTotal] = useState(0);
+  const [payoutsPages, setPayoutsPages] = useState(1);
+  const [payoutsPage, setPayoutsPage] = useState(1);
+  const [payoutsFilter, setPayoutsFilter] = useState("");
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [payoutsError, setPayoutsError] = useState("");
+
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2600); };
 
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
@@ -139,7 +149,52 @@ export default function AdminInfluencers({ token: tokenProp }) {
       .finally(() => setLoading(false));
   }, [token, page, search, statusFilter]);
 
+  const loadPayoutStats = useCallback(() => {
+    fetch("/api/admin/payouts/stats", { headers })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setPayoutStats(d))
+      .catch(() => {});
+  }, [token]);
+
+  const loadPayouts = useCallback(() => {
+    setPayoutsLoading(true);
+    const qs = new URLSearchParams({ page: String(payoutsPage), limit: "20" });
+    if (payoutsFilter) qs.set("status", payoutsFilter);
+    fetch(`/api/admin/payouts?${qs}`, { headers })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Could not load payouts"))))
+      .then((d) => {
+        setPayouts(d.items || []);
+        setPayoutsTotal(d.total || 0);
+        setPayoutsPages(d.pages || 1);
+        setPayoutsError("");
+      })
+      .catch((e) => setPayoutsError(e.message))
+      .finally(() => setPayoutsLoading(false));
+  }, [token, payoutsPage, payoutsFilter]);
+
+  const doCompletePayout = async (id) => {
+    try {
+      const res = await fetch(`/api/admin/payouts/${id}/complete`, { method: "PUT", headers });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message || "Failed");
+      flash("Payout marked as completed");
+      loadPayouts(); loadPayoutStats();
+    } catch (e) { flash(e.message); }
+  };
+
+  const doRejectPayout = async (id) => {
+    try {
+      const res = await fetch(`/api/admin/payouts/${id}/reject`, { method: "PUT", headers });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message || "Failed");
+      flash("Payout rejected");
+      loadPayouts(); loadPayoutStats();
+    } catch (e) { flash(e.message); }
+  };
+
   useEffect(() => { loadStats(); }, [loadStats]);
+  useEffect(() => { if (tab === "payouts") { loadPayoutStats(); } }, [tab, loadPayoutStats]);
+  useEffect(() => { if (tab === "payouts") { loadPayouts(); } }, [tab, loadPayouts]);
   useEffect(() => {
     const t = setTimeout(loadList, search ? 350 : 0);
     return () => clearTimeout(t);
@@ -257,9 +312,137 @@ export default function AdminInfluencers({ token: tokenProp }) {
           }>
           Commissions
         </button>
+        <button onClick={() => setTab("payouts")}
+          className={tab === "payouts"
+            ? "pb-2.5 text-sm font-bold transition-colors text-white border-b-2 border-[#C7E36B]"
+            : "pb-2.5 text-sm font-bold transition-colors text-gray-500 hover:text-gray-300 border-b-2 border-transparent"
+          }>
+          Payouts
+        </button>
       </div>
 
       {tab === "commissions" && <AdminCommissions token={token} />}
+
+      {tab === "payouts" && (
+        <div>
+          {/* Payout stat cards */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            {[
+              { label: "Pending Requests", value: payoutStats?.pendingCount ?? "—" },
+              { label: "Pending Amount", value: payoutStats ? money(payoutStats.pendingAmount) : "—" },
+              { label: "Completed", value: payoutStats?.completedCount ?? "—" },
+              { label: "Total Paid Out", value: payoutStats ? money(payoutStats.completedAmount) : "—" },
+            ].map((c) => (
+              <div key={c.label} className="bg-[#0F1112] border border-white/10 rounded-2xl p-5">
+                <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{c.label}</p>
+                <p className="text-2xl font-black text-white mt-2">{c.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Filter */}
+          <div className="bg-[#0F1112] border border-white/10 rounded-xl p-4 mb-4 flex items-end gap-4">
+            <div className="min-w-[160px]">
+              <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5 block">Status</label>
+              <select
+                value={payoutsFilter}
+                onChange={(e) => { setPayoutsFilter(e.target.value); setPayoutsPage(1); }}
+                className="w-full bg-[#1A1D1E] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#C7E36B]/50 appearance-none cursor-pointer"
+              >
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="border border-white/10 rounded-xl overflow-hidden bg-[#0F1112]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px] text-left">
+                <thead className="bg-white/5">
+                  <tr className="text-[10px] uppercase tracking-wider text-gray-500">
+                    <th className="px-4 py-3 font-bold">Influencer</th>
+                    <th className="px-4 py-3 font-bold">Amount</th>
+                    <th className="px-4 py-3 font-bold">Status</th>
+                    <th className="px-4 py-3 font-bold">Requested</th>
+                    <th className="px-4 py-3 font-bold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {payoutsLoading ? (
+                    <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-500 text-sm">Loading payouts…</td></tr>
+                  ) : payoutsError ? (
+                    <tr><td colSpan={5} className="px-4 py-12 text-center text-red-400 text-sm">{payoutsError}</td></tr>
+                  ) : payouts.length === 0 ? (
+                    <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-500 text-sm">No payout requests found.</td></tr>
+                  ) : payouts.map((p) => {
+                    const statusColor = p.status === "completed"
+                      ? "border-green-500/50 text-green-400"
+                      : p.status === "rejected"
+                      ? "border-red-500/50 text-red-400"
+                      : "border-yellow-500/50 text-yellow-400";
+                    return (
+                      <tr key={p._id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-white font-semibold">{p.influencer?.fullName || "—"}</p>
+                          <p className="text-[11px] text-gray-500">{p.influencer?.email || ""}</p>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-white font-bold">{money(p.amount)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase border ${statusColor}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-400">
+                          {p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {p.status === "pending" && (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => doCompletePayout(p._id)}
+                                className="text-[11px] font-bold text-black bg-[#C7E36B] hover:bg-[#d4ec85] px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                Complete
+                              </button>
+                              <button
+                                onClick={() => doRejectPayout(p._id)}
+                                className="text-[11px] font-bold text-red-300 bg-red-500/15 hover:bg-red-500/30 px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {payoutsPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-[11px] text-gray-500">{payoutsTotal} payout{payoutsTotal === 1 ? "" : "s"} total</p>
+              <div className="flex items-center gap-2">
+                <button disabled={payoutsPage <= 1} onClick={() => setPayoutsPage((p) => p - 1)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed">
+                  Previous
+                </button>
+                <span className="text-xs text-gray-400">Page {payoutsPage} of {payoutsPages}</span>
+                <button disabled={payoutsPage >= payoutsPages} onClick={() => setPayoutsPage((p) => p + 1)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed">
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {tab === "influencers" && <>
 
@@ -348,7 +531,11 @@ export default function AdminInfluencers({ token: tokenProp }) {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-white font-black">{inf.couponCode}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{inf.status === "active" ? "Active" : "Disabled"}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400 max-w-[160px] truncate">
+                      {inf.referralLink
+                        ? <span title={inf.referralLink}>{inf.referralLink.replace(/^https?:\/\/[^/]+/, "")}</span>
+                        : <span className="text-gray-600">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-sm text-white font-bold">{money(inf.lifetimeEarnings)}</td>
                     <td className="px-4 py-3 text-sm text-white font-bold">{money(inf.pendingCommission)}</td>
                     <td className="px-4 py-3"><Badge status={inf.status} /></td>
