@@ -2,6 +2,58 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import MembershipEnroll from "./MembershipEnroll";
 import { useMembershipPrice } from "../hooks/useMembershipPrice";
+import BootcampHero from "./Bootcamp/Hero";
+import BootcampVideoSection from "./Bootcamp/Videosection";
+import BootcampLearnSection from "./Bootcamp/LearnSection";
+import BootcampBuildSection from "./Bootcamp/BuildSection";
+import BootcampFAQSection from "./Bootcamp/FAQSection";
+import BootcampTestimonialsSection from "./Bootcamp/TestimonialsSection";
+import BootcampWhoSection from "./Bootcamp/WhoSection";
+import BootcampCourseContent from "./Bootcamp/CourseContent";
+import BootcampIncludedSection from "./Bootcamp/IncludedSection";
+
+function BootcamppageEmbed() {
+  const navigate = useNavigate();
+  const [bootcamp, setBootcamp] = useState(null);
+  useEffect(() => {
+    fetch("/api/bootcamps").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d) && d.length > 0) setBootcamp(d.find(b => b.isPublished) || d[0]);
+    }).catch(() => {});
+  }, []);
+  return (
+    <div className="bg-[#0B0F19] flex flex-col pb-24">
+      <BootcampHero bootcamp={bootcamp} />
+      <BootcampVideoSection />
+      <BootcampLearnSection />
+      <BootcampBuildSection />
+      <BootcampIncludedSection />
+      <BootcampCourseContent />
+      <BootcampWhoSection />
+      <BootcampTestimonialsSection />
+      <BootcampFAQSection />
+      <div className="fixed bottom-0 left-64 right-0 z-40 bg-[#0B0F10] border-t border-white/10">
+        <div className="hidden md:flex items-center justify-between max-w-7xl mx-auto px-8 py-4">
+          <div>
+            <div className="flex items-center gap-4">
+              <p className="text-white font-bold text-base">{bootcamp?.title || "AI Filmmaking Bootcamp"}</p>
+              <span className="text-[#C7E36B] font-bold text-2xl">₹{(bootcamp?.price||0).toLocaleString("en-IN")}</span>
+              {bootcamp?.originalPrice > 0 && <span className="text-gray-400 line-through text-sm">₹{bootcamp.originalPrice.toLocaleString("en-IN")}</span>}
+            </div>
+            {bootcamp?.duration && <p className="text-gray-400 text-xs mt-0.5">{bootcamp.duration} Program</p>}
+          </div>
+          <button onClick={() => navigate("/bootcamp/enroll")} className="bg-[#C7E36B] text-black font-bold px-8 py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
+            Book your seat →
+          </button>
+        </div>
+        <div className="md:hidden px-4 py-4">
+          <button onClick={() => navigate("/bootcamp/enroll")} className="w-full bg-[#C7E36B] text-black font-bold py-3 rounded-xl hover:bg-lime-300 transition-all text-sm">
+            Book your seat →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Module-level flag prevents StrictMode double-fetch without persisting across reloads
 let _infTokenFetched = false;
@@ -1077,10 +1129,6 @@ function BootcampSection({ token, profile }) {
   ));
 
   useEffect(() => {
-    if (bcLoaded && !enrolled) navigate("/bootcamp");
-  }, [bcLoaded, enrolled]);
-
-  useEffect(() => {
     if (!enrolled || !bootcampData?._id) return;
     const id = bootcampData._id;
     const h = token ? { Authorization: `Bearer ${token}` } : {};
@@ -1153,83 +1201,8 @@ function BootcampSection({ token, profile }) {
   );
 
   if (!enrolled) return (
-    <div className="flex-1 overflow-y-auto bg-[#0B0F10]">
-      <div className="max-w-5xl mx-auto px-6 py-8">
-
-        {/* ── Hero card ── */}
-        <div className="bg-[#161B1F] border border-white/8 rounded-[24px] overflow-hidden mb-6">
-          <div className="grid md:grid-cols-2">
-            {/* Left */}
-            <div className="p-8 flex flex-col justify-center">
-              <p className="text-[#C7E36B] text-sm font-bold mb-4">{bootcampData?.tagline || "A Course You'll Actually Finish"}</p>
-              <h1 className="text-3xl font-black text-white leading-tight mb-4">
-                {bootcampData?.title || "Build AI-Powered Films – An AI Fellowship for Creators"}
-              </h1>
-              <p className="text-white/50 text-sm leading-relaxed mb-8">
-                {bootcampData?.description || "Learn how to integrate AI into your creative workflow — no technical or coding background required."}
-              </p>
-              <button
-                onClick={()=>navigate("/bootcamp/enroll", { state: { from: "/dashboard", fromPage: "bootcamp" } })}
-                className="bg-[#C7E36B] text-black font-black text-sm px-8 py-3 rounded-xl hover:bg-lime-300 transition-all w-fit"
-              >
-                ENROLL NOW
-              </button>
-            </div>
-            {/* Right: feature list */}
-            <div className="p-8 border-l border-white/8 flex flex-col justify-center">
-              <div className="space-y-4">
-                {[
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="18" y="3" width="3" height="18" rx="1"/><rect x="11" y="8" width="3" height="13" rx="1"/><rect x="4" y="13" width="3" height="8" rx="1"/></svg>, label:"Beginner"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"22 Hours"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>, label:"20 Assignments"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, label:"Downloadable Content"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2A8 8 0 0 1 2 14v-1a2 2 0 1 1 4 0v4"/></svg>, label:"Hands-on Exercises"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01"/><path d="M2 5V3h20v2"/></svg>, label:"English Captions"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>, label:"Certificate of Completion"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17.5 5.5C19 7 20 9 20 11c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8c.6 0 1.1.1 1.6.2"/><circle cx="12" cy="11" r="3"/><path d="M20 4 12 12"/></svg>, label:"Class Recordings"},
-                  {icon:<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label:"1 month duration"},
-                ].map(({icon,label})=>(
-                  <div key={label} className="flex items-center gap-3">
-                    <span className="text-white/60 shrink-0">{icon}</span>
-                    <span className="text-white text-sm">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Video preview ── */}
-        {bootcampData?.previewVideoUrl ? (
-          <div className="rounded-[24px] overflow-hidden aspect-video border border-white/10">
-            <iframe
-              src={bootcampData.previewVideoUrl.includes("watch?v=") ? bootcampData.previewVideoUrl.replace("watch?v=","embed/") : bootcampData.previewVideoUrl}
-              className="w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              title="Bootcamp Preview"
-            />
-          </div>
-        ) : (
-          <div
-            className="relative rounded-[24px] overflow-hidden border border-white/10 cursor-pointer group"
-            style={{aspectRatio:"16/9"}}
-            onClick={()=>{setVideoMsg("Preview video coming soon.");setTimeout(()=>setVideoMsg(""),4000);}}
-          >
-            <img
-              src={bootcampData?.image || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80"}
-              alt="Bootcamp preview"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full bg-[#E67E22] flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xl">
-                <Ic name="play" size={32} className="text-white ml-1.5"/>
-              </div>
-            </div>
-            {videoMsg && <div className="absolute inset-x-4 top-4 bg-black/80 text-white text-xs rounded-lg px-3 py-2 text-center">{videoMsg}</div>}
-          </div>
-        )}
-      </div>
+    <div className="flex-1 overflow-y-auto">
+      <BootcamppageEmbed />
     </div>
   );
 
