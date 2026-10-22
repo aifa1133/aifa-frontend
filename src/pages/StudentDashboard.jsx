@@ -2456,7 +2456,7 @@ function VideoCoursesSection({ profile, onNavigate, onScrollTop }) {
           <p className="text-gray-500 text-xs mt-1">Try a different filter or search term.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((c, i) => {
             const discountPct = c.originalPrice && c.price && c.originalPrice > c.price
               ? Math.round((1 - c.price / c.originalPrice) * 100) : null;
