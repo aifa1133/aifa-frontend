@@ -183,11 +183,10 @@ export default function AdminDashboard() {
           })}
         </nav>
         <div onClick={() => setPage("profile")} className="border-t border-white/5 px-3 py-3 flex items-center gap-2 hover:bg-white/5 transition-all w-full text-left cursor-pointer">
-          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 bg-[#C7E36B] flex items-center justify-center text-black text-xs font-bold">
             {profile?.profilePicture
-              ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-              : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-xs font-bold">{name[0]}</span>
-            }
+              ? <img src={profile.profilePicture} alt="" className="w-full h-full object-cover" onError={e => e.currentTarget.remove()} />
+              : name[0]}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-white font-semibold truncate">{name}</p>
@@ -259,11 +258,10 @@ export default function AdminDashboard() {
 
             {/* Profile avatar with dropdown */}
             <div className="relative">
-              <button onClick={()=>{ setShowProfileMenu(v=>!v); setShowNotifPanel(false); }} className="w-8 h-8 rounded-full overflow-hidden shrink-0 hover:ring-2 hover:ring-[#C7E36B]/50 transition-all">
+              <button onClick={()=>{ setShowProfileMenu(v=>!v); setShowNotifPanel(false); }} className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#C7E36B] flex items-center justify-center text-black font-bold text-sm hover:ring-2 hover:ring-[#C7E36B]/50 transition-all">
                 {profile?.profilePicture
-                  ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
-                  : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black font-bold text-sm">{name[0]}</span>
-                }
+                  ? <img src={profile.profilePicture} alt="" className="w-full h-full object-cover" onError={e => e.currentTarget.remove()} />
+                  : name[0]}
               </button>
               {showProfileMenu && (
                 <>
@@ -10424,6 +10422,7 @@ function AdminProfile({ token, profile, onUpdated }) {
   const [pwdSaving, setPwdSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const fileRef = useRef(null);
   const avatarMenuRef = useRef(null);
 
@@ -10438,7 +10437,7 @@ function AdminProfile({ token, profile, onUpdated }) {
     try {
       const res = await fetch("/api/users/me/avatar", { method:"PUT", headers:{ Authorization:`Bearer ${token}` }, body:fd });
       const data = await res.json();
-      if (res.ok) { onUpdated(data.user); }
+      if (res.ok) { onUpdated(data.user); setAvatarError(false); }
     } catch {}
     setUploading(false);
     setShowAvatarMenu(false);
@@ -10497,8 +10496,8 @@ function AdminProfile({ token, profile, onUpdated }) {
         <div className="flex items-center gap-4 mb-5">
           <div className="relative" ref={avatarMenuRef}>
             <div className="w-14 h-14 rounded-full overflow-hidden">
-              {profile?.profilePicture
-                ? <img src={profile.profilePicture} alt="avatar" className="w-full h-full object-cover" />
+              {profile?.profilePicture && !avatarError
+                ? <img src={profile.profilePicture} alt="" className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
                 : <span className="w-full h-full bg-[#C7E36B] flex items-center justify-center text-black text-xl font-bold">{(profile?.name||"A")[0]}</span>
               }
             </div>
