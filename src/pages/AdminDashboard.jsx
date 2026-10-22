@@ -9531,7 +9531,7 @@ function MembershipAdmin({ token }) {
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [planFilter, setPlanFilter]     = useState("All");
+  const [memberTab, setMemberTab]       = useState("All"); // "All" | "Bootcamp" | "Pro"
   const [viewMember, setViewMember]     = useState(null);
   const [showExport, setShowExport]     = useState(false);
   const [exportFmt, setExportFmt]       = useState("xlsx");
@@ -9589,25 +9589,24 @@ function MembershipAdmin({ token }) {
   const getRenewal= m => fmtDate(m.membership?.renewalDate || m.nextRenewal) ;
   const getPhone  = m => m.phone || m.membership?.phone || "";
 
+  const isBootcamp = m => Array.isArray(m.enrolledBootcamps) && m.enrolledBootcamps.length > 0;
+  const isPro      = m => !!m.isPro;
+
   const filtered = members.filter(m => {
     const q = search.toLowerCase();
     const matchQ = !q || m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q);
     const matchS = statusFilter === "All" || getStatus(m) === statusFilter;
-    const matchP = planFilter === "All" || getPlan(m).toLowerCase() === planFilter.toLowerCase();
-    return matchQ && matchS && matchP;
+    const matchT = memberTab === "All" || (memberTab === "Bootcamp" ? isBootcamp(m) : isPro(m));
+    return matchQ && matchS && matchT;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const pageItems  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
-  const totalMembers  = members.length;
-  const activeCount   = members.filter(m => getStatus(m) === "Active").length;
-  const expiringCount = members.filter(m => {
-    const r = m.membership?.renewalDate || m.nextRenewal;
-    if (!r) return false;
-    const diff = new Date(r) - new Date();
-    return diff > 0 && diff < 30 * 864e5;
-  }).length;
+  const totalMembers    = members.length;
+  const activeCount     = members.filter(m => getStatus(m) === "Active").length;
+  const bootcampCount   = members.filter(m => Array.isArray(m.enrolledBootcamps) && m.enrolledBootcamps.length > 0).length;
+  const proCount        = members.filter(m => !!m.isPro).length;
 
   const initials = name => (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
@@ -9673,11 +9672,12 @@ function MembershipAdmin({ token }) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
-          { label:"Total Members",      value: totalMembers,  icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M12 15c-4.4 0-8 2.4-8 4v1h16v-1c0-1.6-3.6-4-8-4z"/><circle cx="12" cy="8" r="4"/></svg> },
-          { label:"Active Members",     value: activeCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> },
-          { label:"Expiring This Month",value: expiringCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+          { label:"Total Students",      value: totalMembers,  icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M12 15c-4.4 0-8 2.4-8 4v1h16v-1c0-1.6-3.6-4-8-4z"/><circle cx="12" cy="8" r="4"/></svg> },
+          { label:"Active Members",      value: activeCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> },
+          { label:"Bootcamp Members",    value: bootcampCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
+          { label:"Pro Members",         value: proCount,      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
         ].map(s => (
           <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center gap-4">
             <div className="shrink-0">{s.icon}</div>
@@ -9749,12 +9749,12 @@ function MembershipAdmin({ token }) {
             <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
         </div>
-        {/* Plan filter pills */}
+        {/* Member type tabs */}
         <div className="flex items-center gap-1 ml-auto">
-          {["All","Basic","Pro"].map(p => (
-            <button key={p} onClick={() => { setPlanFilter(p); setPage(1); }}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${planFilter===p ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
-              {p !== "All" && <span className="mr-1">|</span>}{p}
+          {["All","Bootcamp","Pro"].map(t => (
+            <button key={t} onClick={() => { setMemberTab(t); setPage(1); }}
+              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${memberTab===t ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
+              {t !== "All" && <span className="mr-1">|</span>}{t}
             </button>
           ))}
         </div>
@@ -9763,7 +9763,7 @@ function MembershipAdmin({ token }) {
       {/* Table */}
       <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
         <div className="grid grid-cols-[2fr_1fr_1fr_1.2fr_1.2fr_80px] px-5 py-3.5 border-b border-white/10">
-          {["MEMBER","PLAN","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
+          {["MEMBER","TYPE","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
             <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
           ))}
         </div>
@@ -9790,8 +9790,12 @@ function MembershipAdmin({ token }) {
                     <p className="text-xs text-gray-500">{m.email}</p>
                   </div>
                 </div>
-                {/* Plan */}
-                <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${PLAN_BADGE[getPlan(m)] || "bg-white/10 text-gray-400"}`}>{getPlan(m)}</span>
+                {/* Type */}
+                <div className="flex flex-col gap-1">
+                  {isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
+                  {isPro(m)      && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30">Pro</span>}
+                  {!isBootcamp(m) && !isPro(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/10 text-gray-400">Basic</span>}
+                </div>
                 {/* Status */}
                 <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${STATUS_BADGE[getStatus(m)] || "bg-white/10 text-gray-300"}`}>{getStatus(m)}</span>
                 {/* Started On */}
