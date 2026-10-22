@@ -46,7 +46,8 @@ export default function BuildSection() {
           max-w-[1366px]
 
           px-[93px]
-          py-[64px]
+          pt-[64px]
+          pb-0
 
           flex
           flex-col
@@ -54,7 +55,8 @@ export default function BuildSection() {
           gap-[64px]
 
           max-sm:px-[16px]
-          max-sm:py-[40px]
+          max-sm:pt-[40px]
+          max-sm:pb-0
           max-sm:gap-[40px]
         "
       >
