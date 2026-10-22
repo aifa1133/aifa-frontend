@@ -9591,6 +9591,8 @@ function MembershipAdmin({ token }) {
 
   const isBootcamp = m => Array.isArray(m.enrolledBootcamps) && m.enrolledBootcamps.length > 0;
   const isPro      = m => !!m.isPro;
+  const isWorkshop = m => Array.isArray(m.enrolledWorkshops) && m.enrolledWorkshops.length > 0;
+  const isCourse   = m => Array.isArray(m.enrolledCourses)   && m.enrolledCourses.length   > 0;
 
   const filtered = members.filter(m => {
     const q = search.toLowerCase();
@@ -9792,9 +9794,11 @@ function MembershipAdmin({ token }) {
                 </div>
                 {/* Type */}
                 <div className="flex flex-col gap-1">
-                  {isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
                   {isPro(m)      && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30">Pro</span>}
-                  {!isBootcamp(m) && !isPro(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/10">Other</span>}
+                  {isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
+                  {isWorkshop(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-purple-500/15 text-purple-300 border border-purple-500/30">Workshop</span>}
+                  {isCourse(m)   && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-orange-500/15 text-orange-300 border border-orange-500/30">Course</span>}
+                  {!isPro(m) && !isBootcamp(m) && !isWorkshop(m) && !isCourse(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/10">Other</span>}
                 </div>
                 {/* Status */}
                 <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${STATUS_BADGE[getStatus(m)] || "bg-white/10 text-gray-300"}`}>{getStatus(m)}</span>
