@@ -9538,6 +9538,11 @@ function MembershipAdmin({ token }) {
   const [page, setPage]           = useState(1);
   const [proSaving, setProSaving]       = useState(false);
   const [proDays, setProDays]           = useState("365");
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addEmail, setAddEmail]           = useState("");
+  const [addDays, setAddDays]             = useState("365");
+  const [addLoading, setAddLoading]       = useState(false);
+  const [addMsg, setAddMsg]               = useState(null);
   const PER_PAGE = 10;
 
   /* ── Pricing state ── */
@@ -9570,6 +9575,33 @@ function MembershipAdmin({ token }) {
     setPriceSaving(false);
   };
 
+  const handleAddMember = async () => {
+    if (!addEmail.trim()) { setAddMsg({ ok: false, text: "Enter a user email." }); return; }
+    setAddLoading(true); setAddMsg(null);
+    try {
+      const searchRes = await fetch(`/api/admin/users?search=${encodeURIComponent(addEmail.trim())}&limit=1`, { headers: { Authorization: `Bearer ${token}` } });
+      const searchData = await searchRes.json();
+      const user = Array.isArray(searchData) ? searchData[0] : searchData?.users?.[0];
+      if (!user) { setAddMsg({ ok: false, text: "No user found with that email." }); setAddLoading(false); return; }
+      const res = await fetch(`/api/membership/activate/${user._id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isPro: true, durationDays: parseInt(addDays) || 365 }),
+      });
+      if (res.ok) {
+        setAddMsg({ ok: true, text: `Pro membership activated for ${user.name || user.email}.` });
+        setAddEmail(""); setAddDays("365");
+        const r2 = await fetch("/api/membership/members", { headers: { Authorization: `Bearer ${token}` } });
+        const d2 = await r2.json();
+        if (Array.isArray(d2)) setMembers(d2);
+      } else {
+        const d = await res.json();
+        setAddMsg({ ok: false, text: d.message || "Failed to activate." });
+      }
+    } catch { setAddMsg({ ok: false, text: "Request failed. Try again." }); }
+    setAddLoading(false);
+  };
+
   useEffect(() => {
     fetch("/api/membership/members", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r => r.json())
@@ -9595,8 +9627,7 @@ function MembershipAdmin({ token }) {
   const isCourse   = m => Array.isArray(m.enrolledCourses)   && m.enrolledCourses.length   > 0;
 
   const filtered = members.filter(m => {
-    const isPaid = isPro(m) || isBootcamp(m) || isWorkshop(m) || isCourse(m);
-    if (!isPaid) return false;
+    if (!isPro(m) && !isBootcamp(m)) return false;
     const q = search.toLowerCase();
     const matchQ = !q || m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q);
     const matchS = statusFilter === "All" || getStatus(m) === statusFilter;
@@ -9665,16 +9696,65 @@ function MembershipAdmin({ token }) {
   return (
     <div className="flex-1 overflow-y-auto p-6">
 
+      {/* Add New Member Modal */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-[#111315] border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white">Add New Member</h3>
+              <button onClick={() => setShowAddMember(false)} className="text-gray-400 hover:text-white text-xs">✕</button>
+            </div>
+            <p className="text-xs text-gray-500">Activate Pro membership for an existing registered user.</p>
+            {addMsg && <div className={`text-xs px-3 py-2.5 rounded-xl border ${addMsg.ok ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}>{addMsg.text}</div>}
+            <div>
+              <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">User Email</label>
+              <input type="email" value={addEmail} onChange={e => setAddEmail(e.target.value)} placeholder="student@example.com"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+            </div>
+            <div>
+              <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Membership Type</label>
+              <div className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#C7E36B] font-bold">Pro Membership</div>
+            </div>
+            <div>
+              <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Duration (days)</label>
+              <div className="flex gap-2 flex-wrap mb-2">
+                {[30,90,180,365].map(d => (
+                  <button key={d} type="button" onClick={() => setAddDays(String(d))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${addDays === String(d) ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-300 hover:bg-white/15"}`}>
+                    {d === 365 ? "1 Year" : d === 180 ? "6 Months" : d === 90 ? "3 Months" : "30 Days"}
+                  </button>
+                ))}
+              </div>
+              <input type="number" min="1" value={addDays} onChange={e => setAddDays(e.target.value)} placeholder="Custom days"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setShowAddMember(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/15 transition-colors">Cancel</button>
+              <button onClick={handleAddMember} disabled={addLoading}
+                className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-black hover:bg-[#d4ec85] disabled:opacity-50 transition-colors">
+                {addLoading ? "Activating…" : "Activate Pro"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Membership</h1>
           <p className="text-sm text-gray-400 mt-1">Manage Membership plan and monitor member activity.</p>
         </div>
-        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => { setShowAddMember(true); setAddMsg(null); }} className="flex items-center gap-2 bg-[#C7E36B] text-black font-black text-sm px-5 py-2.5 rounded-xl hover:bg-[#d4ec85] transition-all">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add New Member
+          </button>
+          <button onClick={() => setShowExport(true)} className="flex items-center gap-2 border border-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}
