@@ -9608,9 +9608,11 @@ function MembershipAdmin({ token }) {
   const pageItems  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
   const totalMembers    = members.length;
-  const activeCount     = members.filter(m => getStatus(m) === "Active").length;
-  const bootcampCount   = members.filter(m => Array.isArray(m.enrolledBootcamps) && m.enrolledBootcamps.length > 0).length;
-  const proCount        = members.filter(m => !!m.isPro).length;
+  const nonSubCount     = members.filter(m => !isPro(m) && !isBootcamp(m) && !isWorkshop(m) && !isCourse(m)).length;
+  const bootcampCount   = members.filter(m => isBootcamp(m)).length;
+  const proCount        = members.filter(m => isPro(m)).length;
+  const courseCount     = members.filter(m => isCourse(m)).length;
+  const workshopCount   = members.filter(m => isWorkshop(m)).length;
 
   const initials = name => (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
@@ -9676,12 +9678,14 @@ function MembershipAdmin({ token }) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
         {[
           { label:"Total Students",      value: totalMembers,  icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M12 15c-4.4 0-8 2.4-8 4v1h16v-1c0-1.6-3.6-4-8-4z"/><circle cx="12" cy="8" r="4"/></svg> },
-          { label:"Active Members",      value: activeCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> },
-          { label:"Bootcamp Members",    value: bootcampCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
+          { label:"Non-Subscription",    value: nonSubCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg> },
+          { label:"Bootcamp",            value: bootcampCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
           { label:"Pro Members",         value: proCount,      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+          { label:"Video Course",        value: courseCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
+          { label:"Workshop",            value: workshopCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> },
         ].map(s => (
           <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center gap-4">
             <div className="shrink-0">{s.icon}</div>
