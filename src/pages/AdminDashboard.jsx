@@ -10445,6 +10445,117 @@ function Placeholder({ title }) {
   );
 }
 
+/* ── IMAGE CROP MODAL ── */
+function ImageCropModal({ src, onCancel, onDone }) {
+  const SIZE = 280;
+  const canvasRef = useRef(null);
+  const imgRef    = useRef(null);
+  const [scale, setScale]   = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      const s = Math.max(SIZE / img.width, SIZE / img.height);
+      setScale(s);
+      setOffset({ x: (SIZE - img.width * s) / 2, y: (SIZE - img.height * s) / 2 });
+    };
+    img.src = src;
+  }, [src]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !imgRef.current) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    ctx.drawImage(imgRef.current, offset.x, offset.y, imgRef.current.width * scale, imgRef.current.height * scale);
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.beginPath();
+    ctx.rect(0, 0, SIZE, SIZE);
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 2, 0, Math.PI * 2, true);
+    ctx.fill("evenodd");
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 2, 0, Math.PI * 2);
+    ctx.strokeStyle = "#C7E36B";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }, [scale, offset]);
+
+  const onMouseDown = (e) => {
+    dragRef.current = { mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onMouseMove = (e) => {
+    if (!dragRef.current) return;
+    setOffset({ x: dragRef.current.ox + e.clientX - dragRef.current.mx, y: dragRef.current.oy + e.clientY - dragRef.current.my });
+  };
+  const onMouseUp   = () => { dragRef.current = null; };
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    dragRef.current = { mx: t.clientX, my: t.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onTouchMove = (e) => {
+    if (!dragRef.current) return;
+    const t = e.touches[0];
+    setOffset({ x: dragRef.current.ox + t.clientX - dragRef.current.mx, y: dragRef.current.oy + t.clientY - dragRef.current.my });
+  };
+
+  const handleScaleChange = (e) => {
+    const newScale = parseFloat(e.target.value);
+    if (!imgRef.current) return;
+    const cx = SIZE / 2, cy = SIZE / 2;
+    const ratio = newScale / scale;
+    setOffset(prev => ({ x: cx - (cx - prev.x) * ratio, y: cy - (cy - prev.y) * ratio }));
+    setScale(newScale);
+  };
+
+  const handleDone = () => {
+    const out = document.createElement("canvas");
+    out.width = SIZE; out.height = SIZE;
+    const ctx = out.getContext("2d");
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(imgRef.current, offset.x, offset.y, imgRef.current.width * scale, imgRef.current.height * scale);
+    out.toBlob(blob => onDone(blob), "image/jpeg", 0.92);
+  };
+
+  const minScale = imgRef.current ? Math.max(SIZE / imgRef.current.width, SIZE / imgRef.current.height) : 0.5;
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center p-4" onMouseUp={onMouseUp} onMouseMove={onMouseMove}>
+      <div className="bg-[#111315] border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white">Crop Profile Photo</h3>
+          <button onClick={onCancel} className="text-gray-400 hover:text-white text-xs">Cancel</button>
+        </div>
+        <p className="text-xs text-gray-500">Drag to reposition · Use slider to zoom</p>
+        <div className="flex justify-center">
+          <canvas ref={canvasRef} width={SIZE} height={SIZE}
+            className="rounded-full cursor-grab active:cursor-grabbing"
+            style={{ width: SIZE, height: SIZE }}
+            onMouseDown={onMouseDown}
+            onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onMouseUp} />
+        </div>
+        <div className="flex items-center gap-3">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          <input type="range" min={minScale || 0.5} max={(minScale || 0.5) * 4} step="0.01" value={scale}
+            onChange={handleScaleChange}
+            className="flex-1 accent-[#C7E36B]" />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/15 transition-colors">Cancel</button>
+          <button onClick={handleDone} className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-black hover:bg-[#d4ec85] transition-colors">Apply Crop</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── ADMIN PROFILE ── */
 function AdminProfile({ token, profile, onUpdated }) {
   const [editing, setEditing]     = useState(false);
@@ -10459,6 +10570,7 @@ function AdminProfile({ token, profile, onUpdated }) {
   const [uploading, setUploading] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [cropSrc, setCropSrc] = useState(null);
   const fileRef = useRef(null);
   const avatarMenuRef = useRef(null);
 
@@ -10471,19 +10583,26 @@ function AdminProfile({ token, profile, onUpdated }) {
 
   const memberId = `AIFA-ADMIN-${String(profile?._id || "00001").slice(-5).toUpperCase()}`;
 
-  const handleAvatarChange = async (e) => {
+  const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => { setCropSrc(ev.target.result); setShowAvatarMenu(false); };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropDone = async (blob) => {
+    setCropSrc(null);
     setUploading(true);
     const fd = new FormData();
-    fd.append("avatar", file);
+    fd.append("avatar", blob, "avatar.jpg");
     try {
       const res = await fetch("/api/users/me/avatar", { method:"PUT", headers:{ Authorization:`Bearer ${token}` }, body:fd });
       const data = await res.json();
       if (res.ok) { onUpdated(data.user); setAvatarError(false); }
     } catch {}
     setUploading(false);
-    setShowAvatarMenu(false);
   };
 
   const handleAvatarRemove = async () => {
@@ -10532,6 +10651,7 @@ function AdminProfile({ token, profile, onUpdated }) {
 
   return (
     <div className="p-6 max-w-2xl space-y-5">
+      {cropSrc && <ImageCropModal src={cropSrc} onCancel={() => setCropSrc(null)} onDone={handleCropDone} />}
       <h1 className="text-xl font-bold text-white">Admin Profile</h1>
 
       {/* Identity card */}
