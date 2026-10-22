@@ -10,6 +10,9 @@ const CHECKLIST = [
   "20 Assignments",
   "Portfolio Mentorship",
   "Session Recordings",
+  "AIFA Community Access",
+  "Self Paced Courses Access",
+  "All Resources Access",
 ];
 
 /* LeftCard receives all values as props — no closure references to outer component vars */
