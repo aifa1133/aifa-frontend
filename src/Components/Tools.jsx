@@ -79,7 +79,7 @@ export default function Tools() {
                   <img
                     src={tool.logoUrl}
                     alt={tool.name}
-                    className="w-14 h-14 sm:w-16 sm:h-16 object-contain brightness-0 invert opacity-90 group-hover:scale-110 transition-transform duration-300"
+                    className={`w-14 h-14 sm:w-16 sm:h-16 object-contain opacity-90 group-hover:scale-110 transition-transform duration-300 ${tool.logoUrl.includes("simple-icons") || tool.logoUrl.includes("jsdelivr") ? "brightness-0 invert" : ""}`}
                     onError={e => { e.target.style.display = "none"; }}
                   />
                 ) : (
