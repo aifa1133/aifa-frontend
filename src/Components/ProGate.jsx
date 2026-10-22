@@ -68,7 +68,7 @@ export function ProUpgradeModal({ onClose }) {
         </div>
 
         <button
-          onClick={() => navigate("/bootcamp/enroll")}
+          onClick={() => navigate("/membership/pay")}
           className="w-full bg-[#C7E36B] text-black font-black py-3 rounded-xl text-base hover:opacity-90 transition"
         >
           Upgrade to Pro
