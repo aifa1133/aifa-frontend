@@ -233,6 +233,8 @@ export default function AdminDashboard() {
                 )}
               </button>
               {showNotifPanel && (
+                <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowNotifPanel(false)} />
                 <div className="absolute right-0 top-full mt-2 w-[340px] bg-[#0F1112] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                     <p className="text-sm font-bold text-white">Notifications</p>
@@ -254,6 +256,7 @@ export default function AdminDashboard() {
                     <button onClick={()=>{ setShowNotifPanel(false); }} className="text-xs text-[#C7E36B] hover:underline">Close</button>
                   </div>
                 </div>
+                </>
               )}
             </div>
 
