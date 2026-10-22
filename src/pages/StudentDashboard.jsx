@@ -463,7 +463,7 @@ function NotificationsSection({ token }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/notifications?limit=100", { headers: { Authorization: `Bearer ${token}` } })
+    fetch("/api/notifications/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : [])
       .then(d => setNotifs(Array.isArray(d) ? d : []))
       .catch(() => setNotifs([]))
