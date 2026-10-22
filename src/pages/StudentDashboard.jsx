@@ -1077,6 +1077,10 @@ function BootcampSection({ token, profile }) {
   ));
 
   useEffect(() => {
+    if (bcLoaded && !enrolled) navigate("/bootcamp");
+  }, [bcLoaded, enrolled]);
+
+  useEffect(() => {
     if (!enrolled || !bootcampData?._id) return;
     const id = bootcampData._id;
     const h = token ? { Authorization: `Bearer ${token}` } : {};
