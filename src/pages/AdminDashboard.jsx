@@ -9595,6 +9595,8 @@ function MembershipAdmin({ token }) {
   const isCourse   = m => Array.isArray(m.enrolledCourses)   && m.enrolledCourses.length   > 0;
 
   const filtered = members.filter(m => {
+    const isPaid = isPro(m) || isBootcamp(m) || isWorkshop(m) || isCourse(m);
+    if (!isPaid) return false;
     const q = search.toLowerCase();
     const matchQ = !q || m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q);
     const matchS = statusFilter === "All" || getStatus(m) === statusFilter;
