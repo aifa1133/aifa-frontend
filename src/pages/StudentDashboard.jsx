@@ -1664,18 +1664,6 @@ function BootcampSection({ token, profile }) {
                 <h2 className="text-3xl font-black text-white mb-3">{activeProject.title}</h2>
                 <p className="text-base text-white/50 leading-relaxed">{activeProject.desc || "Complete this project to demonstrate your skills from the bootcamp."}</p>
               </div>
-              {(activeProject.deadline || activeProject.maxMarks) && (
-                <div className="border border-[#C7E36B]/40 rounded-xl grid grid-cols-2 divide-x divide-[#C7E36B]/20 overflow-hidden">
-                  <div className="px-5 py-4">
-                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest mb-1">Submission Deadline</p>
-                    <p className="text-sm font-bold text-white">{activeProject.deadline || "—"}</p>
-                  </div>
-                  <div className="px-5 py-4">
-                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest mb-1">Maximum Marks</p>
-                    <p className="text-sm font-bold text-white">{activeProject.maxMarks || 100} Points</p>
-                  </div>
-                </div>
-              )}
               <hr className="border-white/10"/>
               {(() => {
                 const reqs = activeProject.requirements || activeProject.req || [];
