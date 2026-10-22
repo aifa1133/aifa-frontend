@@ -9762,8 +9762,8 @@ function MembershipAdmin({ token }) {
 
       {/* Table */}
       <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-[2fr_1fr_1fr_1.2fr_1.2fr_80px] px-5 py-3.5 border-b border-white/10">
-          {["MEMBER","TYPE","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
+        <div className="grid grid-cols-[2.5fr_1fr_1.2fr_1.2fr_80px] px-5 py-3.5 border-b border-white/10">
+          {["MEMBER","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
             <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
           ))}
         </div>
@@ -9778,7 +9778,7 @@ function MembershipAdmin({ token }) {
         ) : (
           <div className="divide-y divide-white/5">
             {pageItems.map((m, i) => (
-              <div key={m._id||i} className="grid grid-cols-[2fr_1fr_1fr_1.2fr_1.2fr_80px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
+              <div key={m._id||i} className="grid grid-cols-[2.5fr_1fr_1.2fr_1.2fr_80px] px-5 py-4 items-center hover:bg-white/[0.03] transition-all">
                 {/* Member */}
                 <div className="flex items-center gap-3">
                   {m.avatar
@@ -9788,13 +9788,11 @@ function MembershipAdmin({ token }) {
                   <div>
                     <p className="text-sm font-semibold text-white">{m.name}</p>
                     <p className="text-xs text-gray-500">{m.email}</p>
+                    <div className="flex gap-1 mt-1">
+                      {isBootcamp(m) && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
+                      {isPro(m)      && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30">Pro</span>}
+                    </div>
                   </div>
-                </div>
-                {/* Type */}
-                <div className="flex flex-col gap-1">
-                  {isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
-                  {isPro(m)      && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30">Pro</span>}
-                  {!isBootcamp(m) && !isPro(m) && <span className="text-gray-600 text-xs">—</span>}
                 </div>
                 {/* Status */}
                 <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${STATUS_BADGE[getStatus(m)] || "bg-white/10 text-gray-300"}`}>{getStatus(m)}</span>
