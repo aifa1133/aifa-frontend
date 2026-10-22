@@ -577,7 +577,7 @@ export default function WorkshopDetail() {
         <div className="border-b border-white/5 px-4 sm:px-6 py-3 flex items-center gap-4">
           <Link to="/"><img src="/logos/aifabetalogo.svg" alt="AIFA" className="h-6" /></Link>
           <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
-            <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <span>›</span>
             <button onClick={() => navigate(-1)} className="hover:text-white transition-colors">Workshop</button>
             <span>›</span>
@@ -654,7 +654,7 @@ export default function WorkshopDetail() {
         {/* BREADCRUMB — below top bar */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-1">
           <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
-            <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <span>›</span>
             <button onClick={() => navigate(-1)} className="hover:text-white transition-colors">Workshop</button>
             <span>›</span>
@@ -860,7 +860,7 @@ export default function WorkshopDetail() {
       {/* BREADCRUMB — below top bar, inside page content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-1">
         <div className="text-xs text-gray-500 flex gap-2 flex-wrap items-center">
-          <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+          <Link to="/" className="hover:text-white transition-colors">Home</Link>
           <span>›</span>
           <button onClick={() => navigate(-1)} className="hover:text-white transition-colors">Workshop</button>
           <span>›</span>
