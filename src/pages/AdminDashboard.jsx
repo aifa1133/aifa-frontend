@@ -9538,7 +9538,7 @@ function MembershipAdmin({ token }) {
   const [page, setPage]           = useState(1);
   const [proSaving, setProSaving]       = useState(false);
   const [proDays, setProDays]           = useState("365");
-  const PER_PAGE = 5;
+  const PER_PAGE = 10;
 
   /* ── Pricing state ── */
   const [priceEdit, setPriceEdit]       = useState({ price: "", orig: "" });
