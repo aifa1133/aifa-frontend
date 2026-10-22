@@ -3208,6 +3208,10 @@ function InvoiceView({ item, onBack, profile }) {
 
   const handleDownload = () => {
     const invoiceHtml = invoiceRef.current?.innerHTML || "";
+    const _numAmt = parseFloat((item.amount || "0").replace(/[₹,]/g, "")) || 0;
+    const _taxAmt = Math.round(_numAmt * 18 / 118 * 100) / 100;
+    const _baseAmt = Math.round((_numAmt - _taxAmt) * 100) / 100;
+    const _fmt = n => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
     const win = window.open("", "_blank");
     win.document.write(`<!DOCTYPE html><html><head>
       <title>Invoice ${item.id}</title>
@@ -3253,8 +3257,9 @@ function InvoiceView({ item, onBack, profile }) {
             <span>AIFA</span>
           </div>
           <div class="inv-addr">
-            AIFA Film Academy<br/>
-            Hyderabad, Telangana, India<br/>
+            ROTOMAKER INTERNATIONAL FILM AND TELEVISION INSTITUTE<br/>
+            DivyaSree Solitaire, Inorbit Mall Rd,<br/>
+            Madhapur, Hyderabad, Telangana 500081<br/>
             <a>info@aifa.co.in</a>
           </div>
         </div>
@@ -3281,14 +3286,14 @@ function InvoiceView({ item, onBack, profile }) {
           <th>Type</th><th>Qty</th><th>Unit Price</th><th>Amount</th>
         </tr></thead>
         <tbody><tr>
-          <td>${item.name}<br/><span class="desc-sub">${item.type} program</span></td>
+          <td>${item.name}</td>
           <td>${item.type}</td><td>1</td><td>${item.amount}</td><td>${item.amount}</td>
         </tr></tbody>
       </table>
 
       <table class="totals"><tbody>
-        <tr><td>Subtotal</td><td>${item.amount}</td></tr>
-        <tr><td>Tax (GST 18%)</td><td>₹0</td></tr>
+        <tr><td>Subtotal (excl. GST)</td><td>${_fmt(_baseAmt)}</td></tr>
+        <tr><td>GST 18% (included)</td><td>${_fmt(_taxAmt)}</td></tr>
         <tr class="total-row"><td>Total</td><td>${item.amount}</td></tr>
         <tr class="paid-row"><td>Amount Paid</td><td>-${item.amount}</td></tr>
         <tr class="balance-row"><td>Balance Due</td><td>₹0</td></tr>
@@ -3333,10 +3338,11 @@ function InvoiceView({ item, onBack, profile }) {
               <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center"><span className="text-white font-bold text-xs">A</span></div>
               <span className="text-lg font-black text-white">AIFA</span>
             </div>
-            <p className="text-xs text-gray-400">AIFA Learning Platform Inc.</p>
-            <p className="text-xs text-gray-400">123 Tech Avenue, Suite 400</p>
-            <p className="text-xs text-gray-400">San Francisco, CA 94105</p>
-            <p className="text-xs text-[#C7E36B]">billing@aifa.edu</p>
+            <p className="text-xs text-gray-400">ROTOMAKER INTERNATIONAL FILM AND</p>
+            <p className="text-xs text-gray-400">TELEVISION INSTITUTE</p>
+            <p className="text-xs text-gray-400">DivyaSree Solitaire, Inorbit Mall Rd,</p>
+            <p className="text-xs text-gray-400">Madhapur, Hyderabad, Telangana 500081</p>
+            <p className="text-xs text-[#C7E36B]">info@aifa.co.in</p>
           </div>
           <div className="text-right">
             <h2 className="text-3xl font-black text-white/10 tracking-widest">INVOICE</h2>
@@ -3362,7 +3368,7 @@ function InvoiceView({ item, onBack, profile }) {
             ))}
           </tr></thead>
           <tbody><tr className="border-b border-white/5">
-            <td className="py-3 text-sm text-white">{item.name}<br /><span className="text-xs text-gray-400">12-week intensive online program</span></td>
+            <td className="py-3 text-sm text-white">{item.name}</td>
             <td className="py-3 text-sm text-gray-400 text-right">{item.type}</td>
             <td className="py-3 text-sm text-white text-right">1</td>
             <td className="py-3 text-sm text-white text-right">{item.amount}</td>
@@ -3370,13 +3376,21 @@ function InvoiceView({ item, onBack, profile }) {
           </tr></tbody>
         </table>
 
-        <div className="space-y-1 ml-auto w-48 text-xs">
-          <div className="flex justify-between text-gray-400"><span>Subtotal</span><span>{item.amount}</span></div>
-          <div className="flex justify-between text-gray-400"><span>Tax (0%)</span><span>₹0</span></div>
-          <div className="flex justify-between text-sm font-bold text-white border-t border-white/10 pt-2 mt-2"><span>Total</span><span>{item.amount}</span></div>
-          <div className="flex justify-between text-gray-400 text-green-400"><span>Amount Paid</span><span>-{item.amount}</span></div>
-          <div className="flex justify-between text-sm font-bold text-white"><span>Balance Due</span><span>₹0</span></div>
-        </div>
+        {(() => {
+          const numAmt = parseFloat((item.amount || "0").replace(/[₹,]/g, "")) || 0;
+          const taxAmt = Math.round(numAmt * 18 / 118 * 100) / 100;
+          const baseAmt = Math.round((numAmt - taxAmt) * 100) / 100;
+          const fmt = n => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+          return (
+            <div className="space-y-1 ml-auto w-52 text-xs">
+              <div className="flex justify-between text-gray-400"><span>Subtotal (excl. GST)</span><span>{fmt(baseAmt)}</span></div>
+              <div className="flex justify-between text-gray-400"><span>GST 18% (included)</span><span>{fmt(taxAmt)}</span></div>
+              <div className="flex justify-between text-sm font-bold text-white border-t border-white/10 pt-2 mt-2"><span>Total</span><span>{item.amount}</span></div>
+              <div className="flex justify-between text-green-400"><span>Amount Paid</span><span>-{item.amount}</span></div>
+              <div className="flex justify-between text-sm font-bold text-white"><span>Balance Due</span><span>₹0</span></div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

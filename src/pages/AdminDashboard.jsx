@@ -4728,7 +4728,7 @@ function UsersAdmin({ token }) {
     return "bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30";
   };
 
-  const ROLE_TABS = ["All", "Student", "Instructor", "Admin"];
+  const ROLE_TABS = ["All", "Student", "Admin"];
 
   return (
     <div className="p-6">

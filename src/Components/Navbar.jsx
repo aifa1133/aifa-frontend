@@ -225,13 +225,13 @@ ${
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-2 w-[200px] bg-[#0F1112] border border-[#414243] rounded-[8px] overflow-hidden z-50">
-                  <Link
-                    to={user.role === "admin" ? "/admin" : "/dashboard"}
+                  <a
+                    href={user.role === "admin" ? "/admin" : "/dashboard"}
                     onClick={() => setShowUserMenu(false)}
                     className="block px-4 py-3 text-[#F0F0F0] text-sm hover:bg-[#C7E36B] hover:text-[#0F1112] border-b border-[#414243]"
                   >
                     My Dashboard
-                  </Link>
+                  </a>
                   <button
                     onClick={() => { setShowUserMenu(false); setShowLogoutConfirm(true); }}
                     className="w-full text-left px-4 py-3 text-red-400 text-sm hover:bg-[#C7E36B] hover:text-[#0F1112]"
@@ -394,13 +394,13 @@ h-[40px]
           <div className="flex flex-col gap-[12px] pt-[8px]">
             {user ? (
               <>
-                <Link
-                  to={user.role === "admin" ? "/admin" : "/dashboard"}
+                <a
+                  href={user.role === "admin" ? "/admin" : "/dashboard"}
                   onClick={() => setOpen(false)}
                   className="h-[48px] rounded-[10px] bg-[#C7E36B] text-black text-[14px] font-bold flex items-center justify-center"
                 >
                   My Dashboard
-                </Link>
+                </a>
                 <button
                   onClick={() => { setOpen(false); setShowLogoutConfirm(true); }}
                   className="h-[48px] rounded-[10px] border border-red-400 text-red-400 text-[14px] font-bold"
