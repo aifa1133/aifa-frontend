@@ -66,6 +66,28 @@ const Badge = ({ status }) => {
   );
 };
 
+function PasswordField({ label, value, onChange, placeholder = "" }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">{label}</label>
+      <div className="relative">
+        <input
+          type={show ? "text" : "password"}
+          value={value ?? ""}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 pr-14 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors"
+        />
+        <button type="button" onClick={() => setShow(v => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400 hover:text-[#C7E36B] transition-colors">
+          {show ? "Hide" : "Show"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const Field = ({ label, value, onChange, type = "text", placeholder = "", required = false }) => (
   <div>
     <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">
@@ -764,7 +786,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
                     <Field label="Account Number" value={editForm.bankAccountNumber} onChange={(v) => setEditForm({ ...editForm, bankAccountNumber: v })} />
                     <Field label="IFSC" value={editForm.bankIFSC} onChange={(v) => setEditForm({ ...editForm, bankIFSC: v })} />
                     <Field label="UPI ID" value={editForm.upiId} onChange={(v) => setEditForm({ ...editForm, upiId: v })} />
-                    <Field label="New Password (optional)" type="password" value={editForm.password} onChange={(v) => setEditForm({ ...editForm, password: v })} placeholder="Min 6 characters" />
+                    <PasswordField label="New Password (optional)" value={editForm.password} onChange={(v) => setEditForm({ ...editForm, password: v })} placeholder="Min 6 characters" />
                   </div>
 
                   <div className="flex gap-3 pt-2">
