@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminInfluencers from "./admin/AdminInfluencers";
+import * as XLSX from "xlsx";
 
 /* ─── GLOBAL TOAST ─── */
 let _globalToastFn = null;
@@ -4676,11 +4677,18 @@ function UsersAdmin({ token }) {
   const doExport = () => {
     const rows = [["Name","Email","Phone","Role","Status","Joined"]];
     filtered.forEach(u => rows.push([u.name||"", u.email||"", u.phone||"", u.role||"", u.isActive===false?"Inactive":"Active", new Date(u.createdAt||Date.now()).toLocaleDateString()]));
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = exportFmt === "csv" ? "users.csv" : "users.csv"; // both CSV for now (XLSX needs a lib)
-    a.click();
+    if (exportFmt === "xlsx") {
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Users");
+      XLSX.writeFile(wb, "users.xlsx");
+    } else {
+      const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+      const a = document.createElement("a");
+      a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      a.download = "users.csv";
+      a.click();
+    }
     setShowExport(false);
   };
 
@@ -5190,10 +5198,17 @@ function EnrolmentsAdmin({ token }) {
       e.price ? `₹${e.price}` : "—",
       new Date(e.enrolledAt).toLocaleDateString(),
     ]));
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "enrollments.csv"; a.click();
+    if (exportFmt === "xlsx") {
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Enrollments");
+      XLSX.writeFile(wb, "enrollments.xlsx");
+    } else {
+      const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+      const a = document.createElement("a");
+      a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      a.download = "enrollments.csv"; a.click();
+    }
     setShowExport(false);
   };
 
@@ -8907,14 +8922,17 @@ function SalesConsultAdmin({ token }) {
   };
 
   const handleExport = () => {
-    const rows = filtered;
-    if (exportFmt === "csv") {
-      const hdr = ["Name","Phone","Email","Consultation Type","Status","Priority","Date","Assigned To","Note"];
-      const body = rows.map(l => [l.name,l.phone,l.email,l.consultType,l.status,l.priority,l.date,l.assignedTo,l.note].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
+    const hdr = ["Name","Phone","Email","Consultation Type","Status","Priority","Date","Assigned To","Note"];
+    const dataRows = filtered.map(l => [l.name,l.phone,l.email,l.consultType,l.status,l.priority,l.date,l.assignedTo,l.note]);
+    if (exportFmt === "xlsx") {
+      const ws = XLSX.utils.aoa_to_sheet([hdr, ...dataRows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Consultations");
+      XLSX.writeFile(wb, "consultations.xlsx");
+    } else {
+      const body = dataRows.map(r => r.map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
       const blob = new Blob([[hdr.join(","), ...body].join("\n")], { type:"text/csv" });
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultations.csv"; a.click();
-    } else {
-      alert("XLSX export requires a server-side endpoint. CSV is available for client-side export.");
     }
     setShowExport(false);
   };
@@ -9624,13 +9642,17 @@ function MembershipAdmin({ token }) {
   };
 
   const handleExport = () => {
-    if (exportFmt === "csv") {
-      const hdr = ["Name","Email","Phone","Plan","Status","Started On","Next Renewal"];
-      const body = filtered.map(m => [m.name,m.email,getPhone(m),getPlan(m),getStatus(m),getStart(m),getRenewal(m)].map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
+    const hdr = ["Name","Email","Phone","Plan","Status","Started On","Next Renewal"];
+    const rows = [hdr, ...filtered.map(m => [m.name,m.email,getPhone(m),getPlan(m),getStatus(m),getStart(m),getRenewal(m)])];
+    if (exportFmt === "xlsx") {
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Members");
+      XLSX.writeFile(wb, "members.xlsx");
+    } else {
+      const body = rows.slice(1).map(r => r.map(v=>`"${(v||"").replace(/"/g,'""')}"`).join(","));
       const blob = new Blob([[hdr.join(","), ...body].join("\n")], {type:"text/csv"});
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "members.csv"; a.click();
-    } else {
-      alert("XLSX export requires a server-side endpoint. Use CSV for client-side export.");
     }
     setShowExport(false);
   };

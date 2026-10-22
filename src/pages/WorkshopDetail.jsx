@@ -164,7 +164,7 @@ function WhatYouWillCreate({ projects }) {
             <img
               src={proj.image || FALLBACK}
               alt={proj.title}
-              className="w-full h-[280px] md:h-[380px] object-cover rounded-[40px] md:rounded-[60px]"
+              className="w-full h-[280px] md:h-[380px] object-cover rounded-2xl shadow-2xl"
               onError={e => { e.target.src = FALLBACK; }}
             />
           </div>
