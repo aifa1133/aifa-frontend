@@ -3015,7 +3015,7 @@ function JobsSection({ token }) {
               </div>
             </div>
               </div>
-              {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
+              {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership/pay"} />}
             </div>
           ))}
         </div>
@@ -4187,7 +4187,7 @@ function ResourcesSection({ token }) {
               </div>
             </div>
               </div>
-              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
+              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership/pay")} />}
             </div>
           ))}
         </div>
@@ -4233,7 +4233,7 @@ function ResourcesSection({ token }) {
               </div>
             </div>
               </div>
-              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
+              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership/pay")} />}
             </div>
           ))}
         </div>
@@ -4267,7 +4267,7 @@ function ResourcesSection({ token }) {
               }
             </div>
               </div>
-              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
+              {idx > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership/pay")} />}
             </div>
           ))}
         </div>
@@ -4312,7 +4312,7 @@ function ResourcesSection({ token }) {
               </div>
             </div>
               </div>
-              {i > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership")} />}
+              {i > 0 && !isPro && <ProLockOverlay onUpgrade={() => navigate("/membership/pay")} />}
             </div>
           ))}
         </div>
@@ -4479,7 +4479,7 @@ function CommunitySection({ token, profile }) {
                 </div>
               </div>
                 </div>
-                {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
+                {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership/pay"} />}
               </div>
             ))}
           </div>
@@ -4594,7 +4594,7 @@ function CommunitySection({ token, profile }) {
               </div>
             </div>
               </div>
-              {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
+              {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership/pay"} />}
             </div>
           ))}
         </div>
@@ -4638,7 +4638,7 @@ function CommunitySection({ token, profile }) {
           </div>
           </div>
           </div>
-          {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
+          {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership/pay"} />}
         </div>
       ))}
     </div>
@@ -4733,7 +4733,7 @@ function CommunitySection({ token, profile }) {
           </div>
           </div>
           </div>
-          {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership"} />}
+          {idx > 0 && !isProUser && <ProLockOverlay onUpgrade={() => window.location.href="/membership/pay"} />}
         </div>
       ))}
     </div>
