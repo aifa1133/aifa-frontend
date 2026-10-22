@@ -9763,7 +9763,7 @@ function MembershipAdmin({ token }) {
       {/* Table */}
       <div className="bg-[#111315] border border-white/10 rounded-2xl overflow-hidden">
         <div className="grid grid-cols-[2fr_1fr_1fr_1.2fr_1.2fr_80px] px-5 py-3.5 border-b border-white/10">
-          {["MEMBER","TYPE","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
+          {["MEMBER","SUBSCRIPTION TYPE","STATUS","STARTED ON","NEXT RENEWAL","ACTIONS"].map(h => (
             <span key={h} className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{h}</span>
           ))}
         </div>
@@ -9794,7 +9794,7 @@ function MembershipAdmin({ token }) {
                 <div className="flex flex-col gap-1">
                   {isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
                   {isPro(m)      && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30">Pro</span>}
-                  {!isBootcamp(m) && !isPro(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/10">Basic</span>}
+                  {!isBootcamp(m) && !isPro(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/10">Other</span>}
                 </div>
                 {/* Status */}
                 <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${STATUS_BADGE[getStatus(m)] || "bg-white/10 text-gray-300"}`}>{getStatus(m)}</span>
