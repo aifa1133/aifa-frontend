@@ -9542,8 +9542,13 @@ function MembershipAdmin({ token }) {
   const [proSaving, setProSaving]       = useState(false);
   const [proDays, setProDays]           = useState("365");
   const [showAddMember, setShowAddMember] = useState(false);
+  const [addMode, setAddMode]             = useState("pro"); // "pro" | "bootcamp" | "student"
   const [addEmail, setAddEmail]           = useState("");
   const [addDays, setAddDays]             = useState("365");
+  const [addName, setAddName]             = useState("");
+  const [addPassword, setAddPassword]     = useState("");
+  const [addBootcampId, setAddBootcampId] = useState("");
+  const [bootcampsList, setBootcampsList] = useState([]);
   const [addLoading, setAddLoading]       = useState(false);
   const [addMsg, setAddMsg]               = useState(null);
   const PER_PAGE = 10;
@@ -9578,28 +9583,62 @@ function MembershipAdmin({ token }) {
     setPriceSaving(false);
   };
 
+  const refreshMembers = async () => {
+    const r = await fetch("/api/membership/members", { headers: { Authorization: `Bearer ${token}` } });
+    const d = await r.json();
+    if (Array.isArray(d)) setMembers(d);
+  };
+
   const handleAddMember = async () => {
-    if (!addEmail.trim()) { setAddMsg({ ok: false, text: "Enter a user email." }); return; }
     setAddLoading(true); setAddMsg(null);
     try {
+      if (addMode === "student") {
+        if (!addName.trim() || !addEmail.trim() || !addPassword) {
+          setAddMsg({ ok: false, text: "Name, email and password are required." }); setAddLoading(false); return;
+        }
+        const res = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name: addName.trim(), email: addEmail.trim(), password: addPassword }),
+        });
+        const d = await res.json();
+        if (!res.ok) { setAddMsg({ ok: false, text: d.message || "Failed to create student." }); setAddLoading(false); return; }
+        setAddMsg({ ok: true, text: `Student account created for ${addName.trim()}.` });
+        setAddName(""); setAddEmail(""); setAddPassword("");
+        await refreshMembers();
+        return;
+      }
+
+      if (!addEmail.trim()) { setAddMsg({ ok: false, text: "Enter a user email." }); setAddLoading(false); return; }
+
       const searchRes = await fetch(`/api/admin/users?search=${encodeURIComponent(addEmail.trim())}&limit=1`, { headers: { Authorization: `Bearer ${token}` } });
       const searchData = await searchRes.json();
-      const user = Array.isArray(searchData) ? searchData[0] : searchData?.users?.[0];
-      if (!user) { setAddMsg({ ok: false, text: "No user found with that email." }); setAddLoading(false); return; }
-      const res = await fetch(`/api/membership/activate/${user._id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ isPro: true, durationDays: parseInt(addDays) || 365 }),
-      });
-      if (res.ok) {
+      const user = Array.isArray(searchData) ? searchData[0] : null;
+      if (!user) { setAddMsg({ ok: false, text: "No AIFA account found with that email." }); setAddLoading(false); return; }
+
+      if (addMode === "pro") {
+        const res = await fetch(`/api/membership/activate/${user._id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ isPro: true, durationDays: parseInt(addDays) || 365 }),
+        });
+        const d = await res.json();
+        if (!res.ok) { setAddMsg({ ok: false, text: d.message || "Failed to activate." }); setAddLoading(false); return; }
         setAddMsg({ ok: true, text: `Pro membership activated for ${user.name || user.email}.` });
         setAddEmail(""); setAddDays("365");
-        const r2 = await fetch("/api/membership/members", { headers: { Authorization: `Bearer ${token}` } });
-        const d2 = await r2.json();
-        if (Array.isArray(d2)) setMembers(d2);
-      } else {
+        await refreshMembers();
+      } else if (addMode === "bootcamp") {
+        if (!addBootcampId) { setAddMsg({ ok: false, text: "Select a bootcamp." }); setAddLoading(false); return; }
+        const res = await fetch(`/api/bootcamps/${addBootcampId}/enroll-by-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ email: addEmail.trim() }),
+        });
         const d = await res.json();
-        setAddMsg({ ok: false, text: d.message || "Failed to activate." });
+        if (!res.ok) { setAddMsg({ ok: false, text: d.message || "Failed to enroll." }); setAddLoading(false); return; }
+        setAddMsg({ ok: true, text: d.message || `${user.name || user.email} enrolled in bootcamp.` });
+        setAddEmail(""); setAddBootcampId("");
+        await refreshMembers();
       }
     } catch { setAddMsg({ ok: false, text: "Request failed. Try again." }); }
     setAddLoading(false);
@@ -9610,6 +9649,10 @@ function MembershipAdmin({ token }) {
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setMembers(d); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch("/api/bootcamps", { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setBootcampsList(d); })
+      .catch(() => {});
   }, [token]);
 
   const fmtDate = (v) => {
@@ -9705,37 +9748,87 @@ function MembershipAdmin({ token }) {
           <div className="bg-[#111315] border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white">Add New Member</h3>
-              <button onClick={() => setShowAddMember(false)} className="text-gray-400 hover:text-white text-xs">✕</button>
+              <button onClick={() => { setShowAddMember(false); setAddMsg(null); }} className="text-gray-400 hover:text-white text-xs">✕</button>
             </div>
-            <p className="text-xs text-gray-500">Activate Pro membership for an existing registered user.</p>
+
+            {/* Mode tabs */}
+            <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+              {[["pro","Pro Member"],["bootcamp","Bootcamp"],["student","New Student"]].map(([m,l]) => (
+                <button key={m} onClick={() => { setAddMode(m); setAddMsg(null); }}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${addMode === m ? "bg-[#C7E36B] text-black" : "text-gray-400 hover:text-white"}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
             {addMsg && <div className={`text-xs px-3 py-2.5 rounded-xl border ${addMsg.ok ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}>{addMsg.text}</div>}
-            <div>
-              <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">User Email</label>
-              <input type="email" value={addEmail} onChange={e => setAddEmail(e.target.value)} placeholder="student@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
-            </div>
-            <div>
-              <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Membership Type</label>
-              <div className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-[#C7E36B] font-bold">Pro Membership</div>
-            </div>
-            <div>
-              <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Duration (days)</label>
-              <div className="flex gap-2 flex-wrap mb-2">
-                {[30,90,180,365].map(d => (
-                  <button key={d} type="button" onClick={() => setAddDays(String(d))}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${addDays === String(d) ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-300 hover:bg-white/15"}`}>
-                    {d === 365 ? "1 Year" : d === 180 ? "6 Months" : d === 90 ? "3 Months" : "30 Days"}
-                  </button>
-                ))}
+
+            {/* Pro mode */}
+            {addMode === "pro" && (<>
+              <p className="text-xs text-gray-500">Activate Pro membership for an existing registered user.</p>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">User Email</label>
+                <input type="email" value={addEmail} onChange={e => setAddEmail(e.target.value)} placeholder="student@example.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
               </div>
-              <input type="number" min="1" value={addDays} onChange={e => setAddDays(e.target.value)} placeholder="Custom days"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
-            </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Duration</label>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {[30,90,180,365].map(d => (
+                    <button key={d} type="button" onClick={() => setAddDays(String(d))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${addDays === String(d) ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-300 hover:bg-white/15"}`}>
+                      {d === 365 ? "1 Year" : d === 180 ? "6 Months" : d === 90 ? "3 Months" : "30 Days"}
+                    </button>
+                  ))}
+                </div>
+                <input type="number" min="1" value={addDays} onChange={e => setAddDays(e.target.value)} placeholder="Custom days"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+              </div>
+            </>)}
+
+            {/* Bootcamp mode */}
+            {addMode === "bootcamp" && (<>
+              <p className="text-xs text-gray-500">Enroll an existing user in a bootcamp.</p>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">User Email</label>
+                <input type="email" value={addEmail} onChange={e => setAddEmail(e.target.value)} placeholder="student@example.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Bootcamp</label>
+                <select value={addBootcampId} onChange={e => setAddBootcampId(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#C7E36B]/60 transition-colors">
+                  <option value="">Select bootcamp…</option>
+                  {bootcampsList.map(b => <option key={b._id} value={b._id}>{b.title}</option>)}
+                </select>
+              </div>
+            </>)}
+
+            {/* New Student mode */}
+            {addMode === "student" && (<>
+              <p className="text-xs text-gray-500">Create a new student account manually.</p>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Full Name</label>
+                <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="Student full name"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Email</label>
+                <input type="email" value={addEmail} onChange={e => setAddEmail(e.target.value)} placeholder="student@example.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Password</label>
+                <input type="text" value={addPassword} onChange={e => setAddPassword(e.target.value)} placeholder="Min 6 characters"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+              </div>
+            </>)}
+
             <div className="flex gap-3 pt-1">
-              <button onClick={() => setShowAddMember(false)} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/15 transition-colors">Cancel</button>
+              <button onClick={() => { setShowAddMember(false); setAddMsg(null); }} className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/15 transition-colors">Cancel</button>
               <button onClick={handleAddMember} disabled={addLoading}
                 className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-black hover:bg-[#d4ec85] disabled:opacity-50 transition-colors">
-                {addLoading ? "Activating…" : "Activate Pro"}
+                {addLoading ? "Processing…" : addMode === "pro" ? "Activate Pro" : addMode === "bootcamp" ? "Enroll in Bootcamp" : "Create Student"}
               </button>
             </div>
           </div>
@@ -9749,7 +9842,7 @@ function MembershipAdmin({ token }) {
           <p className="text-sm text-gray-400 mt-1">Manage Membership plan and monitor member activity.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => { setShowAddMember(true); setAddMsg(null); }} className="flex items-center gap-2 bg-[#C7E36B] text-black font-black text-sm px-5 py-2.5 rounded-xl hover:bg-[#d4ec85] transition-all">
+          <button onClick={() => { setShowAddMember(true); setAddMsg(null); setAddMode("pro"); setAddEmail(""); setAddName(""); setAddPassword(""); setAddDays("365"); setAddBootcampId(""); }} className="flex items-center gap-2 bg-[#C7E36B] text-black font-black text-sm px-5 py-2.5 rounded-xl hover:bg-[#d4ec85] transition-all">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New Member
           </button>
