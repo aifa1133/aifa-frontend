@@ -40,5 +40,11 @@ export default function InfluencerAuthGuard() {
     return <Navigate to="/influencer/login" replace state={{ from: location.pathname }} />;
   }
 
+  // Enforce mandatory first-login password change
+  const user = (() => { try { return JSON.parse(localStorage.getItem("influencer_user") || "{}"); } catch { return {}; } })();
+  if (user.mustChangePassword && location.pathname !== "/influencer/change-password") {
+    return <Navigate to="/influencer/change-password" replace />;
+  }
+
   return <Outlet />;
 }

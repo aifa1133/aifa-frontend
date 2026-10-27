@@ -1033,7 +1033,7 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
       let d;
       try { d = await res.json(); } catch { throw new Error("Server returned an unexpected response"); }
       if (!res.ok) throw new Error(d.message || "Could not create influencer");
-      onCreated(`Influencer created. Temp password: ${d.tempPassword}`);
+      onCreated("Influencer created. Welcome email with login details has been sent.");
     } catch (e) { setErr(e.message); }
     setSaving(false);
   };

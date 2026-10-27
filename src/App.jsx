@@ -131,6 +131,7 @@ import InfluencerAuthGuard from "./Components/influencer/InfluencerAuthGuard";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
 import InfluencerReferrals from "./pages/influencer/InfluencerReferrals";
 import InfluencerPayouts from "./pages/influencer/InfluencerPayouts";
+import InfluencerChangePassword from "./pages/influencer/InfluencerChangePassword";
 
 const FULLSCREEN_PATHS = ["/dashboard", "/admin", "/adminlogin", "/login", "/reset-password", "/bootcamp/enroll", "/bootcamp", "/influencer"];
 const DASHBOARD_SECTIONS = ["dashboard","bootcamp","workshops","video-courses","certificates","jobs","resources","community","hire-talent","profile","settings","billing"];
@@ -297,6 +298,7 @@ function AppShell() {
           <Route path="/influencer/login" element={<InfluencerLogin />} />
           <Route path="/influencer" element={<Navigate to="/influencer/login" replace />} />
           <Route element={<InfluencerAuthGuard />}>
+            <Route path="/influencer/change-password" element={<InfluencerChangePassword />} />
             <Route element={<InfluencerLayout />}>
               <Route path="/influencer/dashboard" element={<InfluencerDashboard />} />
               <Route path="/influencer/referrals" element={<InfluencerReferrals />} />

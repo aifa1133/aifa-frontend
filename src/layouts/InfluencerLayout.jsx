@@ -11,6 +11,7 @@ const ICONS = {
   referrals: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
   payouts: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
   logout: "M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z",
+  lock: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
   home: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
   bell: "M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
 };
@@ -110,15 +111,25 @@ export default function InfluencerLayout() {
             </NavLink>
           ))}
 
-          {localStorage.getItem("aifa_token") && (
-            <div className="mt-3 mx-3 border-t border-white/5 pt-3">
+          <div className="mt-3 mx-3 border-t border-white/5 pt-3">
+            <NavLink to="/influencer/change-password"
+              className={({ isActive }) =>
+                `w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all ${
+                  isActive ? "text-[#C7E36B] bg-white/5" : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`
+              }
+            >
+              <I name="lock" size={14} />
+              Change Password
+            </NavLink>
+            {localStorage.getItem("aifa_token") && (
               <button onClick={() => navigate("/dashboard")}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-all mt-0.5">
                 <I name="home" size={14} />
                 Student Dashboard
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </nav>
 
         {/* Logout only at bottom */}
