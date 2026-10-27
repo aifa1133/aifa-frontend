@@ -131,6 +131,8 @@ export default function AdminInfluencers({ token: tokenProp }) {
   const [showAdd, setShowAdd] = useState(false);
   const [resetCouponFor, setResetCouponFor] = useState(null);
   const [resetLinkFor, setResetLinkFor] = useState(null);
+  const [deleteConfirmFor, setDeleteConfirmFor] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState("");
 
   /* ── Payouts state ── */
@@ -750,6 +752,10 @@ export default function AdminInfluencers({ token: tokenProp }) {
                       className="w-full py-3 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 transition-colors">
                       Close
                     </button>
+                    <button onClick={() => setDeleteConfirmFor(detail)}
+                      className="w-full py-3 rounded-xl bg-red-500/10 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-colors border border-red-500/20">
+                      Delete Influencer
+                    </button>
                   </div>
                 </>
               ) : (
@@ -959,6 +965,45 @@ export default function AdminInfluencers({ token: tokenProp }) {
               <button onClick={doResetLink}
                 className="flex-1 py-2.5 rounded-xl bg-[#C7E36B] text-black text-sm font-bold hover:bg-[#d4ec85] transition-colors">
                 Generate New Referral Link
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ DELETE CONFIRM MODAL ═══ */}
+      {deleteConfirmFor && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+          <div className="bg-[#111315] border border-white/10 rounded-2xl p-6 w-full max-w-sm">
+            <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </div>
+            <h3 className="text-white font-bold text-center mb-1">Delete Influencer?</h3>
+            <p className="text-gray-400 text-xs text-center mb-1">You're about to permanently delete</p>
+            <p className="text-white text-sm font-semibold text-center mb-4">"{deleteConfirmFor.fullName}"</p>
+            <p className="text-[11px] text-red-400/80 text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-5">This will permanently remove the influencer account, coupon code, and referral link.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirmFor(null)} className="flex-1 text-xs border border-white/20 text-gray-300 py-2.5 rounded-xl hover:bg-white/5 font-semibold">Cancel</button>
+              <button disabled={deleting} onClick={async () => {
+                setDeleting(true);
+                try {
+                  const res = await fetch(`/api/admin/influencers/${deleteConfirmFor._id}`, { method: "DELETE", headers });
+                  if (res.ok) {
+                    setDeleteConfirmFor(null);
+                    setDetail(null);
+                    setEditing(false);
+                    flash(`${deleteConfirmFor.fullName} deleted.`);
+                    loadList();
+                    loadStats();
+                  } else {
+                    const d = await res.json();
+                    flash(d.message || "Failed to delete.");
+                    setDeleteConfirmFor(null);
+                  }
+                } catch { flash("Network error."); setDeleteConfirmFor(null); }
+                setDeleting(false);
+              }} className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold transition-colors disabled:opacity-60">
+                {deleting ? "Deleting..." : "Delete Permanently"}
               </button>
             </div>
           </div>
