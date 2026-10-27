@@ -49,6 +49,30 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
   const [step, setStep]         = useState(1);
   const pwdRef = useRef(null);
 
+  // Availability check states
+  const [emailStatus, setEmailStatus] = useState(null); // null | "checking" | "available" | "taken"
+  const [phoneStatus, setPhoneStatus] = useState(null);
+
+  const checkEmail = async (val) => {
+    if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { setEmailStatus(null); return; }
+    setEmailStatus("checking");
+    try {
+      const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      setEmailStatus(data.available ? "available" : "taken");
+    } catch { setEmailStatus(null); }
+  };
+
+  const checkPhone = async (val) => {
+    if (!val || val.length < 10) { setPhoneStatus(null); return; }
+    setPhoneStatus("checking");
+    try {
+      const res = await fetch(`/api/auth/check-phone?phone=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      setPhoneStatus(data.available ? "available" : "taken");
+    } catch { setPhoneStatus(null); }
+  };
+
   // Step 1 → send mobile OTP
   const handleContinue = async () => {
     setError("");
@@ -175,15 +199,29 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
           <>
             <input type="text" placeholder="Enter Name" value={name} onChange={e => setName(e.target.value)}
               className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
-            <input type="email" placeholder="Enter Email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white mb-4 outline-none focus:border-[#C7E36B]"/>
-            <div className="flex gap-3 mb-6 w-full min-w-0">
-              <div className="flex items-center border border-white/20 rounded-xl px-4 py-3 text-white shrink-0">+91</div>
-              <input type="text" placeholder="Enter Phone" value={phone} onChange={e => setPhone(e.target.value)}
-                className="min-w-0 flex-1 bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B]"/>
+            <div className="mb-4">
+              <input type="email" placeholder="Enter Email" value={email}
+                onChange={e => { setEmail(e.target.value); setEmailStatus(null); }}
+                onBlur={e => checkEmail(e.target.value)}
+                className={`w-full bg-transparent border rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B] ${emailStatus === "taken" ? "border-red-400" : emailStatus === "available" ? "border-[#C7E36B]" : "border-white/20"}`}/>
+              {emailStatus === "taken" && <p className="text-red-400 text-xs mt-1 pl-1">This email is already registered. <span onClick={onSwitchToLogin} className="text-blue-400 cursor-pointer underline">Log in instead?</span></p>}
+              {emailStatus === "available" && <p className="text-[#C7E36B] text-xs mt-1 pl-1">✓ Email is available</p>}
+              {emailStatus === "checking" && <p className="text-gray-400 text-xs mt-1 pl-1">Checking...</p>}
+            </div>
+            <div className="mb-6 w-full min-w-0">
+              <div className="flex gap-3">
+                <div className="flex items-center border border-white/20 rounded-xl px-4 py-3 text-white shrink-0">+91</div>
+                <input type="text" placeholder="Enter Phone" value={phone}
+                  onChange={e => { setPhone(e.target.value.replace(/\D/g, "")); setPhoneStatus(null); }}
+                  onBlur={e => checkPhone(e.target.value)}
+                  className={`min-w-0 flex-1 bg-transparent border rounded-xl px-4 py-3 text-white outline-none focus:border-[#C7E36B] ${phoneStatus === "taken" ? "border-red-400" : phoneStatus === "available" ? "border-[#C7E36B]" : "border-white/20"}`}/>
+              </div>
+              {phoneStatus === "taken" && <p className="text-red-400 text-xs mt-1 pl-1">This phone number is already registered. <span onClick={onSwitchToLogin} className="text-blue-400 cursor-pointer underline">Log in instead?</span></p>}
+              {phoneStatus === "available" && <p className="text-[#C7E36B] text-xs mt-1 pl-1">✓ Phone number is available</p>}
+              {phoneStatus === "checking" && <p className="text-gray-400 text-xs mt-1 pl-1">Checking...</p>}
             </div>
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-            <button onClick={handleContinue} disabled={loading} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
+            <button onClick={handleContinue} disabled={loading || emailStatus === "taken" || phoneStatus === "taken"} className="w-full bg-[#C7E36B] text-black py-3 rounded-md font-semibold disabled:opacity-60">
               {loading ? "Sending code..." : "+ CONTINUE"}
             </button>
           </>
