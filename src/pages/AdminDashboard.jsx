@@ -9854,14 +9854,11 @@ function MembershipAdmin({ token }) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label:"Total Students",   value: totalMembers,  icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
           { label:"Non-Subscription", value: nonSubCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-2.5 3.6-4.5 8-4.5s8 2 8 4.5"/><line x1="17" y1="13" x2="23" y2="19"/><line x1="23" y1="13" x2="17" y2="19"/></svg> },
           { label:"Bootcamp",         value: bootcampCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
           { label:"Pro Members",      value: proCount,      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 17l2.5-9L9 13l3-9 3 9 4.5-5L22 17H2z"/><path d="M2 17h20"/></svg> },
-          { label:"Video Course",     value: courseCount,   icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> },
-          { label:"Workshop",         value: workshopCount, icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7E36B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.2 6L3 11l-1-2.6C1.7 7.3 2.3 6.2 3.4 5.9L17 1.9c1.1-.3 2.2.3 2.5 1.4z"/><rect x="2" y="13" width="20" height="9" rx="2"/><path d="M6.2 6l1.5 4"/><path d="M12.2 4.4l1.5 4"/></svg> },
         ].map(s => (
           <div key={s.label} className="bg-[#111315] border border-white/10 rounded-2xl p-5 flex items-center gap-4">
             <div className="shrink-0">{s.icon}</div>
@@ -9978,9 +9975,7 @@ function MembershipAdmin({ token }) {
                 <div className="flex flex-col gap-1">
                   {isPro(m)      && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-[#C7E36B]/15 text-[#C7E36B] border border-[#C7E36B]/30">Pro</span>}
                   {isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-blue-500/15 text-blue-300 border border-blue-500/30">Bootcamp</span>}
-                  {isWorkshop(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-purple-500/15 text-purple-300 border border-purple-500/30">Workshop</span>}
-                  {isCourse(m)   && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-orange-500/15 text-orange-300 border border-orange-500/30">Course</span>}
-                  {!isPro(m) && !isBootcamp(m) && !isWorkshop(m) && !isCourse(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/10">Other</span>}
+                  {!isPro(m) && !isBootcamp(m) && <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/10">Other</span>}
                 </div>
                 {/* Status */}
                 <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-md w-fit ${STATUS_BADGE[getStatus(m)] || "bg-white/10 text-gray-300"}`}>{getStatus(m)}</span>
