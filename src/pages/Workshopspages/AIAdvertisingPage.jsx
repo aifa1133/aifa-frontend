@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import VideoSection from "../Bootcamp/Videosection";
+import WhatYouWillCreate from "../../Components/WhatYouWillCreate";
 import StudentSuccessStories from "../../Components/Studentsucessstories";
 
 import { useState } from "react";
@@ -329,139 +330,7 @@ export default function AIAdvertisingPage() {
         </div>
       </section>
 
-      <section className="w-full bg-[#0F1112]">
-        <div
-          className="
-      max-w-[1366px]
-      mx-auto
-
-      px-[16px]
-      sm:px-[24px]
-      md:px-[50px]
-      lg:px-[93px]
-
-      py-[64px]
-
-      flex
-      flex-col
-      items-center
-      gap-[32px]
-    "
-        >
-          {/* Heading */}
-          <div className="text-center max-w-[700px] mx-auto">
-            <h2
-              className="
-          text-white
-          font-black
-          text-[34px]
-          leading-[42px]
-          sm:text-[46px]
-          sm:leading-[54px]
-          lg:text-[54px]
-          lg:leading-[70px]
-          tracking-[-1px]
-        "
-            >
-              What You Will CREATE
-            </h2>
-
-            <p
-              className="
-          mt-5
-          text-[#9FA2A4]
-          text-[15px]
-          md:text-[18px]
-          leading-7
-        "
-            >
-              By the end of this workshop, you'll create real AI-powered
-              advertising projects.
-            </p>
-          </div>
-
-          {/* Content */}
-          <div className="mt-16 flex flex-col-reverse lg:flex-row items-center justify-between gap-14">
-            {/* Left */}
-            <div className="w-full lg:max-w-[360px] text-center lg:text-left">
-              <span
-                className="
-            text-[#CFCFCF]
-            uppercase
-            font-bold
-            text-[14px]
-            tracking-wider
-          "
-              >
-                Project
-              </span>
-
-              <h3
-                className="
-            mt-3
-            text-white
-            font-black
-            text-[34px]
-            leading-[42px]
-            md:text-[42px]
-            md:leading-[48px]
-          "
-              >
-                AI Product Advertisement
-              </h3>
-            </div>
-
-            {/* Right Image */}
-            <div className="w-full lg:max-w-[760px]">
-              <img
-                src="/adverise.png"
-                alt="AI Short Film"
-                className="
-            w-full
-            h-auto
-            rounded-[48px]
-            object-cover
-            shadow-2xl
-          "
-              />
-            </div>
-          </div>
-
-          {/* Button */}
-          <div className="flex justify-center mt-[48px]">
-            <button
-              type="button"
-              className="
-      flex
-      h-[48px]
-      px-[30px]
-      py-[12px]
-      justify-center
-      items-center
-      gap-[4px]
-
-      rounded-[8px]
-
-      bg-[#D0E46A]
-      hover:bg-[#BDD253]
-
-      text-[#0F1112]
-      font-[Montserrat]
-      text-[14px]
-      leading-[28px]
-      font-extrabold
-      uppercase
-
-      transition-all
-      duration-300
-      cursor-pointer
-    "
-            >
-              I WANT TO CREATE THIS
-            </button>
-          </div>
-        </div>
-      </section>
+      <WhatYouWillCreate />
 
       <section className="w-full bg-[#0F1112]">
         <div className="max-w-[1366px] mx-auto px-4 sm:px-6 md:px-[50px] lg:px-[93px] py-16">
