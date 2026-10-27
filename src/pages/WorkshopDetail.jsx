@@ -51,7 +51,7 @@ const getYouTubeId = (url = "") => {
 /* ── Normalise any Vimeo URL to a player embed URL ── */
 const toVimeoEmbed = (url = "") => {
   const m = url.match(/vimeo\.com\/(?:video\/|manage\/videos\/)?(\d+)/);
-  return m ? `https://player.vimeo.com/video/${m[1]}` : null;
+  return m ? `https://player.vimeo.com/video/${m[1]}?badge=0&autopause=0&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0` : null;
 };
 
 /* ── YouTube preview — full playback, no lock ── */
