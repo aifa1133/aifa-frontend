@@ -2129,7 +2129,7 @@ function WorkshopsAdmin({ token }) {
 
   const loadWorkshops = () => {
     setLoading(true);
-    fetch("/api/workshops", { headers:{ Authorization:`Bearer ${token}` } })
+    fetch("/api/workshops?all=true", { headers:{ Authorization:`Bearer ${token}` } })
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);

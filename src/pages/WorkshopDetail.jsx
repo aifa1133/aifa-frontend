@@ -967,13 +967,26 @@ export default function WorkshopDetail() {
           </div>
         )}
 
-        {/* VIDEO PREVIEW — Vimeo default, YouTube teaser if set */}
+        {/* VIDEO PREVIEW — YouTube player, custom URL iframe, or default Vimeo */}
         {workshop.previewVideoUrl && getYouTubeId(workshop.previewVideoUrl) ? (
           <WorkshopVideoPreview
             url={workshop.previewVideoUrl}
             workshopId={id}
             onEnroll={() => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } })}
           />
+        ) : workshop.previewVideoUrl ? (
+          <div className="-mx-4 sm:-mx-6 mb-8">
+            <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
+              <iframe
+                src={workshop.previewVideoUrl}
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
+                title="Workshop Preview"
+              />
+            </div>
+          </div>
         ) : (
           <div className="-mx-4 sm:-mx-6 mb-8">
             <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
