@@ -48,6 +48,12 @@ const getYouTubeId = (url = "") => {
   return m ? m[1] : null;
 };
 
+/* ── Normalise any Vimeo URL to a player embed URL ── */
+const toVimeoEmbed = (url = "") => {
+  const m = url.match(/vimeo\.com\/(?:video\/|manage\/videos\/)?(\d+)/);
+  return m ? `https://player.vimeo.com/video/${m[1]}` : null;
+};
+
 /* ── YouTube preview — full playback, no lock ── */
 function WorkshopVideoPreview({ url, workshopId }) {
   const videoId = getYouTubeId(url);
@@ -967,40 +973,29 @@ export default function WorkshopDetail() {
           </div>
         )}
 
-        {/* VIDEO PREVIEW — YouTube player, custom URL iframe, or default Vimeo */}
-        {workshop.previewVideoUrl && getYouTubeId(workshop.previewVideoUrl) ? (
-          <WorkshopVideoPreview
-            url={workshop.previewVideoUrl}
-            workshopId={id}
-            onEnroll={() => navigate(`/workshops/${id}/pay`, { state: { workshopData: workshop } })}
-          />
-        ) : workshop.previewVideoUrl ? (
-          <div className="-mx-4 sm:-mx-6 mb-8">
-            <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
-              <iframe
-                src={workshop.previewVideoUrl}
-                frameBorder="0"
-                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
-                title="Workshop Preview"
-              />
+        {/* VIDEO PREVIEW — YouTube, Vimeo (auto-normalised), or no video */}
+        {(() => {
+          const ytId = getYouTubeId(workshop.previewVideoUrl || "");
+          const vimeoUrl = !ytId ? toVimeoEmbed(workshop.previewVideoUrl || "") : null;
+          const embedSrc = ytId
+            ? `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`
+            : vimeoUrl || null;
+          if (!embedSrc) return null;
+          return (
+            <div className="-mx-4 sm:-mx-6 mb-8">
+              <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
+                <iframe
+                  src={embedSrc}
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
+                  title="Workshop Preview"
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="-mx-4 sm:-mx-6 mb-8">
-            <div className="rounded-none sm:rounded-2xl overflow-hidden" style={{padding:"56.25% 0 0 0", position:"relative"}}>
-              <iframe
-                src="https://player.vimeo.com/video/1237277724?badge=0&autopause=0&player_id=0&app_id=58479&loop=1&autoplay=1&muted=1&title=0&byline=0&portrait=0"
-                frameBorder="0"
-                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                style={{position:"absolute",top:0,left:0,width:"100%",height:"100%"}}
-                title="Workshop Preview"
-              />
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* WHAT YOU WILL LEARN */}
