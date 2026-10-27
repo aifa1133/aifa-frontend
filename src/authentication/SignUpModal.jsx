@@ -168,13 +168,25 @@ export default function SignUpModal({ onClose, onSwitchToLogin }) {
     if (!termsChecked) { setError("Please agree to the Terms and Privacy Policy."); return; }
     setLoading(true);
     try {
+      // Read 30-day referral from localStorage
+      let referralCode = null;
+      try {
+        const stored = localStorage.getItem("aifa_referral");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.expiry > Date.now()) referralCode = parsed.ref;
+          else localStorage.removeItem("aifa_referral");
+        }
+      } catch {}
+
       const res = await fetch("/api/auth/signup", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password }),
+        body: JSON.stringify({ name, email, phone, password, ...(referralCode && { referralCode }) }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.message || "Signup failed.");
       else {
+        localStorage.removeItem("aifa_referral"); // clear after use
         localStorage.setItem("aifa_token", data.token);
         localStorage.setItem("aifa_user", JSON.stringify({ name: data.name, _id: data._id, role: data.role, emailVerified: true }));
         onClose();

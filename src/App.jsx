@@ -217,17 +217,34 @@ function AppShell() {
       .catch(() => {});
   }, []);
 
-  // Auto-open signup when ?ref= is in the URL (influencer referral link)
+  // Referral link tracking — store for 30 days, track click, link if logged in
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const ref = params.get("ref");
-    if (ref) {
-      sessionStorage.setItem("aifa_referral", ref);
-      const isLoggedIn = !!localStorage.getItem("aifa_token");
-      if (!isLoggedIn && !isFullScreen) {
-        setShowLogin(false);
-        setShowSignup(true);
-      }
+    if (!ref) return;
+
+    // Store with 30-day expiry
+    const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    try { localStorage.setItem("aifa_referral", JSON.stringify({ ref, expiry })); } catch {}
+
+    // Track the click server-side (fire and forget)
+    fetch("/api/auth/track-referral-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ref }),
+    }).catch(() => {});
+
+    const token = localStorage.getItem("aifa_token");
+    if (token) {
+      // Logged-in user — link referral to their account
+      fetch("/api/auth/link-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ref }),
+      }).catch(() => {});
+    } else if (!isFullScreen) {
+      setShowLogin(false);
+      setShowSignup(true);
     }
   }, [location.search, isFullScreen]);
 

@@ -57,12 +57,13 @@ export default function InfluencerDashboard() {
       )}
 
       {/* STAT CARDS — no icons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
         {[
           { label: "Total Earnings", value: loading ? "—" : money(stats?.totalEarnings) },
           { label: `Coupon Earnings (${couponRate}%)`, value: loading ? "—" : money(stats?.couponEarnings) },
           { label: `Referral Link Earnings (${referralRate}%)`, value: loading ? "—" : money(stats?.referralLinkEarnings) },
           { label: "Pending Payout", value: loading ? "—" : money(stats?.pendingPayout) },
+          { label: "Total Link Clicks", value: loading ? "—" : (stats?.linkClicks ?? 0).toLocaleString() },
         ].map((c) => (
           <div key={c.label} className="bg-[#0F1112] border border-white/10 rounded-2xl p-5">
             <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{c.label}</p>

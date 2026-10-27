@@ -718,6 +718,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
                         { label: "Lifetime Earnings", value: money(detail.lifetimeEarnings) },
                         { label: "Pending Approval", value: money(detail.pendingApproval) },
                         { label: "Pending Payment", value: money(detail.pendingCommission) },
+                        { label: "Link Clicks", value: (detail.linkClicks ?? 0).toLocaleString() },
                       ].map(({ label, value }) => (
                         <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-4">
                           <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">{label}</p>
