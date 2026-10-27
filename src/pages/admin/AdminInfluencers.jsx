@@ -1088,7 +1088,7 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
                       try {
                         const fd = new FormData();
                         fd.append("image", file);
-                        const tok = localStorage.getItem("aifa_token");
+                        const tok = localStorage.getItem("aifa_admin_token") || localStorage.getItem("aifa_token");
                         const r = await fetch("/api/uploads/image", { method: "POST", headers: { Authorization: `Bearer ${tok}` }, body: fd });
                         const d = await r.json();
                         if (!r.ok) throw new Error(d.message || "Upload failed");
