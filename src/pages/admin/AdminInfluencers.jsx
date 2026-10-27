@@ -973,7 +973,7 @@ export default function AdminInfluencers({ token: tokenProp }) {
 
       {/* ═══ DELETE CONFIRM MODAL ═══ */}
       {deleteConfirmFor && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 bg-black/70 z-[300] flex items-center justify-center px-4">
           <div className="bg-[#111315] border border-white/10 rounded-2xl p-6 w-full max-w-sm">
             <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
