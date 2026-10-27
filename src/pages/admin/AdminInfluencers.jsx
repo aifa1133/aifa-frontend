@@ -1048,7 +1048,7 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
   const [f, setF] = useState({
     fullName: "", email: "", phone: "", password: "", country: "", city: "", profilePhoto: "",
     instagram: "", youtube: "", linkedin: "", otherSocial: "",
-    couponCode: "", couponCommissionRate: 10, referralCommissionRate: 30,
+    couponCode: "", referralSlug: "", couponCommissionRate: 10, referralCommissionRate: 30,
     bankAccountHolder: "", bankName: "", bankAccountNumber: "", bankIFSC: "", upiId: "",
   });
   const [saving, setSaving] = useState(false);
@@ -1073,8 +1073,14 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
     if (f.city && /[^a-zA-Z\s]/.test(f.city)) { setErr("City name must contain only letters"); return; }
     setSaving(true); setErr("");
     try {
+      const slug = (f.referralSlug || baseName.toLowerCase()).replace(/[^a-z0-9]/g, "");
+      const payload = {
+        ...f,
+        couponCode: (f.couponCode || autoCode).trim(),
+        ...(slug && { referralSlug: slug }),
+      };
       const res = await fetch("/api/admin/influencers", {
-        method: "POST", headers, body: JSON.stringify({ ...f, couponCode: f.couponCode.trim() }),
+        method: "POST", headers, body: JSON.stringify(payload),
       });
       let d;
       try { d = await res.json(); } catch { throw new Error("Server returned an unexpected response"); }
@@ -1233,43 +1239,54 @@ function AddInfluencerModal({ headers, onClose, onCreated }) {
             <h4 className="text-sm font-bold text-white mb-4">Commission Settings</h4>
 
             {/* Coupon Code card */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-3">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="text-xs font-semibold text-white">Coupon Code</p>
-                  <p className="text-[10px] text-gray-500">Auto generated on account creation</p>
-                </div>
-                <button onClick={() => setCouponSuffix((n) => n + 1)}
-                  className="text-[11px] font-bold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition-colors shrink-0">
-                  Generate Again
+            {/* Coupon Code — editable */}
+            <div>
+              <label className="block text-xs font-semibold text-white mb-1.5">Coupon Code</label>
+              <div className="flex gap-2">
+                <input
+                  value={f.couponCode || autoCode}
+                  onChange={e => set("couponCode")(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none focus:border-[#C7E36B]/60 uppercase"
+                  placeholder={autoCode}
+                />
+                <button type="button" onClick={() => { setCouponSuffix((n) => n + 1); set("couponCode")(""); }}
+                  className="text-[11px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl transition-colors shrink-0">
+                  Auto
                 </button>
               </div>
-              <div className="bg-white/5 border border-white/8 rounded-lg px-3 py-2 flex items-center justify-between">
-                <span className="text-sm font-black text-white">{displayCode}</span>
-                <span className="text-[10px] text-gray-500">Unique code</span>
+            </div>
+
+            {/* Referral Link slug — editable */}
+            <div>
+              <label className="block text-xs font-semibold text-white mb-1.5">Referral Link Slug</label>
+              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden focus-within:border-[#C7E36B]/60">
+                <span className="text-[11px] text-gray-500 pl-3 pr-1 shrink-0">https://aifa.ai/?ref=</span>
+                <input
+                  value={f.referralSlug || baseName.toLowerCase()}
+                  onChange={e => set("referralSlug")(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))}
+                  className="flex-1 bg-transparent py-2.5 pr-3 text-sm text-white outline-none"
+                  placeholder={baseName.toLowerCase()}
+                />
               </div>
             </div>
 
-            {/* Referral Link card */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-3">
-              <p className="text-xs font-semibold text-white mb-0.5">Referral Link</p>
-              <p className="text-[10px] text-gray-500 mb-2">Auto generated and read only</p>
-              <div className="bg-white/5 border border-white/8 rounded-lg px-3 py-2">
-                <span className="text-[11px] text-gray-300 break-all">{autoLink}</span>
-              </div>
-            </div>
-
-            {/* Commission rate cards — read only */}
+            {/* Commission rates — editable */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Coupon Commission</p>
-                <p className="text-xl font-black text-white">{f.couponCommissionRate}%</p>
-                <p className="text-[10px] text-gray-500 mt-1">Read only</p>
+              <div>
+                <label className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Coupon Commission %</label>
+                <input type="number" min="0" max="100"
+                  value={f.couponCommissionRate}
+                  onChange={e => set("couponCommissionRate")(Number(e.target.value))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-lg font-black outline-none focus:border-[#C7E36B]/60"
+                />
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Referral Link Commission</p>
-                <p className="text-xl font-black text-white">{f.referralCommissionRate}%</p>
-                <p className="text-[10px] text-gray-500 mt-1">Read only</p>
+              <div>
+                <label className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Referral Commission %</label>
+                <input type="number" min="0" max="100"
+                  value={f.referralCommissionRate}
+                  onChange={e => set("referralCommissionRate")(Number(e.target.value))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-lg font-black outline-none focus:border-[#C7E36B]/60"
+                />
               </div>
             </div>
           </section>
