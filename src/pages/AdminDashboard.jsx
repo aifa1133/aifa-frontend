@@ -11975,6 +11975,8 @@ function PromptsAdmin({ token }) {
 /* ── WEBSITE MANAGEMENT ADMIN ── */
 const BADGE_OPTIONS = ["AI CHAT","VIDEO","SEARCH","IMAGE","MUSIC","VOICE","3D / VIDEO","CONTENT","ENHANCE"];
 const EMPTY_TOOL = { name:"", badge:"AI CHAT", desc:"", logoUrl:"", logoText:"", bgColor:"from-[#6366f1]/20 to-[#4338ca]/10", isActive:true };
+const EMPTY_CI = { label:"PROJECT", title:"AI SHORT FILM", subtitle:"By the end of this workshop, you'll build real AI filmmaking projects.", image:"/airplane1.png", workshopType:"all", isActive:true, order:0 };
+const WORKSHOP_TYPES = ["all","AI Filmmaking","AI Animation","AI Advertising","AI Content Creation"];
 
 function WebsiteManagementAdmin({ token }) {
   const [tools, setTools]         = useState([]);
@@ -11988,6 +11990,18 @@ function WebsiteManagementAdmin({ token }) {
   const [logoUploadPct, setLogoUploadPct] = useState(0);
   const logoFileRef = useRef(null);
 
+  // Creation Items state
+  const [ciItems, setCiItems]         = useState([]);
+  const [ciLoading, setCiLoading]     = useState(true);
+  const [ciForm, setCiForm]           = useState(EMPTY_CI);
+  const [ciEditId, setCiEditId]       = useState(null);
+  const [ciShowForm, setCiShowForm]   = useState(false);
+  const [ciSaving, setCiSaving]       = useState(false);
+  const [ciMsg, setCiMsg]             = useState(null);
+  const [ciImgUploading, setCiImgUploading] = useState(false);
+  const [ciImgPct, setCiImgPct]       = useState(0);
+  const ciImgRef = useRef(null);
+
   const load = () => {
     setLoading(true);
     fetch("/api/tools", { headers: { Authorization: `Bearer ${token}` } })
@@ -11995,7 +12009,19 @@ function WebsiteManagementAdmin({ token }) {
       .catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  const loadCi = () => {
+    setCiLoading(true);
+    fetch("/api/creation-items?all=true", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => {
+        const arr = Array.isArray(d) ? d : [];
+        setCiItems(arr);
+        if (arr[0]) { const it = arr[0]; setCiForm({ label:it.label||"PROJECT", title:it.title||"", subtitle:it.subtitle||"", image:it.image||"", workshopType:it.workshopType||"all", isActive:it.isActive, order:it.order||0 }); setCiEditId(it._id); }
+        setCiLoading(false);
+      })
+      .catch(() => setCiLoading(false));
+  };
+
+  useEffect(() => { load(); loadCi(); }, []);
 
   const openNew  = () => { setForm(EMPTY_TOOL); setEditId(null); setShowForm(true); setMsg(null); };
   const openEdit = (t) => { setForm({ name:t.name, badge:t.badge, desc:t.desc, logoUrl:t.logoUrl||"", logoText:t.logoText||"", bgColor:t.bgColor||"", isActive:t.isActive }); setEditId(t._id); setShowForm(true); setMsg(null); };
@@ -12034,6 +12060,46 @@ function WebsiteManagementAdmin({ token }) {
       setForm(f => ({ ...f, logoUrl: d.url || "" }));
     } catch { setMsg({ ok:false, text:"Image upload failed." }); }
     setLogoUploading(false);
+  };
+
+  // Creation Items helpers
+  const ciOpenNew  = () => { setCiForm(EMPTY_CI); setCiEditId(null); setCiShowForm(true); setCiMsg(null); };
+  const ciOpenEdit = (it) => { setCiForm({ label:it.label||"PROJECT", title:it.title, subtitle:it.subtitle||"", image:it.image||"", workshopType:it.workshopType||"all", isActive:it.isActive, order:it.order||0 }); setCiEditId(it._id); setCiShowForm(true); setCiMsg(null); };
+
+  const ciSave = async () => {
+    if (!ciForm.title.trim()) { setCiMsg({ ok:false, text:"Title is required." }); return; }
+    setCiSaving(true);
+    try {
+      const url = ciEditId ? `/api/creation-items/${ciEditId}` : "/api/creation-items";
+      const method = ciEditId ? "PUT" : "POST";
+      const res = await fetch(url, { method, headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body: JSON.stringify(ciForm) });
+      const data = await res.json();
+      if (res.ok) { setCiMsg({ ok:true, text: ciEditId ? "Saved!" : "Created!" }); loadCi(); setTimeout(() => setCiMsg(null), 2000); }
+      else setCiMsg({ ok:false, text: data.message || "Failed." });
+    } catch { setCiMsg({ ok:false, text:"Network error." }); }
+    setCiSaving(false);
+  };
+
+  const ciToggleActive = async (it) => {
+    await fetch(`/api/creation-items/${it._id}`, { method:"PUT", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body: JSON.stringify({ isActive: !it.isActive }) });
+    setCiItems(arr => arr.map(x => x._id === it._id ? { ...x, isActive: !x.isActive } : x));
+  };
+
+  const ciDelete = async (id) => {
+    if (!window.confirm("Delete this item?")) return;
+    await fetch(`/api/creation-items/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    loadCi();
+  };
+
+  const ciUploadImg = async (file) => {
+    if (!file) return;
+    setCiImgUploading(true); setCiImgPct(0);
+    const fd = new FormData(); fd.append("image", file);
+    try {
+      const d = await uploadXHR("/api/uploads/image", fd, token, pct => setCiImgPct(pct));
+      setCiForm(f => ({ ...f, image: d.url || "" }));
+    } catch { setCiMsg({ ok:false, text:"Image upload failed." }); }
+    setCiImgUploading(false);
   };
 
   return (
@@ -12094,6 +12160,104 @@ function WebsiteManagementAdmin({ token }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* What You Will CREATE Section — split panel */}
+      <div className="bg-[#111315] border border-white/10 rounded-2xl p-5 mb-6">
+        <div className="mb-5">
+          <h2 className="text-white font-bold text-base">What You Will CREATE</h2>
+          <p className="text-gray-400 text-xs mt-0.5">Shown on all workshop pages. Edit left, preview updates live on the right.</p>
+        </div>
+
+        {ciLoading ? (
+          <p className="text-gray-500 text-sm text-center py-8">Loading…</p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* LEFT — Form */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider block mb-1.5">Label</label>
+                <input value={ciForm.label} onChange={e=>setCiForm(f=>({...f,label:e.target.value}))} placeholder="PROJECT"
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50 transition-colors" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider block mb-1.5">Title *</label>
+                <input value={ciForm.title} onChange={e=>setCiForm(f=>({...f,title:e.target.value}))} placeholder="e.g. AI SHORT FILM"
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50 transition-colors" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider block mb-1.5">Subtitle <span className="text-gray-600 normal-case font-normal">(shown below section heading)</span></label>
+                <input value={ciForm.subtitle} onChange={e=>setCiForm(f=>({...f,subtitle:e.target.value}))} placeholder="By the end of this workshop, you'll build real AI filmmaking projects."
+                  className="w-full bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50 transition-colors" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider block mb-1.5">Image</label>
+                <div className="flex gap-2">
+                  <input value={ciForm.image} onChange={e=>setCiForm(f=>({...f,image:e.target.value}))} placeholder="Paste URL or upload →"
+                    className="flex-1 bg-[#0B0F10] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#C7E36B]/50 transition-colors" />
+                  <button type="button" onClick={() => ciImgRef.current?.click()} disabled={ciImgUploading}
+                    className="shrink-0 flex items-center gap-1.5 bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-white/10 transition-all disabled:opacity-50 whitespace-nowrap">
+                    {ciImgUploading ? `${ciImgPct}%` : <><I name="upload" size={12}/> Upload</>}
+                  </button>
+                  <input ref={ciImgRef} type="file" accept="image/*" className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden"
+                    onChange={e => ciUploadImg(e.target.files?.[0])} />
+                </div>
+              </div>
+              <div className="flex items-center gap-4 pt-1">
+                {ciMsg && <p className={`text-xs font-semibold flex-1 ${ciMsg.ok?"text-[#C7E36B]":"text-red-400"}`}>{ciMsg.text}</p>}
+                <button onClick={ciSave} disabled={ciSaving}
+                  className="ml-auto bg-[#C7E36B] text-black text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-lime-300 transition-all disabled:opacity-60 whitespace-nowrap">
+                  {ciSaving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+
+            {/* RIGHT — Live Preview */}
+            <div className="bg-[#0B0F10] rounded-2xl overflow-hidden border border-white/5 flex flex-col">
+              <div className="px-3 py-2 border-b border-white/5 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/60"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500/60"></span>
+                <span className="text-[10px] text-gray-600 ml-2">Preview — workshop page</span>
+              </div>
+              <div className="flex-1 p-6 flex flex-col">
+                {/* Section heading */}
+                <div className="text-center mb-6">
+                  <h3 className="text-white font-black text-xl leading-tight">What You Will <span className="text-white">CREATE</span></h3>
+                  <p className="text-gray-500 text-xs mt-1.5 leading-relaxed">
+                    {ciForm.subtitle || "By the end of this workshop, you'll build real AI filmmaking projects."}
+                  </p>
+                </div>
+                {/* Content row */}
+                <div className="flex items-center gap-4 flex-1">
+                  {/* Left text */}
+                  <div className="shrink-0 w-[40%]">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                      {ciForm.label || "PROJECT"}
+                    </p>
+                    <p className="text-white font-black text-lg leading-tight uppercase">
+                      {ciForm.title || "AI SHORT FILM"}
+                    </p>
+                  </div>
+                  {/* Right image */}
+                  <div className="flex-1 rounded-xl overflow-hidden bg-white/5 aspect-video flex items-center justify-center">
+                    {ciForm.image ? (
+                      <img src={ciForm.image} alt="preview" className="w-full h-full object-cover" onError={e=>e.target.style.display="none"} />
+                    ) : (
+                      <p className="text-gray-600 text-xs">No image yet</p>
+                    )}
+                  </div>
+                </div>
+                {/* CTA button preview */}
+                <div className="mt-5 flex justify-center">
+                  <div className="bg-[#C7E36B] text-black text-[10px] font-bold px-5 py-2 rounded-full tracking-wider">
+                    I WANT TO CREATE THIS
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
