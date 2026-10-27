@@ -274,7 +274,7 @@ function AppShell() {
           <Route path="/clubs" element={<Clubs />} />
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/awards" element={<Awards />} />
-          <Route path="/dashboard" element={<Navigate to="/dashboard/dashboard" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/dashboard/home" replace />} />
           <Route path="/dashboard/:section" element={<StudentDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/adminlogin" element={<AdminLogin />} />

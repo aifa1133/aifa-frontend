@@ -111,7 +111,7 @@ const Ic = ({ name, size = 18, className = "" }) => (
 
 /* ─── NAV ITEMS ─── */
 const NAV = [
-  { id: "dashboard",    label: "Dashboard",    icon: "dashboard" },
+  { id: "home",         label: "Dashboard",    icon: "dashboard" },
   { id: "bootcamp",     label: "Bootcamp",     icon: "bootcamp"  },
   { id: "workshops",    label: "Workshops",    icon: "workshop"  },
   { id: "video-courses",label: "Video Courses",icon: "video"     },
@@ -128,7 +128,7 @@ const NAV = [
 ════════════════════════════════════════════ */
 export default function StudentDashboard() {
   const { section } = useParams();
-  const activePage = section || "dashboard";
+  const activePage = section || "home";
   const navigate = useNavigate();
   const mainRef = useRef(null);
   const { price: membershipPrice, originalPrice: membershipOrig } = useMembershipPrice();
@@ -415,7 +415,7 @@ export default function StudentDashboard() {
             <InvoiceView item={invoiceItem} onBack={() => setInvoiceItem(null)} profile={profile} />
           ) : (
             <>
-              {activePage === "dashboard" && <DashboardHome profile={profile} token={token} onNavigate={navigateTo} />}
+              {activePage === "home" && <DashboardHome profile={profile} token={token} onNavigate={navigateTo} />}
               {activePage === "bootcamp" && <BootcampSection token={token} profile={profile} />}
               {activePage === "workshops" && <WorkshopsSection token={token} />}
               {activePage === "video-courses" && <VideoCoursesSection profile={profile} onNavigate={navigateTo} onScrollTop={() => mainRef.current?.scrollTo({ top: 0, behavior: "instant" })} />}
