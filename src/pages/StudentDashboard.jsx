@@ -260,7 +260,7 @@ export default function StudentDashboard() {
         </div>
         {/* Nav */}
         <nav className="flex-1 py-3 px-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {NAV.map(item => (
+          {NAV.filter(item => item.id !== "bootcamp" || (profile?.enrolledBootcamps?.length > 0)).map(item => (
             <button
               key={item.id}
               onClick={() => !item.soon && navigateTo(item.id)}

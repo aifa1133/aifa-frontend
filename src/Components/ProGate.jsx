@@ -6,7 +6,11 @@ import { useNavigate } from "react-router-dom";
 function readIsPro() {
   try {
     const user = JSON.parse(localStorage.getItem("aifa_user") || "null");
-    return !!(user?.isPro || user?.role === "admin");
+    if (!user) return false;
+    if (user.role === "admin") return true;
+    if (!user.isPro) return false;
+    if (user.proExpiry && new Date(user.proExpiry) < new Date()) return false;
+    return true;
   } catch {
     return false;
   }

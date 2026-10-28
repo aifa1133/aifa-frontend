@@ -9632,7 +9632,7 @@ function MembershipAdmin({ token }) {
         const res = await fetch(`/api/bootcamps/${addBootcampId}/enroll-by-email`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ email: addEmail.trim() }),
+          body: JSON.stringify({ email: addEmail.trim(), durationDays: parseInt(addDays) || 365 }),
         });
         const d = await res.json();
         if (!res.ok) { setAddMsg({ ok: false, text: d.message || "Failed to enroll." }); setAddLoading(false); return; }
@@ -9788,7 +9788,7 @@ function MembershipAdmin({ token }) {
 
             {/* Bootcamp mode */}
             {addMode === "bootcamp" && (<>
-              <p className="text-xs text-gray-500">Enroll an existing user in a bootcamp.</p>
+              <p className="text-xs text-gray-500">Enroll an existing user in a bootcamp and grant general platform access for the selected duration.</p>
               <div>
                 <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">User Email</label>
                 <input type="email" value={addEmail} onChange={e => setAddEmail(e.target.value)} placeholder="student@example.com"
@@ -9801,6 +9801,20 @@ function MembershipAdmin({ token }) {
                   <option value="">Select bootcamp…</option>
                   {bootcampsList.map(b => <option key={b._id} value={b._id}>{b.title}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 font-semibold mb-1.5">Membership Duration</label>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {[30,90,180,365].map(d => (
+                    <button key={d} type="button" onClick={() => setAddDays(String(d))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${addDays === String(d) ? "bg-[#C7E36B] text-black" : "bg-white/10 text-gray-300 hover:bg-white/15"}`}>
+                      {d === 365 ? "1 Year" : d === 180 ? "6 Months" : d === 90 ? "3 Months" : "30 Days"}
+                    </button>
+                  ))}
+                </div>
+                <input type="number" min="1" value={addDays} onChange={e => setAddDays(e.target.value)} placeholder="Custom days"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#C7E36B]/60 transition-colors" />
+                <p className="text-[10px] text-gray-600 mt-1">Bootcamp recordings remain accessible for lifetime. General features (Jobs, Community, etc.) expire after this period.</p>
               </div>
             </>)}
 
