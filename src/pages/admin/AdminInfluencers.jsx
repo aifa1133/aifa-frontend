@@ -793,7 +793,6 @@ export default function AdminInfluencers({ token: tokenProp }) {
                     <Field label="Account Number" value={editForm.bankAccountNumber} onChange={(v) => setEditForm({ ...editForm, bankAccountNumber: v })} />
                     <Field label="IFSC" value={editForm.bankIFSC} onChange={(v) => setEditForm({ ...editForm, bankIFSC: v })} />
                     <Field label="UPI ID" value={editForm.upiId} onChange={(v) => setEditForm({ ...editForm, upiId: v })} />
-                    <PasswordField label="New Password (optional)" value={editForm.password} onChange={(v) => setEditForm({ ...editForm, password: v })} placeholder="Min 6 characters" />
                   </div>
 
                   <div className="flex gap-3 pt-2">
