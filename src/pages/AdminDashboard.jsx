@@ -2133,7 +2133,7 @@ function WorkshopsAdmin({ token }) {
       .then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setWorkshops(d); setLoading(false); }).catch(()=>setLoading(false));
   };
   useEffect(loadWorkshops, [token]);
-  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", originalPrice:"", mode:"ONLINE", trainer:"", seats:50, date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"" });
+  const [cf, setCf] = useState({ title:"", shortDesc:"", duration:"35 Hours", price:"USD 999", originalPrice:"", mode:"ONLINE", trainer:"", seats:50, date:"", time:"", timezone:"", previewVideoUrl:"", published:true, ctaText:"Reserve Spot", ctaType:"external", ctaUrl:"", image:"", zoomLink:"", createLabel:"PROJECT", createTitle:"", createSubtitle:"", createImage:"" });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -2151,7 +2151,8 @@ function WorkshopsAdmin({ token }) {
       dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
       timeStr = `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
     }
-    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), originalPrice:w.originalPrice!=null?String(w.originalPrice):"", mode:w.mode||"ONLINE", trainer:w.trainer||"", seats:w.seats||50, date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"" });
+    const p0 = w.projects?.[0] || {};
+    setCf({ title:w.title||"", shortDesc:w.description||"", duration:w.duration||"35 Hours", price:String(w.price||999), originalPrice:w.originalPrice!=null?String(w.originalPrice):"", mode:w.mode||"ONLINE", trainer:w.trainer||"", seats:w.seats||50, date:dateStr, time:timeStr, timezone:"", previewVideoUrl:w.previewVideoUrl||"", published:!!w.isPublished, ctaText:w.ctaText||"Reserve Spot", ctaType:(w.ctaType||"EXTERNAL").toLowerCase(), ctaUrl:w.ctaUrl||"", image:w.image||"", zoomLink:w.zoomLink||"", createLabel:p0.label||"PROJECT", createTitle:p0.title||"", createSubtitle:p0.description||"", createImage:p0.image||"" });
     setIsEditing(true); setView("create");
   };
 
@@ -2166,7 +2167,8 @@ function WorkshopsAdmin({ token }) {
           if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
         } catch {}
       }
-      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), originalPrice:cf.originalPrice?parseFloat(cf.originalPrice.replace(/[^0-9.]/g,""))||0:0, mode:cf.mode.toUpperCase(), trainer:cf.trainer||"", seats:parseInt(cf.seats)||50, isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", ...(scheduledAt && { scheduledAt }) };
+      const projects = cf.createTitle.trim() ? [{ label:cf.createLabel||"PROJECT", title:cf.createTitle.trim(), description:cf.createSubtitle||"", image:cf.createImage||"" }] : [];
+      const body = { title:cf.title, description:cf.shortDesc, duration:cf.duration, price:parseFloat(cf.price.replace(/[^0-9.]/g,"")), originalPrice:cf.originalPrice?parseFloat(cf.originalPrice.replace(/[^0-9.]/g,""))||0:0, mode:cf.mode.toUpperCase(), trainer:cf.trainer||"", seats:parseInt(cf.seats)||50, isPublished:cf.published, previewVideoUrl:cf.previewVideoUrl||"", ctaText:cf.ctaText||"Reserve Spot", ctaType:(cf.ctaType||"external").toUpperCase(), ctaUrl:cf.ctaUrl||"", image:cf.image||"", zoomLink:cf.zoomLink||"", projects, ...(scheduledAt && { scheduledAt }) };
       const url  = isEditing && sel?._id ? `/api/workshops/${sel._id}` : "/api/workshops";
       const meth = isEditing && sel?._id ? "PUT" : "POST";
       const res  = await fetch(url,{ method:meth, headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify(body) });
@@ -2270,6 +2272,36 @@ function WorkshopsAdmin({ token }) {
               placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
             />
             <p className="text-[10px] text-gray-500 mt-1">Visitors see the first 5 seconds then see a 🔒 lock overlay. Use a short promo/trailer clip — not the full workshop.</p>
+          </Sect>
+          <Sect icon="videocam" title="What You Will CREATE">
+            <p className="text-[10px] text-gray-500 mb-2">Shown on the workshop detail page — the project students will build. Leave title blank to hide this section.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Fld label="Label" value={cf.createLabel} onChange={v=>setCf({...cf,createLabel:v})} placeholder="PROJECT" />
+              <Fld label="Project Title" value={cf.createTitle} onChange={v=>setCf({...cf,createTitle:v})} placeholder="e.g. AI SHORT FILM" />
+            </div>
+            <Fld label="Description" value={cf.createSubtitle} onChange={v=>setCf({...cf,createSubtitle:v})} placeholder="By the end of this workshop, you'll build real AI filmmaking projects." textarea />
+            <label className="border-2 border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer hover:border-[#C7E36B]/50 transition-all block">
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async e => {
+                const file = e.target.files?.[0]; if (!file) return;
+                setWsCoverUploading(true); setWsCoverPct(0);
+                const fd = new FormData(); fd.append("image", file);
+                try {
+                  const data = await uploadXHR("/api/uploads/image", fd, token, pct => setWsCoverPct(pct));
+                  if (data.url) setCf(p => ({...p, createImage: data.url}));
+                } catch {}
+                setWsCoverUploading(false); e.target.value="";
+              }}/>
+              {wsCoverUploading ? (
+                <div className="flex flex-col items-center justify-center py-4 gap-2">
+                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden"><div className="h-2 bg-[#C7E36B] rounded-full transition-all duration-150" style={{width:`${wsCoverPct}%`}}/></div>
+                  <p className="text-xs text-[#C7E36B] font-bold">{wsCoverPct}%</p>
+                </div>
+              ) : cf.createImage
+                ? <img src={cf.createImage} alt="Project" className="w-full h-32 object-cover rounded-lg mb-2"/>
+                : <><I name="upload" size={20} className="mx-auto text-gray-500 mb-1"/><p className="text-[11px] text-gray-400">Upload project image</p><p className="text-[10px] text-gray-500">PNG, JPG or WEBP (Max 5MB)</p></>
+              }
+            </label>
+            {cf.createImage && <Fld label="Or paste image URL" value={cf.createImage} onChange={v=>setCf({...cf,createImage:v})} placeholder="https://..." />}
           </Sect>
           <Sect icon="workshop" title="Schedule">
             <div className="grid grid-cols-3 gap-3">
