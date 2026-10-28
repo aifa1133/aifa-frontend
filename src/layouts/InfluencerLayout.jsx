@@ -52,7 +52,11 @@ export default function InfluencerLayout() {
   const logout = () => {
     localStorage.removeItem("influencer_token");
     localStorage.removeItem("influencer_user");
-    navigate("/influencer/login", { replace: true });
+    if (localStorage.getItem("aifa_token")) {
+      navigate("/dashboard", { replace: true });
+    } else {
+      navigate("/influencer/login", { replace: true });
+    }
   };
 
   const fullName = me?.fullName || "Influencer";
@@ -122,13 +126,6 @@ export default function InfluencerLayout() {
               <I name="lock" size={14} />
               Change Password
             </NavLink>
-            {localStorage.getItem("aifa_token") && (
-              <button onClick={() => navigate("/dashboard")}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-all mt-0.5">
-                <I name="home" size={14} />
-                Student Dashboard
-              </button>
-            )}
           </div>
         </nav>
 
