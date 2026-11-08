@@ -14,9 +14,12 @@ import Institutions from "../Components/Institutions";
 import Stats from "../Components/Stats";
 import Testimonial from "../Components/Testimonial";
 import CTASection from "../Components/CTASection";
+import DiwaliCelebration from "../Components/DiwaliCelebration";
 
 export default function Home() {
   return (
+    <>
+    <DiwaliCelebration />
     <main
       className="
         w-full
@@ -87,5 +90,6 @@ export default function Home() {
         <CTASection />
       </section>
     </main>
+    </>
   );
 }
