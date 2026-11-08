@@ -8,9 +8,16 @@ import App from "./App.jsx";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GOOGLE_OAUTH_ENABLED = Boolean(GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("your_google"));
 
-/* ── Global 401 interceptor — auto-logout on expired token ── */
+/* ── Global fetch interceptor: prefix /api and /uploads with backend URL in production ── */
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 const _fetch = window.fetch.bind(window);
 window.fetch = async (...args) => {
+  if (API_BASE) {
+    const url = typeof args[0] === "string" ? args[0] : (args[0] instanceof Request ? args[0].url : "");
+    if (url.startsWith("/api/") || url.startsWith("/uploads/")) {
+      args[0] = API_BASE + url;
+    }
+  }
   const res = await _fetch(...args);
   if (res.status === 401) {
     const url = typeof args[0] === "string" ? args[0] : (args[0]?.url || "");
